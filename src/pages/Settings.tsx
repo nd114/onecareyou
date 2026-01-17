@@ -4,7 +4,7 @@ import {
   User, Shield, Bell, Moon, Sun, 
   Brain, History, ChevronRight, LogOut,
   Mail, Phone, Heart, AlertTriangle, Globe, Scale, Thermometer, Droplets,
-  BellRing, TrendingUp
+  BellRing, TrendingUp, Crown, CreditCard, Loader2, ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { useAIConsent } from '@/hooks/useAIConsent';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
+import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -131,6 +132,14 @@ const Settings = () => {
     updateEmailNotifications,
     isSaving: savingNotifications 
   } = useNotificationSettings();
+  const {
+    subscription,
+    checkSubscription,
+    openCustomerPortal,
+    loading: subscriptionLoading,
+    checkingStatus,
+    isPremium,
+  } = useSubscription();
   
   // Initialize service worker for push notifications
   useServiceWorker();
@@ -144,6 +153,11 @@ const Settings = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [timezone, setTimezone] = useState<string>((profile as any)?.timezone || 'UTC');
   const [savingTimezone, setSavingTimezone] = useState(false);
+  
+  // Check subscription on mount
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
   
   // Unit preferences - stored in localStorage for now (could be moved to profile later)
   const [glucoseUnit, setGlucoseUnit] = useState<GlucoseUnit>(() => {
@@ -283,9 +297,68 @@ const Settings = () => {
                   <div>
                     <p className="font-semibold">{(profile as any)?.name || 'User'}</p>
                     <p className="text-sm text-muted-foreground">{user?.email}</p>
+                    {isPremium && (
+                      <Badge className="mt-1 gradient-primary border-0">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Premium
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 
+                <Separator />
+                
+                {/* Subscription Status */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isPremium ? 'gradient-primary' : 'bg-muted'}`}>
+                        <Crown className={`h-5 w-5 ${isPremium ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {isPremium ? 'Premium Plan' : 'Free Plan'}
+                        </p>
+                        {subscription?.subscription_end && (
+                          <p className="text-xs text-muted-foreground">
+                            Renews {new Date(subscription.subscription_end).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {checkingStatus ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    ) : isPremium ? (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={openCustomerPortal}
+                        disabled={subscriptionLoading}
+                      >
+                        {subscriptionLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Manage
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button 
+                        size="sm"
+                        className="gradient-primary border-0"
+                        asChild
+                      >
+                        <Link to="/pricing">
+                          <Crown className="h-4 w-4 mr-2" />
+                          Upgrade
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
                 <Separator />
                 
                 {/* Biodata */}
