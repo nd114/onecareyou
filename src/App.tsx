@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Medications from "./pages/Medications";
@@ -23,19 +25,49 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/medications" element={<Medications />} />
-          <Route path="/medications/add" element={<AddMedication />} />
-          <Route path="/schedule" element={<Schedule />} />
-          <Route path="/vitals" element={<Vitals />} />
-          <Route path="/care-circle" element={<CareCircle />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/sign-in" element={<SignIn />} />
-          <Route path="/sign-up" element={<SignUp />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/medications" element={
+              <ProtectedRoute>
+                <Medications />
+              </ProtectedRoute>
+            } />
+            <Route path="/medications/add" element={
+              <ProtectedRoute>
+                <AddMedication />
+              </ProtectedRoute>
+            } />
+            <Route path="/schedule" element={
+              <ProtectedRoute>
+                <Schedule />
+              </ProtectedRoute>
+            } />
+            <Route path="/vitals" element={
+              <ProtectedRoute>
+                <Vitals />
+              </ProtectedRoute>
+            } />
+            <Route path="/care-circle" element={
+              <ProtectedRoute>
+                <CareCircle />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
