@@ -21,6 +21,7 @@ import { Header } from '@/components/layout/Header';
 import { useClinicianProfile, MEDICAL_SPECIALTIES } from '@/hooks/useClinicianProfile';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
+import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { Badge } from '@/components/ui/badge';
 
@@ -34,6 +35,9 @@ const ClinicianSettings = () => {
     updateEmailNotifications,
     isSaving: savingNotifications 
   } = useClinicianNotificationSettings();
+  
+  // Initialize service worker for push notifications
+  useServiceWorker();
 
   const [profileForm, setProfileForm] = useState({
     practice_name: clinicianProfile?.practice_name || '',

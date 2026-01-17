@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Inbox, 
@@ -16,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { usePatientGuidance } from '@/hooks/usePatientGuidance';
+import { useDueDateReminders } from '@/hooks/useDueDateReminders';
+import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -43,6 +45,12 @@ interface GuidanceItem {
 
 const PatientGuidance = () => {
   const { guidance, isLoading, acknowledgeGuidance, completeGuidance } = usePatientGuidance();
+  
+  // Initialize service worker for push notifications
+  useServiceWorker();
+  
+  // Schedule due date reminders
+  useDueDateReminders(guidance);
   
   const [selectedGuidance, setSelectedGuidance] = useState<GuidanceItem | null>(null);
   const [completionNotes, setCompletionNotes] = useState('');
