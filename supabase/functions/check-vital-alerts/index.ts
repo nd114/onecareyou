@@ -31,13 +31,6 @@ interface Vital {
   user_id: string;
 }
 
-interface ProviderShare {
-  id: string;
-  provider_name: string;
-  provider_email: string | null;
-  clinician_user_id: string | null;
-}
-
 const VITAL_LABELS: Record<string, string> = {
   blood_pressure: "Blood Pressure",
   heart_rate: "Heart Rate",
@@ -351,11 +344,10 @@ const handler = async (req: Request): Promise<Response> => {
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in check-vital-alerts function:", errorMessage);
+  } catch (error) {
+    console.error("Error in check-vital-alerts function:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "Failed to check vital alerts" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

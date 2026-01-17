@@ -1,17 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface SearchRequest {
-  action: 'search' | 'get-info' | 'get-rxcui' | 'check-interactions' | 'lookup-ndc';
-  query?: string;
-  drugName?: string;
-  drugNames?: string[];
-  ndc?: string;
-}
+// Input validation schemas
+const SearchRequestSchema = z.object({
+  action: z.enum(['search', 'get-info', 'get-rxcui', 'check-interactions', 'lookup-ndc']),
+  query: z.string().max(200).optional(),
+  drugName: z.string().max(200).optional(),
+  drugNames: z.array(z.string().max(200)).max(20).optional(),
+  ndc: z.string().max(20).regex(/^[\d\-]+$/, 'Invalid NDC format').optional(),
+});
+
+type SearchRequest = z.infer<typeof SearchRequestSchema>;
 
 // Clean HTML from label text
 const cleanLabelText = (text: string | undefined): string => {
@@ -281,7 +285,19 @@ serve(async (req) => {
   }
 
   try {
-    const body: SearchRequest = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate input with zod
+    const parseResult = SearchRequestSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: 'Invalid request', details: parseResult.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const body: SearchRequest = parseResult.data;
     const { action } = body;
 
     console.log(`Drug lookup action: ${action}`);
@@ -291,41 +307,59 @@ serve(async (req) => {
     switch (action) {
       case 'search':
         if (!body.query) {
-          throw new Error('Query is required for search');
+          return new Response(
+            JSON.stringify({ error: 'Query is required for search' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         result = await searchMedications(body.query);
         break;
         
       case 'get-info':
         if (!body.drugName) {
-          throw new Error('Drug name is required');
+          return new Response(
+            JSON.stringify({ error: 'Drug name is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         result = await getMedicationInfo(body.drugName);
         break;
         
       case 'get-rxcui':
         if (!body.drugName) {
-          throw new Error('Drug name is required');
+          return new Response(
+            JSON.stringify({ error: 'Drug name is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         result = await getRxCui(body.drugName);
         break;
         
       case 'check-interactions':
         if (!body.drugNames || body.drugNames.length < 2) {
-          throw new Error('At least 2 drug names are required');
+          return new Response(
+            JSON.stringify({ error: 'At least 2 drug names are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         result = await checkInteractions(body.drugNames);
         break;
         
       case 'lookup-ndc':
         if (!body.ndc) {
-          throw new Error('NDC is required');
+          return new Response(
+            JSON.stringify({ error: 'NDC is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         result = await lookupNDC(body.ndc);
         break;
         
       default:
-        throw new Error(`Unknown action: ${action}`);
+        return new Response(
+          JSON.stringify({ error: 'Unknown action' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
     }
 
     return new Response(JSON.stringify(result), {
@@ -333,9 +367,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Drug lookup error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred processing your request' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

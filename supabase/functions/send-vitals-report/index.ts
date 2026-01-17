@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -9,25 +10,28 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface VitalRecord {
-  id: string;
-  type: string;
-  value: number;
-  secondary_value: number | null;
-  unit: string;
-  recorded_at: string;
-  notes: string | null;
-}
+// Input validation schemas
+const VitalRecordSchema = z.object({
+  id: z.string().uuid(),
+  type: z.string().max(50),
+  value: z.number(),
+  secondary_value: z.number().nullable(),
+  unit: z.string().max(20),
+  recorded_at: z.string(),
+  notes: z.string().max(500).nullable(),
+});
 
-interface SendReportRequest {
-  recipientEmail: string;
-  recipientName?: string;
-  vitals: VitalRecord[];
-  dateRange: {
-    from?: string;
-    to?: string;
-  };
-}
+const SendReportRequestSchema = z.object({
+  recipientEmail: z.string().email().max(255),
+  recipientName: z.string().max(100).optional(),
+  vitals: z.array(VitalRecordSchema).min(1).max(500),
+  dateRange: z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+  }),
+});
+
+type VitalRecord = z.infer<typeof VitalRecordSchema>;
 
 const VITAL_LABELS: Record<string, string> = {
   blood_pressure: 'Blood Pressure',
@@ -252,17 +256,21 @@ const handler = async (req: Request): Promise<Response> => {
     const patientName = profile?.name || 'A patient';
     const patientEmail = profile?.email || claimsData.claims.email || 'Unknown';
 
-    // Parse request body
-    const { recipientEmail, recipientName, vitals, dateRange }: SendReportRequest = await req.json();
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const parseResult = SendReportRequestSchema.safeParse(rawBody);
     
-    console.log(`Sending report to ${recipientEmail} with ${vitals.length} vitals`);
-
-    if (!recipientEmail || !vitals || vitals.length === 0) {
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.flatten());
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Invalid request', details: parseResult.error.flatten().fieldErrors }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+    
+    const { recipientEmail, recipientName, vitals, dateRange } = parseResult.data;
+    
+    console.log(`Sending report to ${recipientEmail} with ${vitals.length} vitals`);
 
     // Generate email HTML
     const html = generateEmailHTML(patientName, patientEmail, recipientName, vitals, dateRange);
@@ -282,10 +290,9 @@ const handler = async (req: Request): Promise<Response> => {
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error("Error in send-vitals-report function:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Failed to send report' }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

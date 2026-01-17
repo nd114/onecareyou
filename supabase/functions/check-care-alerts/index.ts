@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema (optional user_id filter)
+const CheckCareAlertsSchema = z.object({
+  user_id: z.string().uuid().optional(),
+}).optional();
 
 interface CareAlertSetting {
   id: string;
@@ -29,9 +35,19 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get request body - can be triggered with specific user_id or check all
-    const body = await req.json().catch(() => ({}));
-    const { user_id } = body;
+    // Parse and validate request body
+    const rawBody = await req.json().catch(() => ({}));
+    const parseResult = CheckCareAlertsSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: 'Invalid request', details: parseResult.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const user_id = parseResult.data?.user_id;
 
     // Get today's date range
     const today = new Date();
@@ -188,7 +204,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in check-care-alerts:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Failed to process care alerts" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
