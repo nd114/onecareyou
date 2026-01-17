@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2 } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -96,21 +96,33 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
-                    <Link to="/care-circle" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Care Circle
+                    <Link to="/medications" className="flex items-center gap-2">
+                      <Pill className="h-4 w-4" />
+                      Medications
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/settings" className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      Settings
+                    <Link to="/vitals" className="flex items-center gap-2">
+                      <Activity className="h-4 w-4" />
+                      Vitals
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/care-circle" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Care Circle
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/onboarding" className="flex items-center gap-2">
                       <Heart className="h-4 w-4" />
                       Health Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Settings
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -168,6 +180,20 @@ export function Header() {
             ))}
             {isAuthenticated ? (
               <>
+                <Link
+                  to="/medications"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Medications
+                </Link>
+                <Link
+                  to="/vitals"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Vitals
+                </Link>
                 <Link
                   to="/care-circle"
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
