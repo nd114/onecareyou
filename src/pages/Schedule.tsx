@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Clock, Check, Calendar, ChevronLeft, ChevronRight, Bell, Loader2, X, MessageSquare, BellRing } from 'lucide-react';
+import { Clock, Check, Calendar, ChevronLeft, ChevronRight, Bell, Loader2, X, MessageSquare, BellRing, TestTube } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { useScheduleEntries } from '@/hooks/useScheduleEntries';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useMedicationReminders } from '@/hooks/useMedicationReminders';
+import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState, useEffect, useRef } from 'react';
 import { format, addDays, subDays, isToday as checkIsToday } from 'date-fns';
@@ -35,9 +37,15 @@ const Schedule = () => {
   } = useScheduleEntries(selectedDate);
   
   const { isSupported, isGranted, requestPermission, scheduleMedicationReminder } = usePushNotifications();
+  const { isEnabled: remindersEnabled, sendTestReminder, scheduledCount } = useMedicationReminders();
+  
+  // Initialize service worker
+  useServiceWorker();
+  
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
   const [skipEntryId, setSkipEntryId] = useState<string | null>(null);
   const [skipReason, setSkipReason] = useState('');
+  const [testingReminder, setTestingReminder] = useState(false);
   const scheduledReminders = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Schedule push notifications for pending entries when on today's date
@@ -108,7 +116,24 @@ const Schedule = () => {
       toast.error('Push notifications are not supported in this browser');
       return;
     }
-    await requestPermission();
+    const granted = await requestPermission();
+    if (granted) {
+      toast.success('Medication reminders enabled! You will receive notifications before each scheduled dose.');
+    }
+  };
+
+  const handleTestReminder = async () => {
+    setTestingReminder(true);
+    try {
+      const success = await sendTestReminder('Your Medication');
+      if (success) {
+        toast.success('Test notification sent! Check your notifications.');
+      } else {
+        toast.error('Failed to send test notification. Make sure notifications are enabled.');
+      }
+    } finally {
+      setTestingReminder(false);
+    }
   };
 
   return (
@@ -172,6 +197,66 @@ const Schedule = () => {
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="h-full gradient-primary rounded-full"
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Notification Reminders Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <Card className={remindersEnabled ? 'border-status-success/30 bg-status-success/5' : ''}>
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                    remindersEnabled 
+                      ? 'bg-status-success/20 text-status-success' 
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <BellRing className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {remindersEnabled ? 'Reminders Active' : 'Enable Medication Reminders'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {remindersEnabled 
+                        ? `${scheduledCount} reminder${scheduledCount !== 1 ? 's' : ''} scheduled for upcoming doses`
+                        : 'Get notified 5 minutes before each scheduled dose'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {remindersEnabled ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleTestReminder}
+                      disabled={testingReminder}
+                    >
+                      {testingReminder ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <TestTube className="h-4 w-4 mr-2" />
+                      )}
+                      Test Reminder
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleEnableReminders}
+                      className="gradient-primary border-0"
+                      size="sm"
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Enable Reminders
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -13,6 +13,38 @@ interface InteractionInfo {
 
 // Common drug interactions database (simplified)
 const INTERACTION_DATABASE: InteractionInfo[] = [
+  // NSAID interactions
+  {
+    medications: ['Ibuprofen', 'Advil'],
+    severity: 'moderate',
+    description: 'Advil is a brand name for Ibuprofen. Taking both means double dosing on the same medication.',
+    recommendation: 'Do not take both. Choose one or the other.',
+  },
+  {
+    medications: ['Ibuprofen', 'Aspirin'],
+    severity: 'moderate',
+    description: 'Both are NSAIDs. Combined use increases risk of stomach bleeding and kidney problems.',
+    recommendation: 'Avoid taking together unless directed by your doctor.',
+  },
+  {
+    medications: ['Ibuprofen', 'Naproxen'],
+    severity: 'moderate',
+    description: 'Both are NSAIDs. Combined use increases risk of stomach bleeding and kidney problems.',
+    recommendation: 'Do not take together. Choose one NSAID only.',
+  },
+  {
+    medications: ['Advil', 'Aspirin'],
+    severity: 'moderate',
+    description: 'Both are NSAIDs. Combined use increases risk of stomach bleeding.',
+    recommendation: 'Avoid taking together unless directed by your doctor.',
+  },
+  {
+    medications: ['Advil', 'Naproxen'],
+    severity: 'moderate',
+    description: 'Both are NSAIDs. Combined use increases risk of gastrointestinal bleeding.',
+    recommendation: 'Do not take together. Choose one NSAID only.',
+  },
+  // Original interactions
   {
     medications: ['Metformin', 'Lisinopril'],
     severity: 'low',
@@ -29,6 +61,12 @@ const INTERACTION_DATABASE: InteractionInfo[] = [
     medications: ['Warfarin', 'Ibuprofen'],
     severity: 'high',
     description: 'NSAIDs like Ibuprofen increase the risk of bleeding when taken with Warfarin.',
+    recommendation: 'Avoid combination. Consult your healthcare provider.',
+  },
+  {
+    medications: ['Warfarin', 'Advil'],
+    severity: 'high',
+    description: 'NSAIDs like Advil (Ibuprofen) increase the risk of bleeding when taken with Warfarin.',
     recommendation: 'Avoid combination. Consult your healthcare provider.',
   },
   {
@@ -102,6 +140,54 @@ const INTERACTION_DATABASE: InteractionInfo[] = [
     severity: 'moderate',
     description: 'Increased risk of gastrointestinal bleeding and ulcers.',
     recommendation: 'Use gastroprotective medication if combination is necessary.',
+  },
+  {
+    medications: ['Prednisone', 'Ibuprofen'],
+    severity: 'moderate',
+    description: 'Increased risk of gastrointestinal bleeding and ulcers.',
+    recommendation: 'Use gastroprotective medication if combination is necessary.',
+  },
+  {
+    medications: ['Sertraline', 'Tramadol'],
+    severity: 'high',
+    description: 'Risk of serotonin syndrome when combining SSRIs with Tramadol.',
+    recommendation: 'Avoid combination. Consult your doctor.',
+  },
+  {
+    medications: ['Escitalopram', 'Tramadol'],
+    severity: 'high',
+    description: 'Risk of serotonin syndrome when combining SSRIs with Tramadol.',
+    recommendation: 'Avoid combination. Consult your doctor.',
+  },
+  {
+    medications: ['Alprazolam', 'Alcohol'],
+    severity: 'high',
+    description: 'Combination can cause severe drowsiness, respiratory depression, and death.',
+    recommendation: 'Never mix benzodiazepines with alcohol.',
+  },
+  {
+    medications: ['Lorazepam', 'Alcohol'],
+    severity: 'high',
+    description: 'Combination can cause severe drowsiness, respiratory depression, and death.',
+    recommendation: 'Never mix benzodiazepines with alcohol.',
+  },
+  {
+    medications: ['Gabapentin', 'Opioids'],
+    severity: 'high',
+    description: 'Combined use increases risk of respiratory depression.',
+    recommendation: 'Use with extreme caution and close monitoring.',
+  },
+  {
+    medications: ['Lisinopril', 'Losartan'],
+    severity: 'high',
+    description: 'Dual renin-angiotensin blockade increases risk of kidney problems and hyperkalemia.',
+    recommendation: 'Generally avoid combination. Close monitoring required.',
+  },
+  {
+    medications: ['Metformin', 'Contrast Dye'],
+    severity: 'high',
+    description: 'Risk of lactic acidosis if Metformin is continued during contrast procedures.',
+    recommendation: 'Stop Metformin before and 48 hours after contrast procedures.',
   },
 ];
 

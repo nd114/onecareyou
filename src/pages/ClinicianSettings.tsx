@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -49,7 +49,7 @@ const ClinicianSettings = () => {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Update form when profile loads
-  useState(() => {
+  useEffect(() => {
     if (clinicianProfile) {
       setProfileForm({
         practice_name: clinicianProfile.practice_name || '',
@@ -58,7 +58,7 @@ const ClinicianSettings = () => {
         country: clinicianProfile.country || '',
       });
     }
-  });
+  }, [clinicianProfile]);
 
   const handleSaveProfile = async () => {
     setIsSavingProfile(true);
