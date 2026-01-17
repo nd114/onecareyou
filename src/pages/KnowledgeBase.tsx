@@ -26,6 +26,7 @@ const healthTopics = [
   {
     icon: Heart,
     title: 'Heart Health',
+    slug: 'heart-health',
     description: 'Blood pressure, cholesterol, and cardiovascular care',
     color: 'text-red-500 bg-red-500/10',
     searchTerms: ['Lisinopril', 'Metoprolol', 'Amlodipine', 'Atorvastatin'],
@@ -33,6 +34,7 @@ const healthTopics = [
   {
     icon: Brain,
     title: 'Mental Health',
+    slug: 'mental-health',
     description: 'Anxiety, depression, and mental wellness',
     color: 'text-purple-500 bg-purple-500/10',
     searchTerms: ['Sertraline', 'Escitalopram', 'Fluoxetine', 'Alprazolam'],
@@ -40,6 +42,7 @@ const healthTopics = [
   {
     icon: Activity,
     title: 'Diabetes Management',
+    slug: 'diabetes',
     description: 'Blood sugar control and diabetes care',
     color: 'text-blue-500 bg-blue-500/10',
     searchTerms: ['Metformin', 'Glipizide', 'Insulin', 'Januvia'],
@@ -47,6 +50,7 @@ const healthTopics = [
   {
     icon: Stethoscope,
     title: 'Pain Management',
+    slug: 'pain-management',
     description: 'Understanding pain medications and alternatives',
     color: 'text-orange-500 bg-orange-500/10',
     searchTerms: ['Ibuprofen', 'Acetaminophen', 'Gabapentin', 'Tramadol'],
@@ -54,6 +58,7 @@ const healthTopics = [
   {
     icon: Baby,
     title: 'Pediatric Care',
+    slug: 'pediatric',
     description: 'Children\'s health and medication safety',
     color: 'text-pink-500 bg-pink-500/10',
     searchTerms: ['Amoxicillin', 'Tylenol', 'Benadryl', 'Zyrtec'],
@@ -61,6 +66,7 @@ const healthTopics = [
   {
     icon: Users,
     title: 'Senior Health',
+    slug: 'senior-health',
     description: 'Medication management for older adults',
     color: 'text-teal-500 bg-teal-500/10',
     searchTerms: ['Warfarin', 'Aricept', 'Furosemide', 'Omeprazole'],
@@ -185,14 +191,17 @@ const KnowledgeBase = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
                 >
-                  <Card className="h-full">
+                  <Card 
+                    className="h-full hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => navigate(`/knowledge-base/${topic.slug}`)}
+                  >
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4">
                         <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${topic.color}`}>
                           <topic.icon className="h-6 w-6" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold mb-1">
+                          <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
                             {topic.title}
                           </h3>
                           <p className="text-sm text-muted-foreground mb-2">
@@ -204,13 +213,17 @@ const KnowledgeBase = () => {
                                 key={term} 
                                 variant="secondary" 
                                 className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                                onClick={() => navigate(`/medication-info/${encodeURIComponent(term)}`)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/medication-info/${encodeURIComponent(term)}`);
+                                }}
                               >
                                 {term}
                               </Badge>
                             ))}
                           </div>
                         </div>
+                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                       </div>
                     </CardContent>
                   </Card>

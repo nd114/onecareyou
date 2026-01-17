@@ -36,6 +36,7 @@ import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import AdherenceReport from "./pages/AdherenceReport";
 import KnowledgeBase from "./pages/KnowledgeBase";
+import KnowledgeBaseTopic from "./pages/KnowledgeBaseTopic";
 import MedicationInfo from "./pages/MedicationInfo";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 
@@ -141,6 +142,11 @@ const App = () => (
             <Route path="/knowledge-base" element={
               <ProtectedRoute>
                 <KnowledgeBase />
+              </ProtectedRoute>
+            } />
+            <Route path="/knowledge-base/:topicSlug" element={
+              <ProtectedRoute>
+                <KnowledgeBaseTopic />
               </ProtectedRoute>
             } />
             <Route path="/medication-info/:drugName" element={
