@@ -33,6 +33,7 @@ export function Header() {
     ? isClinician
       ? [
           { href: '/clinician/dashboard', label: 'Dashboard' },
+          { href: '/clinician/settings', label: 'Settings' },
         ]
       : [
           { href: '/dashboard', label: 'Dashboard' },
@@ -178,6 +179,12 @@ export function Header() {
                           Clinician Dashboard
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/clinician/settings" className="flex items-center gap-2">
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuSeparator />
@@ -277,17 +284,7 @@ export function Header() {
                     </Link>
                   </>
                 )}
-                {/* Clinician mobile menu items - Settings only (Dashboard already in navLinks) */}
-                {isClinician && (
-                  <Link
-                    to="/settings"
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </Link>
-                )}
+                {/* Clinician mobile menu items - Settings in navLinks now */}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
