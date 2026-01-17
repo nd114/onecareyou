@@ -10,16 +10,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
+import { usePatientGuidance } from '@/hooks/usePatientGuidance';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
   const { isClinician } = useClinicianProfile();
+  const { guidance } = usePatientGuidance();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   
@@ -27,6 +32,10 @@ export function Header() {
   const userName = profile?.name || user?.email?.split('@')[0] || 'User';
   const subscriptionTier = (profile?.subscription_tier || 'free') as string;
   const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
+  
+  // Get unread notifications (guidance items that haven't been acknowledged)
+  const unreadGuidance = !isClinician ? guidance.filter(g => g.status === 'pending' || g.status === 'sent') : [];
+  const hasUnreadNotifications = unreadGuidance.length > 0;
   
   // Clinicians get a simplified nav - they don't need patient features like medications/vitals in main nav
   const navLinks = isAuthenticated 
@@ -98,17 +107,70 @@ export function Header() {
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
+                    {hasUnreadNotifications && (
+                      <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                        {unreadGuidance.length > 9 ? '9+' : unreadGuidance.length}
+                      </span>
+                    )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-80">
-                  <div className="space-y-3">
+                <PopoverContent align="end" className="w-80 p-0">
+                  <div className="p-3 border-b">
                     <h4 className="font-medium text-sm">Notifications</h4>
+                  </div>
+                  {unreadGuidance.length > 0 ? (
+                    <ScrollArea className="max-h-80">
+                      <div className="divide-y">
+                        {unreadGuidance.slice(0, 10).map((item) => (
+                          <Link
+                            key={item.id}
+                            to="/guidance"
+                            onClick={() => setNotificationsOpen(false)}
+                            className="block p-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-start gap-2">
+                              <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{item.title}</p>
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {item.instruction}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                    {item.category}
+                                  </Badge>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {format(new Date(item.created_at), 'MMM d, h:mm a')}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  ) : (
                     <div className="text-center py-6 text-muted-foreground text-sm">
                       <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>No new notifications</p>
                       <p className="text-xs mt-1">We'll notify you about medication reminders and updates</p>
                     </div>
-                  </div>
+                  )}
+                  {unreadGuidance.length > 0 && (
+                    <div className="p-2 border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-primary"
+                        onClick={() => {
+                          setNotificationsOpen(false);
+                          navigate('/guidance');
+                        }}
+                      >
+                        View all instructions
+                      </Button>
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
               <DropdownMenu>
