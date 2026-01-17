@@ -39,6 +39,7 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import KnowledgeBaseTopic from "./pages/KnowledgeBaseTopic";
 import MedicationInfo from "./pages/MedicationInfo";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import EHRComparison from "./pages/EHRComparison";
 
 const queryClient = new QueryClient();
 
@@ -159,6 +160,8 @@ const App = () => (
                 <SubscriptionSuccess />
               </ProtectedRoute>
             } />
+            {/* Internal/unlisted pages */}
+            <Route path="/ehr-comparison" element={<EHRComparison />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
