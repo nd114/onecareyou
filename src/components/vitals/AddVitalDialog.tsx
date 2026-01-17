@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,14 +8,26 @@ import { Textarea } from '@/components/ui/textarea';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Upload } from 'lucide-react';
+import { CalendarIcon, Upload, FileText, Check, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface AddVitalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (type: VitalType, value: number, secondaryValue?: number, notes?: string, date?: Date) => Promise<any>;
+}
+
+interface ExtractedVital {
+  type: VitalType;
+  value: number;
+  secondary_value: number | null;
+  unit: string;
+  selected: boolean;
 }
 
 const vitalCategories = [
@@ -29,12 +41,19 @@ const vitalCategories = [
 ];
 
 export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogProps) {
+  const [mode, setMode] = useState<'manual' | 'upload'>('manual');
   const [selectedCategory, setSelectedCategory] = useState('daily');
   const [values, setValues] = useState<Record<string, string>>({});
   const [secondaryValues, setSecondaryValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [saving, setSaving] = useState(false);
+  
+  // Upload state
+  const [uploading, setUploading] = useState(false);
+  const [extractedVitals, setExtractedVitals] = useState<ExtractedVital[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setValues({});
@@ -42,13 +61,15 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setNotes('');
     setSelectedDate(new Date());
     setSelectedCategory('daily');
+    setExtractedVitals([]);
+    setUploadError(null);
+    setMode('manual');
   };
 
-  const handleSave = async () => {
+  const handleSaveManual = async () => {
     setSaving(true);
     
     try {
-      // Save all entered values
       const entries = Object.entries(values).filter(([_, v]) => v && !isNaN(parseFloat(v)));
       
       for (const [type, value] of entries) {
@@ -64,7 +85,108 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     }
   };
 
-  const hasValues = Object.values(values).some(v => v && !isNaN(parseFloat(v)));
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please upload a JPG, PNG, WebP, or PDF file');
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size must be less than 10MB');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    setExtractedVitals([]);
+
+    try {
+      // Convert to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Please sign in to upload lab reports');
+      }
+
+      // Call edge function to parse
+      const { data, error } = await supabase.functions.invoke('parse-lab-report', {
+        body: { 
+          imageBase64: base64,
+          reportDate: selectedDate.toISOString()
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to process lab report');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to extract vitals from report');
+      }
+
+      if (data.extractedVitals && data.extractedVitals.length > 0) {
+        setExtractedVitals(data.extractedVitals.map((v: any) => ({ ...v, selected: true })));
+        toast.success(`Found ${data.extractedVitals.length} health metrics!`);
+      } else {
+        setUploadError('No health metrics found in the image. Try a clearer photo of your lab report.');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to process file');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const toggleVitalSelection = (index: number) => {
+    setExtractedVitals(prev => prev.map((v, i) => 
+      i === index ? { ...v, selected: !v.selected } : v
+    ));
+  };
+
+  const handleSaveExtracted = async () => {
+    setSaving(true);
+    
+    try {
+      const selectedVitals = extractedVitals.filter(v => v.selected);
+      
+      for (const vital of selectedVitals) {
+        await onSave(
+          vital.type, 
+          vital.value, 
+          vital.secondary_value || undefined, 
+          'Extracted from lab report', 
+          selectedDate
+        );
+      }
+
+      toast.success(`Saved ${selectedVitals.length} health metrics!`);
+      resetForm();
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hasManualValues = Object.values(values).some(v => v && !isNaN(parseFloat(v)));
+  const hasSelectedExtracted = extractedVitals.some(v => v.selected);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,11 +194,32 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
         <DialogHeader>
           <DialogTitle>Record Health Metrics</DialogTitle>
           <DialogDescription>
-            Enter your measurements manually or upload a document
+            Enter measurements manually or upload a lab report
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-4">
+          {/* Mode Toggle */}
+          <div className="flex rounded-lg border bg-muted/50 p-1">
+            <Button
+              variant={mode === 'manual' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1"
+              onClick={() => setMode('manual')}
+            >
+              Manual Entry
+            </Button>
+            <Button
+              variant={mode === 'upload' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1"
+              onClick={() => setMode('upload')}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Report
+            </Button>
+          </div>
+
           {/* Date Selection */}
           <div className="flex items-center gap-4">
             <Label className="w-20">Date</Label>
@@ -104,101 +247,232 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
             </Popover>
           </div>
 
-          {/* Category Tabs */}
-          <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-            <TabsList className="flex flex-wrap h-auto gap-1">
-              {vitalCategories.map((cat) => (
-                <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
-                  {cat.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            {vitalCategories.map((category) => (
-              <TabsContent key={category.id} value={category.id} className="space-y-4 pt-4">
-                {category.types.map((type) => {
-                  const config = VITAL_CONFIG[type];
-                  const hasBPSecondary = type === 'blood_pressure';
-                  
-                  return (
-                    <div key={type} className="space-y-2">
-                      <Label htmlFor={type}>
-                        {config.label} 
-                        <span className="text-muted-foreground ml-1">({config.unit})</span>
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id={type}
-                          type="number"
-                          step="0.1"
-                          placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
-                          value={values[type] || ''}
-                          onChange={(e) => setValues({ ...values, [type]: e.target.value })}
-                          className="flex-1"
-                        />
-                        {hasBPSecondary && (
-                          <Input
-                            type="number"
-                            placeholder="Diastolic (e.g., 80)"
-                            value={secondaryValues[type] || ''}
-                            onChange={(e) => setSecondaryValues({ ...secondaryValues, [type]: e.target.value })}
-                            className="flex-1"
-                          />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Normal range: {config.normalMin}–{config.normalMax} {config.unit}
-                      </p>
+          {mode === 'manual' ? (
+            <>
+              {/* Category Tabs */}
+              <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+                <TabsList className="flex flex-wrap h-auto gap-1">
+                  {vitalCategories.map((cat) => (
+                    <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
+                      {cat.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                
+                {vitalCategories.map((category) => (
+                  <TabsContent key={category.id} value={category.id} className="space-y-4 pt-4">
+                    {category.types.map((type) => {
+                      const config = VITAL_CONFIG[type];
+                      const hasBPSecondary = type === 'blood_pressure';
+                      
+                      return (
+                        <div key={type} className="space-y-2">
+                          <Label htmlFor={type}>
+                            {config.label} 
+                            <span className="text-muted-foreground ml-1">({config.unit})</span>
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id={type}
+                              type="number"
+                              step="0.1"
+                              placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
+                              value={values[type] || ''}
+                              onChange={(e) => setValues({ ...values, [type]: e.target.value })}
+                              className="flex-1"
+                            />
+                            {hasBPSecondary && (
+                              <Input
+                                type="number"
+                                placeholder="Diastolic (e.g., 80)"
+                                value={secondaryValues[type] || ''}
+                                onChange={(e) => setSecondaryValues({ ...secondaryValues, [type]: e.target.value })}
+                                className="flex-1"
+                              />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Normal range: {config.normalMin}–{config.normalMax} {config.unit}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </TabsContent>
+                ))}
+              </Tabs>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Any relevant context or observations..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => {
+                    resetForm();
+                    onOpenChange(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1 gradient-primary border-0" 
+                  onClick={handleSaveManual}
+                  disabled={!hasManualValues || saving}
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Upload Section */}
+              <div className="space-y-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                
+                {extractedVitals.length === 0 ? (
+                  <Card 
+                    className={cn(
+                      "border-dashed border-2 cursor-pointer transition-colors",
+                      uploading ? "opacity-50" : "hover:border-primary/50"
+                    )}
+                    onClick={() => !uploading && fileInputRef.current?.click()}
+                  >
+                    <CardContent className="flex flex-col items-center justify-center py-10">
+                      {uploading ? (
+                        <>
+                          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                          <p className="text-sm text-muted-foreground">
+                            Analyzing lab report with AI...
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-10 w-10 text-muted-foreground mb-4" />
+                          <p className="font-medium mb-1">Upload Lab Report</p>
+                          <p className="text-sm text-muted-foreground text-center">
+                            Take a photo or upload a PDF of your lab results
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Supports: JPG, PNG, WebP, PDF (max 10MB)
+                          </p>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Extracted Values</h4>
+                      <Badge variant="outline" className="bg-status-success/10 text-status-success">
+                        {extractedVitals.filter(v => v.selected).length} selected
+                      </Badge>
                     </div>
-                  );
-                })}
-              </TabsContent>
-            ))}
-          </Tabs>
+                    
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {extractedVitals.map((vital, index) => {
+                        const config = VITAL_CONFIG[vital.type];
+                        const displayValue = vital.type === 'blood_pressure' && vital.secondary_value
+                          ? `${vital.value}/${vital.secondary_value}`
+                          : vital.value;
+                        
+                        return (
+                          <Card 
+                            key={index}
+                            className={cn(
+                              "cursor-pointer transition-colors",
+                              vital.selected 
+                                ? "border-primary bg-primary/5" 
+                                : "opacity-60"
+                            )}
+                            onClick={() => toggleVitalSelection(index)}
+                          >
+                            <CardContent className="p-3 flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">{config.label}</p>
+                                <p className="text-lg font-bold">
+                                  {displayValue} 
+                                  <span className="text-sm font-normal text-muted-foreground ml-1">
+                                    {config.unit}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className={cn(
+                                "h-6 w-6 rounded-full flex items-center justify-center",
+                                vital.selected 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "bg-muted"
+                              )}>
+                                {vital.selected ? (
+                                  <Check className="h-4 w-4" />
+                                ) : (
+                                  <X className="h-4 w-4" />
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Any relevant context or observations..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => {
+                        setExtractedVitals([]);
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      Upload Different Report
+                    </Button>
+                  </div>
+                )}
 
-          {/* Upload Option - Placeholder for future OCR */}
-          <div className="border-t pt-4">
-            <Button variant="outline" className="w-full" disabled>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Lab Report (Coming Soon)
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              OCR document upload will be available soon
-            </p>
-          </div>
+                {uploadError && (
+                  <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                    {uploadError}
+                  </div>
+                )}
+              </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button 
-              variant="outline" 
-              className="flex-1" 
-              onClick={() => {
-                resetForm();
-                onOpenChange(false);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              className="flex-1 gradient-primary border-0" 
-              onClick={handleSave}
-              disabled={!hasValues || saving}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => {
+                    resetForm();
+                    onOpenChange(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1 gradient-primary border-0" 
+                  onClick={handleSaveExtracted}
+                  disabled={!hasSelectedExtracted || saving}
+                >
+                  {saving ? 'Saving...' : `Save ${extractedVitals.filter(v => v.selected).length} Metrics`}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
