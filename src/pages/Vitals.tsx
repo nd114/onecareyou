@@ -65,52 +65,64 @@ const Vitals = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
+          className="mb-8"
         >
-          <div>
-            <h1 className="font-display text-3xl font-bold mb-2">
-              Health Metrics
-            </h1>
-            <p className="text-muted-foreground">
-              Track your vitals and lab results over time
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex rounded-lg border bg-card p-1">
-              <Button
-                variant={view === 'overview' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setView('overview')}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Overview
-              </Button>
-              <Button
-                variant={view === 'analytics' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setView('analytics')}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
-              </Button>
-              <Button
-                variant={view === 'history' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setView('history')}
-              >
-                <History className="h-4 w-4 mr-2" />
-                History
-              </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+                Health Metrics
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Track your vitals and lab results over time
+              </p>
             </div>
-            <Button className="gradient-primary border-0" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Record Vital
-            </Button>
-            {vitals.length > 0 && (
-              <Button variant="outline" size="icon" onClick={() => setIsExportDialogOpen(true)}>
-                <Download className="h-4 w-4" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button 
+                className="gradient-primary border-0 flex-1 sm:flex-none" 
+                size="sm"
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Record Vital</span>
+                <span className="xs:hidden">Record</span>
               </Button>
-            )}
+              {vitals.length > 0 && (
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setIsExportDialogOpen(true)}>
+                  <Download className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* View Toggle - Full width on mobile */}
+          <div className="flex rounded-lg border bg-card p-1 mt-4 w-full sm:w-auto sm:inline-flex">
+            <Button
+              variant={view === 'overview' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              onClick={() => setView('overview')}
+            >
+              <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+              Overview
+            </Button>
+            <Button
+              variant={view === 'analytics' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              onClick={() => setView('analytics')}
+            >
+              <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" />
+              Analytics
+            </Button>
+            <Button
+              variant={view === 'history' ? 'default' : 'ghost'}
+              size="sm"
+              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              onClick={() => setView('history')}
+            >
+              <History className="h-4 w-4 mr-1 sm:mr-2" />
+              History
+            </Button>
           </div>
         </motion.div>
 

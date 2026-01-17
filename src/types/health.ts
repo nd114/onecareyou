@@ -97,6 +97,45 @@ export interface ProviderShare {
 }
 
 // Vital configuration with normal ranges
+// Users can select preferred units in Settings for vitals that support multiple units
+export type GlucoseUnit = 'mg/dL' | 'mmol/L';
+export type WeightUnit = 'kg' | 'lbs';
+export type TemperatureUnit = '°C' | '°F';
+
+export interface UnitPreferences {
+  glucose: GlucoseUnit;
+  weight: WeightUnit;
+  temperature: TemperatureUnit;
+}
+
+export const DEFAULT_UNIT_PREFERENCES: UnitPreferences = {
+  glucose: 'mg/dL',
+  weight: 'kg',
+  temperature: '°C',
+};
+
+// Conversion functions
+export const convertGlucose = (value: number, from: GlucoseUnit, to: GlucoseUnit): number => {
+  if (from === to) return value;
+  if (from === 'mg/dL' && to === 'mmol/L') return Math.round((value / 18.0182) * 10) / 10;
+  if (from === 'mmol/L' && to === 'mg/dL') return Math.round(value * 18.0182);
+  return value;
+};
+
+export const convertWeight = (value: number, from: WeightUnit, to: WeightUnit): number => {
+  if (from === to) return value;
+  if (from === 'kg' && to === 'lbs') return Math.round(value * 2.20462 * 10) / 10;
+  if (from === 'lbs' && to === 'kg') return Math.round((value / 2.20462) * 10) / 10;
+  return value;
+};
+
+export const convertTemperature = (value: number, from: TemperatureUnit, to: TemperatureUnit): number => {
+  if (from === to) return value;
+  if (from === '°C' && to === '°F') return Math.round(((value * 9/5) + 32) * 10) / 10;
+  if (from === '°F' && to === '°C') return Math.round(((value - 32) * 5/9) * 10) / 10;
+  return value;
+};
+
 export const VITAL_CONFIG: Record<VitalType, {
   label: string;
   unit: string;
@@ -104,12 +143,13 @@ export const VITAL_CONFIG: Record<VitalType, {
   normalMin: number;
   normalMax: number;
   secondaryLabel?: string;
+  alternativeUnits?: string[];
 }> = {
-  weight: { label: 'Weight', unit: 'kg', category: 'Daily Vitals', normalMin: 0, normalMax: 999 },
+  weight: { label: 'Weight', unit: 'kg', category: 'Daily Vitals', normalMin: 0, normalMax: 999, alternativeUnits: ['lbs'] },
   blood_pressure: { label: 'Blood Pressure', unit: 'mmHg', category: 'Daily Vitals', normalMin: 90, normalMax: 120, secondaryLabel: 'Diastolic' },
   heart_rate: { label: 'Heart Rate', unit: 'bpm', category: 'Daily Vitals', normalMin: 60, normalMax: 100 },
-  temperature: { label: 'Temperature', unit: '°C', category: 'Daily Vitals', normalMin: 36.1, normalMax: 37.2 },
-  glucose: { label: 'Blood Glucose', unit: 'mg/dL', category: 'Sugar', normalMin: 70, normalMax: 100 },
+  temperature: { label: 'Temperature', unit: '°C', category: 'Daily Vitals', normalMin: 36.1, normalMax: 37.2, alternativeUnits: ['°F'] },
+  glucose: { label: 'Blood Glucose', unit: 'mg/dL', category: 'Sugar', normalMin: 70, normalMax: 100, alternativeUnits: ['mmol/L'] },
   hba1c: { label: 'HbA1c', unit: '%', category: 'Sugar', normalMin: 4, normalMax: 5.6 },
   urea: { label: 'Urea', unit: 'mg/dL', category: 'Kidneys', normalMin: 7, normalMax: 20 },
   creatinine: { label: 'Creatinine', unit: 'mg/dL', category: 'Kidneys', normalMin: 0.6, normalMax: 1.3 },

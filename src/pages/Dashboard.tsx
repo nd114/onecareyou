@@ -82,12 +82,12 @@ const Dashboard = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="font-display text-3xl font-bold mb-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
             Welcome back, {userName}! 👋
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Here's your health overview for today, {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </motion.div>
@@ -98,22 +98,22 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
             <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Activity className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold">Complete Your Health Profile</p>
-                    <p className="text-sm text-muted-foreground">
-                      Add your health details for personalized care coordination
+                    <p className="font-semibold text-sm sm:text-base">Complete Your Health Profile</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Add your health details for personalized care
                     </p>
                   </div>
                 </div>
-                <Button asChild className="gradient-primary border-0">
+                <Button asChild className="gradient-primary border-0 w-full sm:w-auto" size="sm">
                   <Link to="/onboarding">Complete Profile</Link>
                 </Button>
               </CardContent>
@@ -126,7 +126,7 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8"
         >
           {statCards.map((stat, index) => (
             <motion.div
@@ -136,17 +136,17 @@ const Dashboard = () => {
               transition={{ delay: 0.1 + index * 0.05 }}
             >
               <Card className={`${stat.gradient} text-primary-foreground border-0 overflow-hidden relative`}>
-                <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-                      <stat.icon className="h-5 w-5" />
+                <div className="absolute top-0 right-0 w-16 sm:w-20 h-16 sm:h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <div>
-                      <p className="text-sm opacity-90">{stat.label}</p>
-                      <p className="text-2xl font-bold">
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm opacity-90 truncate">{stat.label}</p>
+                      <p className="text-lg sm:text-2xl font-bold">
                         {isLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                         ) : (
                           `${stat.value}${stat.suffix || ''}`
                         )}

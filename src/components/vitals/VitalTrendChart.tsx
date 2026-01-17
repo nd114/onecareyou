@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
@@ -36,10 +36,18 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
     );
   }
 
+  // Special handling for blood pressure to show systolic/diastolic labels
+  const isBloodPressure = type === 'blood_pressure';
+
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">{title || config.label}</CardTitle>
+        {isBloodPressure && (
+          <p className="text-xs text-muted-foreground">
+            Systolic (top number) / Diastolic (bottom number)
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <div className="h-[200px]">
@@ -64,8 +72,25 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
                   fontSize: '12px'
                 }}
                 labelFormatter={(_, payload) => payload[0]?.payload?.fullDate || ''}
-                formatter={(value: number) => [`${value} ${config.unit}`, config.label]}
+                formatter={(value: number, name: string) => {
+                  if (isBloodPressure) {
+                    const label = name === 'value' ? 'Systolic' : 'Diastolic';
+                    return [`${value} ${config.unit}`, label];
+                  }
+                  return [`${value} ${config.unit}`, config.label];
+                }}
               />
+              {isBloodPressure && (
+                <Legend 
+                  verticalAlign="top" 
+                  height={36}
+                  formatter={(value) => {
+                    if (value === 'value') return 'Systolic (SYS)';
+                    if (value === 'secondaryValue') return 'Diastolic (DIA)';
+                    return value;
+                  }}
+                />
+              )}
               <ReferenceLine 
                 y={config.normalMax} 
                 stroke="hsl(var(--severity-high))" 
@@ -85,21 +110,27 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
                 strokeWidth={2}
                 dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 4 }}
                 activeDot={{ r: 6, stroke: 'hsl(var(--background))', strokeWidth: 2 }}
+                name="value"
               />
-              {type === 'blood_pressure' && (
+              {isBloodPressure && (
                 <Line 
                   type="monotone" 
                   dataKey="secondaryValue" 
                   stroke="hsl(var(--ocean))" 
                   strokeWidth={2}
                   dot={{ fill: 'hsl(var(--ocean))', strokeWidth: 0, r: 4 }}
+                  name="secondaryValue"
                 />
               )}
             </LineChart>
           </ResponsiveContainer>
         </div>
         <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
-          <span>Normal range: {config.normalMin}–{config.normalMax} {config.unit}</span>
+          {isBloodPressure ? (
+            <span>Normal: Systolic 90–120, Diastolic 60–80 {config.unit}</span>
+          ) : (
+            <span>Normal range: {config.normalMin}–{config.normalMax} {config.unit}</span>
+          )}
         </div>
       </CardContent>
     </Card>
