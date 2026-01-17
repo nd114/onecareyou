@@ -264,18 +264,16 @@ export function Header() {
                     </Link>
                   </>
                 )}
-                {/* Clinician mobile menu items */}
+                {/* Clinician mobile menu items - Settings only (Dashboard already in navLinks) */}
                 {isClinician && (
-                  <>
-                    <Link
-                      to="/clinician/dashboard"
-                      className="px-4 py-2 text-sm font-medium text-primary hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Stethoscope className="h-4 w-4" />
-                      Clinician Dashboard
-                    </Link>
-                  </>
+                  <Link
+                    to="/settings"
+                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
                 )}
                 <button
                   onClick={() => {
