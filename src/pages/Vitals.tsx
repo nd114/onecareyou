@@ -10,11 +10,18 @@ import {
   BarChart3,
   FileText,
   Loader2,
-  History
+  History,
+  Download
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Header } from '@/components/layout/Header';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { useVitals, VitalRecord } from '@/hooks/useVitals';
@@ -23,6 +30,7 @@ import { VitalStatsCard } from '@/components/vitals/VitalStatsCard';
 import { AddVitalDialog } from '@/components/vitals/AddVitalDialog';
 import { EditVitalDialog } from '@/components/vitals/EditVitalDialog';
 import { VitalHistoryLog } from '@/components/vitals/VitalHistoryLog';
+import { exportVitalsToCSV, exportVitalsToPDF } from '@/lib/vitals-export';
 
 const vitalCards = [
   { type: 'blood_pressure' as VitalType, icon: Heart, color: 'text-rose' },
@@ -103,6 +111,25 @@ const Vitals = () => {
               <Plus className="h-4 w-4 mr-2" />
               Record Vital
             </Button>
+            {vitals.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => exportVitalsToCSV(vitals)}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportVitalsToPDF(vitals)}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </motion.div>
 
