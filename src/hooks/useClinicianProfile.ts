@@ -10,6 +10,8 @@ export interface ClinicianProfile {
   specialty: string | null;
   license_number: string | null;
   country: string | null;
+  title: string | null;
+  avatar_url: string | null;
   is_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -20,7 +22,21 @@ export interface CreateClinicianProfileData {
   specialty?: string;
   license_number?: string;
   country?: string;
+  title?: string;
 }
+
+// Professional title prefixes
+export const CLINICIAN_TITLES = [
+  'Dr.',
+  'Prof.',
+  'Mr.',
+  'Ms.',
+  'Mrs.',
+  'NP',
+  'PA',
+  'RN',
+  'PharmD',
+];
 
 export const useClinicianProfile = () => {
   const { user } = useAuth();
@@ -55,6 +71,7 @@ export const useClinicianProfile = () => {
           specialty: data.specialty || null,
           license_number: data.license_number || null,
           country: data.country || null,
+          title: data.title || 'Dr.',
         })
         .select()
         .single();

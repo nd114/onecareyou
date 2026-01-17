@@ -14,6 +14,8 @@ import {
   Clock,
   Phone,
   Building2,
+  Camera,
+  Upload,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +25,8 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Header } from '@/components/layout/Header';
-import { useClinicianProfile, MEDICAL_SPECIALTIES } from '@/hooks/useClinicianProfile';
+import { useClinicianProfile, MEDICAL_SPECIALTIES, CLINICIAN_TITLES } from '@/hooks/useClinicianProfile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
@@ -62,7 +65,11 @@ const ClinicianSettings = () => {
     specialty: clinicianProfile?.specialty || '',
     license_number: clinicianProfile?.license_number || '',
     country: clinicianProfile?.country || '',
+    title: clinicianProfile?.title || 'Dr.',
   });
+
+  const [avatarUrl, setAvatarUrl] = useState(clinicianProfile?.avatar_url || '');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPersonal, setIsSavingPersonal] = useState(false);
@@ -75,7 +82,9 @@ const ClinicianSettings = () => {
         specialty: clinicianProfile.specialty || '',
         license_number: clinicianProfile.license_number || '',
         country: clinicianProfile.country || '',
+        title: clinicianProfile.title || 'Dr.',
       });
+      setAvatarUrl(clinicianProfile.avatar_url || '');
     }
   }, [clinicianProfile]);
 
@@ -115,9 +124,60 @@ const ClinicianSettings = () => {
   const handleSaveProfile = async () => {
     setIsSavingProfile(true);
     try {
-      await updateClinicianProfile.mutateAsync(profileForm);
+      await updateClinicianProfile.mutateAsync({
+        ...profileForm,
+        avatar_url: avatarUrl || null,
+      });
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('clinician-avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('clinician-avatars')
+        .getPublicUrl(filePath);
+
+      // Add cache buster
+      const urlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
+      setAvatarUrl(urlWithCacheBuster);
+
+      // Save to profile
+      await updateClinicianProfile.mutateAsync({ avatar_url: urlWithCacheBuster });
+      toast.success('Profile photo updated');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload profile photo');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -242,7 +302,69 @@ const ClinicianSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Avatar Upload */}
+              <div className="flex items-center gap-6 pb-4 border-b">
+                <div className="relative">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={avatarUrl} alt="Profile photo" />
+                    <AvatarFallback className="text-lg bg-primary/10">
+                      {personalForm.name?.charAt(0) || 'C'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <label 
+                    htmlFor="avatar-upload" 
+                    className="absolute bottom-0 right-0 p-1.5 bg-primary text-primary-foreground rounded-full cursor-pointer hover:bg-primary/90 transition-colors"
+                  >
+                    {isUploadingAvatar ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Camera className="h-3.5 w-3.5" />
+                    )}
+                  </label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingAvatar}
+                  />
+                </div>
+                <div>
+                  <p className="font-medium">Profile Photo</p>
+                  <p className="text-sm text-muted-foreground">
+                    This will be shown to your patients
+                  </p>
+                  <label 
+                    htmlFor="avatar-upload" 
+                    className="text-sm text-primary hover:underline cursor-pointer inline-flex items-center gap-1 mt-1"
+                  >
+                    <Upload className="h-3 w-3" />
+                    Upload new photo
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Title Prefix */}
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Select
+                    value={profileForm.title}
+                    onValueChange={(value) => setProfileForm({ ...profileForm, title: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select title" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CLINICIAN_TITLES.map(title => (
+                        <SelectItem key={title} value={title}>
+                          {title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="practice_name">Practice/Hospital Name</Label>
                   <Input

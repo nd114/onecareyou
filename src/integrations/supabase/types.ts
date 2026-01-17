@@ -355,6 +355,7 @@ export type Database = {
       }
       clinician_profiles: {
         Row: {
+          avatar_url: string | null
           country: string | null
           created_at: string
           email_notifications_enabled: boolean | null
@@ -368,10 +369,12 @@ export type Database = {
           push_notifications_enabled: boolean | null
           push_subscription: Json | null
           specialty: string | null
+          title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           country?: string | null
           created_at?: string
           email_notifications_enabled?: boolean | null
@@ -385,10 +388,12 @@ export type Database = {
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
           specialty?: string | null
+          title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           country?: string | null
           created_at?: string
           email_notifications_enabled?: boolean | null
@@ -402,6 +407,7 @@ export type Database = {
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
           specialty?: string | null
+          title?: string | null
           updated_at?: string
           user_id?: string
         }

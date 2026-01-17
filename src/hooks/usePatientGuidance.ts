@@ -16,6 +16,7 @@ interface GuidanceItem {
   completed_at: string | null;
   clinician_user_id: string;
   clinician_name?: string;
+  clinician_title?: string;
   clinician_specialty?: string;
   clinician_practice?: string;
 }
@@ -49,10 +50,10 @@ export function usePatientGuidance() {
         .select('user_id, name')
         .in('user_id', clinicianIds);
 
-      // Fetch clinician profiles for specialty and practice name
+      // Fetch clinician profiles for specialty, practice name, and title
       const { data: clinicianProfiles } = await supabase
         .from('clinician_profiles')
-        .select('user_id, specialty, practice_name')
+        .select('user_id, specialty, practice_name, title')
         .in('user_id', clinicianIds);
 
       const profileMap = new Map(
@@ -60,7 +61,7 @@ export function usePatientGuidance() {
       );
 
       const clinicianProfileMap = new Map(
-        (clinicianProfiles || []).map(p => [p.user_id, { specialty: p.specialty, practice_name: p.practice_name }])
+        (clinicianProfiles || []).map(p => [p.user_id, { specialty: p.specialty, practice_name: p.practice_name, title: p.title }])
       );
 
       return (data || []).map(item => {
@@ -68,6 +69,7 @@ export function usePatientGuidance() {
         return {
           ...item,
           clinician_name: profileMap.get(item.clinician_user_id) || 'Healthcare Provider',
+          clinician_title: clinicianInfo?.title || 'Dr.',
           clinician_specialty: clinicianInfo?.specialty || undefined,
           clinician_practice: clinicianInfo?.practice_name || undefined,
         };
