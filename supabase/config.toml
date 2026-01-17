@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.get-shared-patient-data]
 verify_jwt = false
+
+[functions.send-vitals-report]
+verify_jwt = false

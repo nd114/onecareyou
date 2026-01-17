@@ -16,12 +16,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Header } from '@/components/layout/Header';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { useVitals, VitalRecord } from '@/hooks/useVitals';
@@ -30,7 +24,7 @@ import { VitalStatsCard } from '@/components/vitals/VitalStatsCard';
 import { AddVitalDialog } from '@/components/vitals/AddVitalDialog';
 import { EditVitalDialog } from '@/components/vitals/EditVitalDialog';
 import { VitalHistoryLog } from '@/components/vitals/VitalHistoryLog';
-import { exportVitalsToCSV, exportVitalsToPDF } from '@/lib/vitals-export';
+import { ExportDialog } from '@/components/vitals/ExportDialog';
 
 const vitalCards = [
   { type: 'blood_pressure' as VitalType, icon: Heart, color: 'text-rose' },
@@ -52,6 +46,7 @@ const vitalCategories = [
 const Vitals = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [editingVital, setEditingVital] = useState<VitalRecord | null>(null);
   const [view, setView] = useState<'overview' | 'analytics' | 'history'>('overview');
   const { vitals, loading, addVital, updateVital, deleteVital, getLatestVital, getVitalHistory, getVitalStats } = useVitals();
@@ -112,23 +107,9 @@ const Vitals = () => {
               Record Vital
             </Button>
             {vitals.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportVitalsToCSV(vitals)}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Export as CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportVitalsToPDF(vitals)}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button variant="outline" size="icon" onClick={() => setIsExportDialogOpen(true)}>
+                <Download className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </motion.div>
@@ -403,6 +384,12 @@ const Vitals = () => {
         onOpenChange={setIsEditDialogOpen}
         vital={editingVital}
         onSave={updateVital}
+      />
+
+      <ExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        vitals={vitals}
       />
     </div>
   );
