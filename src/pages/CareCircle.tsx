@@ -1,17 +1,13 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { 
   Users, 
   Plus, 
   Copy, 
   Trash2, 
   Eye, 
-  EyeOff, 
   Shield, 
   Clock,
   Mail,
-  CheckCircle,
-  AlertTriangle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,9 +16,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Header } from '@/components/layout/Header';
-import { mockProviderShares } from '@/lib/mock-data';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useProviderShares } from '@/hooks/useProviderShares';
+import { Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +42,7 @@ import {
 
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [shares, setShares] = useState(mockProviderShares);
+  const { shares, isLoading, createShare, revokeShare } = useProviderShares();
   const [newShare, setNewShare] = useState({
     providerName: '',
     providerEmail: '',
@@ -63,31 +60,22 @@ const CareCircle = () => {
       return;
     }
     
-    const inviteCode = Math.random().toString(36).substring(2, 10);
-    const share = {
-      id: String(Date.now()),
-      ...newShare,
-      inviteCode,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
+    createShare.mutate({
+      providerName: newShare.providerName,
+      providerEmail: newShare.providerEmail || undefined,
+      permissions: newShare.permissions,
+    });
     
-    setShares([...shares, share]);
     setIsDialogOpen(false);
     setNewShare({
       providerName: '',
       providerEmail: '',
       permissions: { vitals: true, meds: true, adherence: true, profile: false },
     });
-    
-    toast.success('Share link created!');
-    navigator.clipboard.writeText(`${window.location.origin}/clinician/patient/${inviteCode}`);
-    toast.info('Link copied to clipboard');
   };
 
   const handleRevokeAccess = (id: string) => {
-    setShares(shares.filter(s => s.id !== id));
-    toast.success('Access revoked');
+    revokeShare.mutate(id);
   };
 
   const copyShareLink = (inviteCode: string) => {
@@ -181,8 +169,19 @@ const CareCircle = () => {
                   <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button className="flex-1 gradient-primary border-0" onClick={handleCreateShare}>
-                    Generate Link
+                  <Button 
+                    className="flex-1 gradient-primary border-0" 
+                    onClick={handleCreateShare}
+                    disabled={createShare.isPending}
+                  >
+                    {createShare.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Generate Link'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -231,7 +230,11 @@ const CareCircle = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {shares.length === 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : shares.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="h-16 w-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                     <Users className="h-8 w-8 text-muted-foreground" />
@@ -256,15 +259,15 @@ const CareCircle = () => {
                         <div className="flex items-start gap-3">
                           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-lg font-semibold text-primary">
-                              {share.providerName.charAt(0)}
+                              {share.provider_name.charAt(0)}
                             </span>
                           </div>
                           <div>
-                            <p className="font-semibold">{share.providerName}</p>
-                            {share.providerEmail && (
+                            <p className="font-semibold">{share.provider_name}</p>
+                            {share.provider_email && (
                               <p className="text-sm text-muted-foreground flex items-center gap-1">
                                 <Mail className="h-3 w-3" />
-                                {share.providerEmail}
+                                {share.provider_email}
                               </p>
                             )}
                             <div className="flex flex-wrap gap-1 mt-2">
@@ -279,7 +282,7 @@ const CareCircle = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => copyShareLink(share.inviteCode)}
+                            onClick={() => copyShareLink(share.invite_code)}
                           >
                             <Copy className="h-4 w-4 mr-1" />
                             Copy Link
@@ -294,7 +297,7 @@ const CareCircle = () => {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Revoke Access</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will immediately remove {share.providerName}'s access to your health data. They will no longer be able to view any of your information.
+                                  This will immediately remove {share.provider_name}'s access to your health data. They will no longer be able to view any of your information.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -313,12 +316,12 @@ const CareCircle = () => {
                       <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          Added {new Date(share.createdAt).toLocaleDateString()}
+                          Added {new Date(share.created_at).toLocaleDateString()}
                         </span>
-                        {share.lastAccessedAt && (
+                        {share.last_accessed_at && (
                           <span className="flex items-center gap-1">
                             <Eye className="h-3 w-3" />
-                            Last viewed {new Date(share.lastAccessedAt).toLocaleDateString()}
+                            Last viewed {new Date(share.last_accessed_at).toLocaleDateString()}
                           </span>
                         )}
                       </div>

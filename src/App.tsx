@@ -13,6 +13,7 @@ import EditMedication from "./pages/EditMedication";
 import Schedule from "./pages/Schedule";
 import Vitals from "./pages/Vitals";
 import CareCircle from "./pages/CareCircle";
+import ClinicianPortal from "./pages/ClinicianPortal";
 import Onboarding from "./pages/Onboarding";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/data-processing" element={<DataProcessing />} />
             <Route path="/disclaimer" element={<MedicalDisclaimer />} />
             <Route path="/help" element={<HelpCenter />} />
+            <Route path="/clinician/patient/:inviteCode" element={<ClinicianPortal />} />
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
