@@ -225,9 +225,28 @@ export function CreateGuidanceDialog({ trigger, patients, selectedPatientId }: C
                 type="number"
                 min={1}
                 max={168}
-                value={formData.resend_interval_hours}
-                onChange={(e) => setFormData({ ...formData, resend_interval_hours: parseInt(e.target.value) || 24 })}
+                value={formData.resend_interval_hours || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow empty string for clearing, otherwise parse as number
+                  if (value === '') {
+                    setFormData({ ...formData, resend_interval_hours: 0 });
+                  } else {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num)) {
+                      setFormData({ ...formData, resend_interval_hours: Math.max(1, Math.min(168, num)) });
+                    }
+                  }
+                }}
+                onBlur={(e) => {
+                  // On blur, ensure a valid value (min 1)
+                  if (!formData.resend_interval_hours || formData.resend_interval_hours < 1) {
+                    setFormData({ ...formData, resend_interval_hours: 1 });
+                  }
+                }}
+                placeholder="1-168"
               />
+              <p className="text-xs text-muted-foreground">Enter a value between 1 and 168 hours (1 week)</p>
             </div>
           )}
 

@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pill, Loader2 } from 'lucide-react';
+import { ArrowLeft, Pill, Loader2, Camera, ScanBarcode } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -19,6 +20,7 @@ import { useState } from 'react';
 import { useMedications } from '@/hooks/useMedications';
 import { MedicationSearchInput } from '@/components/medications/MedicationSearchInput';
 import { MedicationSuggestion } from '@/hooks/useMedicationDatabase';
+import { MedicationScanner } from '@/components/medications/MedicationScanner';
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },
@@ -109,6 +111,27 @@ const AddMedication = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Quick Add Options */}
+                <div className="space-y-3">
+                  <Label className="text-muted-foreground">Quick Add</Label>
+                  <MedicationScanner 
+                    onMedicationIdentified={(info) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        name: info.name,
+                        dosage: info.strength || prev.dosage,
+                      }));
+                    }}
+                  />
+                </div>
+                
+                <div className="relative">
+                  <Separator />
+                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                    or search manually
+                  </span>
+                </div>
+
                 {/* Medication Name with Search */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Medication Name *</Label>
