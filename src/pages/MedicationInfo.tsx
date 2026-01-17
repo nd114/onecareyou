@@ -13,7 +13,9 @@ import {
   Beaker,
   ExternalLink,
   Loader2,
-  Search
+  Search,
+  Building2,
+  MapPin
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,9 @@ import { Header } from '@/components/layout/Header';
 import { useMedicationInfo } from '@/hooks/useMedicationInfo';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { formatDrugText, formatDosageText } from '@/lib/format-drug-text';
+import { Separator } from '@/components/ui/separator';
 
 const MedicationInfo = () => {
   const { drugName } = useParams<{ drugName: string }>();
@@ -111,6 +116,16 @@ const MedicationInfo = () => {
 
           {drugInfo && (
             <div className="space-y-6">
+              {/* Manufacturer Disclaimer */}
+              <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+                <Building2 className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  <strong>Note:</strong> This medication may be manufactured by multiple companies under different brand names. 
+                  The information shown is from one FDA-registered label and may not match your specific product. 
+                  Always refer to the label on your medication packaging.
+                </AlertDescription>
+              </Alert>
+
               {/* Header Card */}
               <Card>
                 <CardHeader>
@@ -122,7 +137,7 @@ const MedicationInfo = () => {
                       <CardTitle className="text-2xl">{drugInfo.name}</CardTitle>
                       {drugInfo.genericName && drugInfo.genericName !== drugInfo.name && (
                         <CardDescription className="text-base mt-1">
-                          Generic: {drugInfo.genericName}
+                          Generic Name: <span className="font-medium text-foreground">{drugInfo.genericName}</span>
                         </CardDescription>
                       )}
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -138,9 +153,17 @@ const MedicationInfo = () => {
                 </CardHeader>
                 {drugInfo.manufacturerName && (
                   <CardContent className="pt-0">
-                    <p className="text-sm text-muted-foreground">
-                      Manufacturer: {drugInfo.manufacturerName}
-                    </p>
+                    <Separator className="mb-4" />
+                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-medium text-foreground">Label Source</p>
+                        <p>{drugInfo.manufacturerName}</p>
+                        <p className="text-xs mt-1 italic">
+                          This is one of potentially many manufacturers of this medication.
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 )}
               </Card>
@@ -175,17 +198,21 @@ const MedicationInfo = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Accordion type="multiple" className="w-full">
+                  <Accordion type="multiple" className="w-full" defaultValue={['indications']}>
                     {drugInfo.indications && (
                       <AccordionItem value="indications">
                         <AccordionTrigger>
                           <div className="flex items-center gap-2">
-                            <Info className="h-4 w-4" />
+                            <Info className="h-4 w-4 text-primary" />
                             What is this medication for?
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                          {drugInfo.indications}
+                        <AccordionContent>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
+                              {formatDrugText(drugInfo.indications)}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -194,12 +221,16 @@ const MedicationInfo = () => {
                       <AccordionItem value="dosage">
                         <AccordionTrigger>
                           <div className="flex items-center gap-2">
-                            <Stethoscope className="h-4 w-4" />
+                            <Stethoscope className="h-4 w-4 text-primary" />
                             How to take this medication
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                          {drugInfo.dosageAndAdministration}
+                        <AccordionContent>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-line text-muted-foreground leading-relaxed bg-muted/30 p-4 rounded-lg">
+                              {formatDosageText(drugInfo.dosageAndAdministration)}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -212,8 +243,12 @@ const MedicationInfo = () => {
                             Warnings & Precautions
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                          {drugInfo.warnings}
+                        <AccordionContent>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-line text-muted-foreground leading-relaxed bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                              {formatDrugText(drugInfo.warnings)}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -222,12 +257,16 @@ const MedicationInfo = () => {
                       <AccordionItem value="sideEffects">
                         <AccordionTrigger>
                           <div className="flex items-center gap-2">
-                            <ShieldAlert className="h-4 w-4" />
+                            <ShieldAlert className="h-4 w-4 text-primary" />
                             Possible Side Effects
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                          {drugInfo.adverseReactions}
+                        <AccordionContent>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
+                              {formatDrugText(drugInfo.adverseReactions)}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -237,11 +276,15 @@ const MedicationInfo = () => {
                         <AccordionTrigger>
                           <div className="flex items-center gap-2 text-destructive">
                             <ShieldAlert className="h-4 w-4" />
-                            Contraindications
+                            Contraindications (Do Not Use If)
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                          {drugInfo.contraindications}
+                        <AccordionContent>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-line text-muted-foreground leading-relaxed bg-destructive/5 p-4 rounded-lg border border-destructive/20">
+                              {formatDrugText(drugInfo.contraindications)}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -250,12 +293,16 @@ const MedicationInfo = () => {
                       <AccordionItem value="interactions">
                         <AccordionTrigger>
                           <div className="flex items-center gap-2">
-                            <Pill className="h-4 w-4" />
+                            <Pill className="h-4 w-4 text-primary" />
                             Drug Interactions
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                          {drugInfo.drugInteractions}
+                        <AccordionContent>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
+                              {formatDrugText(drugInfo.drugInteractions)}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -264,12 +311,16 @@ const MedicationInfo = () => {
                       <AccordionItem value="pregnancy">
                         <AccordionTrigger>
                           <div className="flex items-center gap-2">
-                            <Baby className="h-4 w-4" />
+                            <Baby className="h-4 w-4 text-primary" />
                             Pregnancy & Nursing
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                          {drugInfo.pregnancyInfo}
+                        <AccordionContent>
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
+                              {formatDrugText(drugInfo.pregnancyInfo)}
+                            </div>
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -278,24 +329,30 @@ const MedicationInfo = () => {
                       <AccordionItem value="special">
                         <AccordionTrigger>
                           <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
+                            <Users className="h-4 w-4 text-primary" />
                             Special Populations
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4">
                           {drugInfo.pediatricUse && (
-                            <div>
-                              <p className="font-medium mb-1">Pediatric Use</p>
-                              <p className="text-muted-foreground whitespace-pre-line">
-                                {drugInfo.pediatricUse}
+                            <div className="bg-muted/30 p-4 rounded-lg">
+                              <p className="font-medium mb-2 flex items-center gap-2">
+                                <Baby className="h-4 w-4" />
+                                Pediatric Use (Children)
+                              </p>
+                              <p className="text-muted-foreground whitespace-pre-line leading-relaxed">
+                                {formatDrugText(drugInfo.pediatricUse)}
                               </p>
                             </div>
                           )}
                           {drugInfo.geriatricUse && (
-                            <div>
-                              <p className="font-medium mb-1">Geriatric Use</p>
-                              <p className="text-muted-foreground whitespace-pre-line">
-                                {drugInfo.geriatricUse}
+                            <div className="bg-muted/30 p-4 rounded-lg">
+                              <p className="font-medium mb-2 flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                Geriatric Use (Older Adults)
+                              </p>
+                              <p className="text-muted-foreground whitespace-pre-line leading-relaxed">
+                                {formatDrugText(drugInfo.geriatricUse)}
                               </p>
                             </div>
                           )}
