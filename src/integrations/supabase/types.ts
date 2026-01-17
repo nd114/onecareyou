@@ -256,6 +256,45 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_shares: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          is_active: boolean
+          last_accessed_at: string | null
+          permissions: Json
+          provider_email: string | null
+          provider_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          permissions?: Json
+          provider_email?: string | null
+          provider_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          permissions?: Json
+          provider_email?: string | null
+          provider_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       schedule_entries: {
         Row: {
           created_at: string
