@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { VitalsSummaryView } from '@/components/clinician/VitalsSummaryView';
 
 interface SharedData {
   patientName?: string;
@@ -383,44 +384,7 @@ const ClinicianPortal = () => {
             {/* Vitals Tab */}
             {data.permissions.vitals && (
               <TabsContent value="vitals">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Vital Recordings</CardTitle>
-                    <CardDescription>Last 50 vital measurements</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {data.vitals && data.vitals.length > 0 ? (
-                      <div className="space-y-3">
-                        {data.vitals.map((vital) => (
-                          <div 
-                            key={vital.id}
-                            className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                {getVitalIcon(vital.type)}
-                              </div>
-                              <div>
-                                <p className="font-medium capitalize">{vital.type.replace('_', ' ')}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {format(new Date(vital.recorded_at), 'PPp')}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-lg font-semibold">{formatVitalValue(vital)}</p>
-                              {vital.notes && (
-                                <p className="text-xs text-muted-foreground">{vital.notes}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-center text-muted-foreground py-8">No vitals recorded</p>
-                    )}
-                  </CardContent>
-                </Card>
+                <VitalsSummaryView vitals={data.vitals || []} />
               </TabsContent>
             )}
 
