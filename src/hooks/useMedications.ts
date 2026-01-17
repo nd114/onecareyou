@@ -126,6 +126,38 @@ export const useMedications = () => {
     },
   });
 
+  const discontinueMedication = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('medications')
+        .update({
+          is_active: false,
+          end_date: today,
+          discontinued_at: new Date().toISOString(),
+          discontinuation_reason: reason || null,
+        } as any)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['schedule_entries', user?.id] });
+      toast.success('Medication discontinued. History preserved.');
+    },
+    onError: (error) => {
+      console.error('Error discontinuing medication:', error);
+      toast.error('Failed to discontinue medication');
+    },
+  });
+
   const getMedicationById = async (id: string) => {
     if (!user?.id) throw new Error('Not authenticated');
 
@@ -147,6 +179,7 @@ export const useMedications = () => {
     addMedication,
     updateMedication,
     deleteMedication,
+    discontinueMedication,
     getMedicationById,
     refetch: medicationsQuery.refetch,
   };

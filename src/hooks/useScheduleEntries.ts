@@ -28,7 +28,14 @@ export const useScheduleEntries = (date?: Date) => {
     const generateEntriesForDate = async () => {
       if (!user?.id || !medications.length) return;
       
-      const activeMeds = medications.filter(m => m.is_active && m.times_of_day);
+      // Filter medications that should be active on the target date
+      const activeMeds = medications.filter(m => {
+        if (!m.is_active || !m.times_of_day) return false;
+        // Check if target date is within medication's date range
+        if (m.start_date && targetDateStr < m.start_date) return false;
+        if (m.end_date && targetDateStr > m.end_date) return false;
+        return true;
+      });
       if (activeMeds.length === 0) return;
 
       // Check which medications already have entries for this date
