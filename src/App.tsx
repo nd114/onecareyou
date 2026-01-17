@@ -34,6 +34,9 @@ import Contact from "./pages/Contact";
 import MedicalDisclaimer from "./pages/MedicalDisclaimer";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
+import AdherenceReport from "./pages/AdherenceReport";
+import KnowledgeBase from "./pages/KnowledgeBase";
+import MedicationInfo from "./pages/MedicationInfo";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +130,21 @@ const App = () => (
             <Route path="/guidance" element={
               <ProtectedRoute>
                 <PatientGuidance />
+              </ProtectedRoute>
+            } />
+            <Route path="/adherence-report" element={
+              <ProtectedRoute>
+                <AdherenceReport />
+              </ProtectedRoute>
+            } />
+            <Route path="/knowledge-base" element={
+              <ProtectedRoute>
+                <KnowledgeBase />
+              </ProtectedRoute>
+            } />
+            <Route path="/medication-info/:drugName" element={
+              <ProtectedRoute>
+                <MedicationInfo />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Pill, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, Pill, Search, Loader2, Ban, BookOpen } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
 import { Switch } from '@/components/ui/switch';
+import { DiscontinueMedicationDialog } from '@/components/medications/DiscontinueMedicationDialog';
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },
@@ -30,8 +31,9 @@ const medicationTypes: { value: MedicationType; label: string }[] = [
 const EditMedication = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getMedicationById, updateMedication } = useMedications();
+  const { getMedicationById, updateMedication, discontinueMedication } = useMedications();
   const [isLoading, setIsLoading] = useState(true);
+  const [showDiscontinueDialog, setShowDiscontinueDialog] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     type: '' as MedicationType | '',
@@ -108,6 +110,12 @@ const EditMedication = () => {
       is_active: formData.is_active,
     });
 
+    navigate('/medications');
+  };
+
+  const handleDiscontinue = async (reason: string) => {
+    if (!id) return;
+    await discontinueMedication.mutateAsync({ id, reason });
     navigate('/medications');
   };
 
@@ -308,10 +316,40 @@ const EditMedication = () => {
                     )}
                   </Button>
                 </div>
+
+                {/* Discontinue & Learn More */}
+                <div className="flex gap-3 pt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => navigate(`/medication-info/${encodeURIComponent(formData.name)}`)}
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Learn About This Medication
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    onClick={() => setShowDiscontinueDialog(true)}
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    Discontinue
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
         </motion.div>
+
+        <DiscontinueMedicationDialog
+          open={showDiscontinueDialog}
+          onOpenChange={setShowDiscontinueDialog}
+          medicationName={formData.name}
+          onConfirm={handleDiscontinue}
+          isPending={discontinueMedication.isPending}
+        />
       </main>
     </div>
   );

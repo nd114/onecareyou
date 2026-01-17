@@ -463,6 +463,8 @@ export type Database = {
       medications: {
         Row: {
           created_at: string
+          discontinuation_reason: string | null
+          discontinued_at: string | null
           dosage: string
           end_date: string | null
           family_member_id: string | null
@@ -483,6 +485,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discontinuation_reason?: string | null
+          discontinued_at?: string | null
           dosage: string
           end_date?: string | null
           family_member_id?: string | null
@@ -503,6 +507,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discontinuation_reason?: string | null
+          discontinued_at?: string | null
           dosage?: string
           end_date?: string | null
           family_member_id?: string | null
@@ -559,6 +565,7 @@ export type Database = {
           timezone: string | null
           updated_at: string | null
           user_id: string
+          weekly_adherence_report_enabled: boolean | null
         }
         Insert: {
           address?: string | null
@@ -587,6 +594,7 @@ export type Database = {
           timezone?: string | null
           updated_at?: string | null
           user_id: string
+          weekly_adherence_report_enabled?: boolean | null
         }
         Update: {
           address?: string | null
@@ -615,6 +623,7 @@ export type Database = {
           timezone?: string | null
           updated_at?: string | null
           user_id?: string
+          weekly_adherence_report_enabled?: boolean | null
         }
         Relationships: []
       }
