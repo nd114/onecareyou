@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Heart, Shield, Users, Target, Award, Sparkles, ArrowRight } from 'lucide-react';
+import { Heart, Shield, Users, Target, Award, Sparkles, ArrowRight, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
@@ -8,19 +8,19 @@ import { Footer } from '@/components/layout/Footer';
 
 const values = [
   {
-    icon: Shield,
-    title: 'Safety First',
-    description: 'We believe medication safety should be accessible to everyone. Our interaction checking helps prevent dangerous drug combinations.',
+    icon: Share2,
+    title: 'Care Continuity',
+    description: 'We believe the care relationship shouldn\'t end when you leave the hospital. OneCare keeps you connected to your providers.',
   },
   {
     icon: Users,
-    title: 'User-Centered Design',
-    description: 'Every feature is designed with real users in mind. We prioritize simplicity, clarity, and ease of use for all ages.',
+    title: 'Patient Empowerment',
+    description: 'Every feature puts you in control. Share what you want, with whom you want, when you want.',
   },
   {
     icon: Target,
     title: 'Accuracy & Trust',
-    description: 'Our medication database is regularly updated and verified. We partner with healthcare professionals to ensure reliability.',
+    description: 'Our health tracking and medication database are regularly updated and verified for reliability.',
   },
   {
     icon: Award,
@@ -60,16 +60,16 @@ const About = () => {
             </motion.div>
             
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-              Making Medication{' '}
+              Eliminating{' '}
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Safety Simple
+                Information Asymmetry
               </span>
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              OneCare was founded with a simple mission: to help people manage their medications 
-              safely and confidently. We believe everyone deserves access to tools that can 
-              potentially save lives.
+              OneCare was founded to solve a critical gap in healthcare: the disconnect 
+              between patients and providers after leaving the hospital. We believe 
+              continuous care coordination saves lives.
             </p>
           </motion.div>
         </div>
@@ -88,14 +88,14 @@ const About = () => {
                 Our Mission
               </h2>
               <p className="text-lg text-muted-foreground mb-6">
-                Every year, thousands of people experience adverse drug interactions that could 
-                have been prevented. OneCare was created to bridge the gap between complex 
-                medication information and everyday users.
+                When patients transition from hospital to home, critical health information 
+                often gets lost. Doctors lose visibility, patients feel isolated, and 
+                preventable complications occur.
               </p>
               <p className="text-lg text-muted-foreground mb-6">
-                We work tirelessly to provide accurate, up-to-date information about medication 
-                interactions, helping you and your healthcare providers make informed decisions 
-                about your health.
+                OneCare bridges this gap by enabling patients to share their health updates—vitals, 
+                medications, and lab results—directly with their care team. No more waiting for 
+                appointments to communicate critical changes.
               </p>
               <Button asChild className="gradient-primary border-0">
                 <Link to="/sign-up">
@@ -176,10 +176,10 @@ const About = () => {
           >
             <Sparkles className="h-12 w-12 text-primary-foreground mx-auto mb-4" />
             <h2 className="font-display text-3xl font-bold text-primary-foreground mb-4">
-              Ready to Get Started?
+              Ready to Get Connected?
             </h2>
             <p className="text-lg text-primary-foreground/90 mb-8">
-              Join thousands of users who trust OneCare for their medication safety.
+              Join thousands of patients who stay connected with their healthcare providers.
             </p>
             <Button size="lg" variant="secondary" asChild>
               <Link to="/sign-up">Create Free Account</Link>

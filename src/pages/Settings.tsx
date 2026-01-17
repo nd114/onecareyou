@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   User, Shield, Bell, Moon, Sun, 
   Brain, History, ChevronRight, LogOut,
-  Mail, Phone, Heart, AlertTriangle
+  Mail, Phone, Heart, AlertTriangle, Globe
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ConsentLogEntry {
   id: string;
@@ -45,8 +52,29 @@ interface ConsentLogEntry {
   created_at: string;
 }
 
+const COMMON_TIMEZONES = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
+  { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
+  { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
+  { value: 'America/Anchorage', label: 'Alaska Time' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Asia/Kolkata', label: 'Mumbai/Kolkata (IST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+  { value: 'Australia/Perth', label: 'Perth (AWST)' },
+  { value: 'Pacific/Auckland', label: 'Auckland (NZST/NZDT)' },
+];
+
 const Settings = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const { hasConsent, consentUpdatedAt, grantConsent, revokeConsent } = useAIConsent();
   const navigate = useNavigate();
   
@@ -55,6 +83,8 @@ const Settings = () => {
   const [consentLogs, setConsentLogs] = useState<ConsentLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [timezone, setTimezone] = useState<string>((profile as any)?.timezone || 'UTC');
+  const [savingTimezone, setSavingTimezone] = useState(false);
 
   useEffect(() => {
     // Check current theme
@@ -62,10 +92,39 @@ const Settings = () => {
     setTheme(isDark ? 'dark' : 'light');
   }, []);
 
+  useEffect(() => {
+    if ((profile as any)?.timezone) {
+      setTimezone((profile as any).timezone);
+    }
+  }, [profile]);
+
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
+
+  const handleTimezoneChange = async (newTimezone: string) => {
+    if (!user) return;
+    
+    setSavingTimezone(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ timezone: newTimezone })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      setTimezone(newTimezone);
+      toast.success('Timezone updated');
+      refreshProfile?.();
+    } catch (error) {
+      console.error('Failed to update timezone:', error);
+      toast.error('Failed to update timezone');
+    } finally {
+      setSavingTimezone(false);
+    }
   };
 
   const fetchConsentLogs = async () => {
@@ -285,7 +344,33 @@ const Settings = () => {
                   Preferences
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                {/* Timezone */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Timezone</p>
+                      <p className="text-sm text-muted-foreground">Set your local timezone for accurate scheduling</p>
+                    </div>
+                  </div>
+                  <Select value={timezone} onValueChange={handleTimezoneChange} disabled={savingTimezone}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COMMON_TIMEZONES.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                {/* Dark Mode */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {theme === 'light' ? (

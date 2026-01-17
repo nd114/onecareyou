@@ -7,51 +7,22 @@ import {
   Users, 
   Check, 
   Clock,
-  AlertTriangle,
   ArrowRight,
   Bell,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  mockMedications, 
-  mockScheduleEntries, 
-  mockDashboardStats,
-  mockInteractions 
-} from '@/lib/mock-data';
+import { useMedications } from '@/hooks/useMedications';
+import { useScheduleEntries } from '@/hooks/useScheduleEntries';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useVitals } from '@/hooks/useVitals';
 import { MEDICATION_TYPE_COLORS } from '@/types/health';
-
-const statCards = [
-  { 
-    label: 'Adherence Rate', 
-    value: mockDashboardStats.adherenceRate, 
-    suffix: '%', 
-    icon: TrendingUp,
-    gradient: 'stat-card-1'
-  },
-  { 
-    label: 'Daily Doses', 
-    value: mockDashboardStats.dailyDoses, 
-    icon: Pill,
-    gradient: 'stat-card-2'
-  },
-  { 
-    label: 'Health Markers', 
-    value: mockDashboardStats.healthMarkers, 
-    icon: Activity,
-    gradient: 'stat-card-3'
-  },
-  { 
-    label: 'Active Providers', 
-    value: mockDashboardStats.activeProviders, 
-    icon: Users,
-    gradient: 'stat-card-4'
-  },
-];
+import { format } from 'date-fns';
 
 const quickLinks = [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
@@ -62,15 +33,45 @@ const quickLinks = [
 
 const Dashboard = () => {
   const { profile } = useAuth();
+  const { medications, isLoading: loadingMeds } = useMedications();
+  const { entries, pending, taken, total, markAsTaken, isLoading: loadingSchedule } = useScheduleEntries();
+  const { stats, isLoading: loadingStats } = useDashboardStats();
+  const { vitals, loading: loadingVitals } = useVitals();
+
   const userName = profile?.name?.split(' ')[0] || 'there';
+  const isLoading = loadingMeds || loadingSchedule || loadingStats || loadingVitals;
 
-  const todaySchedule = mockScheduleEntries.map(entry => ({
-    ...entry,
-    medication: mockMedications.find(m => m.id === entry.medicationId)
-  }));
+  const statCards = [
+    { 
+      label: 'Adherence Rate', 
+      value: stats.adherenceRate, 
+      suffix: '%', 
+      icon: TrendingUp,
+      gradient: 'stat-card-1'
+    },
+    { 
+      label: 'Daily Doses', 
+      value: stats.dailyDoses, 
+      icon: Pill,
+      gradient: 'stat-card-2'
+    },
+    { 
+      label: 'Health Markers', 
+      value: stats.healthMarkers, 
+      icon: Activity,
+      gradient: 'stat-card-3'
+    },
+    { 
+      label: 'Active Providers', 
+      value: stats.activeProviders, 
+      icon: Users,
+      gradient: 'stat-card-4'
+    },
+  ];
 
-  const pendingDoses = todaySchedule.filter(e => e.status === 'pending');
-  const completedDoses = todaySchedule.filter(e => e.status === 'taken');
+  const handleMarkTaken = async (entryId: string) => {
+    await markAsTaken.mutateAsync(entryId);
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -108,7 +109,7 @@ const Dashboard = () => {
                   <div>
                     <p className="font-semibold">Complete Your Health Profile</p>
                     <p className="text-sm text-muted-foreground">
-                      Add your allergies and health conditions for better interaction checking
+                      Add your health details for personalized care coordination
                     </p>
                   </div>
                 </div>
@@ -144,7 +145,11 @@ const Dashboard = () => {
                     <div>
                       <p className="text-sm opacity-90">{stat.label}</p>
                       <p className="text-2xl font-bold">
-                        {stat.value}{stat.suffix || ''}
+                        {isLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          `${stat.value}${stat.suffix || ''}`
+                        )}
                       </p>
                     </div>
                   </div>
@@ -154,26 +159,24 @@ const Dashboard = () => {
           ))}
         </motion.div>
 
-        {/* Interaction Warnings */}
-        {mockInteractions.length > 0 && (
+        {/* No Medications Prompt */}
+        {!loadingMeds && medications.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
+            transition={{ delay: 0.2 }}
             className="mb-8"
           >
-            <Card className="border-severity-low bg-emerald-light">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">Low-Risk Interaction Detected</p>
-                  <p className="text-sm text-muted-foreground">
-                    {mockInteractions[0].medication1} + {mockInteractions[0].medication2}: {mockInteractions[0].description}
-                  </p>
-                </div>
-                <Badge variant="outline" className="border-primary text-primary">Low</Badge>
+            <Card className="border-dashed">
+              <CardContent className="p-8 text-center">
+                <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">No medications added yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Start by adding your medications to track and share with your care team
+                </p>
+                <Button asChild className="gradient-primary border-0">
+                  <Link to="/medications/add">Add Your First Medication</Link>
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -195,7 +198,7 @@ const Dashboard = () => {
                     Today's Regimen
                   </CardTitle>
                   <CardDescription>
-                    {completedDoses.length}/{todaySchedule.length} doses completed
+                    {total > 0 ? `${taken.length}/${total} doses completed` : 'No doses scheduled'}
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" asChild>
@@ -203,57 +206,88 @@ const Dashboard = () => {
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {todaySchedule.slice(0, 5).map((entry) => (
-                    <div
-                      key={entry.id}
-                      className={`flex items-center justify-between p-4 rounded-xl border ${
-                        entry.status === 'taken' 
-                          ? 'bg-emerald-light border-primary/20' 
-                          : 'bg-card border-border'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="text-center min-w-[60px]">
-                          <p className="text-lg font-semibold">{entry.scheduledTime}</p>
+                {loadingSchedule ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : entries.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>No doses scheduled for today</p>
+                    {medications.length > 0 && (
+                      <p className="text-sm mt-2">Your medications will appear here once scheduled</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {entries.slice(0, 5).map((entry) => (
+                      <div
+                        key={entry.id}
+                        className={`flex items-center justify-between p-4 rounded-xl border ${
+                          entry.status === 'taken' 
+                            ? 'bg-emerald-light border-primary/20' 
+                            : 'bg-card border-border'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="text-center min-w-[60px]">
+                            <p className="text-lg font-semibold">
+                              {format(new Date(entry.scheduled_time), 'HH:mm')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-medium">{entry.medication?.name || 'Unknown'}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {entry.medication && (
+                                <>
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as keyof typeof MEDICATION_TYPE_COLORS] || ''}`}
+                                  >
+                                    {entry.medication.type}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    {entry.medication.dosage}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <div>
-                          <p className="font-medium">{entry.medication?.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${MEDICATION_TYPE_COLORS[entry.medication?.type || 'prescription']}`}
+                          {entry.status === 'taken' ? (
+                            <div className="flex items-center gap-2 text-primary">
+                              <Check className="h-5 w-5" />
+                              <span className="text-sm font-medium">Taken</span>
+                            </div>
+                          ) : entry.status === 'skipped' ? (
+                            <Badge variant="secondary">Skipped</Badge>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              className="gradient-primary border-0"
+                              onClick={() => handleMarkTaken(entry.id)}
+                              disabled={markAsTaken.isPending}
                             >
-                              {entry.medication?.type}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              {entry.medication?.dosage}
-                            </span>
-                          </div>
+                              {markAsTaken.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Mark Taken'
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
-                      <div>
-                        {entry.status === 'taken' ? (
-                          <div className="flex items-center gap-2 text-primary">
-                            <Check className="h-5 w-5" />
-                            <span className="text-sm font-medium">Taken</span>
-                          </div>
-                        ) : (
-                          <Button size="sm" className="gradient-primary border-0">
-                            Mark Taken
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
 
-                {pendingDoses.length > 0 && (
+                {pending.length > 0 && (
                   <div className="mt-6 p-4 rounded-xl bg-muted/50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Bell className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        {pendingDoses.length} doses remaining today
+                        {pending.length} dose{pending.length !== 1 ? 's' : ''} remaining today
                       </span>
                     </div>
                     <Button variant="ghost" size="sm">
@@ -299,10 +333,10 @@ const Dashboard = () => {
                   <div className="mt-6 p-4 rounded-xl gradient-primary text-primary-foreground">
                     <p className="font-semibold mb-1">Upgrade to Premium</p>
                     <p className="text-sm opacity-90 mb-3">
-                      Unlock unlimited medications and advanced features
+                      Unlock unlimited medications and provider sharing
                     </p>
                     <Button size="sm" variant="secondary" asChild>
-                      <Link to="/subscription">
+                      <Link to="/pricing">
                         Learn More
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
