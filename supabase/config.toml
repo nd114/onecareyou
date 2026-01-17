@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.check-vital-alerts]
 verify_jwt = false
+
+[functions.identify-pill]
+verify_jwt = false
+
+[functions.check-care-alerts]
+verify_jwt = false

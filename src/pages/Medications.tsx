@@ -25,6 +25,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { MedicationInteractionChecker } from '@/components/medications/MedicationInteractionChecker';
 import { DrugInteractionChecker } from '@/components/medications/DrugInteractionChecker';
+import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Medications = () => {
@@ -216,13 +217,11 @@ const Medications = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${!medication.is_active ? 'bg-muted' : 'bg-primary/10'}`}>
-                          {medication.is_active ? (
-                            <Pill className="h-6 w-6 text-primary" />
-                          ) : (
-                            <Ban className="h-6 w-6 text-muted-foreground" />
-                          )}
-                        </div>
+                        <MedicationPhotoGallery 
+                          medicationId={medication.id} 
+                          medicationName={medication.name}
+                          compact
+                        />
                         <div>
                           <CardTitle className="text-lg">{medication.name}</CardTitle>
                           {!medication.is_active && (
