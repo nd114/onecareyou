@@ -10,6 +10,11 @@ interface SharePermissions {
   profile: boolean;
 }
 
+interface PatientProfile {
+  name: string | null;
+  email: string | null;
+}
+
 interface PatientShare {
   id: string;
   user_id: string;
@@ -23,6 +28,8 @@ interface PatientShare {
   expires_at: string | null;
   clinician_user_id: string | null;
   clinician_notes: string | null;
+  patient_name: string;
+  patient_email: string | null;
 }
 
 export function useClinicianPatients() {
@@ -51,10 +58,26 @@ export function useClinicianPatients() {
 
       if (error) throw error;
       
-      return (data || []).map(share => ({
-        ...share,
-        permissions: share.permissions as unknown as SharePermissions,
-      })) as PatientShare[];
+      // Fetch patient profiles for each share
+      const patientUserIds = (data || []).map(share => share.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name, email')
+        .in('user_id', patientUserIds);
+      
+      const profileMap = new Map(
+        (profiles || []).map(p => [p.user_id, p])
+      );
+      
+      return (data || []).map(share => {
+        const profile = profileMap.get(share.user_id);
+        return {
+          ...share,
+          permissions: share.permissions as unknown as SharePermissions,
+          patient_name: profile?.name || 'Unknown Patient',
+          patient_email: profile?.email || null,
+        };
+      }) as PatientShare[];
     },
     enabled: !!user?.email,
   });

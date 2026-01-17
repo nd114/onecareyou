@@ -251,11 +251,11 @@ const ClinicianDashboard = () => {
                             >
                               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                                 <span className="font-semibold text-primary">
-                                  {patient.provider_name.charAt(0)}
+                                  {patient.patient_name.charAt(0)}
                                 </span>
                               </div>
                               <div>
-                                <p className="font-medium">{patient.provider_name}</p>
+                                <p className="font-medium">{patient.patient_name}</p>
                                 <div className="flex gap-1 mt-1">
                                   {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
                                   {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
@@ -272,7 +272,7 @@ const ClinicianDashboard = () => {
                                   setNotesDialog({
                                     open: true,
                                     patientId: patient.id,
-                                    patientName: patient.provider_name,
+                                    patientName: patient.patient_name,
                                     notes: patient.clinician_notes || '',
                                   });
                                 }}
