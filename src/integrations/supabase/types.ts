@@ -200,6 +200,7 @@ export type Database = {
           onboarding_completed: boolean | null
           phone_number: string | null
           subscription_tier: string | null
+          timezone: string | null
           updated_at: string | null
           user_id: string
         }
@@ -224,6 +225,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone_number?: string | null
           subscription_tier?: string | null
+          timezone?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -248,6 +250,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone_number?: string | null
           subscription_tier?: string | null
+          timezone?: string | null
           updated_at?: string | null
           user_id?: string
         }

@@ -21,6 +21,7 @@ interface Profile {
   health_conditions: string[];
   subscription_tier: 'free' | 'premium';
   onboarding_completed: boolean;
+  timezone: string | null;
   created_at: string;
   updated_at: string;
 }

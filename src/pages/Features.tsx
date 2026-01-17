@@ -14,7 +14,8 @@ import {
   Smartphone,
   Zap,
   ArrowRight,
-  Check
+  Check,
+  Share2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,11 +24,33 @@ import { Footer } from '@/components/layout/Footer';
 
 const coreFeatures = [
   {
+    icon: Users,
+    title: 'Care Circle',
+    description: 'Share your health data securely with healthcare providers and caregivers for continuous outpatient care.',
+    details: [
+      'Invite providers with secure access codes',
+      'Granular permission controls',
+      'Real-time health data sharing',
+      'No appointments needed for updates'
+    ]
+  },
+  {
+    icon: TrendingUp,
+    title: 'Vitals & Lab Tracking',
+    description: 'Monitor your health metrics and share them with your care team in real-time.',
+    details: [
+      '18+ vital types supported',
+      'Upload lab reports with AI extraction',
+      'Historical charts and trends',
+      'Providers see updates instantly'
+    ]
+  },
+  {
     icon: Shield,
     title: 'Drug Interaction Checking',
-    description: 'Real-time analysis of potential interactions between your medications, vitamins, and supplements.',
+    description: 'Real-time analysis of potential interactions—keeping both you and your providers informed.',
     details: [
-      'Check interactions across all your medications',
+      'Check interactions across all medications',
       'Severity levels from low to high risk',
       'Actionable recommendations',
       'Updated database with 50,000+ medications'
@@ -40,37 +63,15 @@ const coreFeatures = [
     details: [
       'Multiple daily time slots',
       'Flexible frequency options',
-      'Miss notifications and tracking',
+      'Adherence tracking for providers',
       'Calendar integration'
-    ]
-  },
-  {
-    icon: TrendingUp,
-    title: 'Vitals Tracking',
-    description: 'Monitor your health metrics and see trends over time.',
-    details: [
-      '18+ vital types supported',
-      'Normal range indicators',
-      'Historical charts and graphs',
-      'AI-powered lab report parsing'
-    ]
-  },
-  {
-    icon: Users,
-    title: 'Care Circle',
-    description: 'Share your health data securely with healthcare providers and caregivers.',
-    details: [
-      'Invite providers with secure codes',
-      'Granular permission controls',
-      'Real-time data sharing',
-      'Activity logging'
     ]
   },
 ];
 
 const additionalFeatures = [
   { icon: Pill, title: 'Multi-Type Support', description: 'Track prescriptions, OTC, vitamins, supplements, and herbal remedies' },
-  { icon: Heart, title: 'Health Profile', description: 'Store allergies, conditions, blood type, and emergency contacts' },
+  { icon: Heart, title: 'Health Profile', description: 'Store allergies, conditions, blood type—accessible to your care team' },
   { icon: Bell, title: 'Smart Notifications', description: 'Timely reminders that adapt to your schedule' },
   { icon: FileText, title: 'Health Reports', description: 'Export comprehensive reports for doctor visits' },
   { icon: Lock, title: 'Privacy First', description: 'End-to-end encryption and data anonymization' },
@@ -101,15 +102,15 @@ const Features = () => {
             </motion.div>
             
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-              Everything You Need for{' '}
+              Stay Connected to Your{' '}
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Better Health
+                Care Team
               </span>
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Discover the comprehensive suite of tools designed to help you manage 
-              your medications safely and maintain optimal health.
+              Discover the tools designed to keep you connected with your healthcare providers 
+              even after leaving the hospital. No more information gaps.
             </p>
 
             <Button size="lg" asChild className="gradient-primary border-0">
@@ -135,7 +136,7 @@ const Features = () => {
               Core Features
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              The essential tools that make OneCare your trusted health companion.
+              The essential tools that keep you connected with your healthcare providers.
             </p>
           </motion.div>
 
@@ -228,10 +229,10 @@ const Features = () => {
             className="max-w-4xl mx-auto text-center rounded-3xl gradient-primary p-12"
           >
             <h2 className="font-display text-3xl font-bold text-primary-foreground mb-4">
-              Ready to Experience These Features?
+              Ready to Stay Connected?
             </h2>
             <p className="text-lg text-primary-foreground/90 mb-8">
-              Start your free account today and take control of your medication safety.
+              Start your free account and keep your care team informed.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="secondary" asChild>

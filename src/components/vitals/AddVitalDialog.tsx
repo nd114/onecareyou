@@ -53,6 +53,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const [secondaryValues, setSecondaryValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedTime, setSelectedTime] = useState<string>(format(new Date(), 'HH:mm'));
   const [saving, setSaving] = useState(false);
   
   // Upload state
@@ -74,6 +75,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setSecondaryValues({});
     setNotes('');
     setSelectedDate(new Date());
+    setSelectedTime(format(new Date(), 'HH:mm'));
     setSelectedCategory('daily');
     setExtractedVitals([]);
     setUploadError(null);
@@ -83,16 +85,25 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setUsedLocalOCR(false);
   };
 
+  // Combine date and time into a single Date object
+  const getRecordedDateTime = () => {
+    const [hours, minutes] = selectedTime.split(':').map(Number);
+    const dateTime = new Date(selectedDate);
+    dateTime.setHours(hours, minutes, 0, 0);
+    return dateTime;
+  };
+
   const handleSaveManual = async () => {
     setSaving(true);
     
     try {
       const entries = Object.entries(values).filter(([_, v]) => v && !isNaN(parseFloat(v)));
+      const recordedDateTime = getRecordedDateTime();
       
       for (const [type, value] of entries) {
         const numValue = parseFloat(value);
         const secondaryValue = secondaryValues[type] ? parseFloat(secondaryValues[type]) : undefined;
-        await onSave(type as VitalType, numValue, secondaryValue, notes || undefined, selectedDate);
+        await onSave(type as VitalType, numValue, secondaryValue, notes || undefined, recordedDateTime);
       }
 
       resetForm();
@@ -302,31 +313,43 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
               </Button>
             </div>
 
-            {/* Date Selection */}
-            <div className="flex items-center gap-4">
-              <Label className="w-20">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "flex-1 justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => date && setSelectedDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+            {/* Date & Time Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "MMM d, yyyy") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => date && setSelectedDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="recordTime">Time</Label>
+                <Input
+                  id="recordTime"
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="w-full"
+                />
+              </div>
             </div>
 
             {mode === 'manual' ? (

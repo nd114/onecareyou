@@ -9,7 +9,9 @@ import {
   Calendar,
   Check,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Users,
+  Share2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,9 +20,24 @@ import { Footer } from '@/components/layout/Footer';
 
 const features = [
   {
+    icon: Share2,
+    title: 'Care Coordination',
+    description: 'Seamlessly share your health data with doctors, specialists, and caregivers for continuous outpatient care.',
+  },
+  {
+    icon: Users,
+    title: 'Provider Access',
+    description: 'Give your healthcare providers real-time access to your vitals and medications without appointments.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Health Tracking',
+    description: 'Track vitals, medications, and lab results. Your care team sees updates as they happen.',
+  },
+  {
     icon: Shield,
-    title: 'Interaction Warnings',
-    description: 'Real-time alerts for dangerous drug interactions between your medications, vitamins, and supplements.',
+    title: 'Safety Alerts',
+    description: 'Automatic medication interaction checking keeps you and your providers informed of risks.',
   },
   {
     icon: Clock,
@@ -30,22 +47,7 @@ const features = [
   {
     icon: Heart,
     title: 'Health Profile',
-    description: 'Store allergies, conditions, and emergency contacts in one secure place.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Adherence Tracking',
-    description: 'Visual progress tracking to help you maintain consistent medication routines.',
-  },
-  {
-    icon: Pill,
-    title: 'Multi-Type Support',
-    description: 'Track prescriptions, OTC medications, vitamins, supplements, and herbal remedies.',
-  },
-  {
-    icon: Calendar,
-    title: 'Easy Management',
-    description: 'Add medications with autocomplete, edit schedules, and manage everything in one place.',
+    description: 'Store allergies, conditions, and emergency contacts—instantly accessible to your care team.',
   },
 ];
 
@@ -68,7 +70,7 @@ const pricingPlans = [
     name: 'Premium',
     price: '$9.99',
     period: '/month',
-    description: 'For comprehensive health management',
+    description: 'For comprehensive care coordination',
     features: [
       'Unlimited medications',
       'Advanced interaction database',
@@ -123,15 +125,15 @@ const Landing = () => {
             </motion.div>
             
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              Take Control of Your{' '}
+              Bridge the Gap Between{' '}
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Medication Safety
+                Patient & Provider
               </span>
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              OneCare helps you track medications, vitamins, and supplements while alerting you 
-              to potentially dangerous interactions. Your health, organized and safe.
+              OneCare eliminates information asymmetry. Continue sharing your health updates with doctors 
+              after leaving the hospital—no appointments needed. Your care team stays informed.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -162,12 +164,15 @@ const Landing = () => {
                   {['Adherence', 'Daily Doses', 'Health Markers', 'Providers'].map((label, i) => (
                     <div key={label} className={`p-4 rounded-xl text-primary-foreground stat-card-${i + 1}`}>
                       <p className="text-sm opacity-90">{label}</p>
-                      <p className="text-2xl font-bold">{[87, 6, 4, 1][i]}{i === 0 ? '%' : ''}</p>
+                      <p className="text-2xl font-bold">{[87, 6, 4, 2][i]}{i === 0 ? '%' : ''}</p>
                     </div>
                   ))}
                 </div>
                 <div className="h-32 rounded-xl bg-muted/50 flex items-center justify-center text-muted-foreground">
-                  <span className="text-sm">Today's Schedule Preview</span>
+                  <div className="text-center">
+                    <Users className="h-8 w-8 mx-auto mb-2 text-primary/60" />
+                    <span className="text-sm">Real-time Care Coordination</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -185,11 +190,11 @@ const Landing = () => {
             className="text-center mb-16"
           >
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-              Everything You Need for{' '}
-              <span className="text-primary">Medication Safety</span>
+              Continuous Care,{' '}
+              <span className="text-primary">Beyond the Hospital</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Powerful features designed to help you manage your health with confidence.
+              Give your healthcare providers visibility into your health journey—even after you leave the hospital.
             </p>
           </motion.div>
 
@@ -297,11 +302,11 @@ const Landing = () => {
             className="max-w-4xl mx-auto text-center rounded-3xl gradient-primary p-12 md:p-16"
           >
             <h2 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-              Ready to Take Control of Your Health?
+              Ready to Connect with Your Care Team?
             </h2>
             <p className="text-lg text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-              Join thousands of users who trust OneCare to manage their medications safely. 
-              Start your free account today.
+              Join thousands of patients who stay connected with their healthcare providers 
+              after leaving the hospital. Start your free account today.
             </p>
             <Button size="lg" variant="secondary" asChild className="text-lg h-12 px-8">
               <Link to="/sign-up">
