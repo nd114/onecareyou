@@ -14,6 +14,10 @@ import Schedule from "./pages/Schedule";
 import Vitals from "./pages/Vitals";
 import CareCircle from "./pages/CareCircle";
 import ClinicianPortal from "./pages/ClinicianPortal";
+import ClinicianSignUp from "./pages/ClinicianSignUp";
+import ClinicianDashboard from "./pages/ClinicianDashboard";
+import FamilyDashboard from "./pages/FamilyDashboard";
+import FamilyMemberDetail from "./pages/FamilyMemberDetail";
 import Onboarding from "./pages/Onboarding";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -42,6 +46,7 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/clinician/sign-up" element={<ClinicianSignUp />} />
             <Route path="/about" element={<About />} />
             <Route path="/features" element={<Features />} />
             <Route path="/pricing" element={<Pricing />} />
@@ -52,6 +57,11 @@ const App = () => (
             <Route path="/disclaimer" element={<MedicalDisclaimer />} />
             <Route path="/help" element={<HelpCenter />} />
             <Route path="/clinician/patient/:inviteCode" element={<ClinicianPortal />} />
+            <Route path="/clinician/dashboard" element={
+              <ProtectedRoute>
+                <ClinicianDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
@@ -90,6 +100,16 @@ const App = () => (
             <Route path="/care-circle" element={
               <ProtectedRoute>
                 <CareCircle />
+              </ProtectedRoute>
+            } />
+            <Route path="/family" element={
+              <ProtectedRoute>
+                <FamilyDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/family/:memberId" element={
+              <ProtectedRoute>
+                <FamilyMemberDetail />
               </ProtectedRoute>
             } />
             <Route path="/settings" element={
