@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Pill, Search, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/select';
 import { Header } from '@/components/layout/Header';
 import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
+import { Switch } from '@/components/ui/switch';
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },
@@ -26,19 +27,51 @@ const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'herbal', label: 'Herbal' },
 ];
 
-const AddMedication = () => {
+const EditMedication = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addMedication } = useMedications();
+  const { getMedicationById, updateMedication } = useMedications();
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     type: '' as MedicationType | '',
     dosage: '',
     frequency: '',
-    times_of_day: ['09:00'],
+    times_of_day: ['09:00'] as string[],
     instructions: '',
     prescriber: '',
     pharmacy: '',
+    is_active: true,
   });
+
+  useEffect(() => {
+    const loadMedication = async () => {
+      if (!id) return;
+      
+      try {
+        const medication = await getMedicationById(id);
+        if (medication) {
+          setFormData({
+            name: medication.name,
+            type: medication.type as MedicationType,
+            dosage: medication.dosage,
+            frequency: medication.frequency,
+            times_of_day: (medication.times_of_day as string[]) || ['09:00'],
+            instructions: medication.instructions || '',
+            prescriber: medication.prescriber || '',
+            pharmacy: medication.pharmacy || '',
+            is_active: medication.is_active,
+          });
+        }
+      } catch (error) {
+        console.error('Error loading medication:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMedication();
+  }, [id]);
 
   const selectedFrequency = MEDICATION_FREQUENCIES.find(f => f.value === formData.frequency);
   const timeSlotsCount = selectedFrequency?.timesPerDay || 1;
@@ -60,8 +93,10 @@ const AddMedication = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    await addMedication.mutateAsync({
+    if (!id) return;
+
+    await updateMedication.mutateAsync({
+      id,
       name: formData.name,
       type: formData.type || 'prescription',
       dosage: formData.dosage,
@@ -70,10 +105,22 @@ const AddMedication = () => {
       instructions: formData.instructions || null,
       prescriber: formData.prescriber || null,
       pharmacy: formData.pharmacy || null,
+      is_active: formData.is_active,
     });
 
     navigate('/medications');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <Header />
+        <main className="container py-8 max-w-2xl flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -98,16 +145,16 @@ const AddMedication = () => {
                   <Pill className="h-6 w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <CardTitle>Add New Medication</CardTitle>
+                  <CardTitle>Edit Medication</CardTitle>
                   <CardDescription>
-                    Enter the details of your medication, vitamin, or supplement
+                    Update the details of your medication
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Medication Name with Search */}
+                {/* Medication Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Medication Name *</Label>
                   <div className="relative">
@@ -121,9 +168,6 @@ const AddMedication = () => {
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Start typing to search the medication database
-                  </p>
                 </div>
 
                 {/* Type */}
@@ -229,6 +273,21 @@ const AddMedication = () => {
                   />
                 </div>
 
+                {/* Active Toggle */}
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="is_active">Active Medication</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Inactive medications won't appear in your schedule
+                    </p>
+                  </div>
+                  <Switch
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  />
+                </div>
+
                 {/* Submit */}
                 <div className="flex gap-3 pt-4">
                   <Button type="button" variant="outline" className="flex-1" asChild>
@@ -237,15 +296,15 @@ const AddMedication = () => {
                   <Button 
                     type="submit" 
                     className="flex-1 gradient-primary border-0"
-                    disabled={addMedication.isPending}
+                    disabled={updateMedication.isPending}
                   >
-                    {addMedication.isPending ? (
+                    {updateMedication.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Adding...
+                        Saving...
                       </>
                     ) : (
-                      'Add Medication'
+                      'Save Changes'
                     )}
                   </Button>
                 </div>
@@ -258,4 +317,4 @@ const AddMedication = () => {
   );
 };
 
-export default AddMedication;
+export default EditMedication;
