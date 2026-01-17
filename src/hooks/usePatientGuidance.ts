@@ -40,15 +40,15 @@ export function usePatientGuidance() {
 
       if (error) throw error;
 
-      // Fetch clinician profiles to get names
+      // Fetch clinician names from profiles table
       const clinicianIds = [...new Set((data || []).map(g => g.clinician_user_id))];
       const { data: profiles } = await supabase
-        .from('clinician_profiles')
-        .select('user_id, practice_name')
+        .from('profiles')
+        .select('user_id, name')
         .in('user_id', clinicianIds);
 
       const profileMap = new Map(
-        (profiles || []).map(p => [p.user_id, p.practice_name])
+        (profiles || []).map(p => [p.user_id, p.name])
       );
 
       return (data || []).map(item => ({
