@@ -9,17 +9,20 @@ import {
   Plus,
   BarChart3,
   FileText,
-  Loader2
+  Loader2,
+  History
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
-import { useVitals } from '@/hooks/useVitals';
+import { useVitals, VitalRecord } from '@/hooks/useVitals';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
 import { VitalStatsCard } from '@/components/vitals/VitalStatsCard';
 import { AddVitalDialog } from '@/components/vitals/AddVitalDialog';
+import { EditVitalDialog } from '@/components/vitals/EditVitalDialog';
+import { VitalHistoryLog } from '@/components/vitals/VitalHistoryLog';
 
 const vitalCards = [
   { type: 'blood_pressure' as VitalType, icon: Heart, color: 'text-rose' },
@@ -40,8 +43,15 @@ const vitalCategories = [
 
 const Vitals = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [view, setView] = useState<'overview' | 'analytics'>('overview');
-  const { vitals, loading, addVital, getLatestVital, getVitalHistory, getVitalStats } = useVitals();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingVital, setEditingVital] = useState<VitalRecord | null>(null);
+  const [view, setView] = useState<'overview' | 'analytics' | 'history'>('overview');
+  const { vitals, loading, addVital, updateVital, deleteVital, getLatestVital, getVitalHistory, getVitalStats } = useVitals();
+
+  const handleEditVital = (vital: VitalRecord) => {
+    setEditingVital(vital);
+    setIsEditDialogOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -79,6 +89,14 @@ const Vitals = () => {
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Analytics
+              </Button>
+              <Button
+                variant={view === 'history' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView('history')}
+              >
+                <History className="h-4 w-4 mr-2" />
+                History
               </Button>
             </div>
             <Button className="gradient-primary border-0" onClick={() => setIsAddDialogOpen(true)}>
@@ -295,6 +313,31 @@ const Vitals = () => {
           </motion.div>
         )}
 
+        {/* History View */}
+        {!loading && view === 'history' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Vital History Log</CardTitle>
+                <CardDescription>
+                  Complete record of all your health measurements with edit and delete options
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VitalHistoryLog
+                  vitals={vitals}
+                  onEdit={handleEditVital}
+                  onDelete={deleteVital}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Educational Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -326,6 +369,13 @@ const Vitals = () => {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSave={addVital}
+      />
+      
+      <EditVitalDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        vital={editingVital}
+        onSave={updateVital}
       />
     </div>
   );

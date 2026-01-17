@@ -48,6 +48,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const { hasConsent, grantConsent, checkConsentRequired } = useAIConsent();
   
   const [mode, setMode] = useState<'manual' | 'upload'>('manual');
+  const [step, setStep] = useState<'entry' | 'confirm'>('entry');
   const [selectedCategory, setSelectedCategory] = useState('daily');
   const [values, setValues] = useState<Record<string, string>>({});
   const [secondaryValues, setSecondaryValues] = useState<Record<string, string>>({});
@@ -80,6 +81,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setExtractedVitals([]);
     setUploadError(null);
     setMode('manual');
+    setStep('entry');
     setPendingFile(null);
     setOcrProgress(null);
     setUsedLocalOCR(false);
@@ -93,17 +95,33 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     return dateTime;
   };
 
+  // Get entries to save for confirmation display
+  const getEntriesToSave = () => {
+    return Object.entries(values)
+      .filter(([_, v]) => v && !isNaN(parseFloat(v)))
+      .map(([type, value]) => ({
+        type: type as VitalType,
+        value: parseFloat(value),
+        secondaryValue: secondaryValues[type] ? parseFloat(secondaryValues[type]) : undefined,
+        config: VITAL_CONFIG[type as VitalType],
+      }));
+  };
+
+  const handleProceedToConfirm = () => {
+    if (getEntriesToSave().length > 0) {
+      setStep('confirm');
+    }
+  };
+
   const handleSaveManual = async () => {
     setSaving(true);
     
     try {
-      const entries = Object.entries(values).filter(([_, v]) => v && !isNaN(parseFloat(v)));
+      const entries = getEntriesToSave();
       const recordedDateTime = getRecordedDateTime();
       
-      for (const [type, value] of entries) {
-        const numValue = parseFloat(value);
-        const secondaryValue = secondaryValues[type] ? parseFloat(secondaryValues[type]) : undefined;
-        await onSave(type as VitalType, numValue, secondaryValue, notes || undefined, recordedDateTime);
+      for (const entry of entries) {
+        await onSave(entry.type, entry.value, entry.secondaryValue, notes || undefined, recordedDateTime);
       }
 
       resetForm();
@@ -353,92 +371,150 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
             </div>
 
             {mode === 'manual' ? (
-              <>
-                {/* Category Tabs */}
-                <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <TabsList className="flex flex-wrap h-auto gap-1">
-                    {vitalCategories.map((cat) => (
-                      <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
-                        {cat.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  
-                  {vitalCategories.map((category) => (
-                    <TabsContent key={category.id} value={category.id} className="space-y-4 pt-4">
-                      {category.types.map((type) => {
-                        const config = VITAL_CONFIG[type];
-                        const hasBPSecondary = type === 'blood_pressure';
-                        
-                        return (
-                          <div key={type} className="space-y-2">
-                            <Label htmlFor={type}>
-                              {config.label} 
-                              <span className="text-muted-foreground ml-1">({config.unit})</span>
-                            </Label>
-                            <div className="flex gap-2">
-                              <Input
-                                id={type}
-                                type="number"
-                                step="0.1"
-                                placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
-                                value={values[type] || ''}
-                                onChange={(e) => setValues({ ...values, [type]: e.target.value })}
-                                className="flex-1"
-                              />
-                              {hasBPSecondary && (
+              step === 'entry' ? (
+                <>
+                  {/* Category Tabs */}
+                  <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <TabsList className="flex flex-wrap h-auto gap-1">
+                      {vitalCategories.map((cat) => (
+                        <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
+                          {cat.label}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    
+                    {vitalCategories.map((category) => (
+                      <TabsContent key={category.id} value={category.id} className="space-y-4 pt-4">
+                        {category.types.map((type) => {
+                          const config = VITAL_CONFIG[type];
+                          const hasBPSecondary = type === 'blood_pressure';
+                          
+                          return (
+                            <div key={type} className="space-y-2">
+                              <Label htmlFor={type}>
+                                {config.label} 
+                                <span className="text-muted-foreground ml-1">({config.unit})</span>
+                              </Label>
+                              <div className="flex gap-2">
                                 <Input
+                                  id={type}
                                   type="number"
-                                  placeholder="Diastolic (e.g., 80)"
-                                  value={secondaryValues[type] || ''}
-                                  onChange={(e) => setSecondaryValues({ ...secondaryValues, [type]: e.target.value })}
+                                  step="0.1"
+                                  placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
+                                  value={values[type] || ''}
+                                  onChange={(e) => setValues({ ...values, [type]: e.target.value })}
                                   className="flex-1"
                                 />
-                              )}
+                                {hasBPSecondary && (
+                                  <Input
+                                    type="number"
+                                    placeholder="Diastolic (e.g., 80)"
+                                    value={secondaryValues[type] || ''}
+                                    onChange={(e) => setSecondaryValues({ ...secondaryValues, [type]: e.target.value })}
+                                    className="flex-1"
+                                  />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Normal range: {config.normalMin}–{config.normalMax} {config.unit}
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              Normal range: {config.normalMin}–{config.normalMax} {config.unit}
-                            </p>
+                          );
+                        })}
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+
+                  {/* Notes */}
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (optional)</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="Any relevant context or observations..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1" 
+                      onClick={() => {
+                        resetForm();
+                        onOpenChange(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      className="flex-1 gradient-primary border-0" 
+                      onClick={handleProceedToConfirm}
+                      disabled={!hasManualValues}
+                    >
+                      Review & Save
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                /* Confirmation Step */
+                <>
+                  <Card className="bg-primary/5 border-primary/20">
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <Check className="h-4 w-4 text-primary" />
+                        Confirm Your Entries
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        You're about to save {getEntriesToSave().length} health metric{getEntriesToSave().length !== 1 ? 's' : ''} for{' '}
+                        <strong>{format(getRecordedDateTime(), "MMM d, yyyy 'at' h:mm a")}</strong>
+                      </p>
+                      
+                      <div className="space-y-2">
+                        {getEntriesToSave().map((entry) => (
+                          <div key={entry.type} className="flex items-center justify-between py-2 px-3 bg-background rounded-lg border">
+                            <span className="font-medium">{entry.config.label}</span>
+                            <span className="text-lg font-bold">
+                              {entry.type === 'blood_pressure' && entry.secondaryValue
+                                ? `${entry.value}/${entry.secondaryValue}`
+                                : entry.value}
+                              <span className="text-sm font-normal text-muted-foreground ml-1">
+                                {entry.config.unit}
+                              </span>
+                            </span>
                           </div>
-                        );
-                      })}
-                    </TabsContent>
-                  ))}
-                </Tabs>
+                        ))}
+                      </div>
+                      
+                      {notes && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-xs text-muted-foreground">Notes:</p>
+                          <p className="text-sm">{notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                {/* Notes */}
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any relevant context or observations..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1" 
-                    onClick={() => {
-                      resetForm();
-                      onOpenChange(false);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    className="flex-1 gradient-primary border-0" 
-                    onClick={handleSaveManual}
-                    disabled={!hasManualValues || saving}
-                  >
-                    {saving ? 'Saving...' : 'Save'}
-                  </Button>
-                </div>
-              </>
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1" 
+                      onClick={() => setStep('entry')}
+                    >
+                      Add More
+                    </Button>
+                    <Button 
+                      className="flex-1 gradient-primary border-0" 
+                      onClick={handleSaveManual}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Confirm Save'}
+                    </Button>
+                  </div>
+                </>
+              )
             ) : (
               <>
                 {/* Upload Section */}
