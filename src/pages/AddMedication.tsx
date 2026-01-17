@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pill, Loader2, Camera, ScanBarcode } from 'lucide-react';
+import { ArrowLeft, Pill, Loader2, Camera, ScanBarcode, Crown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +16,15 @@ import {
 } from '@/components/ui/select';
 import { Header } from '@/components/layout/Header';
 import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
 import { MedicationSearchInput } from '@/components/medications/MedicationSearchInput';
 import { MedicationSuggestion } from '@/hooks/useMedicationDatabase';
 import { MedicationScanner } from '@/components/medications/MedicationScanner';
+import { useSubscription } from '@/hooks/useSubscription';
+import { toast } from 'sonner';
+
+const FREE_MEDICATION_LIMIT = 3;
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },
@@ -32,7 +36,8 @@ const medicationTypes: { value: MedicationType; label: string }[] = [
 
 const AddMedication = () => {
   const navigate = useNavigate();
-  const { addMedication } = useMedications();
+  const { addMedication, medications } = useMedications();
+  const { isPremium, checkSubscription, checkingStatus } = useSubscription();
   const [formData, setFormData] = useState({
     name: '',
     type: '' as MedicationType | '',
@@ -43,6 +48,14 @@ const AddMedication = () => {
     prescriber: '',
     pharmacy: '',
   });
+
+  // Check subscription on mount
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
+
+  const activeMedicationCount = medications.filter(med => med.is_active).length;
+  const isAtLimit = !isPremium && activeMedicationCount >= FREE_MEDICATION_LIMIT;
 
   const selectedFrequency = MEDICATION_FREQUENCIES.find(f => f.value === formData.frequency);
   const timeSlotsCount = selectedFrequency?.timesPerDay || 1;
@@ -64,6 +77,12 @@ const AddMedication = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Enforce free tier limit
+    if (isAtLimit) {
+      toast.error('You\'ve reached your free medication limit. Upgrade to Premium for unlimited medications.');
+      return;
+    }
     
     await addMedication.mutateAsync({
       name: formData.name,
@@ -95,7 +114,27 @@ const AddMedication = () => {
             </Link>
           </Button>
 
-          <Card>
+          {/* Upgrade Banner when at limit */}
+          {isAtLimit && (
+            <Card className="mb-6 gradient-primary text-primary-foreground border-0">
+              <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Crown className="h-8 w-8" />
+                  <div>
+                    <h3 className="text-lg font-semibold">Medication Limit Reached</h3>
+                    <p className="opacity-90">
+                      Free plan allows {FREE_MEDICATION_LIMIT} medications. Upgrade to Premium for unlimited.
+                    </p>
+                  </div>
+                </div>
+                <Button variant="secondary" asChild>
+                  <Link to="/pricing">Upgrade to Premium</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className={isAtLimit ? 'opacity-50 pointer-events-none' : ''}>
             <CardHeader>
               <div className="flex items-center gap-3 mb-2">
                 <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center">
@@ -104,7 +143,10 @@ const AddMedication = () => {
                 <div>
                   <CardTitle>Add New Medication</CardTitle>
                   <CardDescription>
-                    Enter the details of your medication, vitamin, or supplement
+                    {isAtLimit 
+                      ? `Upgrade to add more than ${FREE_MEDICATION_LIMIT} medications`
+                      : 'Enter the details of your medication, vitamin, or supplement'
+                    }
                   </CardDescription>
                 </div>
               </div>
