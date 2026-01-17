@@ -59,26 +59,29 @@ const Medications = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <div>
-            <h1 className="font-display text-3xl font-bold mb-2">
-              My Medicine Cabinet
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your medications, vitamins, and supplements
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="py-2 px-4">
-              {currentCount}/{medicationLimit} medications
-            </Badge>
-            <Button asChild className="gradient-primary border-0">
-              <Link to="/medications/add">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Medication
-              </Link>
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+                My Medicine Cabinet
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Manage your medications, vitamins, and supplements
+              </p>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Badge variant="outline" className="py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
+                {currentCount}/{medicationLimit}
+              </Badge>
+              <Button asChild className="gradient-primary border-0 flex-1 sm:flex-none" size="sm">
+                <Link to="/medications/add">
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Add Medication</span>
+                  <span className="xs:hidden">Add</span>
+                </Link>
+              </Button>
+            </div>
           </div>
         </motion.div>
 

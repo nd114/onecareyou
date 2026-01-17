@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   User, Shield, Bell, Moon, Sun, 
   Brain, History, ChevronRight, LogOut,
-  Mail, Phone, Heart, AlertTriangle, Globe
+  Mail, Phone, Heart, AlertTriangle, Globe, Scale, Thermometer, Droplets
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { GlucoseUnit, WeightUnit, TemperatureUnit, DEFAULT_UNIT_PREFERENCES } from '@/types/health';
 
 interface ConsentLogEntry {
   id: string;
@@ -85,6 +86,20 @@ const Settings = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [timezone, setTimezone] = useState<string>((profile as any)?.timezone || 'UTC');
   const [savingTimezone, setSavingTimezone] = useState(false);
+  
+  // Unit preferences - stored in localStorage for now (could be moved to profile later)
+  const [glucoseUnit, setGlucoseUnit] = useState<GlucoseUnit>(() => {
+    const saved = localStorage.getItem('unitPref_glucose');
+    return (saved as GlucoseUnit) || DEFAULT_UNIT_PREFERENCES.glucose;
+  });
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>(() => {
+    const saved = localStorage.getItem('unitPref_weight');
+    return (saved as WeightUnit) || DEFAULT_UNIT_PREFERENCES.weight;
+  });
+  const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>(() => {
+    const saved = localStorage.getItem('unitPref_temperature');
+    return (saved as TemperatureUnit) || DEFAULT_UNIT_PREFERENCES.temperature;
+  });
 
   useEffect(() => {
     // Check current theme
@@ -125,6 +140,14 @@ const Settings = () => {
     } finally {
       setSavingTimezone(false);
     }
+  };
+
+  const handleUnitChange = (type: 'glucose' | 'weight' | 'temperature', value: string) => {
+    localStorage.setItem(`unitPref_${type}`, value);
+    if (type === 'glucose') setGlucoseUnit(value as GlucoseUnit);
+    if (type === 'weight') setWeightUnit(value as WeightUnit);
+    if (type === 'temperature') setTemperatureUnit(value as TemperatureUnit);
+    toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} unit updated to ${value}`);
   };
 
   const fetchConsentLogs = async () => {
@@ -384,6 +407,90 @@ const Settings = () => {
                     </div>
                   </div>
                   <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Unit Preferences */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Scale className="h-5 w-5" />
+                  Unit Preferences
+                </CardTitle>
+                <CardDescription>
+                  Choose your preferred units of measurement for vitals
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Blood Glucose */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Droplets className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Blood Glucose</p>
+                      <p className="text-sm text-muted-foreground">mg/dL (US) or mmol/L (International)</p>
+                    </div>
+                  </div>
+                  <Select value={glucoseUnit} onValueChange={(v) => handleUnitChange('glucose', v)}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mg/dL">mg/dL</SelectItem>
+                      <SelectItem value="mmol/L">mmol/L</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                {/* Weight */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Scale className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Weight</p>
+                      <p className="text-sm text-muted-foreground">Kilograms or pounds</p>
+                    </div>
+                  </div>
+                  <Select value={weightUnit} onValueChange={(v) => handleUnitChange('weight', v)}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="lbs">lbs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                {/* Temperature */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Thermometer className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Temperature</p>
+                      <p className="text-sm text-muted-foreground">Celsius or Fahrenheit</p>
+                    </div>
+                  </div>
+                  <Select value={temperatureUnit} onValueChange={(v) => handleUnitChange('temperature', v)}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="°C">°C</SelectItem>
+                      <SelectItem value="°F">°F</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
