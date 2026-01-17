@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Pill, Edit, Trash2, Search, Loader2 } from 'lucide-react';
+import { Plus, Pill, Edit, Trash2, Search, Loader2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,9 +21,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MedicationInteractionChecker } from '@/components/medications/MedicationInteractionChecker';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Medications = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'list' | 'interactions'>('list');
   const { medications, isLoading, deleteMedication } = useMedications();
 
   const filteredMedications = medications.filter(med => 
@@ -109,23 +112,40 @@ const Medications = () => {
           </motion.div>
         )}
 
-        {/* Search */}
+        {/* Tabs for List/Interactions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
           className="mb-6"
         >
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search medications..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </motion.div>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'list' | 'interactions')}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="list" className="flex-1 sm:flex-none">
+                  <Pill className="h-4 w-4 mr-2" />
+                  My Medications
+                </TabsTrigger>
+                <TabsTrigger value="interactions" className="flex-1 sm:flex-none">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Interactions
+                </TabsTrigger>
+              </TabsList>
+              
+              {activeTab === 'list' && (
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search medications..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              )}
+            </div>
+
+            <TabsContent value="list" className="m-0">
 
         {/* Loading State */}
         {isLoading && (
@@ -263,7 +283,7 @@ const Medications = () => {
           </motion.div>
         )}
 
-        {!isLoading && filteredMedications.length === 0 && (
+        {!isLoading && activeTab === 'list' && filteredMedications.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -286,6 +306,13 @@ const Medications = () => {
             )}
           </motion.div>
         )}
+            </TabsContent>
+
+            <TabsContent value="interactions" className="m-0">
+              <MedicationInteractionChecker medications={medications} />
+            </TabsContent>
+          </Tabs>
+        </motion.div>
       </main>
     </div>
   );

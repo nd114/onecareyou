@@ -69,13 +69,16 @@ This document tracks all implemented features and requirements for the OneCare h
 - [x] Add/Edit/Delete medications
 - [x] Medication types and frequencies
 - [x] Prescription details (prescriber, pharmacy)
+- [x] Medication interaction checker with severity levels
+- [x] Interactions tab in Medications page
 
 ### Vitals Tracking
 - [x] Record blood pressure, glucose, weight, temperature, heart rate, oxygen
 - [x] Trend charts with systolic/diastolic clarity
 - [x] Unit preferences (mg/dL vs mmol/L, kg vs lbs, °C vs °F)
 - [x] Export to CSV/PDF
-- [x] Notes field for clinician context
+- [x] Notes field for clinician context (with helpful placeholders)
+- [x] Unit conversion applied in charts and history views
 
 ### Care Circle
 - [x] Share health data with providers
@@ -86,8 +89,10 @@ This document tracks all implemented features and requirements for the OneCare h
 
 ### Schedule
 - [x] Medication schedule entries (real data, not dummy)
-- [x] Mark as taken/skipped
+- [x] Mark as taken/skipped with reasons
 - [x] Adherence tracking
+- [x] Push notification reminders for pending doses
+- [x] Automatic scheduling of browser notifications when on today's schedule
 
 ### Settings
 - [x] Timezone selection with African timezones (GMT+1, etc.)
