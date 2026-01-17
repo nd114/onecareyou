@@ -19,7 +19,7 @@ interface Profile {
   height: number | null;
   allergies: string[];
   health_conditions: string[];
-  subscription_tier: 'free' | 'premium';
+  subscription_tier: 'free' | 'family' | 'premium' | 'enterprise';
   onboarding_completed: boolean;
   timezone: string | null;
   created_at: string;

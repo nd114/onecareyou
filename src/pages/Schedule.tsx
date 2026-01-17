@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Clock, Check, Calendar, ChevronLeft, ChevronRight, Bell, Loader2, X, MessageSquare } from 'lucide-react';
+import { Clock, Check, Calendar, ChevronLeft, ChevronRight, Bell, Loader2, X, MessageSquare, BellRing } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,8 +8,8 @@ import { Header } from '@/components/layout/Header';
 import { useScheduleEntries } from '@/hooks/useScheduleEntries';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
-import { useState } from 'react';
-import { format, addDays, subDays } from 'date-fns';
+import { useState, useEffect, useRef } from 'react';
+import { format, addDays, subDays, isToday as checkIsToday } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -34,10 +34,40 @@ const Schedule = () => {
     markAsSkipped 
   } = useScheduleEntries(selectedDate);
   
-  const { isSupported, isGranted, requestPermission } = usePushNotifications();
+  const { isSupported, isGranted, requestPermission, scheduleMedicationReminder } = usePushNotifications();
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
   const [skipEntryId, setSkipEntryId] = useState<string | null>(null);
   const [skipReason, setSkipReason] = useState('');
+  const scheduledReminders = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Schedule push notifications for pending entries when on today's date
+  useEffect(() => {
+    if (!isGranted || !checkIsToday(selectedDate)) return;
+
+    // Clear old scheduled reminders
+    scheduledReminders.current.forEach((timeout) => clearTimeout(timeout));
+    scheduledReminders.current.clear();
+
+    // Schedule reminders for pending entries
+    pending.forEach((entry) => {
+      if (entry.medication) {
+        const scheduledTime = new Date(entry.scheduled_time);
+        const timeoutId = scheduleMedicationReminder(
+          entry.medication.name,
+          scheduledTime,
+          entry.medication.dosage
+        );
+        if (timeoutId) {
+          scheduledReminders.current.set(entry.id, timeoutId);
+        }
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      scheduledReminders.current.forEach((timeout) => clearTimeout(timeout));
+    };
+  }, [pending, isGranted, selectedDate, scheduleMedicationReminder]);
 
   // Group by time
   const groupedSchedule = entries.reduce((acc, entry) => {
@@ -71,7 +101,7 @@ const Schedule = () => {
     setSelectedDate(prev => direction === 'next' ? addDays(prev, 1) : subDays(prev, 1));
   };
 
-  const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+  const isToday = checkIsToday(selectedDate);
 
   const handleEnableReminders = async () => {
     if (!isSupported) {
@@ -312,6 +342,21 @@ const Schedule = () => {
                       </motion.div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Reminder Status */}
+              {isGranted && entries.length > 0 && isToday && (
+                <div className="mt-8 p-4 rounded-xl bg-status-success/10 border border-status-success/20 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <BellRing className="h-5 w-5 text-status-success" />
+                    <span className="text-sm text-status-success font-medium">
+                      Reminders active for {pending.length} pending dose{pending.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <Badge variant="outline" className="bg-status-success/10 text-status-success border-status-success/30">
+                    Notifications On
+                  </Badge>
                 </div>
               )}
 

@@ -425,16 +425,19 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                     ))}
                   </Tabs>
 
-                  {/* Notes */}
+                  {/* Notes for Clinician */}
                   <div className="space-y-2">
-                    <Label htmlFor="notes">Notes (optional)</Label>
+                    <Label htmlFor="notes">Notes for Clinician (optional)</Label>
                     <Textarea
                       id="notes"
-                      placeholder="Any relevant context or observations..."
+                      placeholder="Add context for your care team, e.g., 'Measured after exercise', 'Feeling dizzy', 'Urine output: 500ml'..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       rows={2}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      These notes will be visible to clinicians you've shared your data with
+                    </p>
                   </div>
 
                   {/* Actions */}
