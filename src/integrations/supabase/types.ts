@@ -315,6 +315,44 @@ export type Database = {
           },
         ]
       }
+      clinician_guidance_notifications: {
+        Row: {
+          clinician_user_id: string
+          created_at: string
+          guidance_id: string
+          id: string
+          is_read: boolean
+          notification_type: string
+          patient_user_id: string
+        }
+        Insert: {
+          clinician_user_id: string
+          created_at?: string
+          guidance_id: string
+          id?: string
+          is_read?: boolean
+          notification_type: string
+          patient_user_id: string
+        }
+        Update: {
+          clinician_user_id?: string
+          created_at?: string
+          guidance_id?: string
+          id?: string
+          is_read?: boolean
+          notification_type?: string
+          patient_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinician_guidance_notifications_guidance_id_fkey"
+            columns: ["guidance_id"]
+            isOneToOne: false
+            referencedRelation: "clinician_guidance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinician_profiles: {
         Row: {
           country: string | null
@@ -323,6 +361,9 @@ export type Database = {
           id: string
           is_verified: boolean | null
           license_number: string | null
+          notify_on_guidance_acknowledged: boolean | null
+          notify_on_guidance_completed: boolean | null
+          notify_on_guidance_expired: boolean | null
           practice_name: string | null
           push_notifications_enabled: boolean | null
           push_subscription: Json | null
@@ -337,6 +378,9 @@ export type Database = {
           id?: string
           is_verified?: boolean | null
           license_number?: string | null
+          notify_on_guidance_acknowledged?: boolean | null
+          notify_on_guidance_completed?: boolean | null
+          notify_on_guidance_expired?: boolean | null
           practice_name?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
@@ -351,6 +395,9 @@ export type Database = {
           id?: string
           is_verified?: boolean | null
           license_number?: string | null
+          notify_on_guidance_acknowledged?: boolean | null
+          notify_on_guidance_completed?: boolean | null
+          notify_on_guidance_expired?: boolean | null
           practice_name?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
