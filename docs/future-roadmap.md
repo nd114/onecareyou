@@ -37,16 +37,55 @@ This document outlines planned features that are not yet implemented but are par
 - [ ] **API Connections**: Allow clinicians to connect external platforms via APIs (EHR systems, practice management tools)
 - [ ] **Hospital Access Permissions**: Role-based access for hospital administrators to manage clinician accounts
 
-### EHR Integration
-- [ ] FHIR-compatible data export
-- [ ] Webhook endpoints for external systems
-- [ ] OAuth-based API access for bidirectional sync
-- [ ] Integration with VeriClaim, HealthBridge Clinical
+### EHR Integration - Veradigm (Vericlaim) & HealthBridge Clinical
+
+#### Database Schema
+- [ ] `ehr_connections` table:
+  - `id`, `clinician_id` (FK to clinician_profiles), `provider_type` ('veradigm' | 'healthbridge')
+  - `provider_name`, `access_token` (encrypted), `refresh_token` (encrypted)
+  - `token_expires_at`, `fhir_base_url`, `patient_id_mapping` (JSONB)
+  - `last_sync_at`, `sync_status` ('pending' | 'active' | 'error'), `error_message`
+- [ ] `ehr_sync_logs` table:
+  - `id`, `connection_id` (FK), `sync_type` ('import' | 'export')
+  - `resource_type` ('Patient' | 'Medication' | 'Observation'), `record_count`
+  - `status` ('success' | 'partial' | 'failed'), `error_details` (JSONB)
+
+#### Edge Functions
+- [ ] `ehr-oauth-callback` - Handle OAuth callbacks, exchange codes for tokens, store encrypted
+- [ ] `ehr-refresh-token` - Background token refresh before expiry
+- [ ] `ehr-sync-patients` - Fetch FHIR Patient resources, map to provider_shares
+- [ ] `ehr-sync-vitals` - Bidirectional Observation sync (LOINC code mapping)
+- [ ] `ehr-sync-medications` - MedicationRequest/MedicationStatement sync (RxNorm mapping)
+
+#### Frontend Components
+- [ ] EHR Connections section in ClinicianSettings.tsx
+- [ ] `ConnectEHRDialog.tsx` - Provider selection, OAuth flow initiation
+- [ ] `EHRSyncSettings.tsx` - Auto-sync toggle, frequency, resource selection, sync history
+
+#### Provider-Specific Notes
+**Veradigm (Vericlaim)**
+- Register at Veradigm Developer Portal
+- SMART on FHIR launch flow
+- Scopes: `patient/*.read`, `observation/*.read`, `medication/*.read`
+
+**HealthBridge Clinical**
+- Contact HealthBridge for API credentials
+- JWT authentication + FHIR R4
+- Practice-specific endpoint configuration
+
+#### Data Flow
+- [ ] Patient matching: Check provider_shares by email, create or prompt for match
+- [ ] FHIR ↔ local schema transformation utilities
+- [ ] Timestamp-based conflict resolution with clinician review flags
+- [ ] Audit logging for all imports/exports
 
 ### Compliance
 - [ ] HIPAA compliance documentation
 - [ ] Audit logging for data access
 - [ ] Clinician verification system (license validation via medical boards)
+- [ ] OAuth tokens encrypted at rest
+- [ ] All FHIR API calls server-side via edge functions
+- [ ] RLS policies for connection data isolation
 
 ---
 
