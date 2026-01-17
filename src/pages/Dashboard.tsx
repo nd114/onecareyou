@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   mockMedications, 
   mockScheduleEntries, 
@@ -56,10 +57,13 @@ const quickLinks = [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
   { label: 'Care Circle', href: '/care-circle', icon: Users },
   { label: 'Medicine Cabinet', href: '/medications', icon: Pill },
-  { label: 'My Profile', href: '/profile', icon: Users },
+  { label: 'Health Profile', href: '/onboarding', icon: Users },
 ];
 
 const Dashboard = () => {
+  const { profile } = useAuth();
+  const userName = profile?.name?.split(' ')[0] || 'there';
+
   const todaySchedule = mockScheduleEntries.map(entry => ({
     ...entry,
     medication: mockMedications.find(m => m.id === entry.medicationId)
@@ -70,7 +74,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Header isAuthenticated userName="John" />
+      <Header />
       
       <main className="container py-8">
         {/* Welcome Section */}
@@ -80,12 +84,41 @@ const Dashboard = () => {
           className="mb-8"
         >
           <h1 className="font-display text-3xl font-bold mb-2">
-            Welcome back, John! 👋
+            Welcome back, {userName}! 👋
           </h1>
           <p className="text-muted-foreground">
             Here's your health overview for today, {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </motion.div>
+
+        {/* Onboarding Prompt */}
+        {profile && !profile.onboarding_completed && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mb-8"
+          >
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Activity className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Complete Your Health Profile</p>
+                    <p className="text-sm text-muted-foreground">
+                      Add your allergies and health conditions for better interaction checking
+                    </p>
+                  </div>
+                </div>
+                <Button asChild className="gradient-primary border-0">
+                  <Link to="/onboarding">Complete Profile</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Stat Cards */}
         <motion.div
@@ -120,33 +153,6 @@ const Dashboard = () => {
             </motion.div>
           ))}
         </motion.div>
-
-        {/* Compliance Alert */}
-        {mockDashboardStats.adherenceRate < 80 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8"
-          >
-            <Card className="border-severity-moderate bg-amber-light">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-severity-moderate/20 flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-severity-moderate" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">Adherence Alert</p>
-                  <p className="text-sm text-muted-foreground">
-                    Your adherence rate is below 80%. Consistent medication intake is important for your health.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  View Tips
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
 
         {/* Interaction Warnings */}
         {mockInteractions.length > 0 && (
@@ -289,18 +295,20 @@ const Dashboard = () => {
                   ))}
                 </div>
 
-                <div className="mt-6 p-4 rounded-xl gradient-primary text-primary-foreground">
-                  <p className="font-semibold mb-1">Upgrade to Premium</p>
-                  <p className="text-sm opacity-90 mb-3">
-                    Unlock unlimited medications and advanced features
-                  </p>
-                  <Button size="sm" variant="secondary" asChild>
-                    <Link to="/subscription">
-                      Learn More
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
+                {profile?.subscription_tier === 'free' && (
+                  <div className="mt-6 p-4 rounded-xl gradient-primary text-primary-foreground">
+                    <p className="font-semibold mb-1">Upgrade to Premium</p>
+                    <p className="text-sm opacity-90 mb-3">
+                      Unlock unlimited medications and advanced features
+                    </p>
+                    <Button size="sm" variant="secondary" asChild>
+                      <Link to="/subscription">
+                        Learn More
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>

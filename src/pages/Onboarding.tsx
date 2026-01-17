@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Calendar, Droplet, Ruler, X, Plus, ArrowRight, SkipForward } from 'lucide-react';
+import { Heart, Calendar, Droplet, Ruler, X, Plus, ArrowRight, SkipForward, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,14 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { COMMON_ALLERGIES, COMMON_CONDITIONS, BLOOD_TYPES } from '@/types/health';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const { user, profile, refreshProfile } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     dateOfBirth: '',
     gender: '',
@@ -31,6 +35,22 @@ const Onboarding = () => {
     customAllergy: '',
     customCondition: '',
   });
+
+  // Pre-populate form if profile exists
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        dateOfBirth: profile.date_of_birth || '',
+        gender: profile.gender || '',
+        bloodType: profile.blood_type || '',
+        height: profile.height?.toString() || '',
+        allergies: (profile.allergies as string[]) || [],
+        healthConditions: (profile.health_conditions as string[]) || [],
+        customAllergy: '',
+        customCondition: '',
+      });
+    }
+  }, [profile]);
 
   const toggleAllergy = (allergy: string) => {
     setFormData(prev => ({
@@ -70,14 +90,50 @@ const Onboarding = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success('Health profile saved! Welcome to OneCare.');
-    navigate('/dashboard');
+  const saveProfile = async (markComplete: boolean = true) => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        date_of_birth: formData.dateOfBirth || null,
+        gender: formData.gender || null,
+        blood_type: formData.bloodType || null,
+        height: formData.height ? parseInt(formData.height) : null,
+        allergies: formData.allergies,
+        health_conditions: formData.healthConditions,
+        onboarding_completed: markComplete,
+      })
+      .eq('user_id', user.id);
+    
+    if (error) {
+      toast.error('Failed to save profile: ' + error.message);
+      setIsLoading(false);
+      return false;
+    }
+    
+    await refreshProfile();
+    return true;
   };
 
-  const handleSkip = () => {
-    navigate('/dashboard');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await saveProfile(true);
+    if (success) {
+      toast.success('Health profile saved! Welcome to OneCare.');
+      navigate('/dashboard');
+    }
+    setIsLoading(false);
+  };
+
+  const handleSkip = async () => {
+    const success = await saveProfile(true);
+    if (success) {
+      navigate('/dashboard');
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -95,7 +151,7 @@ const Onboarding = () => {
             </div>
           </div>
           <h1 className="font-display text-3xl font-bold mb-2">
-            Let's Set Up Your Health Profile
+            {profile?.onboarding_completed ? 'Edit Your Health Profile' : 'Let\'s Set Up Your Health Profile'}
           </h1>
           <p className="text-muted-foreground">
             This information helps us personalize your experience and check for relevant interactions.
@@ -203,6 +259,21 @@ const Onboarding = () => {
                     </Badge>
                   ))}
                 </div>
+                {/* Show custom allergies */}
+                {formData.allergies.filter(a => !COMMON_ALLERGIES.includes(a)).length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.allergies.filter(a => !COMMON_ALLERGIES.includes(a)).map((allergy) => (
+                      <Badge
+                        key={allergy}
+                        className="cursor-pointer bg-primary hover:bg-primary/90"
+                        onClick={() => toggleAllergy(allergy)}
+                      >
+                        {allergy}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Input
                     placeholder="Add custom allergy"
@@ -241,6 +312,21 @@ const Onboarding = () => {
                     </Badge>
                   ))}
                 </div>
+                {/* Show custom conditions */}
+                {formData.healthConditions.filter(c => !COMMON_CONDITIONS.includes(c)).length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.healthConditions.filter(c => !COMMON_CONDITIONS.includes(c)).map((condition) => (
+                      <Badge
+                        key={condition}
+                        className="cursor-pointer bg-primary hover:bg-primary/90"
+                        onClick={() => toggleCondition(condition)}
+                      >
+                        {condition}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Input
                     placeholder="Add custom condition"
@@ -256,13 +342,24 @@ const Onboarding = () => {
 
               {/* Actions */}
               <div className="flex gap-3 pt-4">
-                <Button type="button" variant="ghost" onClick={handleSkip} className="flex-1">
-                  <SkipForward className="h-4 w-4 mr-2" />
-                  Skip for Now
-                </Button>
-                <Button type="submit" className="flex-1 gradient-primary border-0">
-                  Complete Setup
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                {!profile?.onboarding_completed && (
+                  <Button type="button" variant="ghost" onClick={handleSkip} disabled={isLoading} className="flex-1">
+                    <SkipForward className="h-4 w-4 mr-2" />
+                    Skip for Now
+                  </Button>
+                )}
+                <Button type="submit" className={`gradient-primary border-0 ${profile?.onboarding_completed ? 'w-full' : 'flex-1'}`} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      {profile?.onboarding_completed ? 'Save Changes' : 'Complete Setup'}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

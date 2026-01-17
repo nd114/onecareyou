@@ -60,7 +60,7 @@ const Schedule = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Header isAuthenticated userName="John" />
+      <Header />
       
       <main className="container py-8">
         {/* Header */}

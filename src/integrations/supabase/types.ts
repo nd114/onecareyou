@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          address: string | null
+          allergies: Json | null
+          bio: string | null
+          blood_type: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_number: string | null
+          gender: string | null
+          health_conditions: Json | null
+          height: number | null
+          id: string
+          location: string | null
+          name: string | null
+          onboarding_completed: boolean | null
+          phone_number: string | null
+          subscription_tier: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          allergies?: Json | null
+          bio?: string | null
+          blood_type?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_number?: string | null
+          gender?: string | null
+          health_conditions?: Json | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          name?: string | null
+          onboarding_completed?: boolean | null
+          phone_number?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          allergies?: Json | null
+          bio?: string | null
+          blood_type?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_number?: string | null
+          gender?: string | null
+          health_conditions?: Json | null
+          height?: number | null
+          id?: string
+          location?: string | null
+          name?: string | null
+          onboarding_completed?: boolean | null
+          phone_number?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
