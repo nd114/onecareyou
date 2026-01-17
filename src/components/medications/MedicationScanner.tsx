@@ -146,45 +146,23 @@ export function MedicationScanner({ onMedicationIdentified }: MedicationScannerP
 
   const lookupNDC = async (ndc: string) => {
     try {
-      // Clean the NDC (remove dashes, etc.)
-      const cleanNdc = ndc.replace(/[^0-9]/g, '');
-      
-      // Look up in RxNorm using NDC
-      const response = await fetch(
-        `https://rxnav.nlm.nih.gov/REST/ndcstatus.json?ndc=${cleanNdc}`
-      );
-      const data = await response.json();
+      const { data, error } = await supabase.functions.invoke('drug-lookup', {
+        body: { action: 'lookup-ndc', ndc }
+      });
 
-      if (data.ndcStatus?.rxcui) {
-        // Get drug name from RxCUI
-        const rxcuiResponse = await fetch(
-          `https://rxnav.nlm.nih.gov/REST/rxcui/${data.ndcStatus.rxcui}/properties.json`
-        );
-        const rxcuiData = await rxcuiResponse.json();
-
-        if (rxcuiData.properties) {
-          const info: MedicationInfo = {
-            name: rxcuiData.properties.name,
-            rxcui: data.ndcStatus.rxcui,
-          };
-          setResult(info);
-          return;
-        }
+      if (error) {
+        console.error('NDC lookup error:', error);
+        setError('Failed to look up medication. Please try again.');
+        return;
       }
 
-      // Try OpenFDA as fallback
-      const fdaResponse = await fetch(
-        `https://api.fda.gov/drug/ndc.json?search=product_ndc:"${cleanNdc}"&limit=1`
-      );
-      const fdaData = await fdaResponse.json();
-
-      if (fdaData.results?.[0]) {
-        const drug = fdaData.results[0];
+      if (data?.found) {
         const info: MedicationInfo = {
-          name: drug.brand_name || drug.generic_name,
-          dosageForm: drug.dosage_form,
-          strength: drug.active_ingredients?.[0]?.strength,
-          manufacturer: drug.labeler_name,
+          name: data.name,
+          rxcui: data.rxcui,
+          dosageForm: data.dosageForm,
+          strength: data.strength,
+          manufacturer: data.manufacturer,
         };
         setResult(info);
         return;
