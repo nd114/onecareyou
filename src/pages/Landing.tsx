@@ -147,6 +147,13 @@ const Landing = () => {
                 <Link to="#features">Learn More</Link>
               </Button>
             </div>
+            
+            <div className="mt-6 text-sm text-muted-foreground">
+              <span>Are you a healthcare provider? </span>
+              <Link to="/clinician/sign-up" className="text-primary font-medium hover:underline">
+                Register as a Clinician →
+              </Link>
+            </div>
           </motion.div>
 
           {/* Hero Image/Illustration */}

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Heart, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Heart, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Stethoscope } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { z } from 'zod';
 
 const signInSchema = z.object({
@@ -19,6 +20,7 @@ const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, user, loading: authLoading } = useAuth();
+  const { isClinician, isLoading: clinicianLoading } = useClinicianProfile();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -27,14 +29,20 @@ const SignIn = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
-  // Redirect if already logged in
+  // Redirect if already logged in - clinicians go to clinician dashboard
   useEffect(() => {
-    if (user && !authLoading) {
-      navigate(from, { replace: true });
+    if (user && !authLoading && !clinicianLoading) {
+      if (from) {
+        navigate(from, { replace: true });
+      } else if (isClinician) {
+        navigate('/clinician/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [user, authLoading, navigate, from]);
+  }, [user, authLoading, clinicianLoading, isClinician, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +81,7 @@ const SignIn = () => {
     navigate(from, { replace: true });
   };
 
-  if (authLoading) {
+  if (authLoading || clinicianLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -169,13 +177,21 @@ const SignIn = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-3">
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <Link to="/sign-up" className="text-primary font-medium hover:underline">
                   Sign up
                 </Link>
               </p>
+              
+              <div className="flex items-center gap-2 justify-center text-sm">
+                <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Healthcare provider?</span>
+                <Link to="/clinician/sign-up" className="text-primary font-medium hover:underline">
+                  Register here
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
