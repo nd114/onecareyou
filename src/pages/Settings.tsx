@@ -16,6 +16,7 @@ import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -112,6 +113,12 @@ const Settings = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const { hasConsent, consentUpdatedAt, grantConsent, revokeConsent } = useAIConsent();
   const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
+  const { 
+    settings: notificationSettings, 
+    updatePushNotifications, 
+    updateEmailNotifications,
+    isSaving: savingNotifications 
+  } = useNotificationSettings();
   const navigate = useNavigate();
   
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
@@ -502,23 +509,48 @@ const Settings = () => {
                       <p className="font-medium">Push Notifications</p>
                       <p className="text-sm text-muted-foreground">
                         {notificationsSupported 
-                          ? 'Get reminders for scheduled medications' 
+                          ? 'Get browser notifications for alerts and reminders' 
                           : 'Not supported in this browser'}
                       </p>
                     </div>
                   </div>
                   {notificationsSupported && (
                     <Switch
-                      checked={notificationsEnabled}
-                      onCheckedChange={() => {
-                        if (!notificationsEnabled) {
-                          requestPermission();
+                      checked={notificationSettings.push_notifications_enabled && notificationsEnabled}
+                      disabled={savingNotifications}
+                      onCheckedChange={async (checked) => {
+                        if (checked) {
+                          // First request browser permission
+                          const granted = await requestPermission();
+                          if (granted) {
+                            await updatePushNotifications(true);
+                          }
                         } else {
-                          toast.info('To disable notifications, use your browser settings');
+                          await updatePushNotifications(false);
                         }
                       }}
                     />
                   )}
+                </div>
+
+                <Separator />
+
+                {/* Email Notifications */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Email Notifications</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receive email alerts for vital thresholds and important updates
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationSettings.email_notifications_enabled}
+                    disabled={savingNotifications}
+                    onCheckedChange={updateEmailNotifications}
+                  />
                 </div>
 
                 <Separator />

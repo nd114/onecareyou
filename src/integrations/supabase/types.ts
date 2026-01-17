@@ -228,10 +228,13 @@ export type Database = {
         Row: {
           country: string | null
           created_at: string
+          email_notifications_enabled: boolean | null
           id: string
           is_verified: boolean | null
           license_number: string | null
           practice_name: string | null
+          push_notifications_enabled: boolean | null
+          push_subscription: Json | null
           specialty: string | null
           updated_at: string
           user_id: string
@@ -239,10 +242,13 @@ export type Database = {
         Insert: {
           country?: string | null
           created_at?: string
+          email_notifications_enabled?: boolean | null
           id?: string
           is_verified?: boolean | null
           license_number?: string | null
           practice_name?: string | null
+          push_notifications_enabled?: boolean | null
+          push_subscription?: Json | null
           specialty?: string | null
           updated_at?: string
           user_id: string
@@ -250,10 +256,13 @@ export type Database = {
         Update: {
           country?: string | null
           created_at?: string
+          email_notifications_enabled?: boolean | null
           id?: string
           is_verified?: boolean | null
           license_number?: string | null
           practice_name?: string | null
+          push_notifications_enabled?: boolean | null
+          push_subscription?: Json | null
           specialty?: string | null
           updated_at?: string
           user_id?: string
@@ -533,6 +542,7 @@ export type Database = {
           created_at: string | null
           date_of_birth: string | null
           email: string | null
+          email_notifications_enabled: boolean | null
           emergency_contact_name: string | null
           emergency_number: string | null
           gender: string | null
@@ -543,6 +553,8 @@ export type Database = {
           name: string | null
           onboarding_completed: boolean | null
           phone_number: string | null
+          push_notifications_enabled: boolean | null
+          push_subscription: Json | null
           subscription_tier: string | null
           timezone: string | null
           updated_at: string | null
@@ -558,6 +570,7 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          email_notifications_enabled?: boolean | null
           emergency_contact_name?: string | null
           emergency_number?: string | null
           gender?: string | null
@@ -568,6 +581,8 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           phone_number?: string | null
+          push_notifications_enabled?: boolean | null
+          push_subscription?: Json | null
           subscription_tier?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -583,6 +598,7 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          email_notifications_enabled?: boolean | null
           emergency_contact_name?: string | null
           emergency_number?: string | null
           gender?: string | null
@@ -593,6 +609,8 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           phone_number?: string | null
+          push_notifications_enabled?: boolean | null
+          push_subscription?: Json | null
           subscription_tier?: string | null
           timezone?: string | null
           updated_at?: string | null

@@ -6,7 +6,6 @@ import {
   Clock, 
   AlertTriangle,
   Loader2,
-  ChevronRight,
   User,
   Calendar,
   MessageSquare,
@@ -16,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
-import { useAuth } from '@/contexts/AuthContext';
 import { usePatientGuidance } from '@/hooks/usePatientGuidance';
 import { format } from 'date-fns';
 import {
@@ -44,7 +42,6 @@ interface GuidanceItem {
 }
 
 const PatientGuidance = () => {
-  const { user } = useAuth();
   const { guidance, isLoading, acknowledgeGuidance, completeGuidance } = usePatientGuidance();
   
   const [selectedGuidance, setSelectedGuidance] = useState<GuidanceItem | null>(null);
