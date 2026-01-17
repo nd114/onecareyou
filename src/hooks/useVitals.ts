@@ -103,6 +103,42 @@ export function useVitals() {
     }
   };
 
+  const updateVital = async (
+    id: string,
+    updates: {
+      value?: number;
+      secondaryValue?: number;
+      notes?: string;
+      recordedAt?: Date;
+    }
+  ): Promise<boolean> => {
+    try {
+      const updateData: Record<string, unknown> = {};
+      
+      if (updates.value !== undefined) updateData.value = updates.value;
+      if (updates.secondaryValue !== undefined) updateData.secondary_value = updates.secondaryValue;
+      if (updates.notes !== undefined) updateData.notes = updates.notes || null;
+      if (updates.recordedAt) updateData.recorded_at = updates.recordedAt.toISOString();
+
+      const { data, error } = await supabase
+        .from('vitals')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setVitals(prev => prev.map(v => v.id === id ? (data as VitalRecord) : v));
+      toast.success('Vital updated successfully');
+      return true;
+    } catch (error) {
+      console.error('Error updating vital:', error);
+      toast.error('Failed to update vital');
+      return false;
+    }
+  };
+
   const getLatestVital = (type: VitalType): VitalRecord | undefined => {
     return vitals.find(v => v.type === type);
   };
@@ -145,6 +181,7 @@ export function useVitals() {
     vitals,
     loading,
     addVital,
+    updateVital,
     deleteVital,
     getLatestVital,
     getVitalHistory,
