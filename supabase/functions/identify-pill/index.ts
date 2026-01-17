@@ -5,13 +5,128 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface NIHPillResult {
+  rxcui?: string;
+  name?: string;
+  imageUrl?: string;
+  imprint?: string;
+  shape?: string;
+  color?: string;
+  score?: number;
+}
+
+// Cross-reference with NIH RxImage database for verification
+async function crossReferenceNIH(imprint?: string, shape?: string, color?: string): Promise<NIHPillResult[]> {
+  if (!imprint && !shape && !color) return [];
+  
+  try {
+    const params = new URLSearchParams();
+    if (imprint) params.append('imprint', imprint);
+    if (shape) params.append('shape', shape.toUpperCase());
+    if (color) params.append('color', color.toUpperCase());
+    params.append('imageExists', '1'); // Only return results with images
+    
+    const response = await fetch(
+      `https://rximage.nlm.nih.gov/api/rximage/1/rxnav?${params.toString()}`,
+      { headers: { 'Accept': 'application/json' } }
+    );
+    
+    if (!response.ok) {
+      console.error('NIH RxImage API error:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    const results: NIHPillResult[] = [];
+    
+    if (data.nlmRxImages && Array.isArray(data.nlmRxImages)) {
+      for (const img of data.nlmRxImages.slice(0, 5)) {
+        results.push({
+          rxcui: img.rxcui,
+          name: img.name,
+          imageUrl: img.imageUrl,
+          imprint: img.imprint,
+          shape: img.shape,
+          color: img.color,
+          score: img.score,
+        });
+      }
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Error querying NIH RxImage:', error);
+    return [];
+  }
+}
+
+// Get additional drug information from DailyMed
+async function getDrugInfoFromDailyMed(drugName: string): Promise<{ setId?: string; warnings?: string[] }> {
+  try {
+    const response = await fetch(
+      `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?drug_name=${encodeURIComponent(drugName)}&pagesize=1`
+    );
+    
+    if (!response.ok) return {};
+    
+    const data = await response.json();
+    if (data.data && data.data.length > 0) {
+      return { setId: data.data[0].setid };
+    }
+    
+    return {};
+  } catch (error) {
+    console.error('Error querying DailyMed:', error);
+    return {};
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { image } = await req.json();
+    const { image, manualSearch } = await req.json();
+    
+    // Handle manual search without image
+    if (manualSearch && !image) {
+      const { imprint, shape, color } = manualSearch;
+      const nihResults = await crossReferenceNIH(imprint, shape, color);
+      
+      if (nihResults.length === 0) {
+        return new Response(
+          JSON.stringify({
+            identified: false,
+            confidence: "low",
+            notes: "No matching medications found in the NIH database with the provided characteristics.",
+            nihMatches: [],
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Get additional info for the top match
+      const topMatch = nihResults[0];
+      const dailyMedInfo = topMatch.name ? await getDrugInfoFromDailyMed(topMatch.name) : {};
+      
+      return new Response(
+        JSON.stringify({
+          identified: true,
+          confidence: "medium",
+          name: topMatch.name,
+          imprint: topMatch.imprint,
+          shape: topMatch.shape,
+          color: topMatch.color,
+          rxcui: topMatch.rxcui,
+          nihMatches: nihResults,
+          dailyMedSetId: dailyMedInfo.setId,
+          verificationSource: "NIH RxImage Database",
+          notes: "Identification based on NIH RxImage database. Always verify with a pharmacist.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     if (!image) {
       return new Response(
@@ -131,6 +246,34 @@ NEVER provide medical advice. Always recommend consulting a pharmacist or doctor
         notes: content,
         error: "Could not parse structured response"
       };
+    }
+
+    // Cross-reference with NIH database if we have identifying features
+    if (result.imprint || result.shape || result.color) {
+      const nihResults = await crossReferenceNIH(
+        result.imprint,
+        result.shape,
+        result.color
+      );
+      
+      result.nihMatches = nihResults;
+      result.nihVerified = nihResults.length > 0 && nihResults.some(
+        (n: NIHPillResult) => n.name?.toLowerCase().includes(result.name?.toLowerCase() || '') ||
+             result.name?.toLowerCase().includes(n.name?.toLowerCase() || '')
+      );
+      
+      if (result.nihVerified) {
+        result.verificationSource = "NIH RxImage Database";
+        result.confidence = "high";
+      }
+      
+      // Get DailyMed info for the identified medication
+      if (result.name) {
+        const dailyMedInfo = await getDrugInfoFromDailyMed(result.name);
+        if (dailyMedInfo.setId) {
+          result.dailyMedSetId = dailyMedInfo.setId;
+        }
+      }
     }
 
     return new Response(

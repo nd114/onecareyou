@@ -10,7 +10,9 @@ import {
   ArrowRight,
   Bell,
   ChevronRight,
-  Loader2
+  Loader2,
+  BarChart3,
+  BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,11 +26,12 @@ import { useVitals } from '@/hooks/useVitals';
 import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
 
-const quickLinks = [
+const getQuickLinks = (showAdherence: boolean) => [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
   { label: 'Care Circle', href: '/care-circle', icon: Users },
   { label: 'Medicine Cabinet', href: '/medications', icon: Pill },
-  { label: 'Health Profile', href: '/onboarding', icon: Users },
+  ...(showAdherence ? [{ label: 'Adherence Report', href: '/adherence-report', icon: BarChart3 }] : []),
+  { label: 'Knowledge Base', href: '/knowledge-base', icon: BookOpen },
 ];
 
 const Dashboard = () => {
@@ -40,6 +43,8 @@ const Dashboard = () => {
 
   const userName = profile?.name?.split(' ')[0] || 'there';
   const isLoading = loadingMeds || loadingSchedule || loadingStats || loadingVitals;
+  const showAdherenceReport = profile?.weekly_adherence_report_enabled ?? true;
+  const quickLinks = getQuickLinks(showAdherenceReport);
 
   const statCards = [
     { 

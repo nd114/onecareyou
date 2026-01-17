@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus, Inbox } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus, Inbox, TrendingUp, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -32,6 +32,7 @@ export function Header() {
   const userName = profile?.name || user?.email?.split('@')[0] || 'User';
   const subscriptionTier = (profile?.subscription_tier || 'free') as string;
   const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
+  const showAdherenceReport = profile?.weekly_adherence_report_enabled ?? true;
   
   // Get unread notifications (guidance items that haven't been acknowledged)
   const unreadGuidance = !isClinician ? guidance.filter(g => g.status === 'pending' || g.status === 'sent') : [];
@@ -208,6 +209,20 @@ export function Header() {
                         <Link to="/guidance" className="flex items-center gap-2">
                           <Inbox className="h-4 w-4" />
                           Healthcare Instructions
+                        </Link>
+                      </DropdownMenuItem>
+                      {showAdherenceReport && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/adherence-report" className="flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4" />
+                            Adherence Report
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem asChild>
+                        <Link to="/knowledge-base" className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          Medication Info
                         </Link>
                       </DropdownMenuItem>
                       {hasFamilyAccess && (

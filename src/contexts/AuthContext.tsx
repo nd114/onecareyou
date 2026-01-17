@@ -22,6 +22,7 @@ interface Profile {
   subscription_tier: 'free' | 'family' | 'premium' | 'enterprise';
   onboarding_completed: boolean;
   timezone: string | null;
+  weekly_adherence_report_enabled: boolean | null;
   created_at: string;
   updated_at: string;
 }
