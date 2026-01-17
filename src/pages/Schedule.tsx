@@ -1,62 +1,85 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Clock, Check, Calendar, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
+import { Clock, Check, Calendar, ChevronLeft, ChevronRight, Bell, Loader2, X, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
-import { mockMedications, mockScheduleEntries } from '@/lib/mock-data';
-import { MEDICATION_TYPE_COLORS } from '@/types/health';
+import { useScheduleEntries } from '@/hooks/useScheduleEntries';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState } from 'react';
+import { format, addDays, subDays } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 const Schedule = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [scheduleEntries, setScheduleEntries] = useState(mockScheduleEntries);
-
-  const todaySchedule = scheduleEntries.map(entry => ({
-    ...entry,
-    medication: mockMedications.find(m => m.id === entry.medicationId)
-  }));
+  const { 
+    entries, 
+    pending, 
+    taken, 
+    total, 
+    adherenceRate, 
+    isLoading, 
+    markAsTaken,
+    markAsSkipped 
+  } = useScheduleEntries(selectedDate);
+  
+  const { isSupported, isGranted, requestPermission } = usePushNotifications();
+  const [skipDialogOpen, setSkipDialogOpen] = useState(false);
+  const [skipEntryId, setSkipEntryId] = useState<string | null>(null);
+  const [skipReason, setSkipReason] = useState('');
 
   // Group by time
-  const groupedSchedule = todaySchedule.reduce((acc, entry) => {
-    const time = entry.scheduledTime;
+  const groupedSchedule = entries.reduce((acc, entry) => {
+    const time = format(new Date(entry.scheduled_time), 'HH:mm');
     if (!acc[time]) acc[time] = [];
     acc[time].push(entry);
     return acc;
-  }, {} as Record<string, typeof todaySchedule>);
+  }, {} as Record<string, typeof entries>);
 
   const sortedTimes = Object.keys(groupedSchedule).sort();
 
-  const toggleTaken = (entryId: string) => {
-    setScheduleEntries(prev => prev.map(entry => {
-      if (entry.id === entryId) {
-        const newStatus = entry.status === 'taken' ? 'pending' : 'taken';
-        toast.success(newStatus === 'taken' ? 'Marked as taken!' : 'Unmarked');
-        return {
-          ...entry,
-          status: newStatus,
-          takenAt: newStatus === 'taken' ? new Date().toISOString() : undefined,
-        };
-      }
-      return entry;
-    }));
+  const handleMarkTaken = async (entryId: string) => {
+    await markAsTaken.mutateAsync(entryId);
+  };
+
+  const handleOpenSkipDialog = (entryId: string) => {
+    setSkipEntryId(entryId);
+    setSkipReason('');
+    setSkipDialogOpen(true);
+  };
+
+  const handleConfirmSkip = async () => {
+    if (skipEntryId) {
+      await markAsSkipped.mutateAsync({ entryId: skipEntryId, reason: skipReason });
+      setSkipDialogOpen(false);
+      setSkipEntryId(null);
+    }
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
-    setSelectedDate(prev => {
-      const newDate = new Date(prev);
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
-      return newDate;
-    });
+    setSelectedDate(prev => direction === 'next' ? addDays(prev, 1) : subDays(prev, 1));
   };
 
-  const isToday = selectedDate.toDateString() === new Date().toDateString();
+  const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
-  const completedCount = scheduleEntries.filter(e => e.status === 'taken').length;
-  const totalCount = scheduleEntries.length;
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const handleEnableReminders = async () => {
+    if (!isSupported) {
+      toast.error('Push notifications are not supported in this browser');
+      return;
+    }
+    await requestPermission();
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -94,11 +117,7 @@ const Schedule = () => {
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <Calendar className="h-5 w-5 text-primary" />
                     <span className="font-semibold text-lg">
-                      {selectedDate.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
+                      {format(selectedDate, 'EEEE, MMMM d')}
                     </span>
                     {isToday && (
                       <Badge variant="secondary" className="bg-primary/10 text-primary">
@@ -107,7 +126,7 @@ const Schedule = () => {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {completedCount}/{totalCount} doses completed • {progressPercent}% adherence
+                    {taken.length}/{total} doses completed • {adherenceRate}% adherence
                   </p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => navigateDate('next')}>
@@ -119,7 +138,7 @@ const Schedule = () => {
               <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${progressPercent}%` }}
+                  animate={{ width: `${adherenceRate}%` }}
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="h-full gradient-primary rounded-full"
                 />
@@ -145,116 +164,207 @@ const Schedule = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {sortedTimes.map((time, timeIndex) => {
-                  const entries = groupedSchedule[time];
-                  const allTaken = entries.every(e => e.status === 'taken');
-                  
-                  return (
-                    <motion.div
-                      key={time}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + timeIndex * 0.1 }}
-                      className="relative"
-                    >
-                      {/* Time Marker */}
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={`h-12 w-12 rounded-xl flex items-center justify-center font-semibold ${
-                            allTaken 
-                              ? 'bg-status-success text-primary-foreground' 
-                              : 'bg-primary/10 text-primary'
-                          }`}>
-                            {time}
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : entries.length === 0 ? (
+                <div className="text-center py-12">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">No doses scheduled</h3>
+                  <p className="text-muted-foreground mb-6">
+                    {isToday 
+                      ? "You don't have any medications scheduled for today"
+                      : `No medications scheduled for ${format(selectedDate, 'MMMM d')}`
+                    }
+                  </p>
+                  <Button asChild className="gradient-primary border-0">
+                    <Link to="/medications/add">Add Medication</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {sortedTimes.map((time, timeIndex) => {
+                    const timeEntries = groupedSchedule[time];
+                    const allTaken = timeEntries.every(e => e.status === 'taken');
+                    
+                    return (
+                      <motion.div
+                        key={time}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 + timeIndex * 0.1 }}
+                        className="relative"
+                      >
+                        {/* Time Marker */}
+                        <div className="flex items-start gap-4">
+                          <div className="flex flex-col items-center">
+                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center font-semibold ${
+                              allTaken 
+                                ? 'bg-status-success text-primary-foreground' 
+                                : 'bg-primary/10 text-primary'
+                            }`}>
+                              {time}
+                            </div>
+                            {timeIndex < sortedTimes.length - 1 && (
+                              <div className="w-0.5 h-16 bg-border mt-2" />
+                            )}
                           </div>
-                          {timeIndex < sortedTimes.length - 1 && (
-                            <div className="w-0.5 h-16 bg-border mt-2" />
-                          )}
-                        </div>
 
-                        {/* Medication Cards */}
-                        <div className="flex-1 space-y-3">
-                          {entries.map((entry) => (
-                            <div
-                              key={entry.id}
-                              onClick={() => toggleTaken(entry.id)}
-                              className={`p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
-                                entry.status === 'taken'
-                                  ? 'bg-emerald-light border-primary/20'
-                                  : 'bg-card border-border hover:border-primary/50'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                                    entry.status === 'taken'
-                                      ? 'bg-primary text-primary-foreground'
-                                      : 'bg-muted'
-                                  }`}>
-                                    {entry.status === 'taken' ? (
-                                      <Check className="h-5 w-5" />
-                                    ) : (
-                                      <Clock className="h-5 w-5 text-muted-foreground" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">{entry.medication?.name}</p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      <Badge 
-                                        variant="secondary" 
-                                        className={`text-xs ${MEDICATION_TYPE_COLORS[entry.medication?.type || 'prescription']}`}
-                                      >
-                                        {entry.medication?.type}
-                                      </Badge>
-                                      <span className="text-sm text-muted-foreground">
-                                        {entry.medication?.dosage}
-                                      </span>
+                          {/* Medication Cards */}
+                          <div className="flex-1 space-y-3">
+                            {timeEntries.map((entry) => (
+                              <div
+                                key={entry.id}
+                                className={`p-4 rounded-xl border transition-all ${
+                                  entry.status === 'taken'
+                                    ? 'bg-emerald-light border-primary/20'
+                                    : entry.status === 'skipped'
+                                    ? 'bg-muted/50 border-border opacity-60'
+                                    : 'bg-card border-border hover:border-primary/50'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                                      entry.status === 'taken'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : entry.status === 'skipped'
+                                        ? 'bg-muted text-muted-foreground'
+                                        : 'bg-muted'
+                                    }`}>
+                                      {entry.status === 'taken' ? (
+                                        <Check className="h-5 w-5" />
+                                      ) : entry.status === 'skipped' ? (
+                                        <X className="h-5 w-5" />
+                                      ) : (
+                                        <Clock className="h-5 w-5 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">{entry.medication?.name || 'Unknown Medication'}</p>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        {entry.medication && (
+                                          <>
+                                            <Badge 
+                                              variant="secondary" 
+                                              className={`text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as MedicationType] || ''}`}
+                                            >
+                                              {entry.medication.type}
+                                            </Badge>
+                                            <span className="text-sm text-muted-foreground">
+                                              {entry.medication.dosage}
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
+                                  <div className="flex items-center gap-2">
+                                    {entry.status === 'taken' ? (
+                                      <span className="text-sm text-primary font-medium">
+                                        ✓ Taken
+                                      </span>
+                                    ) : entry.status === 'skipped' ? (
+                                      <div className="text-right">
+                                        <span className="text-sm text-muted-foreground">Skipped</span>
+                                        {entry.skipped_reason && (
+                                          <p className="text-xs text-muted-foreground">{entry.skipped_reason}</p>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <Button 
+                                          size="sm" 
+                                          variant="ghost" 
+                                          className="text-muted-foreground"
+                                          onClick={() => handleOpenSkipDialog(entry.id)}
+                                          disabled={markAsSkipped.isPending}
+                                        >
+                                          Skip
+                                        </Button>
+                                        <Button 
+                                          size="sm" 
+                                          className="gradient-primary border-0"
+                                          onClick={() => handleMarkTaken(entry.id)}
+                                          disabled={markAsTaken.isPending}
+                                        >
+                                          {markAsTaken.isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                            'Mark Taken'
+                                          )}
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="text-right">
-                                  {entry.status === 'taken' ? (
-                                    <span className="text-sm text-primary font-medium">
-                                      ✓ Taken
-                                    </span>
-                                  ) : (
-                                    <Button size="sm" variant="ghost" className="text-primary">
-                                      Mark Taken
-                                    </Button>
-                                  )}
-                                </div>
+                                {entry.notes && (
+                                  <div className="mt-2 pl-13 flex items-center gap-2 text-sm text-muted-foreground">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {entry.notes}
+                                  </div>
+                                )}
                               </div>
-                              {entry.medication?.notes && (
-                                <p className="text-sm text-muted-foreground mt-2 pl-13">
-                                  💊 {entry.medication.notes}
-                                </p>
-                              )}
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Reminder CTA */}
-              <div className="mt-8 p-4 rounded-xl bg-muted/50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Bell className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    Get notified when it's time to take your medications
-                  </span>
+              {!isGranted && entries.length > 0 && (
+                <div className="mt-8 p-4 rounded-xl bg-muted/50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Bell className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Get notified when it's time to take your medications
+                    </span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleEnableReminders}>
+                    Enable Reminders
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm">
-                  Enable Reminders
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
       </main>
+
+      {/* Skip Dialog */}
+      <Dialog open={skipDialogOpen} onOpenChange={setSkipDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Skip Medication</DialogTitle>
+            <DialogDescription>
+              Optionally provide a reason for skipping this dose.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Reason for skipping (optional)..."
+            value={skipReason}
+            onChange={(e) => setSkipReason(e.target.value)}
+            className="min-h-[80px]"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSkipDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmSkip}
+              disabled={markAsSkipped.isPending}
+            >
+              {markAsSkipped.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Skip Dose
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

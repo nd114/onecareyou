@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,26 +9,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { toast } from 'sonner';
 
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
+  const { isClinician } = useClinicianProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   
   const isAuthenticated = !!user;
   const userName = profile?.name || user?.email?.split('@')[0] || 'User';
+  const subscriptionTier = (profile?.subscription_tier || 'free') as string;
+  const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
   
   const navLinks = isAuthenticated 
-    ? [
-        { href: '/dashboard', label: 'Dashboard' },
-        { href: '/medications', label: 'Medications' },
-        { href: '/schedule', label: 'Schedule' },
-        { href: '/vitals', label: 'Vitals' },
-      ]
+    ? isClinician
+      ? [
+          { href: '/clinician/dashboard', label: 'Patients' },
+          { href: '/dashboard', label: 'My Health' },
+        ]
+      : [
+          { href: '/dashboard', label: 'Dashboard' },
+          { href: '/medications', label: 'Medications' },
+          { href: '/schedule', label: 'Schedule' },
+          { href: '/vitals', label: 'Vitals' },
+        ]
     : [
         { href: '/features', label: 'Features' },
         { href: '/pricing', label: 'Pricing' },
@@ -82,9 +93,23 @@ export function Header() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
             <>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-              </Button>
+              <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80">
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm">Notifications</h4>
+                    <div className="text-center py-6 text-muted-foreground text-sm">
+                      <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No new notifications</p>
+                      <p className="text-xs mt-1">We'll notify you about medication reminders and updates</p>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2">
@@ -113,6 +138,22 @@ export function Header() {
                       Care Circle
                     </Link>
                   </DropdownMenuItem>
+                  {hasFamilyAccess && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/family" className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        Family Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isClinician && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/clinician/dashboard" className="flex items-center gap-2">
+                        <Stethoscope className="h-4 w-4" />
+                        Clinician Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to="/onboarding" className="flex items-center gap-2">
                       <Heart className="h-4 w-4" />
@@ -180,27 +221,36 @@ export function Header() {
             ))}
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/medications"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Medications
-                </Link>
-                <Link
-                  to="/vitals"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Vitals
-                </Link>
-                <Link
-                  to="/care-circle"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Care Circle
-                </Link>
+                {!isClinician && (
+                  <>
+                    <Link
+                      to="/care-circle"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Care Circle
+                    </Link>
+                    {hasFamilyAccess && (
+                      <Link
+                        to="/family"
+                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Family Dashboard
+                      </Link>
+                    )}
+                  </>
+                )}
+                {isClinician && (
+                  <Link
+                    to="/clinician/dashboard"
+                    className="px-4 py-2 text-sm font-medium text-primary hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Stethoscope className="h-4 w-4" />
+                    Clinician Dashboard
+                  </Link>
+                )}
                 <Link
                   to="/settings"
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
