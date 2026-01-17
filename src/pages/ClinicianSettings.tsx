@@ -9,6 +9,9 @@ import {
   User,
   Save,
   Loader2,
+  CheckCircle,
+  Eye,
+  Clock,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,9 +24,11 @@ import { Header } from '@/components/layout/Header';
 import { useClinicianProfile, MEDICAL_SPECIALTIES } from '@/hooks/useClinicianProfile';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
+import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
@@ -35,6 +40,8 @@ const ClinicianSettings = () => {
     updateEmailNotifications,
     isSaving: savingNotifications 
   } = useClinicianNotificationSettings();
+  
+  const { preferences: guidancePrefs, updatePreferences } = useClinicianNotifications();
   
   // Initialize service worker for push notifications
   useServiceWorker();
@@ -264,6 +271,84 @@ const ClinicianSettings = () => {
                   checked={notificationSettings.email_notifications_enabled}
                   disabled={savingNotifications}
                   onCheckedChange={updateEmailNotifications}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Guidance Notification Settings */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Guidance Notifications
+              </CardTitle>
+              <CardDescription>
+                Configure which patient guidance updates you want to be notified about
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Notify on Acknowledged */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Eye className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">Patient Acknowledged</p>
+                    <p className="text-sm text-muted-foreground">
+                      Notify when a patient acknowledges your guidance
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={guidancePrefs?.notify_on_guidance_acknowledged ?? true}
+                  onCheckedChange={(checked) => {
+                    updatePreferences.mutate({ notify_on_guidance_acknowledged: checked });
+                    toast.success(checked ? 'Will notify on acknowledgment' : 'Acknowledgment notifications disabled');
+                  }}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Notify on Completed */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="font-medium">Guidance Completed</p>
+                    <p className="text-sm text-muted-foreground">
+                      Notify when a patient marks your guidance as completed
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={guidancePrefs?.notify_on_guidance_completed ?? true}
+                  onCheckedChange={(checked) => {
+                    updatePreferences.mutate({ notify_on_guidance_completed: checked });
+                    toast.success(checked ? 'Will notify on completion' : 'Completion notifications disabled');
+                  }}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Notify on Expired */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-orange-500" />
+                  <div>
+                    <p className="font-medium">Guidance Expired</p>
+                    <p className="text-sm text-muted-foreground">
+                      Notify when guidance reaches its due date without completion
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={guidancePrefs?.notify_on_guidance_expired ?? true}
+                  onCheckedChange={(checked) => {
+                    updatePreferences.mutate({ notify_on_guidance_expired: checked });
+                    toast.success(checked ? 'Will notify on expiration' : 'Expiration notifications disabled');
+                  }}
                 />
               </div>
             </CardContent>

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus, Inbox, TrendingUp, BookOpen } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus, Inbox, TrendingUp, BookOpen, CheckCircle, Eye, Clock, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { usePatientGuidance } from '@/hooks/usePatientGuidance';
+import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -25,6 +26,7 @@ export function Header() {
   const { user, profile, signOut, loading } = useAuth();
   const { isClinician } = useClinicianProfile();
   const { guidance } = usePatientGuidance();
+  const { unreadNotifications: clinicianNotifications, unreadCount: clinicianUnreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   
@@ -34,9 +36,44 @@ export function Header() {
   const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
   const showAdherenceReport = profile?.weekly_adherence_report_enabled ?? true;
   
-  // Get unread notifications (guidance items that haven't been acknowledged)
+  // Get unread notifications for patients (guidance items that haven't been acknowledged)
   const unreadGuidance = !isClinician ? guidance.filter(g => g.status === 'pending' || g.status === 'sent') : [];
-  const hasUnreadNotifications = unreadGuidance.length > 0;
+  // For clinicians, use clinician notifications
+  const hasUnreadNotifications = isClinician ? clinicianUnreadCount > 0 : unreadGuidance.length > 0;
+  const notificationCount = isClinician ? clinicianUnreadCount : unreadGuidance.length;
+
+  // Helper to get icon for notification type
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />;
+      case 'acknowledged':
+        return <Eye className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />;
+      case 'expired':
+        return <Clock className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />;
+      case 'dismissed':
+        return <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />;
+      default:
+        return <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />;
+    }
+  };
+
+  // Helper to get notification message
+  const getNotificationMessage = (type: string, patientName: string | null | undefined) => {
+    const name = patientName || 'Patient';
+    switch (type) {
+      case 'completed':
+        return `${name} completed your guidance`;
+      case 'acknowledged':
+        return `${name} acknowledged your guidance`;
+      case 'expired':
+        return `Guidance for ${name} has expired`;
+      case 'dismissed':
+        return `${name} dismissed your guidance`;
+      default:
+        return `Update from ${name}`;
+    }
+  };
   
   // Clinicians get a simplified nav - they don't need patient features like medications/vitals in main nav
   const navLinks = isAuthenticated 
@@ -110,54 +147,112 @@ export function Header() {
                     <Bell className="h-5 w-5" />
                     {hasUnreadNotifications && (
                       <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-                        {unreadGuidance.length > 9 ? '9+' : unreadGuidance.length}
+                        {notificationCount > 9 ? '9+' : notificationCount}
                       </span>
                     )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80 p-0">
-                  <div className="p-3 border-b">
+                  <div className="p-3 border-b flex items-center justify-between">
                     <h4 className="font-medium text-sm">Notifications</h4>
+                    {isClinician && clinicianUnreadCount > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7 px-2"
+                        onClick={() => markAllAsRead.mutate()}
+                      >
+                        Mark all read
+                      </Button>
+                    )}
                   </div>
-                  {unreadGuidance.length > 0 ? (
-                    <ScrollArea className="max-h-80">
-                      <div className="divide-y">
-                        {unreadGuidance.slice(0, 10).map((item) => (
-                          <Link
-                            key={item.id}
-                            to="/guidance"
-                            onClick={() => setNotificationsOpen(false)}
-                            className="block p-3 hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex items-start gap-2">
-                              <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{item.title}</p>
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {item.instruction}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                    {item.category}
-                                  </Badge>
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {format(new Date(item.created_at), 'MMM d, h:mm a')}
-                                  </span>
+                  {isClinician ? (
+                    // Clinician notifications
+                    clinicianNotifications.length > 0 ? (
+                      <ScrollArea className="max-h-80">
+                        <div className="divide-y">
+                          {clinicianNotifications.slice(0, 10).map((notification) => (
+                            <div
+                              key={notification.id}
+                              onClick={() => {
+                                markAsRead.mutate(notification.id);
+                                setNotificationsOpen(false);
+                                navigate('/clinician/dashboard');
+                              }}
+                              className="block p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                            >
+                              <div className="flex items-start gap-2">
+                                {getNotificationIcon(notification.notification_type)}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {notification.guidance?.title || 'Guidance Update'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {getNotificationMessage(notification.notification_type, notification.patient_profile?.name)}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                      {notification.notification_type}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {format(new Date(notification.created_at), 'MMM d, h:mm a')}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </Link>
-                        ))}
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>No new notifications</p>
+                        <p className="text-xs mt-1">You'll be notified when patients respond to your guidance</p>
                       </div>
-                    </ScrollArea>
+                    )
                   ) : (
-                    <div className="text-center py-6 text-muted-foreground text-sm">
-                      <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No new notifications</p>
-                      <p className="text-xs mt-1">We'll notify you about medication reminders and updates</p>
-                    </div>
+                    // Patient notifications
+                    unreadGuidance.length > 0 ? (
+                      <ScrollArea className="max-h-80">
+                        <div className="divide-y">
+                          {unreadGuidance.slice(0, 10).map((item) => (
+                            <Link
+                              key={item.id}
+                              to="/guidance"
+                              onClick={() => setNotificationsOpen(false)}
+                              className="block p-3 hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex items-start gap-2">
+                                <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">{item.title}</p>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {item.instruction}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                      {item.category}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {format(new Date(item.created_at), 'MMM d, h:mm a')}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>No new notifications</p>
+                        <p className="text-xs mt-1">We'll notify you about medication reminders and updates</p>
+                      </div>
+                    )
                   )}
-                  {unreadGuidance.length > 0 && (
+                  {!isClinician && unreadGuidance.length > 0 && (
                     <div className="p-2 border-t">
                       <Button
                         variant="ghost"
