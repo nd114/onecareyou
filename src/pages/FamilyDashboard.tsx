@@ -29,9 +29,8 @@ const FamilyDashboard = () => {
   const { familyMembers, isLoading, canAddMore, maxMembers } = useFamilyMembers();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const subscriptionTier = profile?.subscription_tier || 'free';
-  const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium' || (subscriptionTier as string) === 'family';
-
+  const subscriptionTier = (profile?.subscription_tier || 'free') as string;
+  const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
   const calculateAge = (dob: string | null): string => {
     if (!dob) return 'Age not set';
     const age = differenceInYears(new Date(), new Date(dob));
