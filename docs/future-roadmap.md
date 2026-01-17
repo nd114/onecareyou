@@ -97,6 +97,13 @@ This document outlines planned features that are not yet implemented but are par
 - [ ] Grace period handling
 - [ ] Upgrade prompts in UI
 
+### Care Alerts Tier Limits
+- [ ] Add `max_care_contacts` column to profiles table (default: 1 for free, unlimited for premium)
+- [ ] Update CareAlertSettings component to check user's plan/max_care_contacts
+- [ ] Show upgrade prompt when limit reached
+- [ ] Free users: 1 care contact allowed
+- [ ] Premium users: Unlimited care contacts
+
 ---
 
 ## Technical Debt & Improvements
