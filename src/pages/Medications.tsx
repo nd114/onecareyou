@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Pill, Edit, Trash2, Search, Loader2, AlertTriangle, BookOpen, Ban, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pill, Edit, Trash2, Search, Loader2, AlertTriangle, BookOpen, Ban, Eye, EyeOff, Crown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Header } from '@/components/layout/Header';
 import { useMedications } from '@/hooks/useMedications';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -27,12 +27,21 @@ import { MedicationInteractionChecker } from '@/components/medications/Medicatio
 import { DrugInteractionChecker } from '@/components/medications/DrugInteractionChecker';
 import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSubscription } from '@/hooks/useSubscription';
+
+const FREE_MEDICATION_LIMIT = 3;
 
 const Medications = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'list' | 'interactions'>('list');
   const [showDiscontinued, setShowDiscontinued] = useState(false);
   const { medications, isLoading, deleteMedication } = useMedications();
+  const { isPremium, checkSubscription } = useSubscription();
+
+  // Check subscription on mount
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
 
   const activeMedications = medications.filter(med => med.is_active);
   const discontinuedMedications = medications.filter(med => !med.is_active);
@@ -41,9 +50,9 @@ const Medications = () => {
     med.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const medicationLimit = 3; // Free tier limit
-  const currentCount = medications.length;
-  const isAtLimit = currentCount >= medicationLimit;
+  const medicationLimit = isPremium ? Infinity : FREE_MEDICATION_LIMIT;
+  const currentCount = activeMedications.length;
+  const isAtLimit = !isPremium && currentCount >= FREE_MEDICATION_LIMIT;
 
   const handleDelete = async (id: string) => {
     await deleteMedication.mutateAsync(id);
@@ -82,9 +91,17 @@ const Medications = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <Badge variant="outline" className="py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
-                {currentCount}/{medicationLimit}
-              </Badge>
+              {!isPremium && (
+                <Badge variant="outline" className="py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
+                  {currentCount}/{medicationLimit} medications
+                </Badge>
+              )}
+              {isPremium && (
+                <Badge className="gradient-primary border-0 py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Premium
+                </Badge>
+              )}
               <Button asChild className="gradient-primary border-0 flex-1 sm:flex-none" size="sm">
                 <Link to="/medications/add">
                   <Plus className="h-4 w-4 mr-1 sm:mr-2" />
@@ -106,14 +123,17 @@ const Medications = () => {
           >
             <Card className="gradient-primary text-primary-foreground border-0">
               <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">You've reached your free limit</h3>
-                  <p className="opacity-90">
-                    Upgrade to Premium to add unlimited medications and unlock advanced features.
-                  </p>
+                <div className="flex items-center gap-3">
+                  <Crown className="h-8 w-8 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">You've reached your free limit</h3>
+                    <p className="opacity-90">
+                      Upgrade to Premium to add unlimited medications and unlock advanced features.
+                    </p>
+                  </div>
                 </div>
-                <Button variant="secondary" asChild>
-                  <Link to="/subscription">Upgrade Now</Link>
+                <Button variant="secondary" asChild className="flex-shrink-0">
+                  <Link to="/pricing">Upgrade Now</Link>
                 </Button>
               </CardContent>
             </Card>
