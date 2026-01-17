@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Pill, Edit, Trash2, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Pill, Edit, Trash2, Search, Loader2, AlertTriangle, BookOpen, Ban, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,8 @@ import { Header } from '@/components/layout/Header';
 import { useMedications } from '@/hooks/useMedications';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState } from 'react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +30,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const Medications = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'list' | 'interactions'>('list');
+  const [showDiscontinued, setShowDiscontinued] = useState(false);
   const { medications, isLoading, deleteMedication } = useMedications();
 
-  const filteredMedications = medications.filter(med => 
+  const activeMedications = medications.filter(med => med.is_active);
+  const discontinuedMedications = medications.filter(med => !med.is_active);
+
+  const filteredMedications = (showDiscontinued ? medications : activeMedications).filter(med => 
     med.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -134,15 +140,29 @@ const Medications = () => {
               </TabsList>
               
               {activeTab === 'list' && (
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search medications..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+                <>
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search medications..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  {discontinuedMedications.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="show-discontinued"
+                        checked={showDiscontinued}
+                        onCheckedChange={setShowDiscontinued}
+                      />
+                      <Label htmlFor="show-discontinued" className="text-sm text-muted-foreground cursor-pointer">
+                        Show discontinued ({discontinuedMedications.length})
+                      </Label>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -192,25 +212,36 @@ const Medications = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 + index * 0.05 }}
               >
-                <Card className={`h-full hover-lift ${!medication.is_active ? 'opacity-60' : ''}`}>
+                <Card className={`h-full hover-lift ${!medication.is_active ? 'opacity-60 bg-muted/50' : ''}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <Pill className="h-6 w-6 text-primary" />
+                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${!medication.is_active ? 'bg-muted' : 'bg-primary/10'}`}>
+                          {medication.is_active ? (
+                            <Pill className="h-6 w-6 text-primary" />
+                          ) : (
+                            <Ban className="h-6 w-6 text-muted-foreground" />
+                          )}
                         </div>
                         <div>
                           <CardTitle className="text-lg">{medication.name}</CardTitle>
                           {!medication.is_active && (
-                            <CardDescription className="text-xs">
-                              Inactive
+                            <CardDescription className="text-xs text-amber-600 dark:text-amber-400">
+                              Discontinued {medication.discontinued_at ? new Date(medication.discontinued_at).toLocaleDateString() : ''}
                             </CardDescription>
                           )}
                         </div>
                       </div>
-                      <Badge className={MEDICATION_TYPE_COLORS[medication.type as MedicationType] || 'bg-muted'}>
-                        {medication.type}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge className={MEDICATION_TYPE_COLORS[medication.type as MedicationType] || 'bg-muted'}>
+                          {medication.type}
+                        </Badge>
+                        {!medication.is_active && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-600/50 dark:text-amber-400 dark:border-amber-400/50">
+                            Discontinued
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -237,6 +268,11 @@ const Medications = () => {
                     </div>
 
                     <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <Button variant="ghost" size="sm" asChild title="Learn about this medication">
+                        <Link to={`/medication-info/${encodeURIComponent(medication.name)}`}>
+                          <BookOpen className="h-4 w-4" />
+                        </Link>
+                      </Button>
                       <Button variant="outline" size="sm" className="flex-1" asChild>
                         <Link to={`/medications/${medication.id}/edit`}>
                           <Edit className="h-4 w-4 mr-2" />

@@ -4,7 +4,7 @@ import {
   User, Shield, Bell, Moon, Sun, 
   Brain, History, ChevronRight, LogOut,
   Mail, Phone, Heart, AlertTriangle, Globe, Scale, Thermometer, Droplets,
-  BellRing
+  BellRing, TrendingUp
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -565,6 +565,40 @@ const Settings = () => {
                     checked={notificationSettings.email_notifications_enabled}
                     disabled={savingNotifications}
                     onCheckedChange={updateEmailNotifications}
+                />
+                </div>
+
+                <Separator />
+
+                {/* Weekly Adherence Report */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Weekly Adherence Report</p>
+                      <p className="text-sm text-muted-foreground">
+                        Show medication adherence tracking and reports
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={(profile as any)?.weekly_adherence_report_enabled ?? true}
+                    disabled={savingNotifications}
+                    onCheckedChange={async (checked) => {
+                      if (!user) return;
+                      try {
+                        const { error } = await supabase
+                          .from('profiles')
+                          .update({ weekly_adherence_report_enabled: checked })
+                          .eq('user_id', user.id);
+                        if (error) throw error;
+                        toast.success(checked ? 'Adherence report enabled' : 'Adherence report disabled');
+                        refreshProfile?.();
+                      } catch (error) {
+                        console.error('Failed to update setting:', error);
+                        toast.error('Failed to update setting');
+                      }
+                    }}
                   />
                 </div>
 

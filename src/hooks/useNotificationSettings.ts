@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 interface NotificationSettings {
   push_notifications_enabled: boolean;
   email_notifications_enabled: boolean;
+  weekly_adherence_report_enabled: boolean;
 }
 
 export function useNotificationSettings() {
@@ -13,6 +14,7 @@ export function useNotificationSettings() {
   const [settings, setSettings] = useState<NotificationSettings>({
     push_notifications_enabled: false,
     email_notifications_enabled: true,
+    weekly_adherence_report_enabled: true,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,6 +25,7 @@ export function useNotificationSettings() {
       setSettings({
         push_notifications_enabled: (profile as any).push_notifications_enabled ?? false,
         email_notifications_enabled: (profile as any).email_notifications_enabled ?? true,
+        weekly_adherence_report_enabled: (profile as any).weekly_adherence_report_enabled ?? true,
       });
       setIsLoading(false);
     }
@@ -90,6 +93,7 @@ export function useClinicianNotificationSettings() {
   const [settings, setSettings] = useState<NotificationSettings>({
     push_notifications_enabled: false,
     email_notifications_enabled: true,
+    weekly_adherence_report_enabled: true,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -109,6 +113,7 @@ export function useClinicianNotificationSettings() {
         setSettings({
           push_notifications_enabled: data.push_notifications_enabled ?? false,
           email_notifications_enabled: data.email_notifications_enabled ?? true,
+          weekly_adherence_report_enabled: true, // Clinicians don't have this setting
         });
       }
       setIsLoading(false);
