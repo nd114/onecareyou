@@ -42,7 +42,8 @@ export function useClinicianPatients() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['clinician-patients', user?.id],
+    // v2 key to force a refetch after adding patient_name/patient_email fields
+    queryKey: ['clinician-patients-v2', user?.id],
     queryFn: async () => {
       if (!user?.email) return [];
 
@@ -59,7 +60,16 @@ export function useClinicianPatients() {
       if (error) throw error;
       
       // Fetch patient profiles for each share
-      const patientUserIds = (data || []).map(share => share.user_id);
+      const patientUserIds = (data || []).map(share => share.user_id).filter(Boolean);
+      if (patientUserIds.length === 0) {
+        return (data || []).map(share => ({
+          ...share,
+          permissions: share.permissions as unknown as SharePermissions,
+          patient_name: 'Unknown Patient',
+          patient_email: null,
+        })) as PatientShare[];
+      }
+
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, name, email')
