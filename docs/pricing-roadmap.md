@@ -82,28 +82,91 @@ The existing pricing structure has several issues:
 
 ---
 
-## Revenue Projections (Conservative 6-Month Forecast)
+## Revenue Projections
 
-### Assumptions:
+### Patient/Consumer Tiers (6-Month Forecast)
+
+**Assumptions:**
 - Starting users: 100
 - Monthly growth: 15%
 - Free to Essential conversion: 8%
 - Essential to Premium upgrade: 25%
+- Premium to Family upgrade: 15%
 - Churn rate: 5%/month
 
-### Month-by-Month:
+| Month | Users | Free | Essential | Premium | Family | MRR |
+|-------|-------|------|-----------|---------|--------|-----|
+| 1 | 100 | 89 | 6 | 3 | 2 | $93 |
+| 2 | 115 | 100 | 8 | 4 | 3 | $131 |
+| 3 | 132 | 112 | 11 | 5 | 4 | $178 |
+| 4 | 152 | 126 | 14 | 7 | 5 | $241 |
+| 5 | 175 | 142 | 18 | 9 | 6 | $319 |
+| 6 | 201 | 159 | 23 | 12 | 7 | $416 |
 
-| Month | Users | Free | Essential | Premium | MRR |
-|-------|-------|------|-----------|---------|-----|
-| 1 | 100 | 92 | 6 | 2 | $68 |
-| 2 | 115 | 104 | 8 | 3 | $95 |
-| 3 | 132 | 117 | 11 | 4 | $129 |
-| 4 | 152 | 132 | 14 | 6 | $176 |
-| 5 | 175 | 149 | 18 | 8 | $230 |
-| 6 | 201 | 167 | 23 | 11 | $304 |
+**Consumer 6-Month Total:** ~$1,378
+**Consumer Year 1 Projected:** ~$7,200
 
-**6-Month Total Revenue:** ~$1,002
-**Projected Year 1 Revenue (with growth):** ~$5,280
+---
+
+### Clinician Tiers (12-Month Forecast)
+
+**Assumptions:**
+- Starting clinicians: 5 (beta users from existing relationships)
+- Monthly clinician acquisition: 3-5 new signups
+- Solo to Pro upgrade rate: 20% after 3 months
+- Pro to Enterprise: Direct sales, 1-2 per quarter
+- Clinician churn: 3%/month (lower due to B2B stickiness)
+
+| Month | Total Clinicians | Solo ($49) | Pro ($99) | Enterprise ($249) | MRR |
+|-------|------------------|------------|-----------|-------------------|-----|
+| 1 | 5 | 5 | 0 | 0 | $245 |
+| 2 | 8 | 8 | 0 | 0 | $392 |
+| 3 | 12 | 11 | 1 | 0 | $638 |
+| 4 | 16 | 13 | 3 | 0 | $934 |
+| 5 | 20 | 15 | 4 | 1 | $1,330 |
+| 6 | 25 | 18 | 6 | 1 | $1,725 |
+| 7 | 30 | 20 | 8 | 2 | $2,270 |
+| 8 | 36 | 23 | 10 | 3 | $2,864 |
+| 9 | 42 | 26 | 12 | 4 | $3,510 |
+| 10 | 49 | 29 | 15 | 5 | $4,211 |
+| 11 | 56 | 32 | 18 | 6 | $4,962 |
+| 12 | 64 | 35 | 21 | 8 | $5,866 |
+
+**Clinician Year 1 Total:** ~$31,000
+**Clinician Year 1 ARR (Month 12 × 12):** ~$70,000
+
+---
+
+### Combined Revenue Summary
+
+| Revenue Stream | 6-Month | Year 1 | Year 1 ARR |
+|----------------|---------|--------|------------|
+| Consumer Tiers | $1,378 | $7,200 | $5,000 |
+| Clinician Tiers | $7,534 | $31,000 | $70,000 |
+| **Total** | **$8,912** | **$38,200** | **$75,000** |
+
+**Key Insight:** Clinician tiers represent **81% of projected revenue** despite being a smaller user base. B2B is the primary revenue driver.
+
+---
+
+### Growth Scenarios
+
+**Conservative (above):** 3-5 clinicians/month acquisition
+**Moderate:** 8-10 clinicians/month with marketing → Year 1 ARR: ~$150,000
+**Aggressive:** 15+ clinicians/month with sales team → Year 1 ARR: ~$300,000
+
+### Revenue per Segment at Scale (Year 3 Target)
+
+| Segment | Users | ARPU | MRR | ARR |
+|---------|-------|------|-----|-----|
+| Free | 10,000 | $0 | $0 | $0 |
+| Essential | 800 | $7 | $5,600 | $67,200 |
+| Premium | 400 | $13 | $5,200 | $62,400 |
+| Family | 200 | $25 | $5,000 | $60,000 |
+| Clinician Solo | 150 | $49 | $7,350 | $88,200 |
+| Clinician Pro | 80 | $99 | $7,920 | $95,040 |
+| Enterprise | 20 | $249 | $4,980 | $59,760 |
+| **Total** | **11,650** | - | **$36,050** | **$432,600** |
 
 ---
 
