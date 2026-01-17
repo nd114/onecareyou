@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface DrugLabel {
   setId: string;
@@ -27,16 +28,6 @@ export interface DrugSearchResult {
   productType: string;
 }
 
-// Helper to clean HTML from label text
-const cleanLabelText = (text: string | undefined): string => {
-  if (!text) return '';
-  return text
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/\s+/g, ' ')     // Normalize whitespace
-    .trim()
-    .substring(0, 2000);      // Limit length
-};
-
 export const useMedicationSearch = (query: string) => {
   return useQuery({
     queryKey: ['medication_search', query],
@@ -44,23 +35,18 @@ export const useMedicationSearch = (query: string) => {
       if (!query || query.length < 2) return [];
 
       try {
-        // Search DailyMed SPL database
-        const response = await fetch(
-          `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?drug_name=${encodeURIComponent(query)}&pagesize=10`
-        );
+        const { data, error } = await supabase.functions.invoke('drug-lookup', {
+          body: { action: 'search', query }
+        });
         
-        if (!response.ok) return [];
+        if (error) {
+          console.error('Drug search error:', error);
+          return [];
+        }
         
-        const data = await response.json();
-        
-        return (data.data || []).map((item: any) => ({
-          setId: item.setid,
-          name: item.title,
-          labeler: item.labeler,
-          productType: item.product_type,
-        }));
+        return data || [];
       } catch (error) {
-        console.error('DailyMed search error:', error);
+        console.error('Drug search error:', error);
         return [];
       }
     },
@@ -76,61 +62,20 @@ export const useMedicationInfo = (drugName: string | null) => {
       if (!drugName) return null;
 
       try {
-        // First, search for the drug to get its setId
-        const searchResponse = await fetch(
-          `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?drug_name=${encodeURIComponent(drugName)}&pagesize=1`
-        );
+        const { data, error } = await supabase.functions.invoke('drug-lookup', {
+          body: { action: 'get-info', drugName }
+        });
         
-        if (!searchResponse.ok) {
-          throw new Error('Failed to search medication');
+        if (error) {
+          console.error('Medication info error:', error);
+          throw new Error('Failed to fetch medication info');
         }
         
-        const searchData = await searchResponse.json();
-        
-        if (!searchData.data || searchData.data.length === 0) {
-          return null;
+        if (data?.error) {
+          throw new Error(data.error);
         }
-
-        const setId = searchData.data[0].setid;
         
-        // Get detailed label information using OpenFDA
-        const fdaResponse = await fetch(
-          `https://api.fda.gov/drug/label.json?search=set_id:"${setId}"&limit=1`
-        );
-        
-        let labelData: DrugLabel = {
-          setId,
-          name: searchData.data[0].title,
-        };
-
-        if (fdaResponse.ok) {
-          const fdaData = await fdaResponse.json();
-          const result = fdaData.results?.[0];
-          
-          if (result) {
-            labelData = {
-              setId,
-              name: result.openfda?.brand_name?.[0] || searchData.data[0].title,
-              genericName: result.openfda?.generic_name?.[0],
-              manufacturerName: result.openfda?.manufacturer_name?.[0],
-              dosageForm: result.dosage_form?.[0],
-              route: result.openfda?.route,
-              activeIngredients: result.openfda?.substance_name,
-              indications: cleanLabelText(result.indications_and_usage?.[0]),
-              warnings: cleanLabelText(result.warnings?.[0] || result.boxed_warning?.[0]),
-              adverseReactions: cleanLabelText(result.adverse_reactions?.[0]),
-              dosageAndAdministration: cleanLabelText(result.dosage_and_administration?.[0]),
-              howSupplied: cleanLabelText(result.how_supplied?.[0]),
-              drugInteractions: cleanLabelText(result.drug_interactions?.[0]),
-              contraindications: cleanLabelText(result.contraindications?.[0]),
-              pregnancyInfo: cleanLabelText(result.pregnancy?.[0]),
-              pediatricUse: cleanLabelText(result.pediatric_use?.[0]),
-              geriatricUse: cleanLabelText(result.geriatric_use?.[0]),
-            };
-          }
-        }
-
-        return labelData;
+        return data;
       } catch (error) {
         console.error('Medication info error:', error);
         throw error;
@@ -150,14 +95,13 @@ export const useRxCui = (drugName: string | null) => {
       if (!drugName) return null;
 
       try {
-        const response = await fetch(
-          `https://rxnav.nlm.nih.gov/REST/rxcui.json?name=${encodeURIComponent(drugName)}`
-        );
+        const { data, error } = await supabase.functions.invoke('drug-lookup', {
+          body: { action: 'get-rxcui', drugName }
+        });
         
-        if (!response.ok) return null;
+        if (error) return null;
         
-        const data = await response.json();
-        return data.idGroup?.rxnormId?.[0] || null;
+        return data || null;
       } catch {
         return null;
       }

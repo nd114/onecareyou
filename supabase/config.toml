@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.check-care-alerts]
 verify_jwt = false
+
+[functions.drug-lookup]
+verify_jwt = false

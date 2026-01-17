@@ -28,36 +28,42 @@ const healthTopics = [
     title: 'Heart Health',
     description: 'Blood pressure, cholesterol, and cardiovascular care',
     color: 'text-red-500 bg-red-500/10',
+    searchTerms: ['Lisinopril', 'Metoprolol', 'Amlodipine', 'Atorvastatin'],
   },
   {
     icon: Brain,
     title: 'Mental Health',
     description: 'Anxiety, depression, and mental wellness',
     color: 'text-purple-500 bg-purple-500/10',
+    searchTerms: ['Sertraline', 'Escitalopram', 'Fluoxetine', 'Alprazolam'],
   },
   {
     icon: Activity,
     title: 'Diabetes Management',
     description: 'Blood sugar control and diabetes care',
     color: 'text-blue-500 bg-blue-500/10',
+    searchTerms: ['Metformin', 'Glipizide', 'Insulin', 'Januvia'],
   },
   {
     icon: Stethoscope,
     title: 'Pain Management',
     description: 'Understanding pain medications and alternatives',
     color: 'text-orange-500 bg-orange-500/10',
+    searchTerms: ['Ibuprofen', 'Acetaminophen', 'Gabapentin', 'Tramadol'],
   },
   {
     icon: Baby,
     title: 'Pediatric Care',
     description: 'Children\'s health and medication safety',
     color: 'text-pink-500 bg-pink-500/10',
+    searchTerms: ['Amoxicillin', 'Tylenol', 'Benadryl', 'Zyrtec'],
   },
   {
     icon: Users,
     title: 'Senior Health',
     description: 'Medication management for older adults',
     color: 'text-teal-500 bg-teal-500/10',
+    searchTerms: ['Warfarin', 'Aricept', 'Furosemide', 'Omeprazole'],
   },
 ];
 
@@ -179,7 +185,10 @@ const KnowledgeBase = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
                 >
-                  <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
+                  <Card 
+                    className="h-full hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => navigate(`/medication-info/${encodeURIComponent(topic.searchTerms[0])}`)}
+                  >
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4">
                         <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${topic.color}`}>
@@ -192,6 +201,21 @@ const KnowledgeBase = () => {
                           <p className="text-sm text-muted-foreground">
                             {topic.description}
                           </p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {topic.searchTerms.slice(0, 3).map((term) => (
+                              <Badge 
+                                key={term} 
+                                variant="secondary" 
+                                className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/medication-info/${encodeURIComponent(term)}`);
+                                }}
+                              >
+                                {term}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                         <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                       </div>
