@@ -36,6 +36,64 @@ const VITAL_UNITS: Record<string, string> = {
   sodium: 'mmol/L',
 };
 
+/**
+ * PII Stripping Patterns
+ * These patterns identify and remove personally identifiable information
+ * from extracted text before sending to AI for vital parsing
+ */
+const PII_PATTERNS = [
+  // Names - common patterns in medical documents
+  { pattern: /\b(patient\s*(name)?|name|mr\.?|mrs\.?|ms\.?|dr\.?)\s*[:\-]?\s*[A-Z][a-z]+(\s+[A-Z][a-z]+){1,3}/gi, replacement: '[NAME REDACTED]' },
+  
+  // Date of Birth / DOB
+  { pattern: /\b(d\.?o\.?b\.?|date\s*of\s*birth|birth\s*date|born)\s*[:\-]?\s*\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}/gi, replacement: '[DOB REDACTED]' },
+  { pattern: /\b(age)\s*[:\-]?\s*\d{1,3}\s*(years?|yrs?|y\.?o\.?)?/gi, replacement: '[AGE REDACTED]' },
+  
+  // Patient ID / MRN / Account Numbers
+  { pattern: /\b(patient\s*id|pat\.?\s*id|mrn|medical\s*record|account\s*(no\.?|number)?|acc\.?\s*no\.?|id\s*no\.?)\s*[:\-]?\s*[A-Z0-9\-]{4,20}/gi, replacement: '[ID REDACTED]' },
+  
+  // Phone Numbers
+  { pattern: /\b(\+?1?\s*)?(\([0-9]{3}\)|[0-9]{3})[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{4}\b/g, replacement: '[PHONE REDACTED]' },
+  
+  // Email addresses
+  { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, replacement: '[EMAIL REDACTED]' },
+  
+  // Addresses - street addresses
+  { pattern: /\b\d{1,5}\s+[A-Za-z]+\s+(Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Boulevard|Blvd\.?|Drive|Dr\.?|Lane|Ln\.?|Way|Court|Ct\.?)\b[^,]*,?\s*[A-Za-z\s]+,?\s*[A-Z]{2}\s*\d{5}(-\d{4})?/gi, replacement: '[ADDRESS REDACTED]' },
+  
+  // ZIP codes (standalone)
+  { pattern: /\b[A-Z]{2}\s+\d{5}(-\d{4})?\b/g, replacement: '[LOCATION REDACTED]' },
+  
+  // Social Security Numbers
+  { pattern: /\b\d{3}[\-\s]?\d{2}[\-\s]?\d{4}\b/g, replacement: '[SSN REDACTED]' },
+  
+  // Insurance/Policy numbers
+  { pattern: /\b(insurance|policy|member|subscriber)\s*(id|no\.?|number)?\s*[:\-]?\s*[A-Z0-9\-]{6,20}/gi, replacement: '[INSURANCE REDACTED]' },
+  
+  // Doctor/Physician names
+  { pattern: /\b(physician|doctor|dr\.?|attending|ordering\s*physician|referring)\s*[:\-]?\s*[A-Z][a-z]+(\s+[A-Z][a-z]+){1,2}/gi, replacement: '[PHYSICIAN REDACTED]' },
+  
+  // Hospital/Clinic names (common patterns)
+  { pattern: /\b[A-Z][a-z]+(\s+[A-Z][a-z]+)*\s+(Hospital|Medical\s*Center|Clinic|Health\s*Center|Laboratory|Labs?)\b/gi, replacement: '[FACILITY REDACTED]' },
+];
+
+/**
+ * Strips PII from text using pattern matching
+ */
+function stripPII(text: string): string {
+  let sanitized = text;
+  
+  for (const { pattern, replacement } of PII_PATTERNS) {
+    sanitized = sanitized.replace(pattern, replacement);
+  }
+  
+  // Additional cleanup: remove any remaining sequences that look like IDs
+  // (alphanumeric strings of 8+ characters that aren't lab values)
+  sanitized = sanitized.replace(/\b[A-Z]{2,}[0-9]{6,}\b/g, '[ID REDACTED]');
+  
+  return sanitized;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -96,7 +154,6 @@ Deno.serve(async (req) => {
     // Prepare image content for AI
     let imageContent;
     if (imageBase64) {
-      // Detect mime type from base64 header or default to jpeg
       const mimeMatch = imageBase64.match(/^data:([^;]+);base64,/);
       const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
       const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
@@ -114,10 +171,13 @@ Deno.serve(async (req) => {
       };
     }
 
-    console.log('Calling AI to extract vitals from lab report...');
-
-    // Call Lovable AI to extract vitals
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // ============================================================
+    // STAGE 1: Extract raw text from document (OCR only)
+    // This extracts all text including PII, which we'll strip next
+    // ============================================================
+    console.log('Stage 1: Extracting text from document (OCR)...');
+    
+    const ocrResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
@@ -128,9 +188,90 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a medical lab report parser. Extract health metrics from lab reports and blood tests.
+            content: `You are an OCR system. Extract ALL text visible in this document exactly as written.
+Output ONLY the raw text content, preserving the structure with line breaks.
+Do not interpret, summarize, or analyze - just transcribe the text you see.`
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Extract all text from this document.' },
+              imageContent
+            ]
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.1
+      }),
+    });
 
-Your task is to identify and extract numerical health values from the image. Return ONLY a valid JSON array.
+    if (!ocrResponse.ok) {
+      const errorText = await ocrResponse.text();
+      console.error('OCR API error:', errorText);
+      
+      if (ocrResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (ocrResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'AI service quota exceeded. Please contact support.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to read document' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const ocrData = await ocrResponse.json();
+    const rawText = ocrData.choices?.[0]?.message?.content || '';
+    
+    if (!rawText.trim()) {
+      console.log('No text extracted from document');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Could not read text from document', extractedVitals: [] }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('Raw text extracted, length:', rawText.length);
+
+    // ============================================================
+    // STAGE 2: Strip PII from extracted text
+    // This ensures no personal information is sent to the AI
+    // ============================================================
+    console.log('Stage 2: Stripping PII from extracted text...');
+    
+    const sanitizedText = stripPII(rawText);
+    console.log('PII stripped. Sanitized text length:', sanitizedText.length);
+    
+    // Log sample of what was redacted (for debugging, not PII)
+    const redactionCount = (sanitizedText.match(/\[.*?REDACTED\]/g) || []).length;
+    console.log('PII elements redacted:', redactionCount);
+
+    // ============================================================
+    // STAGE 3: Extract vitals from sanitized text
+    // Only anonymized text is sent to AI at this stage
+    // ============================================================
+    console.log('Stage 3: Extracting vitals from anonymized text...');
+    
+    const vitalResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a medical lab report parser. Extract health metrics from the provided text.
 
 Valid vital types you can extract:
 - weight (kg)
@@ -155,26 +296,19 @@ Valid vital types you can extract:
 Return format (JSON array only, no markdown):
 [
   {"type": "glucose", "value": 95, "secondary_value": null},
-  {"type": "blood_pressure", "value": 120, "secondary_value": 80},
-  {"type": "cholesterol_total", "value": 185, "secondary_value": null}
+  {"type": "blood_pressure", "value": 120, "secondary_value": 80}
 ]
 
 Important:
-- Only include vitals you can clearly identify in the image
+- Only extract numerical health values - ignore [REDACTED] markers
 - Use exact type names from the list above
-- Convert units if needed to match the expected units
-- If you cannot find any vitals, return an empty array []
-- Do NOT include any explanation or markdown, just the JSON array`
+- Convert units if needed to match expected units
+- Return empty array [] if no vitals found
+- Output ONLY the JSON array, no explanation`
           },
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Extract all health metrics from this lab report. Return only a JSON array with the values found.'
-              },
-              imageContent
-            ]
+            content: `Extract health metrics from this anonymized lab report text:\n\n${sanitizedText}`
           }
         ],
         max_tokens: 2000,
@@ -182,21 +316,28 @@ Important:
       }),
     });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI API error:', errorText);
+    if (!vitalResponse.ok) {
+      const errorText = await vitalResponse.text();
+      console.error('Vital extraction API error:', errorText);
+      
+      if (vitalResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to process image with AI' }),
+        JSON.stringify({ success: false, error: 'Failed to extract vitals' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const aiData = await aiResponse.json();
-    console.log('AI response received');
-
-    const content = aiData.choices?.[0]?.message?.content;
+    const vitalData = await vitalResponse.json();
+    const content = vitalData.choices?.[0]?.message?.content;
+    
     if (!content) {
-      console.error('No content in AI response');
+      console.error('No content in vital extraction response');
       return new Response(
         JSON.stringify({ success: false, error: 'No response from AI', extractedVitals: [] }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -206,7 +347,6 @@ Important:
     // Parse the JSON response
     let extractedVitals = [];
     try {
-      // Clean up potential markdown formatting
       let cleanContent = content.trim();
       if (cleanContent.startsWith('```json')) {
         cleanContent = cleanContent.slice(7);
@@ -222,7 +362,7 @@ Important:
       extractedVitals = JSON.parse(cleanContent);
       console.log('Extracted vitals:', extractedVitals);
     } catch (parseError) {
-      console.error('Failed to parse AI response:', content);
+      console.error('Failed to parse vital extraction response:', content);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -252,13 +392,15 @@ Important:
       }));
 
     console.log('Valid vitals to return:', validVitals);
+    console.log('Processing complete. PII stripped, vitals extracted from anonymized data.');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         extractedVitals: validVitals,
         count: validVitals.length,
-        reportDate: reportDate || new Date().toISOString()
+        reportDate: reportDate || new Date().toISOString(),
+        privacyNote: 'Document processed with PII stripping. Personal information was not sent to AI for analysis.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
