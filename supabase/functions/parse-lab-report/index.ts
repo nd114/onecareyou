@@ -1,9 +1,21 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const LabReportInputSchema = z.object({
+  imageBase64: z.string().max(10_000_000).optional(), // Max ~7.5MB base64
+  imageUrl: z.string().url().max(2000).optional(),
+  preExtractedText: z.string().max(100_000).optional(), // Max 100KB of text
+  reportDate: z.string().datetime().optional(),
+}).refine(
+  (data) => data.imageBase64 || data.imageUrl || data.preExtractedText,
+  { message: 'At least one of imageBase64, imageUrl, or preExtractedText is required' }
+);
 
 // Vital types that can be extracted
 const VALID_VITAL_TYPES = [
@@ -142,17 +154,22 @@ Deno.serve(async (req) => {
 
     console.log('Processing lab report for user:', user.id);
 
-const { imageBase64, imageUrl, reportDate, preExtractedText } = await req.json();
-
-    // Check if we received pre-extracted text from client-side OCR
-    const hasPreExtractedText = preExtractedText && typeof preExtractedText === 'string' && preExtractedText.trim().length > 0;
-
-    if (!imageBase64 && !imageUrl && !hasPreExtractedText) {
+    // Parse and validate input
+    const rawBody = await req.json();
+    const parseResult = LabReportInputSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.flatten());
       return new Response(
-        JSON.stringify({ success: false, error: 'Image data or extracted text is required' }),
+        JSON.stringify({ success: false, error: 'Invalid request', details: parseResult.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    const { imageBase64, imageUrl, reportDate, preExtractedText } = parseResult.data;
+
+    // Check if we received pre-extracted text from client-side OCR
+    const hasPreExtractedText = preExtractedText && preExtractedText.trim().length > 0;
 
     let rawText: string;
     let usedLocalOCR = false;
@@ -378,7 +395,6 @@ Important:
         JSON.stringify({ 
           success: false, 
           error: 'Could not parse lab report values. Please try a clearer image.',
-          rawResponse: content 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -426,7 +442,7 @@ Important:
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to process lab report' 
+        error: 'Failed to process lab report' 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

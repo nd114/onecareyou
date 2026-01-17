@@ -1,9 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schemas
+const ManualSearchSchema = z.object({
+  imprint: z.string().max(50).optional(),
+  shape: z.string().max(30).optional(),
+  color: z.string().max(30).optional(),
+});
+
+const IdentifyPillSchema = z.object({
+  image: z.string().max(10_000_000).optional(), // Max ~7.5MB base64
+  manualSearch: ManualSearchSchema.optional(),
+}).refine(
+  (data) => data.image || data.manualSearch,
+  { message: 'Either image or manualSearch is required' }
+);
 
 interface NIHPillResult {
   rxcui?: string;
@@ -87,7 +103,19 @@ serve(async (req) => {
   }
 
   try {
-    const { image, manualSearch } = await req.json();
+    // Parse and validate input
+    const rawBody = await req.json();
+    const parseResult = IdentifyPillSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: 'Invalid request', details: parseResult.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { image, manualSearch } = parseResult.data;
     
     // Handle manual search without image
     if (manualSearch && !image) {
@@ -243,8 +271,7 @@ NEVER provide medical advice. Always recommend consulting a pharmacist or doctor
       result = {
         identified: false,
         confidence: "low",
-        notes: content,
-        error: "Could not parse structured response"
+        notes: "Could not parse AI response",
       };
     }
 
@@ -283,7 +310,7 @@ NEVER provide medical advice. Always recommend consulting a pharmacist or doctor
   } catch (error) {
     console.error("Error in identify-pill:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Failed to process request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

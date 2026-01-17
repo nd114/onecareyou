@@ -1,9 +1,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const GetSharedPatientDataSchema = z.object({
+  inviteCode: z.string()
+    .min(1, 'Invite code is required')
+    .max(100, 'Invite code too long')
+    .regex(/^[a-zA-Z0-9\-_]+$/, 'Invalid invite code format'),
+});
 
 interface SharePermissions {
   vitals: boolean;
@@ -19,16 +28,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { inviteCode } = await req.json();
-
-    if (!inviteCode) {
+    // Parse and validate input
+    const rawBody = await req.json();
+    const parseResult = GetSharedPatientDataSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.flatten());
       return new Response(
-        JSON.stringify({ error: 'Invite code is required' }),
+        JSON.stringify({ error: 'Invalid request', details: parseResult.error.flatten().fieldErrors }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    const { inviteCode } = parseResult.data;
 
-    console.log('Looking up share with invite code:', inviteCode);
+    console.log('Looking up share with invite code');
 
     // Create Supabase client with service role for bypassing RLS
     const supabaseAdmin = createClient(
