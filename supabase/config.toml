@@ -1,1 +1,4 @@
 project_id = "cwngpcxxwvspcpkbxeax"
+
+[functions.parse-lab-report]
+verify_jwt = false
