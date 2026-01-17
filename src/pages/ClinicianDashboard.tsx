@@ -5,6 +5,7 @@ import {
   Users, 
   Send,
   Bell,
+  BellRing,
   Clock,
   CheckCircle,
   AlertTriangle,
@@ -23,11 +24,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { Header } from '@/components/layout/Header';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 
 const ClinicianDashboard = () => {
@@ -36,6 +41,13 @@ const ClinicianDashboard = () => {
   const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
   const { clinicianGuidance, isLoading: isLoadingGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts } = useAlertRules();
+  const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
+  const { 
+    settings: notificationSettings, 
+    updatePushNotifications, 
+    updateEmailNotifications,
+    isSaving: savingNotifications 
+  } = useClinicianNotificationSettings();
   
   const [notesDialog, setNotesDialog] = useState<{
     open: boolean;
@@ -512,6 +524,71 @@ const ClinicianDashboard = () => {
                         {clinicianProfile?.is_verified ? 'Verified' : 'Trust-based'}
                       </Badge>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notification Settings */}
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Notification Settings
+                  </CardTitle>
+                  <CardDescription>
+                    Configure how you receive alerts about your patients
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Push Notifications */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <BellRing className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Push Notifications</p>
+                        <p className="text-sm text-muted-foreground">
+                          {notificationsSupported 
+                            ? 'Get browser notifications for patient alerts' 
+                            : 'Not supported in this browser'}
+                        </p>
+                      </div>
+                    </div>
+                    {notificationsSupported && (
+                      <Switch
+                        checked={notificationSettings.push_notifications_enabled && notificationsEnabled}
+                        disabled={savingNotifications}
+                        onCheckedChange={async (checked) => {
+                          if (checked) {
+                            const granted = await requestPermission();
+                            if (granted) {
+                              await updatePushNotifications(true);
+                            }
+                          } else {
+                            await updatePushNotifications(false);
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Email Notifications */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Email Notifications</p>
+                        <p className="text-sm text-muted-foreground">
+                          Receive email alerts when patient vitals exceed thresholds
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.email_notifications_enabled}
+                      disabled={savingNotifications}
+                      onCheckedChange={updateEmailNotifications}
+                    />
                   </div>
                 </CardContent>
               </Card>

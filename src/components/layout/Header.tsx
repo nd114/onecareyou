@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -141,6 +141,12 @@ export function Header() {
                           Care Circle
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/guidance" className="flex items-center gap-2">
+                          <Inbox className="h-4 w-4" />
+                          Healthcare Instructions
+                        </Link>
+                      </DropdownMenuItem>
                       {hasFamilyAccess && (
                         <DropdownMenuItem asChild>
                           <Link to="/family" className="flex items-center gap-2">
@@ -248,6 +254,13 @@ export function Header() {
                         Family Dashboard
                       </Link>
                     )}
+                    <Link
+                      to="/guidance"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Healthcare Instructions
+                    </Link>
                     <Link
                       to="/onboarding"
                       className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
