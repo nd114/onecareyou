@@ -61,7 +61,77 @@ This document outlines planned features that are not yet implemented but are par
 
 ---
 
-## Phase 6: Advanced Features (FUTURE)
+## Phase 6: Clinician-to-Patient Document Sharing (PLANNED)
+
+### Overview
+Allow clinicians to email documents to a patient-specific address, and have those documents automatically appear on the patient's OneCare platform.
+
+### How It Works
+1. Each patient gets a unique inbound email address (e.g., `patient-abc123@docs.onecare.app`)
+2. Clinicians send documents (PDFs, lab results, care instructions) to that address
+3. System receives the email, validates sender, parses attachments
+4. Documents appear in patient's "Documents" section on the platform
+
+### Technical Requirements
+
+#### Email Receiving Service
+- [ ] **Resend Inbound Webhooks** or **SendGrid Inbound Parse** to receive emails
+- [ ] Configure DNS (MX records) for subdomain like `docs.onecare.app`
+- [ ] Webhook endpoint edge function to process incoming emails
+
+#### Database Changes
+- [ ] `patient_documents` table:
+  - `id`, `user_id`, `title`, `file_type`, `storage_path`, `source_type` (email/upload/clinician)
+  - `sender_email`, `sender_name`, `received_at`, `is_read`, `clinician_user_id`
+- [ ] `patient_inbound_emails` table:
+  - `id`, `user_id`, `email_address` (unique generated address)
+  - `is_active`, `created_at`
+
+#### Edge Functions
+- [ ] `process-inbound-email` - webhook handler for email service
+  - Validate sender against known clinicians (provider_shares)
+  - Extract attachments
+  - Parse PDFs/images if needed (OCR for lab results)
+  - Store files in Supabase Storage
+  - Create document records
+  - Notify patient of new document
+- [ ] `generate-patient-inbox` - create unique email address for patient
+
+#### Storage
+- [ ] Create `patient-documents` storage bucket (private)
+- [ ] RLS policies for patient + their authorized clinicians
+
+#### Frontend Components
+- [ ] `DocumentsPage` - view all received documents
+- [ ] `DocumentViewer` - in-app PDF/image viewer
+- [ ] `DocumentSettings` - manage inbound email address, toggle on/off
+- [ ] Patient dashboard widget showing unread document count
+
+### Security Considerations
+- [ ] Validate sender email matches authorized clinician in provider_shares
+- [ ] Rate limiting on inbound email processing
+- [ ] Virus/malware scanning on attachments (via service like ClamAV or cloud scanner)
+- [ ] File type whitelist (PDF, JPG, PNG, DOCX only)
+- [ ] Max file size limits (10MB per attachment, 25MB total per email)
+
+### Alternative Approaches
+1. **Direct Upload Portal**: Instead of email, clinicians upload via web portal
+   - Simpler to implement, no email infrastructure needed
+   - Less convenient for clinicians used to email workflows
+2. **Fax-to-Digital**: Integrate with eFax service for legacy workflows
+3. **Hybrid**: Support both email ingest AND portal upload
+
+### Estimated Effort
+- Email infrastructure setup: 2-3 days
+- Edge function development: 2-3 days
+- Database & storage: 1 day
+- Frontend components: 3-4 days
+- Testing & security review: 2-3 days
+- **Total: ~2 weeks**
+
+---
+
+## Phase 7: Advanced Features (FUTURE)
 
 ### AI-Powered
 - [ ] Medication interaction checker (enhanced version with database)
