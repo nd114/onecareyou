@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Calendar, Droplet, Ruler, X, Plus, ArrowRight, SkipForward, Loader2 } from 'lucide-react';
+import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -137,7 +138,9 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 py-8 px-4">
+    <div className="min-h-screen bg-muted/30">
+      <Header />
+      <div className="py-8 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -366,6 +369,7 @@ const Onboarding = () => {
           </CardContent>
         </Card>
       </motion.div>
+      </div>
     </div>
   );
 };

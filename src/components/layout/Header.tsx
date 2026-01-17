@@ -28,11 +28,11 @@ export function Header() {
   const subscriptionTier = (profile?.subscription_tier || 'free') as string;
   const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
   
+  // Clinicians get a simplified nav - they don't need patient features like medications/vitals in main nav
   const navLinks = isAuthenticated 
     ? isClinician
       ? [
-          { href: '/clinician/dashboard', label: 'Patients' },
-          { href: '/dashboard', label: 'My Health' },
+          { href: '/clinician/dashboard', label: 'Dashboard' },
         ]
       : [
           { href: '/dashboard', label: 'Dashboard' },
@@ -120,52 +120,60 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link to="/medications" className="flex items-center gap-2">
-                      <Pill className="h-4 w-4" />
-                      Medications
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/vitals" className="flex items-center gap-2">
-                      <Activity className="h-4 w-4" />
-                      Vitals
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/care-circle" className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Care Circle
-                    </Link>
-                  </DropdownMenuItem>
-                  {hasFamilyAccess && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/family" className="flex items-center gap-2">
-                        <UserPlus className="h-4 w-4" />
-                        Family Dashboard
-                      </Link>
-                    </DropdownMenuItem>
+                  {/* Patient-only menu items */}
+                  {!isClinician && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/medications" className="flex items-center gap-2">
+                          <Pill className="h-4 w-4" />
+                          Medications
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/vitals" className="flex items-center gap-2">
+                          <Activity className="h-4 w-4" />
+                          Vitals
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/care-circle" className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Care Circle
+                        </Link>
+                      </DropdownMenuItem>
+                      {hasFamilyAccess && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/family" className="flex items-center gap-2">
+                            <UserPlus className="h-4 w-4" />
+                            Family Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem asChild>
+                        <Link to="/onboarding" className="flex items-center gap-2">
+                          <Heart className="h-4 w-4" />
+                          Health Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/settings" className="flex items-center gap-2">
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
+                  {/* Clinician-only menu items */}
                   {isClinician && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/clinician/dashboard" className="flex items-center gap-2">
-                        <Stethoscope className="h-4 w-4" />
-                        Clinician Dashboard
-                      </Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/clinician/dashboard" className="flex items-center gap-2">
+                          <Stethoscope className="h-4 w-4" />
+                          Clinician Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link to="/onboarding" className="flex items-center gap-2">
-                      <Heart className="h-4 w-4" />
-                      Health Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
@@ -221,6 +229,7 @@ export function Header() {
             ))}
             {isAuthenticated ? (
               <>
+                {/* Patient-only mobile menu items */}
                 {!isClinician && (
                   <>
                     <Link
@@ -239,25 +248,35 @@ export function Header() {
                         Family Dashboard
                       </Link>
                     )}
+                    <Link
+                      to="/onboarding"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Health Profile
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
                   </>
                 )}
+                {/* Clinician mobile menu items */}
                 {isClinician && (
-                  <Link
-                    to="/clinician/dashboard"
-                    className="px-4 py-2 text-sm font-medium text-primary hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Stethoscope className="h-4 w-4" />
-                    Clinician Dashboard
-                  </Link>
+                  <>
+                    <Link
+                      to="/clinician/dashboard"
+                      className="px-4 py-2 text-sm font-medium text-primary hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Stethoscope className="h-4 w-4" />
+                      Clinician Dashboard
+                    </Link>
+                  </>
                 )}
-                <Link
-                  to="/settings"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Settings
-                </Link>
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);

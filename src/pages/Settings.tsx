@@ -57,21 +57,53 @@ interface ConsentLogEntry {
 
 const COMMON_TIMEZONES = [
   { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  // Africa
+  { value: 'Africa/Lagos', label: 'Lagos (WAT / GMT+1) - Nigeria, Cameroon' },
+  { value: 'Africa/Johannesburg', label: 'Johannesburg (SAST / GMT+2) - South Africa' },
+  { value: 'Africa/Nairobi', label: 'Nairobi (EAT / GMT+3) - Kenya, Tanzania' },
+  { value: 'Africa/Cairo', label: 'Cairo (EET / GMT+2) - Egypt' },
+  { value: 'Africa/Casablanca', label: 'Casablanca (WET / GMT+0/+1) - Morocco' },
+  { value: 'Africa/Accra', label: 'Accra (GMT) - Ghana' },
+  { value: 'Africa/Addis_Ababa', label: 'Addis Ababa (EAT / GMT+3) - Ethiopia' },
+  { value: 'Africa/Algiers', label: 'Algiers (CET / GMT+1) - Algeria' },
+  { value: 'Africa/Kigali', label: 'Kigali (CAT / GMT+2) - Rwanda' },
+  { value: 'Africa/Kinshasa', label: 'Kinshasa (WAT / GMT+1) - DRC West' },
+  { value: 'Africa/Lubumbashi', label: 'Lubumbashi (CAT / GMT+2) - DRC East' },
+  { value: 'Africa/Tunis', label: 'Tunis (CET / GMT+1) - Tunisia' },
+  { value: 'Africa/Dakar', label: 'Dakar (GMT) - Senegal' },
+  // Americas
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
   { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
   { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
   { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
   { value: 'America/Anchorage', label: 'Alaska Time' },
   { value: 'Pacific/Honolulu', label: 'Hawaii Time' },
+  { value: 'America/Toronto', label: 'Toronto (EST/EDT)' },
+  { value: 'America/Mexico_City', label: 'Mexico City (CST)' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
+  { value: 'America/Buenos_Aires', label: 'Buenos Aires (ART)' },
+  // Europe
   { value: 'Europe/London', label: 'London (GMT/BST)' },
   { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
   { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
-  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
-  { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
-  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
-  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
-  { value: 'Asia/Kolkata', label: 'Mumbai/Kolkata (IST)' },
+  { value: 'Europe/Moscow', label: 'Moscow (MSK)' },
+  { value: 'Europe/Istanbul', label: 'Istanbul (TRT)' },
+  // Asia
+  { value: 'Asia/Dubai', label: 'Dubai (GST / GMT+4)' },
+  { value: 'Asia/Kolkata', label: 'Mumbai/Kolkata (IST / GMT+5:30)' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT / GMT+8)' },
+  { value: 'Asia/Hong_Kong', label: 'Hong Kong (HKT / GMT+8)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (CST / GMT+8)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST / GMT+9)' },
+  { value: 'Asia/Seoul', label: 'Seoul (KST / GMT+9)' },
+  { value: 'Asia/Jakarta', label: 'Jakarta (WIB / GMT+7)' },
+  { value: 'Asia/Manila', label: 'Manila (PHT / GMT+8)' },
+  { value: 'Asia/Bangkok', label: 'Bangkok (ICT / GMT+7)' },
+  { value: 'Asia/Karachi', label: 'Karachi (PKT / GMT+5)' },
+  { value: 'Asia/Riyadh', label: 'Riyadh (AST / GMT+3)' },
+  // Oceania
   { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+  { value: 'Australia/Melbourne', label: 'Melbourne (AEST/AEDT)' },
   { value: 'Australia/Perth', label: 'Perth (AWST)' },
   { value: 'Pacific/Auckland', label: 'Auckland (NZST/NZDT)' },
 ];
@@ -233,6 +265,65 @@ const Settings = () => {
                 
                 <Separator />
                 
+                {/* Biodata */}
+                <div className="grid grid-cols-2 gap-4">
+                  {(profile as any)?.date_of_birth && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Date of Birth</p>
+                      <p className="text-sm font-medium">{new Date((profile as any).date_of_birth).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                  {(profile as any)?.gender && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Gender</p>
+                      <p className="text-sm font-medium">{(profile as any).gender}</p>
+                    </div>
+                  )}
+                  {(profile as any)?.blood_type && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Blood Type</p>
+                      <p className="text-sm font-medium">{(profile as any).blood_type}</p>
+                    </div>
+                  )}
+                  {(profile as any)?.height && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Height</p>
+                      <p className="text-sm font-medium">{(profile as any).height} cm</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Allergies & Conditions */}
+                {((profile as any)?.allergies?.length > 0 || (profile as any)?.health_conditions?.length > 0) && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      {(profile as any)?.allergies?.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Allergies</p>
+                          <div className="flex flex-wrap gap-1">
+                            {((profile as any).allergies as string[]).map((a) => (
+                              <Badge key={a} variant="outline" className="text-xs">{a}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(profile as any)?.health_conditions?.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Health Conditions</p>
+                          <div className="flex flex-wrap gap-1">
+                            {((profile as any).health_conditions as string[]).map((c) => (
+                              <Badge key={c} variant="outline" className="text-xs">{c}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+                
                 <div className="space-y-3">
                   {(profile as any)?.phone_number && (
                     <div className="flex items-center gap-3 text-sm">
@@ -247,6 +338,13 @@ const Settings = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Edit Profile Link */}
+                <Link to="/onboarding">
+                  <Button variant="outline" className="w-full mt-2">
+                    Edit Health Profile
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </motion.div>

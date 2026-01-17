@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -13,6 +13,7 @@ import {
   Plus,
   Settings,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,22 +21,27 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
-import { useProviderShares } from '@/hooks/useProviderShares';
+import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
   const { clinicianProfile, isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
-  const { shares, isLoading: isLoadingShares } = useProviderShares();
+  const { patients, isLoading: isLoadingPatients, autoClaimShares } = useClinicianPatients();
   const { clinicianGuidance, isLoading: isLoadingGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts } = useAlertRules();
 
-  const isLoading = isLoadingProfile || isLoadingShares || isLoadingGuidance || isLoadingAlerts;
+  const isLoading = isLoadingProfile || isLoadingPatients || isLoadingGuidance || isLoadingAlerts;
 
-  // For now, show patients that have shared with this clinician via provider_shares
-  // In a full implementation, this would be more sophisticated
-  const patientCount = shares.length;
+  // Auto-claim shares on mount
+  useEffect(() => {
+    if (isClinician && !isLoading) {
+      autoClaimShares.mutate();
+    }
+  }, [isClinician, isLoading]);
+
+  const patientCount = patients.length;
   const pendingGuidanceCount = clinicianGuidance.filter(g => g.status === 'pending').length;
   const activeAlertRules = alertRules.filter(r => r.is_active).length;
   const recentAlerts = alertLogs.slice(0, 5);
@@ -94,9 +100,10 @@ const ClinicianDashboard = () => {
           className="mb-6 sm:mb-8"
         >
           <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-            Welcome, {clinicianProfile?.practice_name || 'Doctor'}
+            Welcome back, Doctor
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
+            {clinicianProfile?.practice_name && `${clinicianProfile.practice_name} • `}
             {clinicianProfile?.specialty && `${clinicianProfile.specialty} • `}
             Manage your patients and monitor their health
           </p>
@@ -192,41 +199,56 @@ const ClinicianDashboard = () => {
             {/* Patients Tab */}
             <TabsContent value="patients">
               <Card>
-                <CardHeader>
-                  <CardTitle>Your Patients</CardTitle>
-                  <CardDescription>
-                    Patients who have shared their health data with you
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Your Patients</CardTitle>
+                    <CardDescription>
+                      Patients who have shared their health data with you
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => autoClaimShares.mutate()}
+                    disabled={autoClaimShares.isPending}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${autoClaimShares.isPending ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
                 </CardHeader>
                 <CardContent>
-                  {shares.length === 0 ? (
+                  {patients.length === 0 ? (
                     <div className="text-center py-8">
                       <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="font-semibold mb-2">No patients yet</h3>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Patients can share their health data with you through the Care Circle feature
+                        When patients share their health data with your email address, they'll appear here automatically.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Tip: Ask patients to add your email in their Care Circle settings
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {shares.map((share) => (
+                      {patients.map((patient) => (
                         <div
-                          key={share.id}
+                          key={patient.id}
                           className="p-4 rounded-lg border hover:shadow-sm transition-shadow cursor-pointer"
-                          onClick={() => navigate(`/clinician/patient/${share.invite_code}`)}
+                          onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                                 <span className="font-semibold text-primary">
-                                  {share.provider_name.charAt(0)}
+                                  {patient.provider_name.charAt(0)}
                                 </span>
                               </div>
                               <div>
-                                <p className="font-medium">{share.provider_name}</p>
+                                <p className="font-medium">{patient.provider_name}</p>
                                 <div className="flex gap-1 mt-1">
-                                  {share.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
-                                  {share.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
+                                  {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
+                                  {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
+                                  {patient.permissions.adherence && <Badge variant="secondary" className="text-xs">Adherence</Badge>}
                                 </div>
                               </div>
                             </div>

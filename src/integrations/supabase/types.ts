@@ -602,6 +602,7 @@ export type Database = {
       }
       provider_shares: {
         Row: {
+          clinician_user_id: string | null
           created_at: string
           expires_at: string | null
           id: string
@@ -614,6 +615,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          clinician_user_id?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -626,6 +628,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          clinician_user_id?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
