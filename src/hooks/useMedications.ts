@@ -43,10 +43,27 @@ export const useMedications = () => {
         .single();
 
       if (error) throw error;
+      
+      // Create schedule entries for today based on times_of_day
+      if (data && medication.times_of_day && Array.isArray(medication.times_of_day)) {
+        const today = new Date().toISOString().split('T')[0];
+        const scheduleEntries = (medication.times_of_day as string[]).map(time => ({
+          user_id: user.id,
+          medication_id: data.id,
+          scheduled_time: `${today}T${time}:00`,
+          status: 'pending' as const,
+        }));
+        
+        if (scheduleEntries.length > 0) {
+          await supabase.from('schedule_entries').insert(scheduleEntries);
+        }
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['schedule_entries', user?.id] });
       toast.success('Medication added successfully!');
     },
     onError: (error) => {

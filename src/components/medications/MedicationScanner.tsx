@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, ScanBarcode, X, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Camera, ScanBarcode, X, Loader2, AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MedicationInfo {
   name: string;
@@ -12,6 +13,12 @@ interface MedicationInfo {
   dosageForm?: string;
   strength?: string;
   manufacturer?: string;
+  genericName?: string;
+  imprint?: string;
+  shape?: string;
+  color?: string;
+  warnings?: string[];
+  confidence?: 'high' | 'medium' | 'low';
 }
 
 interface MedicationScannerProps {
@@ -191,21 +198,49 @@ export function MedicationScanner({ onMedicationIdentified }: MedicationScannerP
   };
 
   const identifyPill = async (imageData: string) => {
-    // For pill identification, we'll use NIH's Pillbox API characteristics
-    // In a real app, you'd send the image to an AI service for analysis
-    
-    // Since we can't do real pill identification without an AI vision API,
-    // we'll show a helpful message
-    setError(
-      'Pill photo identification requires AI vision processing. ' +
-      'For now, please use the medication search to find your medication, ' +
-      'or scan the barcode on the medication package.'
-    );
-    
-    // In a production app, you would:
-    // 1. Send image to an AI vision API (OpenAI GPT-4V, Google Gemini, etc.)
-    // 2. Extract pill characteristics (shape, color, imprint)
-    // 3. Query NIH Pillbox or similar database
+    try {
+      const { data, error } = await supabase.functions.invoke('identify-pill', {
+        body: { image: imageData }
+      });
+
+      if (error) {
+        console.error('Pill identification error:', error);
+        setError('Failed to identify medication. Please try again.');
+        return;
+      }
+
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      if (data.identified && data.name) {
+        const info: MedicationInfo = {
+          name: data.name,
+          genericName: data.genericName,
+          strength: data.strength,
+          manufacturer: data.manufacturer,
+          dosageForm: data.shape,
+          imprint: data.imprint,
+          shape: data.shape,
+          color: data.color,
+          warnings: data.warnings,
+          confidence: data.confidence,
+        };
+        setResult(info);
+      } else {
+        // Not identified but got characteristics
+        setError(
+          `Could not confidently identify this medication. ` +
+          `Observed: ${data.shape || 'unknown shape'}, ${data.color || 'unknown color'}` +
+          (data.imprint ? `, imprint: ${data.imprint}` : '') +
+          `. ${data.notes || 'Please verify with a pharmacist.'}`
+        );
+      }
+    } catch (err) {
+      console.error('Pill identification error:', err);
+      setError('Failed to identify medication. Please try again.');
+    }
   };
 
   const handleUseMedication = () => {
@@ -361,22 +396,49 @@ export function MedicationScanner({ onMedicationIdentified }: MedicationScannerP
                 )}
 
                 {result && (
-                  <Card className="border-status-success/30 bg-status-success/5">
+                  <Card className={`${
+                    result.confidence === 'high' 
+                      ? 'border-status-success/30 bg-status-success/5' 
+                      : result.confidence === 'medium'
+                      ? 'border-yellow-500/30 bg-yellow-500/5'
+                      : 'border-orange-500/30 bg-orange-500/5'
+                  }`}>
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-status-success shrink-0 mt-0.5" />
+                        {result.confidence === 'high' ? (
+                          <CheckCircle className="h-5 w-5 text-status-success shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+                        )}
                         <div className="flex-1">
-                          <p className="font-semibold text-status-success">Medication Found!</p>
+                          <div className="flex items-center gap-2">
+                            <p className={`font-semibold ${
+                              result.confidence === 'high' ? 'text-status-success' : 'text-yellow-600'
+                            }`}>
+                              {result.confidence === 'high' ? 'Medication Identified!' : 'Possible Match'}
+                            </p>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {result.confidence || 'unknown'} confidence
+                            </Badge>
+                          </div>
                           <p className="text-lg font-medium mt-1">{result.name}</p>
+                          {result.genericName && result.genericName !== result.name && (
+                            <p className="text-sm text-muted-foreground">Generic: {result.genericName}</p>
+                          )}
                           <div className="flex flex-wrap gap-2 mt-2">
-                            {result.rxcui && (
+                            {result.color && (
                               <Badge variant="outline" className="text-xs">
-                                RxCUI: {result.rxcui}
+                                {result.color}
                               </Badge>
                             )}
-                            {result.dosageForm && (
+                            {result.shape && (
                               <Badge variant="outline" className="text-xs">
-                                {result.dosageForm}
+                                {result.shape}
+                              </Badge>
+                            )}
+                            {result.imprint && (
+                              <Badge variant="outline" className="text-xs">
+                                Imprint: {result.imprint}
                               </Badge>
                             )}
                             {result.strength && (
@@ -390,6 +452,22 @@ export function MedicationScanner({ onMedicationIdentified }: MedicationScannerP
                               Manufacturer: {result.manufacturer}
                             </p>
                           )}
+                          {result.warnings && result.warnings.length > 0 && (
+                            <div className="mt-3 p-2 bg-destructive/10 rounded-lg">
+                              <p className="text-xs font-medium text-destructive flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                Warnings
+                              </p>
+                              <ul className="text-xs text-destructive/80 mt-1 space-y-0.5">
+                                {result.warnings.map((w, i) => (
+                                  <li key={i}>• {w}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-3 italic">
+                            ⚠️ Always verify with a pharmacist before use
+                          </p>
                         </div>
                       </div>
                     </CardContent>
