@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MedicationInteractionChecker } from '@/components/medications/MedicationInteractionChecker';
+import { DrugInteractionChecker } from '@/components/medications/DrugInteractionChecker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Medications = () => {
@@ -308,8 +309,15 @@ const Medications = () => {
         )}
             </TabsContent>
 
-            <TabsContent value="interactions" className="m-0">
-              <MedicationInteractionChecker medications={medications} />
+            <TabsContent value="interactions" className="m-0 space-y-6">
+              {/* NIH RxNorm API-based checker */}
+              <DrugInteractionChecker medications={medications} />
+              
+              {/* Local fallback database for offline/quick reference */}
+              <div className="pt-4">
+                <p className="text-sm font-medium text-muted-foreground mb-3">Quick Reference (Offline Database)</p>
+                <MedicationInteractionChecker medications={medications} />
+              </div>
             </TabsContent>
           </Tabs>
         </motion.div>

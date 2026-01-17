@@ -57,58 +57,68 @@ interface ConsentLogEntry {
   created_at: string;
 }
 
+// Timezones sorted by UTC offset (west to east)
 const COMMON_TIMEZONES = [
-  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
-  // Africa
-  { value: 'Africa/Lagos', label: 'Lagos (WAT / GMT+1) - Nigeria, Cameroon' },
-  { value: 'Africa/Johannesburg', label: 'Johannesburg (SAST / GMT+2) - South Africa' },
-  { value: 'Africa/Nairobi', label: 'Nairobi (EAT / GMT+3) - Kenya, Tanzania' },
-  { value: 'Africa/Cairo', label: 'Cairo (EET / GMT+2) - Egypt' },
-  { value: 'Africa/Casablanca', label: 'Casablanca (WET / GMT+0/+1) - Morocco' },
-  { value: 'Africa/Accra', label: 'Accra (GMT) - Ghana' },
-  { value: 'Africa/Addis_Ababa', label: 'Addis Ababa (EAT / GMT+3) - Ethiopia' },
-  { value: 'Africa/Algiers', label: 'Algiers (CET / GMT+1) - Algeria' },
-  { value: 'Africa/Kigali', label: 'Kigali (CAT / GMT+2) - Rwanda' },
-  { value: 'Africa/Kinshasa', label: 'Kinshasa (WAT / GMT+1) - DRC West' },
-  { value: 'Africa/Lubumbashi', label: 'Lubumbashi (CAT / GMT+2) - DRC East' },
-  { value: 'Africa/Tunis', label: 'Tunis (CET / GMT+1) - Tunisia' },
-  { value: 'Africa/Dakar', label: 'Dakar (GMT) - Senegal' },
-  // Americas
-  { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
-  { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
-  { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
-  { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
-  { value: 'America/Anchorage', label: 'Alaska Time' },
-  { value: 'Pacific/Honolulu', label: 'Hawaii Time' },
-  { value: 'America/Toronto', label: 'Toronto (EST/EDT)' },
-  { value: 'America/Mexico_City', label: 'Mexico City (CST)' },
-  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
-  { value: 'America/Buenos_Aires', label: 'Buenos Aires (ART)' },
-  // Europe
-  { value: 'Europe/London', label: 'London (GMT/BST)' },
-  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
-  { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
-  { value: 'Europe/Moscow', label: 'Moscow (MSK)' },
-  { value: 'Europe/Istanbul', label: 'Istanbul (TRT)' },
-  // Asia
-  { value: 'Asia/Dubai', label: 'Dubai (GST / GMT+4)' },
-  { value: 'Asia/Kolkata', label: 'Mumbai/Kolkata (IST / GMT+5:30)' },
-  { value: 'Asia/Singapore', label: 'Singapore (SGT / GMT+8)' },
-  { value: 'Asia/Hong_Kong', label: 'Hong Kong (HKT / GMT+8)' },
-  { value: 'Asia/Shanghai', label: 'Shanghai (CST / GMT+8)' },
-  { value: 'Asia/Tokyo', label: 'Tokyo (JST / GMT+9)' },
-  { value: 'Asia/Seoul', label: 'Seoul (KST / GMT+9)' },
-  { value: 'Asia/Jakarta', label: 'Jakarta (WIB / GMT+7)' },
-  { value: 'Asia/Manila', label: 'Manila (PHT / GMT+8)' },
-  { value: 'Asia/Bangkok', label: 'Bangkok (ICT / GMT+7)' },
-  { value: 'Asia/Karachi', label: 'Karachi (PKT / GMT+5)' },
-  { value: 'Asia/Riyadh', label: 'Riyadh (AST / GMT+3)' },
-  // Oceania
-  { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
-  { value: 'Australia/Melbourne', label: 'Melbourne (AEST/AEDT)' },
-  { value: 'Australia/Perth', label: 'Perth (AWST)' },
-  { value: 'Pacific/Auckland', label: 'Auckland (NZST/NZDT)' },
-];
+  // UTC-12 to UTC-9
+  { value: 'Pacific/Honolulu', label: '(UTC-10) Hawaii', offset: -10 },
+  { value: 'America/Anchorage', label: '(UTC-9) Alaska', offset: -9 },
+  // UTC-8 to UTC-5
+  { value: 'America/Los_Angeles', label: '(UTC-8) Pacific Time (US & Canada)', offset: -8 },
+  { value: 'America/Denver', label: '(UTC-7) Mountain Time (US & Canada)', offset: -7 },
+  { value: 'America/Mexico_City', label: '(UTC-6) Mexico City', offset: -6 },
+  { value: 'America/Chicago', label: '(UTC-6) Central Time (US & Canada)', offset: -6 },
+  { value: 'America/New_York', label: '(UTC-5) Eastern Time (US & Canada)', offset: -5 },
+  { value: 'America/Toronto', label: '(UTC-5) Toronto', offset: -5 },
+  // UTC-4 to UTC-3
+  { value: 'America/Buenos_Aires', label: '(UTC-3) Buenos Aires', offset: -3 },
+  { value: 'America/Sao_Paulo', label: '(UTC-3) São Paulo', offset: -3 },
+  // UTC+0
+  { value: 'UTC', label: '(UTC+0) Coordinated Universal Time', offset: 0 },
+  { value: 'Africa/Accra', label: '(UTC+0) Accra - Ghana', offset: 0 },
+  { value: 'Africa/Dakar', label: '(UTC+0) Dakar - Senegal', offset: 0 },
+  { value: 'Africa/Casablanca', label: '(UTC+0/+1) Casablanca - Morocco', offset: 0 },
+  { value: 'Europe/London', label: '(UTC+0/+1) London', offset: 0 },
+  // UTC+1
+  { value: 'Africa/Lagos', label: '(UTC+1) Lagos - Nigeria, Cameroon', offset: 1 },
+  { value: 'Africa/Algiers', label: '(UTC+1) Algiers - Algeria', offset: 1 },
+  { value: 'Africa/Tunis', label: '(UTC+1) Tunis - Tunisia', offset: 1 },
+  { value: 'Africa/Kinshasa', label: '(UTC+1) Kinshasa - DRC West', offset: 1 },
+  { value: 'Europe/Paris', label: '(UTC+1/+2) Paris', offset: 1 },
+  { value: 'Europe/Berlin', label: '(UTC+1/+2) Berlin', offset: 1 },
+  // UTC+2
+  { value: 'Africa/Cairo', label: '(UTC+2) Cairo - Egypt', offset: 2 },
+  { value: 'Africa/Johannesburg', label: '(UTC+2) Johannesburg - South Africa', offset: 2 },
+  { value: 'Africa/Kigali', label: '(UTC+2) Kigali - Rwanda', offset: 2 },
+  { value: 'Africa/Lubumbashi', label: '(UTC+2) Lubumbashi - DRC East', offset: 2 },
+  // UTC+3
+  { value: 'Africa/Nairobi', label: '(UTC+3) Nairobi - Kenya, Tanzania', offset: 3 },
+  { value: 'Africa/Addis_Ababa', label: '(UTC+3) Addis Ababa - Ethiopia', offset: 3 },
+  { value: 'Asia/Riyadh', label: '(UTC+3) Riyadh', offset: 3 },
+  { value: 'Europe/Moscow', label: '(UTC+3) Moscow', offset: 3 },
+  { value: 'Europe/Istanbul', label: '(UTC+3) Istanbul', offset: 3 },
+  // UTC+4
+  { value: 'Asia/Dubai', label: '(UTC+4) Dubai', offset: 4 },
+  // UTC+5 to UTC+5:30
+  { value: 'Asia/Karachi', label: '(UTC+5) Karachi', offset: 5 },
+  { value: 'Asia/Kolkata', label: '(UTC+5:30) Mumbai / Kolkata', offset: 5.5 },
+  // UTC+7
+  { value: 'Asia/Bangkok', label: '(UTC+7) Bangkok', offset: 7 },
+  { value: 'Asia/Jakarta', label: '(UTC+7) Jakarta', offset: 7 },
+  // UTC+8
+  { value: 'Asia/Singapore', label: '(UTC+8) Singapore', offset: 8 },
+  { value: 'Asia/Hong_Kong', label: '(UTC+8) Hong Kong', offset: 8 },
+  { value: 'Asia/Shanghai', label: '(UTC+8) Shanghai', offset: 8 },
+  { value: 'Asia/Manila', label: '(UTC+8) Manila', offset: 8 },
+  { value: 'Australia/Perth', label: '(UTC+8) Perth', offset: 8 },
+  // UTC+9
+  { value: 'Asia/Tokyo', label: '(UTC+9) Tokyo', offset: 9 },
+  { value: 'Asia/Seoul', label: '(UTC+9) Seoul', offset: 9 },
+  // UTC+10 to UTC+11
+  { value: 'Australia/Sydney', label: '(UTC+10/+11) Sydney', offset: 10 },
+  { value: 'Australia/Melbourne', label: '(UTC+10/+11) Melbourne', offset: 10 },
+  // UTC+12 to UTC+13
+  { value: 'Pacific/Auckland', label: '(UTC+12/+13) Auckland', offset: 12 },
+].sort((a, b) => a.offset - b.offset);
 
 const Settings = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
