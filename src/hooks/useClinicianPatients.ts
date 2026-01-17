@@ -22,6 +22,7 @@ interface PatientShare {
   last_accessed_at: string | null;
   expires_at: string | null;
   clinician_user_id: string | null;
+  clinician_notes: string | null;
 }
 
 export function useClinicianPatients() {
@@ -114,11 +115,35 @@ export function useClinicianPatients() {
     },
   });
 
+  // Update clinician notes for a patient
+  const updatePatientNotes = useMutation({
+    mutationFn: async ({ shareId, notes }: { shareId: string; notes: string }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('provider_shares')
+        .update({ clinician_notes: notes })
+        .eq('id', shareId)
+        .eq('clinician_user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients'] });
+      toast.success('Patient notes saved');
+    },
+    onError: (error) => {
+      console.error('Error updating notes:', error);
+      toast.error('Failed to save notes');
+    },
+  });
+
   return {
     patients,
     isLoading,
     error,
     claimShare,
     autoClaimShares,
+    updatePatientNotes,
   };
 }

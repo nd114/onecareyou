@@ -14,6 +14,7 @@ import {
   Settings,
   FileText,
   RefreshCw,
+  StickyNote,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,13 +25,21 @@ import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
+import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
   const { clinicianProfile, isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
-  const { patients, isLoading: isLoadingPatients, autoClaimShares } = useClinicianPatients();
+  const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
   const { clinicianGuidance, isLoading: isLoadingGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts } = useAlertRules();
+  
+  const [notesDialog, setNotesDialog] = useState<{
+    open: boolean;
+    patientId: string;
+    patientName: string;
+    notes: string;
+  }>({ open: false, patientId: '', patientName: '', notes: '' });
 
   const isLoading = isLoadingProfile || isLoadingPatients || isLoadingGuidance || isLoadingAlerts;
 
@@ -233,11 +242,13 @@ const ClinicianDashboard = () => {
                       {patients.map((patient) => (
                         <div
                           key={patient.id}
-                          className="p-4 rounded-lg border hover:shadow-sm transition-shadow cursor-pointer"
-                          onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
+                          className="p-4 rounded-lg border hover:shadow-sm transition-shadow"
                         >
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                            <div 
+                              className="flex items-center gap-3 flex-1 cursor-pointer"
+                              onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
+                            >
                               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                                 <span className="font-semibold text-primary">
                                   {patient.provider_name.charAt(0)}
@@ -252,9 +263,31 @@ const ClinicianDashboard = () => {
                                 </div>
                               </div>
                             </div>
-                            <Button variant="outline" size="sm">
-                              View
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNotesDialog({
+                                    open: true,
+                                    patientId: patient.id,
+                                    patientName: patient.provider_name,
+                                    notes: patient.clinician_notes || '',
+                                  });
+                                }}
+                                title="Patient notes"
+                              >
+                                <StickyNote className={`h-4 w-4 ${patient.clinician_notes ? 'text-primary' : 'text-muted-foreground'}`} />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
+                              >
+                                View
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -441,6 +474,21 @@ const ClinicianDashboard = () => {
           </Tabs>
         </motion.div>
       </main>
+      
+      {/* Patient Notes Dialog */}
+      <PatientNotesDialog
+        open={notesDialog.open}
+        onOpenChange={(open) => setNotesDialog(prev => ({ ...prev, open }))}
+        patientName={notesDialog.patientName}
+        initialNotes={notesDialog.notes}
+        onSave={async (notes) => {
+          await updatePatientNotes.mutateAsync({
+            shareId: notesDialog.patientId,
+            notes,
+          });
+        }}
+        isSaving={updatePatientNotes.isPending}
+      />
     </div>
   );
 };

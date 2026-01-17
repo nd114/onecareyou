@@ -109,6 +109,13 @@ This document tracks all implemented features and requirements for the OneCare h
 - [x] Unit conversion utilities
 - [x] Medical specialty and country lists (alphabetically sorted)
 - [x] Header shows Onboarding page
+- [x] Mobile menu duplicate fix for clinicians
+
+---
+
+## Clinician Features
+- [x] Clinician patient notes (private notes about patients)
+- [x] Notes visible only to the clinician who created them
 
 ---
 
