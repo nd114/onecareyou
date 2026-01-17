@@ -41,6 +41,7 @@ interface GuidanceItem {
   acknowledged_at: string | null;
   completed_at: string | null;
   clinician_name?: string;
+  clinician_title?: string;
   clinician_specialty?: string;
   clinician_practice?: string;
 }
@@ -140,7 +141,7 @@ const PatientGuidance = () => {
             {item.clinician_name && (
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3" />
-                {item.clinician_name}
+                {item.clinician_title || 'Dr.'} {item.clinician_name}
                 {item.clinician_specialty && (
                   <span className="text-muted-foreground">• {item.clinician_specialty}</span>
                 )}
