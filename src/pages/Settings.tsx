@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
+import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -119,6 +120,10 @@ const Settings = () => {
     updateEmailNotifications,
     isSaving: savingNotifications 
   } = useNotificationSettings();
+  
+  // Initialize service worker for push notifications
+  useServiceWorker();
+  
   const navigate = useNavigate();
   
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);

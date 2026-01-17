@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pill, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, Pill, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,8 @@ import { Header } from '@/components/layout/Header';
 import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
 import { useState } from 'react';
 import { useMedications } from '@/hooks/useMedications';
+import { MedicationSearchInput } from '@/components/medications/MedicationSearchInput';
+import { MedicationSuggestion } from '@/hooks/useMedicationDatabase';
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },
@@ -110,20 +112,21 @@ const AddMedication = () => {
                 {/* Medication Name with Search */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Medication Name *</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      placeholder="Search for medication..."
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Start typing to search the medication database
-                  </p>
+                  <MedicationSearchInput
+                    value={formData.name}
+                    onChange={(name) => setFormData({ ...formData, name })}
+                    onSelectSuggestion={(med: MedicationSuggestion) => {
+                      // Auto-fill dosage if common dosages available
+                      if (med.commonDosages.length > 0) {
+                        setFormData(prev => ({
+                          ...prev,
+                          name: med.name,
+                          dosage: prev.dosage || med.commonDosages[0],
+                        }));
+                      }
+                    }}
+                    placeholder="Search medications, vitamins, supplements..."
+                  />
                 </div>
 
                 {/* Type */}
