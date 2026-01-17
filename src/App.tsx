@@ -15,6 +15,10 @@ import CareCircle from "./pages/CareCircle";
 import Onboarding from "./pages/Onboarding";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Settings from "./pages/Settings";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import DataProcessing from "./pages/DataProcessing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +34,9 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/data-processing" element={<DataProcessing />} />
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
@@ -63,6 +70,11 @@ const App = () => (
             <Route path="/care-circle" element={
               <ProtectedRoute>
                 <CareCircle />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

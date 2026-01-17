@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      consent_logs: {
+        Row: {
+          action: string
+          consent_type: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_value: boolean | null
+          previous_value: boolean | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          consent_type: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_value?: boolean | null
+          previous_value?: boolean | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          consent_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_value?: boolean | null
+          previous_value?: boolean | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          document_id: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          document_id: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          document_id?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_acceptances_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_documents: {
+        Row: {
+          content: string
+          created_at: string
+          effective_date: string
+          id: string
+          is_current: boolean | null
+          type: string
+          version: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          effective_date: string
+          id?: string
+          is_current?: boolean | null
+          type: string
+          version: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          is_current?: boolean | null
+          type?: string
+          version?: string
+        }
+        Relationships: []
+      }
       medications: {
         Row: {
           created_at: string
@@ -77,6 +181,8 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          ai_consent_updated_at: string | null
+          ai_processing_consent: boolean | null
           allergies: Json | null
           bio: string | null
           blood_type: string | null
@@ -99,6 +205,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_consent_updated_at?: string | null
+          ai_processing_consent?: boolean | null
           allergies?: Json | null
           bio?: string | null
           blood_type?: string | null
@@ -121,6 +229,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_consent_updated_at?: string | null
+          ai_processing_consent?: boolean | null
           allergies?: Json | null
           bio?: string | null
           blood_type?: string | null

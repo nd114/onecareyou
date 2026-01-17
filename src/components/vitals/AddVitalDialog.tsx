@@ -8,13 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Upload, FileText, Check, X, Loader2 } from 'lucide-react';
+import { CalendarIcon, Upload, FileText, Check, X, Loader2, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useAIConsent } from '@/hooks/useAIConsent';
+import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 
 interface AddVitalDialogProps {
   open: boolean;
@@ -41,6 +43,8 @@ const vitalCategories = [
 ];
 
 export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogProps) {
+  const { hasConsent, grantConsent, checkConsentRequired } = useAIConsent();
+  
   const [mode, setMode] = useState<'manual' | 'upload'>('manual');
   const [selectedCategory, setSelectedCategory] = useState('daily');
   const [values, setValues] = useState<Record<string, string>>({});
@@ -54,6 +58,10 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const [extractedVitals, setExtractedVitals] = useState<ExtractedVital[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Consent dialog state
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const resetForm = () => {
     setValues({});
@@ -64,6 +72,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setExtractedVitals([]);
     setUploadError(null);
     setMode('manual');
+    setPendingFile(null);
   };
 
   const handleSaveManual = async () => {
@@ -85,23 +94,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      setUploadError('Please upload a JPG, PNG, WebP, or PDF file');
-      return;
-    }
-
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError('File size must be less than 10MB');
-      return;
-    }
-
+  const processFile = async (file: File) => {
     setUploading(true);
     setUploadError(null);
     setExtractedVitals([]);
@@ -155,6 +148,47 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please upload a JPG, PNG, WebP, or PDF file');
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size must be less than 10MB');
+      return;
+    }
+
+    // Check if consent is required
+    if (checkConsentRequired()) {
+      setPendingFile(file);
+      setShowConsentDialog(true);
+      return;
+    }
+
+    // Process the file
+    await processFile(file);
+  };
+
+  const handleConsentGranted = async () => {
+    const success = await grantConsent();
+    if (success && pendingFile) {
+      await processFile(pendingFile);
+      setPendingFile(null);
+    }
+  };
+
+  const handleConsentDeclined = () => {
+    setPendingFile(null);
+    toast.info('You can still enter vitals manually');
+  };
+
   const toggleVitalSelection = (index: number) => {
     setExtractedVitals(prev => prev.map((v, i) => 
       i === index ? { ...v, selected: !v.selected } : v
@@ -189,292 +223,316 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const hasSelectedExtracted = extractedVitals.some(v => v.selected);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Record Health Metrics</DialogTitle>
-          <DialogDescription>
-            Enter measurements manually or upload a lab report
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Record Health Metrics</DialogTitle>
+            <DialogDescription>
+              Enter measurements manually or upload a lab report
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4 pt-4">
-          {/* Mode Toggle */}
-          <div className="flex rounded-lg border bg-muted/50 p-1">
-            <Button
-              variant={mode === 'manual' ? 'default' : 'ghost'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setMode('manual')}
-            >
-              Manual Entry
-            </Button>
-            <Button
-              variant={mode === 'upload' ? 'default' : 'ghost'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setMode('upload')}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Report
-            </Button>
-          </div>
+          <div className="space-y-4 pt-4">
+            {/* Mode Toggle */}
+            <div className="flex rounded-lg border bg-muted/50 p-1">
+              <Button
+                variant={mode === 'manual' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setMode('manual')}
+              >
+                Manual Entry
+              </Button>
+              <Button
+                variant={mode === 'upload' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setMode('upload')}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Report
+              </Button>
+            </div>
 
-          {/* Date Selection */}
-          <div className="flex items-center gap-4">
-            <Label className="w-20">Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "PPP") : "Select date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {mode === 'manual' ? (
-            <>
-              {/* Category Tabs */}
-              <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-                <TabsList className="flex flex-wrap h-auto gap-1">
-                  {vitalCategories.map((cat) => (
-                    <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
-                      {cat.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                
-                {vitalCategories.map((category) => (
-                  <TabsContent key={category.id} value={category.id} className="space-y-4 pt-4">
-                    {category.types.map((type) => {
-                      const config = VITAL_CONFIG[type];
-                      const hasBPSecondary = type === 'blood_pressure';
-                      
-                      return (
-                        <div key={type} className="space-y-2">
-                          <Label htmlFor={type}>
-                            {config.label} 
-                            <span className="text-muted-foreground ml-1">({config.unit})</span>
-                          </Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id={type}
-                              type="number"
-                              step="0.1"
-                              placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
-                              value={values[type] || ''}
-                              onChange={(e) => setValues({ ...values, [type]: e.target.value })}
-                              className="flex-1"
-                            />
-                            {hasBPSecondary && (
-                              <Input
-                                type="number"
-                                placeholder="Diastolic (e.g., 80)"
-                                value={secondaryValues[type] || ''}
-                                onChange={(e) => setSecondaryValues({ ...secondaryValues, [type]: e.target.value })}
-                                className="flex-1"
-                              />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Normal range: {config.normalMin}–{config.normalMax} {config.unit}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </TabsContent>
-                ))}
-              </Tabs>
-
-              {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes (optional)</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Any relevant context or observations..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  className="flex-1" 
-                  onClick={() => {
-                    resetForm();
-                    onOpenChange(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  className="flex-1 gradient-primary border-0" 
-                  onClick={handleSaveManual}
-                  disabled={!hasManualValues || saving}
-                >
-                  {saving ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Upload Section */}
-              <div className="space-y-4">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                
-                {extractedVitals.length === 0 ? (
-                  <Card 
+            {/* Date Selection */}
+            <div className="flex items-center gap-4">
+              <Label className="w-20">Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
                     className={cn(
-                      "border-dashed border-2 cursor-pointer transition-colors",
-                      uploading ? "opacity-50" : "hover:border-primary/50"
+                      "flex-1 justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
                     )}
-                    onClick={() => !uploading && fileInputRef.current?.click()}
                   >
-                    <CardContent className="flex flex-col items-center justify-center py-10">
-                      {uploading ? (
-                        <>
-                          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                          <p className="text-sm text-muted-foreground">
-                            Analyzing lab report with AI...
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="h-10 w-10 text-muted-foreground mb-4" />
-                          <p className="font-medium mb-1">Upload Lab Report</p>
-                          <p className="text-sm text-muted-foreground text-center">
-                            Take a photo or upload a PDF of your lab results
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Supports: JPG, PNG, WebP, PDF (max 10MB)
-                          </p>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Extracted Values</h4>
-                      <Badge variant="outline" className="bg-status-success/10 text-status-success">
-                        {extractedVitals.filter(v => v.selected).length} selected
-                      </Badge>
-                    </div>
-                    
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {extractedVitals.map((vital, index) => {
-                        const config = VITAL_CONFIG[vital.type];
-                        const displayValue = vital.type === 'blood_pressure' && vital.secondary_value
-                          ? `${vital.value}/${vital.secondary_value}`
-                          : vital.value;
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {mode === 'manual' ? (
+              <>
+                {/* Category Tabs */}
+                <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <TabsList className="flex flex-wrap h-auto gap-1">
+                    {vitalCategories.map((cat) => (
+                      <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
+                        {cat.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  
+                  {vitalCategories.map((category) => (
+                    <TabsContent key={category.id} value={category.id} className="space-y-4 pt-4">
+                      {category.types.map((type) => {
+                        const config = VITAL_CONFIG[type];
+                        const hasBPSecondary = type === 'blood_pressure';
                         
                         return (
-                          <Card 
-                            key={index}
-                            className={cn(
-                              "cursor-pointer transition-colors",
-                              vital.selected 
-                                ? "border-primary bg-primary/5" 
-                                : "opacity-60"
-                            )}
-                            onClick={() => toggleVitalSelection(index)}
-                          >
-                            <CardContent className="p-3 flex items-center justify-between">
-                              <div>
-                                <p className="font-medium">{config.label}</p>
-                                <p className="text-lg font-bold">
-                                  {displayValue} 
-                                  <span className="text-sm font-normal text-muted-foreground ml-1">
-                                    {config.unit}
-                                  </span>
-                                </p>
-                              </div>
-                              <div className={cn(
-                                "h-6 w-6 rounded-full flex items-center justify-center",
-                                vital.selected 
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "bg-muted"
-                              )}>
-                                {vital.selected ? (
-                                  <Check className="h-4 w-4" />
-                                ) : (
-                                  <X className="h-4 w-4" />
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
+                          <div key={type} className="space-y-2">
+                            <Label htmlFor={type}>
+                              {config.label} 
+                              <span className="text-muted-foreground ml-1">({config.unit})</span>
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id={type}
+                                type="number"
+                                step="0.1"
+                                placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
+                                value={values[type] || ''}
+                                onChange={(e) => setValues({ ...values, [type]: e.target.value })}
+                                className="flex-1"
+                              />
+                              {hasBPSecondary && (
+                                <Input
+                                  type="number"
+                                  placeholder="Diastolic (e.g., 80)"
+                                  value={secondaryValues[type] || ''}
+                                  onChange={(e) => setSecondaryValues({ ...secondaryValues, [type]: e.target.value })}
+                                  className="flex-1"
+                                />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Normal range: {config.normalMin}–{config.normalMax} {config.unit}
+                            </p>
+                          </div>
                         );
                       })}
+                    </TabsContent>
+                  ))}
+                </Tabs>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Any relevant context or observations..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1" 
+                    onClick={() => {
+                      resetForm();
+                      onOpenChange(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="flex-1 gradient-primary border-0" 
+                    onClick={handleSaveManual}
+                    disabled={!hasManualValues || saving}
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Upload Section */}
+                <div className="space-y-4">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  
+                  {/* Consent Status Banner */}
+                  {!hasConsent && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-amber/10 border border-amber/20 text-sm">
+                      <Shield className="h-5 w-5 text-amber flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-foreground">AI Consent Required</p>
+                        <p className="text-muted-foreground">You'll be asked to consent before processing</p>
+                      </div>
                     </div>
-
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => {
-                        setExtractedVitals([]);
-                        fileInputRef.current?.click();
-                      }}
+                  )}
+                  
+                  {extractedVitals.length === 0 ? (
+                    <Card 
+                      className={cn(
+                        "border-dashed border-2 cursor-pointer transition-colors",
+                        uploading ? "opacity-50" : "hover:border-primary/50"
+                      )}
+                      onClick={() => !uploading && fileInputRef.current?.click()}
                     >
-                      Upload Different Report
-                    </Button>
-                  </div>
-                )}
+                      <CardContent className="flex flex-col items-center justify-center py-10">
+                        {uploading ? (
+                          <>
+                            <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                            <p className="text-sm text-muted-foreground">
+                              Analyzing lab report with AI...
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Your data is anonymized before processing
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-10 w-10 text-muted-foreground mb-4" />
+                            <p className="font-medium mb-1">Upload Lab Report</p>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Take a photo or upload a PDF of your lab results
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Supports: JPG, PNG, WebP, PDF (max 10MB)
+                            </p>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Extracted Values</h4>
+                        <Badge variant="outline" className="bg-status-success/10 text-status-success">
+                          {extractedVitals.filter(v => v.selected).length} selected
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {extractedVitals.map((vital, index) => {
+                          const config = VITAL_CONFIG[vital.type];
+                          const displayValue = vital.type === 'blood_pressure' && vital.secondary_value
+                            ? `${vital.value}/${vital.secondary_value}`
+                            : vital.value;
+                          
+                          return (
+                            <Card 
+                              key={index}
+                              className={cn(
+                                "cursor-pointer transition-colors",
+                                vital.selected 
+                                  ? "border-primary bg-primary/5" 
+                                  : "opacity-60"
+                              )}
+                              onClick={() => toggleVitalSelection(index)}
+                            >
+                              <CardContent className="p-3 flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium">{config.label}</p>
+                                  <p className="text-lg font-bold">
+                                    {displayValue} 
+                                    <span className="text-sm font-normal text-muted-foreground ml-1">
+                                      {config.unit}
+                                    </span>
+                                  </p>
+                                </div>
+                                <div className={cn(
+                                  "h-6 w-6 rounded-full flex items-center justify-center",
+                                  vital.selected 
+                                    ? "bg-primary text-primary-foreground" 
+                                    : "bg-muted"
+                                )}>
+                                  {vital.selected ? (
+                                    <Check className="h-4 w-4" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
 
-                {uploadError && (
-                  <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
-                    {uploadError}
-                  </div>
-                )}
-              </div>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          setExtractedVitals([]);
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        Upload Different Report
+                      </Button>
+                    </div>
+                  )}
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  className="flex-1" 
-                  onClick={() => {
-                    resetForm();
-                    onOpenChange(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  className="flex-1 gradient-primary border-0" 
-                  onClick={handleSaveExtracted}
-                  disabled={!hasSelectedExtracted || saving}
-                >
-                  {saving ? 'Saving...' : `Save ${extractedVitals.filter(v => v.selected).length} Metrics`}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                  {uploadError && (
+                    <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                      {uploadError}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1" 
+                    onClick={() => {
+                      resetForm();
+                      onOpenChange(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="flex-1 gradient-primary border-0" 
+                    onClick={handleSaveExtracted}
+                    disabled={!hasSelectedExtracted || saving}
+                  >
+                    {saving ? 'Saving...' : `Save ${extractedVitals.filter(v => v.selected).length} Metrics`}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Consent Dialog */}
+      <AIConsentDialog
+        open={showConsentDialog}
+        onOpenChange={setShowConsentDialog}
+        onConsent={handleConsentGranted}
+        onDecline={handleConsentDeclined}
+      />
+    </>
   );
 }
