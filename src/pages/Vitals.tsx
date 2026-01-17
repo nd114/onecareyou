@@ -233,7 +233,7 @@ const Vitals = () => {
               </Card>
             </motion.div>
           </>
-        ) : (
+        ) : view === 'analytics' ? (
           /* Analytics View */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -311,7 +311,7 @@ const Vitals = () => {
               </CardContent>
             </Card>
           </motion.div>
-        )}
+        ) : null}
 
         {/* History View */}
         {!loading && view === 'history' && (
