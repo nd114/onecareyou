@@ -12,6 +12,8 @@ import {
   CheckCircle,
   Eye,
   Clock,
+  Phone,
+  Building2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,12 +28,15 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
+import { useAuth } from '@/contexts/AuthContext';
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const { clinicianProfile, isLoading: isLoadingProfile, updateClinicianProfile } = useClinicianProfile();
   const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
   const { 
@@ -46,6 +51,12 @@ const ClinicianSettings = () => {
   // Initialize service worker for push notifications
   useServiceWorker();
 
+  const [personalForm, setPersonalForm] = useState({
+    name: profile?.name || '',
+    email: user?.email || '',
+    phone_number: profile?.phone_number || '',
+  });
+
   const [profileForm, setProfileForm] = useState({
     practice_name: clinicianProfile?.practice_name || '',
     specialty: clinicianProfile?.specialty || '',
@@ -54,6 +65,7 @@ const ClinicianSettings = () => {
   });
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingPersonal, setIsSavingPersonal] = useState(false);
 
   // Update form when profile loads
   useEffect(() => {
@@ -66,6 +78,39 @@ const ClinicianSettings = () => {
       });
     }
   }, [clinicianProfile]);
+
+  // Update personal form when user profile loads
+  useEffect(() => {
+    if (profile || user) {
+      setPersonalForm({
+        name: profile?.name || '',
+        email: user?.email || '',
+        phone_number: profile?.phone_number || '',
+      });
+    }
+  }, [profile, user]);
+
+  const handleSavePersonal = async () => {
+    if (!user) return;
+    setIsSavingPersonal(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: personalForm.name,
+          phone_number: personalForm.phone_number,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      toast.success('Personal information saved');
+    } catch (error) {
+      console.error('Error saving personal info:', error);
+      toast.error('Failed to save personal information');
+    } finally {
+      setIsSavingPersonal(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     setIsSavingProfile(true);
@@ -114,15 +159,86 @@ const ClinicianSettings = () => {
             </p>
           </div>
 
-          {/* Profile Settings */}
+          {/* Personal Information */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
+                Personal Information
+              </CardTitle>
+              <CardDescription>
+                Your basic account information
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={personalForm.name}
+                    onChange={(e) => setPersonalForm({ ...personalForm, name: e.target.value })}
+                    placeholder="Dr. Jane Smith"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      value={personalForm.email}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Email cannot be changed here</p>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      value={personalForm.phone_number}
+                      onChange={(e) => setPersonalForm({ ...personalForm, phone_number: e.target.value })}
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t">
+                <Button 
+                  onClick={handleSavePersonal}
+                  disabled={isSavingPersonal}
+                  variant="outline"
+                >
+                  {isSavingPersonal ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Personal Info
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Profile Settings */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
                 Professional Profile
               </CardTitle>
               <CardDescription>
-                Update your professional information
+                Your professional credentials and practice information
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
