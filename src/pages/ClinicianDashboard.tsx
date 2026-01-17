@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -15,11 +15,14 @@ import {
   FileText,
   RefreshCw,
   StickyNote,
+  Search,
+  Mail,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { Header } from '@/components/layout/Header';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
@@ -40,6 +43,19 @@ const ClinicianDashboard = () => {
     patientName: string;
     notes: string;
   }>({ open: false, patientId: '', patientName: '', notes: '' });
+
+  const [patientSearch, setPatientSearch] = useState('');
+
+  // Filter patients based on search
+  const filteredPatients = useMemo(() => {
+    if (!patientSearch.trim()) return patients;
+    const searchLower = patientSearch.toLowerCase();
+    return patients.filter(
+      (p) =>
+        (p.patient_name || '').toLowerCase().includes(searchLower) ||
+        (p.patient_email || '').toLowerCase().includes(searchLower)
+    );
+  }, [patients, patientSearch]);
 
   const isLoading = isLoadingProfile || isLoadingPatients || isLoadingGuidance || isLoadingAlerts;
 
@@ -226,6 +242,21 @@ const ClinicianDashboard = () => {
                   </Button>
                 </CardHeader>
                 <CardContent>
+                  {/* Search Input */}
+                  {patients.length > 0 && (
+                    <div className="mb-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search patients by name or email..."
+                          value={patientSearch}
+                          onChange={(e) => setPatientSearch(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {patients.length === 0 ? (
                     <div className="text-center py-8">
                       <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -237,9 +268,17 @@ const ClinicianDashboard = () => {
                         Tip: Ask patients to add your email in their Care Circle settings
                       </p>
                     </div>
+                  ) : filteredPatients.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="font-semibold mb-2">No matching patients</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Try a different search term
+                      </p>
+                    </div>
                   ) : (
                     <div className="space-y-3">
-                      {patients.map((patient) => (
+                      {filteredPatients.map((patient) => (
                         <div
                           key={patient.id}
                           className="p-4 rounded-lg border hover:shadow-sm transition-shadow"
@@ -256,6 +295,12 @@ const ClinicianDashboard = () => {
                               </div>
                               <div>
                                 <p className="font-medium">{patient.patient_name || 'Unknown Patient'}</p>
+                                {patient.patient_email && (
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Mail className="h-3 w-3" />
+                                    {patient.patient_email}
+                                  </p>
+                                )}
                                 <div className="flex gap-1 mt-1">
                                   {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
                                   {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
