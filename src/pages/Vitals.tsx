@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { 
   Activity, 
   Heart, 
@@ -7,29 +7,19 @@ import {
   Thermometer, 
   Scale,
   Plus,
-  TrendingUp,
-  TrendingDown,
-  Minus
+  BarChart3,
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
-import { mockVitals } from '@/lib/mock-data';
-import { VITAL_CONFIG, VitalType } from '@/types/health';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { useVitals } from '@/hooks/useVitals';
+import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
+import { VitalStatsCard } from '@/components/vitals/VitalStatsCard';
+import { AddVitalDialog } from '@/components/vitals/AddVitalDialog';
 
 const vitalCards = [
   { type: 'blood_pressure' as VitalType, icon: Heart, color: 'text-rose' },
@@ -39,46 +29,19 @@ const vitalCards = [
 ];
 
 const vitalCategories = [
-  { id: 'daily', label: 'Daily Vitals', types: ['weight', 'blood_pressure', 'heart_rate', 'temperature'] },
-  { id: 'sugar', label: 'Sugar', types: ['glucose', 'hba1c'] },
-  { id: 'kidneys', label: 'Kidneys', types: ['urea', 'creatinine', 'gfr'] },
-  { id: 'heart', label: 'Heart', types: ['cholesterol_total', 'ldl', 'hdl'] },
-  { id: 'liver', label: 'Liver', types: ['alt', 'ast'] },
-  { id: 'blood', label: 'Blood', types: ['hemoglobin', 'wbc'] },
-  { id: 'minerals', label: 'Minerals', types: ['potassium', 'sodium'] },
+  { id: 'daily', label: 'Daily Vitals', types: ['weight', 'blood_pressure', 'heart_rate', 'temperature'] as VitalType[] },
+  { id: 'sugar', label: 'Sugar', types: ['glucose', 'hba1c'] as VitalType[] },
+  { id: 'kidneys', label: 'Kidneys', types: ['urea', 'creatinine', 'gfr'] as VitalType[] },
+  { id: 'heart', label: 'Heart', types: ['cholesterol_total', 'ldl', 'hdl'] as VitalType[] },
+  { id: 'liver', label: 'Liver', types: ['alt', 'ast'] as VitalType[] },
+  { id: 'blood', label: 'Blood', types: ['hemoglobin', 'wbc'] as VitalType[] },
+  { id: 'minerals', label: 'Minerals', types: ['potassium', 'sodium'] as VitalType[] },
 ];
-
-const getVitalStatus = (type: VitalType, value: number): 'normal' | 'high' | 'low' => {
-  const config = VITAL_CONFIG[type];
-  if (value < config.normalMin) return 'low';
-  if (value > config.normalMax) return 'high';
-  return 'normal';
-};
-
-const statusColors = {
-  normal: 'bg-status-success/10 text-status-success border-status-success/20',
-  high: 'bg-severity-high/10 text-severity-high border-severity-high/20',
-  low: 'bg-ocean/10 text-ocean border-ocean/20',
-};
-
-const statusIcons = {
-  normal: Minus,
-  high: TrendingUp,
-  low: TrendingDown,
-};
 
 const Vitals = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('daily');
-
-  const getLatestVital = (type: VitalType) => {
-    return mockVitals.find(v => v.type === type);
-  };
-
-  const handleAddVital = () => {
-    toast.success('Vital recorded successfully!');
-    setIsAddDialogOpen(false);
-  };
+  const [view, setView] = useState<'overview' | 'analytics'>('overview');
+  const { vitals, loading, addVital, getLatestVital, getVitalHistory, getVitalStats } = useVitals();
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -99,168 +62,238 @@ const Vitals = () => {
               Track your vitals and lab results over time
             </p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gradient-primary border-0">
-                <Plus className="h-4 w-4 mr-2" />
-                Record Vital
+          <div className="flex gap-3">
+            <div className="flex rounded-lg border bg-card p-1">
+              <Button
+                variant={view === 'overview' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView('overview')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Overview
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Record New Vital</DialogTitle>
-                <DialogDescription>
-                  Enter your health measurement
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <TabsList className="grid grid-cols-4 h-auto">
-                    {vitalCategories.slice(0, 4).map((cat) => (
-                      <TabsTrigger key={cat.id} value={cat.id} className="text-xs">
+              <Button
+                variant={view === 'analytics' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setView('analytics')}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Analytics
+              </Button>
+            </div>
+            <Button className="gradient-primary border-0" onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Record Vital
+            </Button>
+          </div>
+        </motion.div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : view === 'overview' ? (
+          <>
+            {/* Summary Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+            >
+              {vitalCards.map((card, index) => {
+                const latestVital = getLatestVital(card.type);
+                const stats = getVitalStats(card.type);
+                
+                return (
+                  <motion.div
+                    key={card.type}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + index * 0.05 }}
+                  >
+                    <VitalStatsCard
+                      type={card.type}
+                      latestVital={latestVital}
+                      stats={stats}
+                      icon={card.icon}
+                      colorClass={card.color}
+                    />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Vitals by Category */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>All Health Metrics</CardTitle>
+                  <CardDescription>
+                    View and track all your vitals and lab results
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="daily">
+                    <TabsList className="flex flex-wrap h-auto gap-1 mb-6">
+                      {vitalCategories.map((cat) => (
+                        <TabsTrigger key={cat.id} value={cat.id}>
+                          {cat.label}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    {vitalCategories.map((category) => (
+                      <TabsContent key={category.id} value={category.id}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {category.types.map((type) => {
+                            const config = VITAL_CONFIG[type];
+                            const vital = getLatestVital(type);
+                            const stats = getVitalStats(type);
+                            
+                            const getStatus = (value: number): 'normal' | 'high' | 'low' => {
+                              if (value < config.normalMin) return 'low';
+                              if (value > config.normalMax) return 'high';
+                              return 'normal';
+                            };
+                            
+                            const status = vital ? getStatus(vital.value) : 'normal';
+                            
+                            const statusColors = {
+                              normal: 'bg-status-success/10 text-status-success border-status-success/20',
+                              high: 'bg-severity-high/10 text-severity-high border-severity-high/20',
+                              low: 'bg-ocean/10 text-ocean border-ocean/20',
+                            };
+                            
+                            const formatValue = () => {
+                              if (!vital) return '—';
+                              if (type === 'blood_pressure' && vital.secondary_value) {
+                                return `${vital.value}/${vital.secondary_value}`;
+                              }
+                              return vital.value;
+                            };
+                            
+                            return (
+                              <Card key={type} className="border-border/50">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="font-medium">{config.label}</p>
+                                      <p className="text-2xl font-bold mt-1">
+                                        {formatValue()}
+                                        <span className="text-sm font-normal text-muted-foreground ml-1">
+                                          {config.unit}
+                                        </span>
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Normal: {config.normalMin}-{config.normalMax}
+                                      </p>
+                                      {stats && stats.count > 0 && (
+                                        <p className="text-xs text-muted-foreground">
+                                          {stats.count} readings
+                                        </p>
+                                      )}
+                                    </div>
+                                    {vital && (
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                                        {status}
+                                      </span>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        ) : (
+          /* Analytics View */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="space-y-6"
+          >
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {vitalCards.map((card) => {
+                const stats = getVitalStats(card.type);
+                const config = VITAL_CONFIG[card.type];
+                
+                return (
+                  <Card key={card.type}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <card.icon className={`h-4 w-4 ${card.color}`} />
+                        <span className="text-sm font-medium">{config.label}</span>
+                      </div>
+                      {stats ? (
+                        <div className="space-y-1">
+                          <p className="text-lg font-bold">{stats.average} <span className="text-xs font-normal text-muted-foreground">{config.unit}</span></p>
+                          <p className="text-xs text-muted-foreground">{stats.count} readings • {stats.inRange} in range</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No data</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Trend Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {vitalCards.map((card) => (
+                <VitalTrendChart
+                  key={card.type}
+                  type={card.type}
+                  data={getVitalHistory(card.type, 30)}
+                />
+              ))}
+            </div>
+
+            {/* All Categories Analytics */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Lab Results Analytics</CardTitle>
+                <CardDescription>Track trends in your blood work and lab tests</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="sugar">
+                  <TabsList className="flex flex-wrap h-auto gap-1 mb-6">
+                    {vitalCategories.slice(1).map((cat) => (
+                      <TabsTrigger key={cat.id} value={cat.id}>
                         {cat.label}
                       </TabsTrigger>
                     ))}
                   </TabsList>
-                  {vitalCategories.map((category) => (
-                    <TabsContent key={category.id} value={category.id} className="space-y-4 pt-4">
-                      {category.types.map((type) => {
-                        const config = VITAL_CONFIG[type as VitalType];
-                        return (
-                          <div key={type} className="space-y-2">
-                            <Label htmlFor={type}>{config.label} ({config.unit})</Label>
-                            <Input
-                              id={type}
-                              type="number"
-                              placeholder={`e.g., ${config.normalMin}-${config.normalMax}`}
-                            />
-                          </div>
-                        );
-                      })}
+                  {vitalCategories.slice(1).map((category) => (
+                    <TabsContent key={category.id} value={category.id}>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {category.types.map((type) => (
+                          <VitalTrendChart
+                            key={type}
+                            type={type}
+                            data={getVitalHistory(type, 90)}
+                          />
+                        ))}
+                      </div>
                     </TabsContent>
                   ))}
                 </Tabs>
-                <div className="flex gap-3 pt-4">
-                  <Button variant="outline" className="flex-1" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button className="flex-1 gradient-primary border-0" onClick={handleAddVital}>
-                    Save
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </motion.div>
-
-        {/* Summary Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
-        >
-          {vitalCards.map((card, index) => {
-            const vital = getLatestVital(card.type);
-            const config = VITAL_CONFIG[card.type];
-            const status = vital ? getVitalStatus(card.type, vital.valueNumeric) : 'normal';
-            const StatusIcon = statusIcons[status];
-            
-            return (
-              <motion.div
-                key={card.type}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 + index * 0.05 }}
-              >
-                <Card className="hover-lift">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center`}>
-                        <card.icon className={`h-5 w-5 ${card.color}`} />
-                      </div>
-                      <Badge variant="outline" className={statusColors[status]}>
-                        <StatusIcon className="h-3 w-3 mr-1" />
-                        {status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-1">{config.label}</p>
-                    <p className="text-2xl font-bold">
-                      {vital?.value || '—'} 
-                      <span className="text-sm font-normal text-muted-foreground ml-1">
-                        {config.unit}
-                      </span>
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        {/* Vitals by Category */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>All Health Metrics</CardTitle>
-              <CardDescription>
-                View and track all your vitals and lab results
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="daily">
-                <TabsList className="flex flex-wrap h-auto gap-1 mb-6">
-                  {vitalCategories.map((cat) => (
-                    <TabsTrigger key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {vitalCategories.map((category) => (
-                  <TabsContent key={category.id} value={category.id}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {category.types.map((type) => {
-                        const config = VITAL_CONFIG[type as VitalType];
-                        const vital = getLatestVital(type as VitalType);
-                        const status = vital ? getVitalStatus(type as VitalType, vital.valueNumeric) : 'normal';
-                        
-                        return (
-                          <Card key={type} className="border-border/50">
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="font-medium">{config.label}</p>
-                                  <p className="text-2xl font-bold mt-1">
-                                    {vital?.value || '—'}
-                                    <span className="text-sm font-normal text-muted-foreground ml-1">
-                                      {config.unit}
-                                    </span>
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Normal: {config.normalMin}-{config.normalMax}
-                                  </p>
-                                </div>
-                                {vital && (
-                                  <Badge variant="outline" className={statusColors[status]}>
-                                    {status}
-                                  </Badge>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
-        </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Educational Card */}
         <motion.div
@@ -288,6 +321,12 @@ const Vitals = () => {
           </Card>
         </motion.div>
       </main>
+
+      <AddVitalDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSave={addVital}
+      />
     </div>
   );
 };
