@@ -910,6 +910,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clinician_has_patient_access: {
+        Args: { patient_user_id: string }
+        Returns: boolean
+      }
       get_current_user_email: { Args: never; Returns: string }
     }
     Enums: {
