@@ -16,6 +16,8 @@ interface GuidanceItem {
   completed_at: string | null;
   clinician_user_id: string;
   clinician_name?: string;
+  clinician_specialty?: string;
+  clinician_practice?: string;
 }
 
 export function usePatientGuidance() {
@@ -47,14 +49,29 @@ export function usePatientGuidance() {
         .select('user_id, name')
         .in('user_id', clinicianIds);
 
+      // Fetch clinician profiles for specialty and practice name
+      const { data: clinicianProfiles } = await supabase
+        .from('clinician_profiles')
+        .select('user_id, specialty, practice_name')
+        .in('user_id', clinicianIds);
+
       const profileMap = new Map(
         (profiles || []).map(p => [p.user_id, p.name])
       );
 
-      return (data || []).map(item => ({
-        ...item,
-        clinician_name: profileMap.get(item.clinician_user_id) || 'Healthcare Provider',
-      })) as GuidanceItem[];
+      const clinicianProfileMap = new Map(
+        (clinicianProfiles || []).map(p => [p.user_id, { specialty: p.specialty, practice_name: p.practice_name }])
+      );
+
+      return (data || []).map(item => {
+        const clinicianInfo = clinicianProfileMap.get(item.clinician_user_id);
+        return {
+          ...item,
+          clinician_name: profileMap.get(item.clinician_user_id) || 'Healthcare Provider',
+          clinician_specialty: clinicianInfo?.specialty || undefined,
+          clinician_practice: clinicianInfo?.practice_name || undefined,
+        };
+      }) as GuidanceItem[];
     },
     enabled: !!user?.id,
   });
