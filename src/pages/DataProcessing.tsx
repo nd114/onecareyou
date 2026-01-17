@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent } from '@/components/ui/card';
-import { Database, Shield, Brain, Clock, FileCheck, Users } from 'lucide-react';
+import { Database, Shield, Brain, Clock, FileCheck, Users, Lock, Smartphone } from 'lucide-react';
 
 const DataProcessing = () => {
   return (
@@ -74,24 +74,60 @@ const DataProcessing = () => {
               </CardContent>
             </Card>
 
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="p-6 space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-primary" />
+                  3. On-Device Processing (Privacy-First Mode)
+                </h2>
+                <div className="space-y-3 text-muted-foreground">
+                  <div className="flex items-start gap-3 p-4 bg-background rounded-lg border">
+                    <Smartphone className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-foreground">Your images never leave your device</p>
+                      <p className="text-sm mt-1">For image uploads (JPG, PNG, WebP), we use on-device OCR technology. The raw image is processed entirely on your phone or computer using Tesseract.js. Only the extracted text is sent for analysis.</p>
+                    </div>
+                  </div>
+                  
+                  <h3 className="font-semibold text-foreground">3.1 How On-Device Processing Works</h3>
+                  <ol className="list-decimal pl-6 space-y-2">
+                    <li><strong>Local OCR:</strong> Your device runs Tesseract.js to read text from the image locally</li>
+                    <li><strong>Text-Only Transmission:</strong> Only extracted text (not the image) is sent to our servers</li>
+                    <li><strong>PII Stripping:</strong> Personal identifiers are removed from the text before AI analysis</li>
+                    <li><strong>Vital Extraction:</strong> AI analyzes the anonymized text to extract health metrics</li>
+                  </ol>
+                  
+                  <h3 className="font-semibold text-foreground mt-4">3.2 What This Means For You</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Lab report images with your name, DOB, and other PII never leave your device</li>
+                    <li>Only anonymous numerical health data is processed by AI</li>
+                    <li>Maximum privacy with no compromise on functionality</li>
+                  </ul>
+                  
+                  <p className="text-sm italic mt-4">Note: PDF files still require server-side processing, but undergo strict PII stripping before AI analysis.</p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Shield className="h-5 w-5 text-status-success" />
-                  3. Anonymization Process
+                  4. Additional Anonymization Measures
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>Before any data is sent to external AI services, we implement the following anonymization measures:</p>
+                  <p>In addition to on-device processing, we implement the following anonymization measures:</p>
                   
-                  <h3 className="font-semibold text-foreground">3.1 Technical Measures</h3>
+                  <h3 className="font-semibold text-foreground">4.1 Technical Measures</h3>
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>User ID Stripping:</strong> All internal user identifiers are removed from the request</li>
                     <li><strong>Session Isolation:</strong> Each AI request is independent with no session tracking</li>
                     <li><strong>Metadata Removal:</strong> EXIF data and document metadata are stripped from images</li>
+                    <li><strong>PII Pattern Removal:</strong> Names, dates of birth, IDs, phone numbers, and addresses are detected and redacted</li>
                     <li><strong>No Correlation:</strong> AI cannot correlate requests to specific users</li>
                   </ul>
 
-                  <h3 className="font-semibold text-foreground mt-4">3.2 Verification</h3>
+                  <h3 className="font-semibold text-foreground mt-4">4.2 Verification</h3>
                   <p>Our anonymization process is verified through:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Regular code audits of data processing functions</li>
@@ -106,7 +142,7 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Clock className="h-5 w-5 text-amber" />
-                  4. Data Retention
+                  5. Data Retention
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <h3 className="font-semibold text-foreground">4.1 AI Service Retention</h3>
@@ -133,7 +169,7 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Users className="h-5 w-5 text-indigo" />
-                  5. Sub-Processors
+                  6. Sub-Processors
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>We use the following sub-processors for AI data processing:</p>
@@ -169,7 +205,7 @@ const DataProcessing = () => {
 
             <Card>
               <CardContent className="p-6 space-y-4">
-                <h2 className="text-xl font-semibold">6. Your Rights</h2>
+                <h2 className="text-xl font-semibold">7. Your Rights</h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>You have the right to:</p>
                   <ul className="list-disc pl-6 space-y-2">
@@ -186,7 +222,7 @@ const DataProcessing = () => {
 
             <Card>
               <CardContent className="p-6 space-y-4">
-                <h2 className="text-xl font-semibold">7. Contact Information</h2>
+                <h2 className="text-xl font-semibold">8. Contact Information</h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>For questions about data processing or to exercise your rights:</p>
                   <p><strong>Data Protection Officer:</strong> dpo@onecare.health</p>
