@@ -60,34 +60,32 @@ const Vitals = () => {
     <div className="min-h-screen bg-muted/30">
       <Header />
       
-      <main className="container py-8">
+      <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-4 sm:mb-8"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+              <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-bold mb-0.5 sm:mb-2">
                 Health Metrics
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground">
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
                 Track your vitals and lab results over time
               </p>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2">
               <Button 
-                className="gradient-primary border-0 flex-1 sm:flex-none" 
-                size="sm"
+                className="gradient-primary border-0 flex-1 h-10" 
                 onClick={() => setIsAddDialogOpen(true)}
               >
-                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Record Vital</span>
-                <span className="xs:hidden">Record</span>
+                <Plus className="h-4 w-4 mr-1.5" />
+                Record
               </Button>
               {vitals.length > 0 && (
-                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setIsExportDialogOpen(true)}>
+                <Button variant="outline" size="icon" className="h-10 w-10 flex-shrink-0" onClick={() => setIsExportDialogOpen(true)}>
                   <Download className="h-4 w-4" />
                 </Button>
               )}
@@ -95,32 +93,32 @@ const Vitals = () => {
           </div>
           
           {/* View Toggle - Full width on mobile */}
-          <div className="flex rounded-lg border bg-card p-1 mt-4 w-full sm:w-auto sm:inline-flex">
+          <div className="flex rounded-lg border bg-card p-0.5 sm:p-1 mt-4 w-full">
             <Button
               variant={view === 'overview' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
               onClick={() => setView('overview')}
             >
-              <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Overview
             </Button>
             <Button
               variant={view === 'analytics' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
               onClick={() => setView('analytics')}
             >
-              <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" />
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Analytics
             </Button>
             <Button
               variant={view === 'history' ? 'default' : 'ghost'}
               size="sm"
-              className="flex-1 sm:flex-none text-xs sm:text-sm"
+              className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
               onClick={() => setView('history')}
             >
-              <History className="h-4 w-4 mr-1 sm:mr-2" />
+              <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               History
             </Button>
           </div>
@@ -137,7 +135,7 @@ const Vitals = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+              className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:grid-cols-4 mb-4 sm:mb-8"
             >
               {vitalCards.map((card, index) => {
                 const latestVital = getLatestVital(card.type);
@@ -169,24 +167,24 @@ const Vitals = () => {
               transition={{ delay: 0.2 }}
             >
               <Card>
-                <CardHeader>
-                  <CardTitle>All Health Metrics</CardTitle>
-                  <CardDescription>
+                <CardHeader className="pb-2 sm:pb-4">
+                  <CardTitle className="text-base sm:text-lg">All Health Metrics</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     View and track all your vitals and lab results
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3 sm:p-6">
                   <Tabs defaultValue="daily">
-                    <TabsList className="flex flex-wrap h-auto gap-1 mb-6">
+                    <TabsList className="flex flex-wrap h-auto gap-0.5 sm:gap-1 mb-4 sm:mb-6">
                       {vitalCategories.map((cat) => (
-                        <TabsTrigger key={cat.id} value={cat.id}>
+                        <TabsTrigger key={cat.id} value={cat.id} className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1 sm:py-1.5">
                           {cat.label}
                         </TabsTrigger>
                       ))}
                     </TabsList>
                     {vitalCategories.map((category) => (
                       <TabsContent key={category.id} value={category.id}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                           {category.types.map((type) => {
                             const config = VITAL_CONFIG[type];
                             const vital = getLatestVital(type);
@@ -216,27 +214,27 @@ const Vitals = () => {
                             
                             return (
                               <Card key={type} className="border-border/50">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="font-medium">{config.label}</p>
-                                      <p className="text-2xl font-bold mt-1">
+                                <CardContent className="p-3 sm:p-4">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-xs sm:text-sm truncate">{config.label}</p>
+                                      <p className="text-lg sm:text-xl md:text-2xl font-bold mt-0.5 sm:mt-1">
                                         {formatValue()}
-                                        <span className="text-sm font-normal text-muted-foreground ml-1">
+                                        <span className="text-[10px] sm:text-xs md:text-sm font-normal text-muted-foreground ml-0.5 sm:ml-1">
                                           {config.unit}
                                         </span>
                                       </p>
-                                      <p className="text-xs text-muted-foreground mt-1">
+                                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
                                         Normal: {config.normalMin}-{config.normalMax}
                                       </p>
                                       {stats && stats.count > 0 && (
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                                           {stats.count} readings
                                         </p>
                                       )}
                                     </div>
                                     {vital && (
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                                      <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border flex-shrink-0 ${statusColors[status]}`}>
                                         {status}
                                       </span>
                                     )}
@@ -259,28 +257,28 @@ const Vitals = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="space-y-6"
+            className="space-y-4 sm:space-y-6"
           >
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 md:gap-4">
               {vitalCards.map((card) => {
                 const stats = getVitalStats(card.type);
                 const config = VITAL_CONFIG[card.type];
                 
                 return (
                   <Card key={card.type}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <card.icon className={`h-4 w-4 ${card.color}`} />
-                        <span className="text-sm font-medium">{config.label}</span>
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                        <card.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${card.color}`} />
+                        <span className="text-xs sm:text-sm font-medium truncate">{config.label}</span>
                       </div>
                       {stats ? (
-                        <div className="space-y-1">
-                          <p className="text-lg font-bold">{stats.average} <span className="text-xs font-normal text-muted-foreground">{config.unit}</span></p>
-                          <p className="text-xs text-muted-foreground">{stats.count} readings • {stats.inRange} in range</p>
+                        <div className="space-y-0.5 sm:space-y-1">
+                          <p className="text-base sm:text-lg font-bold">{stats.average} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">{config.unit}</span></p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">{stats.count} readings • {stats.inRange} in range</p>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No data</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">No data</p>
                       )}
                     </CardContent>
                   </Card>
@@ -289,7 +287,7 @@ const Vitals = () => {
             </div>
 
             {/* Trend Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
               {vitalCards.map((card) => (
                 <VitalTrendChart
                   key={card.type}
@@ -301,22 +299,22 @@ const Vitals = () => {
 
             {/* All Categories Analytics */}
             <Card>
-              <CardHeader>
-                <CardTitle>Lab Results Analytics</CardTitle>
-                <CardDescription>Track trends in your blood work and lab tests</CardDescription>
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">Lab Results Analytics</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Track trends in your blood work and lab tests</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6">
                 <Tabs defaultValue="sugar">
-                  <TabsList className="flex flex-wrap h-auto gap-1 mb-6">
+                  <TabsList className="flex flex-wrap h-auto gap-0.5 sm:gap-1 mb-4 sm:mb-6">
                     {vitalCategories.slice(1).map((cat) => (
-                      <TabsTrigger key={cat.id} value={cat.id}>
+                      <TabsTrigger key={cat.id} value={cat.id} className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1 sm:py-1.5">
                         {cat.label}
                       </TabsTrigger>
                     ))}
                   </TabsList>
                   {vitalCategories.slice(1).map((category) => (
                     <TabsContent key={category.id} value={category.id}>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                         {category.types.map((type) => (
                           <VitalTrendChart
                             key={type}
