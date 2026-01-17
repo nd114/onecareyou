@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Pill, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Pill, Edit, Trash2, Search, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Header } from '@/components/layout/Header';
-import { mockMedications } from '@/lib/mock-data';
-import { MEDICATION_TYPE_COLORS } from '@/types/health';
+import { useMedications } from '@/hooks/useMedications';
+import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -20,17 +20,35 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Medications = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const medications = mockMedications.filter(med => 
-    med.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    med.genericName?.toLowerCase().includes(searchQuery.toLowerCase())
+  const { medications, isLoading, deleteMedication } = useMedications();
+
+  const filteredMedications = medications.filter(med => 
+    med.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const medicationLimit = 3; // Free tier limit
-  const currentCount = mockMedications.length;
+  const currentCount = medications.length;
   const isAtLimit = currentCount >= medicationLimit;
+
+  const handleDelete = async (id: string) => {
+    await deleteMedication.mutateAsync(id);
+  };
+
+  const formatFrequency = (frequency: string) => {
+    return frequency.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const formatTimesOfDay = (times: unknown) => {
+    if (!times) return 'Not set';
+    if (Array.isArray(times)) {
+      return times.join(', ');
+    }
+    return String(times);
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -106,100 +124,143 @@ const Medications = () => {
           </div>
         </motion.div>
 
-        {/* Medications Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {medications.map((medication, index) => (
-            <motion.div
-              key={medication.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 + index * 0.05 }}
-            >
-              <Card className="h-full hover-lift">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="h-full">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Pill className="h-6 w-6 text-primary" />
-                      </div>
+                      <Skeleton className="h-12 w-12 rounded-xl" />
                       <div>
-                        <CardTitle className="text-lg">{medication.name}</CardTitle>
-                        {medication.genericName && (
-                          <CardDescription className="text-xs">
-                            {medication.genericName}
-                          </CardDescription>
-                        )}
+                        <Skeleton className="h-5 w-32 mb-1" />
+                        <Skeleton className="h-3 w-24" />
                       </div>
                     </div>
-                    <Badge className={MEDICATION_TYPE_COLORS[medication.type]}>
-                      {medication.type}
-                    </Badge>
+                    <Skeleton className="h-6 w-20 rounded-full" />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Dosage</span>
-                      <span className="font-medium">{medication.dosage}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Frequency</span>
-                      <span className="font-medium">{medication.frequency.replace(/_/g, ' ')}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Times</span>
-                      <span className="font-medium">{medication.timeOfDay.join(', ')}</span>
-                    </div>
-                    {medication.notes && (
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-muted-foreground">
-                          {medication.notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 mt-4 pt-4 border-t">
-                    <Button variant="outline" size="sm" className="flex-1" asChild>
-                      <Link to={`/medications/${medication.id}/edit`}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Link>
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Medication</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete {medication.name}? This will also remove all scheduled doses. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
-          ))}
-        </motion.div>
+            ))}
+          </div>
+        )}
 
-        {medications.length === 0 && (
+        {/* Medications Grid */}
+        {!isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {filteredMedications.map((medication, index) => (
+              <motion.div
+                key={medication.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 + index * 0.05 }}
+              >
+                <Card className={`h-full hover-lift ${!medication.is_active ? 'opacity-60' : ''}`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Pill className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{medication.name}</CardTitle>
+                          {!medication.is_active && (
+                            <CardDescription className="text-xs">
+                              Inactive
+                            </CardDescription>
+                          )}
+                        </div>
+                      </div>
+                      <Badge className={MEDICATION_TYPE_COLORS[medication.type as MedicationType] || 'bg-muted'}>
+                        {medication.type}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Dosage</span>
+                        <span className="font-medium">{medication.dosage}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Frequency</span>
+                        <span className="font-medium">{formatFrequency(medication.frequency)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Times</span>
+                        <span className="font-medium">{formatTimesOfDay(medication.times_of_day)}</span>
+                      </div>
+                      {medication.instructions && (
+                        <div className="pt-2 border-t">
+                          <p className="text-sm text-muted-foreground">
+                            {medication.instructions}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <Link to={`/medications/${medication.id}/edit`}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Link>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive hover:text-destructive"
+                            disabled={deleteMedication.isPending}
+                          >
+                            {deleteMedication.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Medication</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete {medication.name}? This will also remove all scheduled doses. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => handleDelete(medication.id)}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {!isLoading && filteredMedications.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

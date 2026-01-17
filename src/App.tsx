@@ -9,6 +9,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Medications from "./pages/Medications";
 import AddMedication from "./pages/AddMedication";
+import EditMedication from "./pages/EditMedication";
 import Schedule from "./pages/Schedule";
 import Vitals from "./pages/Vitals";
 import CareCircle from "./pages/CareCircle";
@@ -55,6 +56,11 @@ const App = () => (
             <Route path="/medications/add" element={
               <ProtectedRoute>
                 <AddMedication />
+              </ProtectedRoute>
+            } />
+            <Route path="/medications/:id/edit" element={
+              <ProtectedRoute>
+                <EditMedication />
               </ProtectedRoute>
             } />
             <Route path="/schedule" element={
