@@ -48,8 +48,8 @@ export function Header() {
       : [
           { href: '/dashboard', label: 'Dashboard' },
           { href: '/medications', label: 'Medications' },
-          { href: '/schedule', label: 'Schedule' },
           { href: '/vitals', label: 'Vitals' },
+          { href: '/schedule', label: 'Schedule' },
         ]
     : [
         { href: '/features', label: 'Features' },
