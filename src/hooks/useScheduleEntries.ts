@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useMedications, Medication } from './useMedications';
 import { startOfDay, endOfDay, format, parseISO, isToday } from 'date-fns';
+import { useEffect } from 'react';
 
 export type ScheduleEntry = Tables<'schedule_entries'>;
 export type ScheduleEntryInsert = TablesInsert<'schedule_entries'>;
@@ -20,9 +21,58 @@ export const useScheduleEntries = (date?: Date) => {
   const { medications } = useMedications();
 
   const targetDate = date || new Date();
+  const targetDateStr = format(targetDate, 'yyyy-MM-dd');
+
+  // Generate schedule entries for the target date from active medications
+  useEffect(() => {
+    const generateEntriesForDate = async () => {
+      if (!user?.id || !medications.length) return;
+      
+      const activeMeds = medications.filter(m => m.is_active && m.times_of_day);
+      if (activeMeds.length === 0) return;
+
+      // Check which medications already have entries for this date
+      const { data: existingEntries } = await supabase
+        .from('schedule_entries')
+        .select('medication_id')
+        .eq('user_id', user.id)
+        .gte('scheduled_time', startOfDay(targetDate).toISOString())
+        .lte('scheduled_time', endOfDay(targetDate).toISOString());
+
+      const existingMedIds = new Set((existingEntries || []).map(e => e.medication_id));
+
+      // Create entries for medications that don't have them yet
+      const newEntries: ScheduleEntryInsert[] = [];
+      
+      for (const med of activeMeds) {
+        if (existingMedIds.has(med.id)) continue;
+        
+        const times = Array.isArray(med.times_of_day) ? med.times_of_day : [];
+        for (const time of times) {
+          if (typeof time === 'string') {
+            newEntries.push({
+              user_id: user.id,
+              medication_id: med.id,
+              scheduled_time: `${targetDateStr}T${time}:00`,
+              status: 'pending',
+            });
+          }
+        }
+      }
+
+      if (newEntries.length > 0) {
+        const { error } = await supabase.from('schedule_entries').insert(newEntries);
+        if (!error) {
+          queryClient.invalidateQueries({ queryKey: ['schedule_entries', user.id, targetDateStr] });
+        }
+      }
+    };
+
+    generateEntriesForDate();
+  }, [user?.id, medications, targetDateStr, queryClient]);
 
   const scheduleQuery = useQuery({
-    queryKey: ['schedule_entries', user?.id, format(targetDate, 'yyyy-MM-dd')],
+    queryKey: ['schedule_entries', user?.id, targetDateStr],
     queryFn: async () => {
       if (!user?.id) throw new Error('Not authenticated');
       
