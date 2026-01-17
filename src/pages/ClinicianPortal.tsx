@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Heart, 
@@ -17,7 +17,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  TrendingUp
+  TrendingUp,
+  Bell
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { VitalsSummaryView } from '@/components/clinician/VitalsSummaryView';
+import { AlertThresholdDialog } from '@/components/clinician/AlertThresholdDialog';
+import { Header } from '@/components/layout/Header';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SharedData {
   patientName?: string;
@@ -78,9 +82,13 @@ interface SharedData {
 
 const ClinicianPortal = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<SharedData | null>(null);
+  const [shareId, setShareId] = useState<string | null>(null);
+  const [patientUserId, setPatientUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSharedData = async () => {
@@ -108,6 +116,20 @@ const ClinicianPortal = () => {
         }
 
         setData(response);
+        
+        // Fetch share info for alert thresholds
+        if (inviteCode) {
+          const { data: shareData } = await supabase
+            .from('provider_shares')
+            .select('id, user_id')
+            .eq('invite_code', inviteCode)
+            .single();
+          
+          if (shareData) {
+            setShareId(shareData.id);
+            setPatientUserId(shareData.user_id);
+          }
+        }
       } catch (err) {
         console.error('Error:', err);
         setError('An unexpected error occurred');
@@ -139,10 +161,13 @@ const ClinicianPortal = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading patient data...</p>
+      <div className="min-h-screen bg-muted/30">
+        <Header />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading patient data...</p>
+          </div>
         </div>
       </div>
     );
@@ -150,22 +175,30 @@ const ClinicianPortal = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-semibold mb-2">Access Error</h2>
-            <p className="text-muted-foreground mb-6">{error}</p>
-            <Link to="/">
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Return Home
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-muted/30">
+        <Header />
+        <div className="flex items-center justify-center p-4 py-20">
+          <Card className="max-w-md w-full">
+            <CardContent className="pt-6 text-center">
+              <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="h-8 w-8 text-destructive" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Access Error</h2>
+              <p className="text-muted-foreground mb-6">{error}</p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => navigate('/clinician/dashboard')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+                <Link to="/">
+                  <Button variant="ghost">
+                    Home
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -176,26 +209,44 @@ const ClinicianPortal = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <header className="bg-background border-b">
-        <div className="container py-4">
+      {/* Main Navigation Header */}
+      <Header />
+      
+      {/* Patient Context Bar */}
+      <div className="bg-background border-b">
+        <div className="container py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center">
-                <ShieldCheck className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="font-display text-xl font-bold">OneCare Clinician Portal</h1>
-                <p className="text-xs text-muted-foreground">Secure Patient Data Access</p>
-              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/clinician/dashboard')}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                All Patients
+              </Button>
+              <div className="h-4 w-px bg-border" />
+              <Badge variant="outline" className="flex items-center gap-1">
+                <ShieldCheck className="h-3 w-3" />
+                Secure Access
+              </Badge>
             </div>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3" />
-              Verified Access
-            </Badge>
+            {user && shareId && patientUserId && data.permissions.vitals && (
+              <AlertThresholdDialog 
+                patientUserId={patientUserId}
+                shareId={shareId}
+                patientName={patientName}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    <Bell className="h-4 w-4 mr-2" />
+                    Alert Thresholds
+                  </Button>
+                }
+              />
+            )}
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="container py-8">
         {/* Patient Info Header */}

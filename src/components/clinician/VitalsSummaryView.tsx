@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { format, subDays, isAfter } from 'date-fns';
+import { useMemo, useState } from 'react';
+import { format, subDays, isAfter, isSameMinute, parseISO } from 'date-fns';
 import { 
   Heart, 
   Activity, 
@@ -10,11 +10,20 @@ import {
   TrendingDown,
   Minus,
   AlertTriangle,
-  Clock
+  Clock,
+  Filter,
+  StickyNote
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Vital {
   id: string;
@@ -50,6 +59,9 @@ const VITAL_CONFIG = {
 };
 
 export function VitalsSummaryView({ vitals }: VitalsSummaryViewProps) {
+  const [timelineFilter, setTimelineFilter] = useState<string>('all');
+  const [timelinePeriod, setTimelinePeriod] = useState<string>('7');
+
   // Group vitals by type and calculate stats
   const vitalStats = useMemo(() => {
     const grouped: Record<string, Vital[]> = {};
@@ -121,6 +133,72 @@ export function VitalsSummaryView({ vitals }: VitalsSummaryViewProps) {
     });
   }, [vitals]);
 
+  // Filter and group timeline vitals
+  const timelineGroups = useMemo(() => {
+    const periodDays = parseInt(timelinePeriod);
+    const cutoffDate = subDays(new Date(), periodDays);
+    
+    let filtered = vitals.filter(v => 
+      isAfter(new Date(v.recorded_at), cutoffDate)
+    );
+
+    if (timelineFilter !== 'all') {
+      filtered = filtered.filter(v => v.type === timelineFilter);
+    }
+
+    // Sort by recorded_at descending
+    filtered.sort((a, b) => 
+      new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
+    );
+
+    // Group vitals recorded at the same time (within 1 minute)
+    const groups: { timestamp: string; vitals: Vital[] }[] = [];
+    
+    filtered.forEach(vital => {
+      const vitalTime = parseISO(vital.recorded_at);
+      const existingGroup = groups.find(g => 
+        isSameMinute(parseISO(g.timestamp), vitalTime)
+      );
+
+      if (existingGroup) {
+        existingGroup.vitals.push(vital);
+      } else {
+        groups.push({ timestamp: vital.recorded_at, vitals: [vital] });
+      }
+    });
+
+    return groups;
+  }, [vitals, timelineFilter, timelinePeriod]);
+
+  // Consolidated notes - group by timestamp to avoid repetition
+  const consolidatedNotes = useMemo(() => {
+    const notesMap = new Map<string, { timestamp: string; notes: string; vitals: Vital[] }>();
+    
+    vitals.forEach(vital => {
+      if (vital.notes && vital.notes.trim().length > 0) {
+        const vitalTime = parseISO(vital.recorded_at);
+        // Use minute-precision timestamp as key
+        const minuteKey = format(vitalTime, 'yyyy-MM-dd HH:mm');
+        
+        const existing = notesMap.get(minuteKey);
+        if (existing) {
+          existing.vitals.push(vital);
+          // Keep the first note (they should be the same for same-time entries)
+        } else {
+          notesMap.set(minuteKey, {
+            timestamp: vital.recorded_at,
+            notes: vital.notes,
+            vitals: [vital]
+          });
+        }
+      }
+    });
+
+    return Array.from(notesMap.values()).sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }, [vitals]);
+
   const formatValue = (vital: Vital) => {
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
       return `${vital.value}/${vital.secondary_value}`;
@@ -135,6 +213,20 @@ export function VitalsSummaryView({ vitals }: VitalsSummaryViewProps) {
       default: return <Minus className="h-4 w-4" />;
     }
   };
+
+  const getVitalConfig = (type: string) => {
+    return VITAL_CONFIG[type as keyof typeof VITAL_CONFIG] || {
+      label: type.replace('_', ' '),
+      icon: Activity,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    };
+  };
+
+  const vitalTypes = useMemo(() => {
+    const types = new Set(vitals.map(v => v.type));
+    return Array.from(types);
+  }, [vitals]);
 
   if (vitals.length === 0) {
     return (
@@ -210,18 +302,13 @@ export function VitalsSummaryView({ vitals }: VitalsSummaryViewProps) {
         <TabsList>
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="notes">Notes ({vitalStats.reduce((sum, s) => sum + s.withNotes.length, 0)})</TabsTrigger>
+          <TabsTrigger value="notes">Notes ({consolidatedNotes.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {vitalStats.map((stat) => {
-              const config = VITAL_CONFIG[stat.type as keyof typeof VITAL_CONFIG] || {
-                label: stat.type.replace('_', ' '),
-                icon: Activity,
-                color: 'text-primary',
-                bgColor: 'bg-primary/10',
-              };
+              const config = getVitalConfig(stat.type);
               const Icon = config.icon;
 
               return (
@@ -288,46 +375,97 @@ export function VitalsSummaryView({ vitals }: VitalsSummaryViewProps) {
 
         <TabsContent value="timeline">
           <Card>
-            <CardContent className="pt-4">
-              <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {vitals.slice(0, 30).map((vital) => {
-                  const config = VITAL_CONFIG[vital.type as keyof typeof VITAL_CONFIG] || {
-                    label: vital.type.replace('_', ' '),
-                    icon: Activity,
-                    color: 'text-primary',
-                    bgColor: 'bg-primary/10',
-                  };
-                  const Icon = config.icon;
-
-                  return (
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <CardTitle className="text-base">Vital Readings Timeline</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Select value={timelineFilter} onValueChange={setTimelineFilter}>
+                    <SelectTrigger className="w-[140px] h-8">
+                      <SelectValue placeholder="All types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All types</SelectItem>
+                      {vitalTypes.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {getVitalConfig(type).label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={timelinePeriod} onValueChange={setTimelinePeriod}>
+                    <SelectTrigger className="w-[100px] h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="14">14 days</SelectItem>
+                      <SelectItem value="30">30 days</SelectItem>
+                      <SelectItem value="90">90 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                {timelineGroups.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">No readings in this period</p>
+                  </div>
+                ) : (
+                  timelineGroups.map((group, idx) => (
                     <div 
-                      key={vital.id}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50"
+                      key={`${group.timestamp}-${idx}`}
+                      className="p-3 rounded-lg border bg-card"
                     >
-                      <div className={`h-8 w-8 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0`}>
-                        <Icon className={`h-4 w-4 ${config.color}`} />
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {format(new Date(group.timestamp), 'MMM d, yyyy • h:mm a')}
+                        </p>
+                        {group.vitals.length > 1 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {group.vitals.length} readings
+                          </Badge>
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium text-sm capitalize truncate">
-                            {config.label}
-                          </p>
-                          <p className="font-semibold text-sm whitespace-nowrap">
-                            {formatValue(vital)} {vital.unit}
+                      <div className="space-y-2">
+                        {group.vitals.map(vital => {
+                          const config = getVitalConfig(vital.type);
+                          const Icon = config.icon;
+
+                          return (
+                            <div 
+                              key={vital.id}
+                              className="flex items-center gap-3"
+                            >
+                              <div className={`h-7 w-7 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0`}>
+                                <Icon className={`h-3.5 w-3.5 ${config.color}`} />
+                              </div>
+                              <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                                <p className="text-sm capitalize truncate">
+                                  {config.label}
+                                </p>
+                                <p className="font-semibold text-sm whitespace-nowrap">
+                                  {formatValue(vital)} {vital.unit}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {group.vitals.some(v => v.notes) && (
+                        <div className="mt-2 pt-2 border-t flex items-start gap-2">
+                          <StickyNote className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <p className="text-xs text-muted-foreground">
+                            {group.vitals.find(v => v.notes)?.notes}
                           </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(vital.recorded_at), 'MMM d, yyyy • h:mm a')}
-                        </p>
-                      </div>
-                      {vital.notes && (
-                        <Badge variant="outline" className="text-xs flex-shrink-0">
-                          Note
-                        </Badge>
                       )}
                     </div>
-                  );
-                })}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -339,45 +477,38 @@ export function VitalsSummaryView({ vitals }: VitalsSummaryViewProps) {
               <CardTitle className="text-base">Patient Notes on Vitals</CardTitle>
             </CardHeader>
             <CardContent>
-              {vitalStats.some(s => s.withNotes.length > 0) ? (
+              {consolidatedNotes.length > 0 ? (
                 <div className="space-y-3">
-                  {vitalStats.flatMap(stat => 
-                    stat.withNotes.map(vital => {
-                      const config = VITAL_CONFIG[vital.type as keyof typeof VITAL_CONFIG] || {
-                        label: vital.type.replace('_', ' '),
-                        icon: Activity,
-                        color: 'text-primary',
-                        bgColor: 'bg-primary/10',
-                      };
-                      const Icon = config.icon;
-
-                      return (
-                        <div 
-                          key={vital.id}
-                          className="p-3 rounded-lg border bg-muted/30"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`h-8 w-8 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0`}>
-                              <Icon className={`h-4 w-4 ${config.color}`} />
+                  {consolidatedNotes.map((entry, idx) => (
+                    <div 
+                      key={`${entry.timestamp}-${idx}`}
+                      className="p-3 rounded-lg border bg-muted/30"
+                    >
+                      <div className="flex items-start gap-3">
+                        <StickyNote className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex flex-wrap gap-1">
+                              {entry.vitals.map(vital => {
+                                const config = getVitalConfig(vital.type);
+                                return (
+                                  <Badge key={vital.id} variant="secondary" className="text-xs">
+                                    {config.label}: {formatValue(vital)} {vital.unit}
+                                  </Badge>
+                                );
+                              })}
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="font-medium text-sm capitalize">
-                                  {config.label}: {formatValue(vital)} {vital.unit}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(vital.recorded_at), 'MMM d')}
-                                </p>
-                              </div>
-                              <p className="text-sm mt-1 text-foreground">
-                                "{vital.notes}"
-                              </p>
-                            </div>
+                            <p className="text-xs text-muted-foreground whitespace-nowrap">
+                              {format(new Date(entry.timestamp), 'MMM d')}
+                            </p>
                           </div>
+                          <p className="text-sm text-foreground">
+                            "{entry.notes}"
+                          </p>
                         </div>
-                      );
-                    })
-                  )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
