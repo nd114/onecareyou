@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { GlucoseUnit, WeightUnit, TemperatureUnit, DEFAULT_UNIT_PREFERENCES } from '@/types/health';
+import { CareAlertSettings } from '@/components/care/CareAlertSettings';
 
 interface ConsentLogEntry {
   id: string;
@@ -703,6 +704,15 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
+
+          {/* Care Alerts */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.38 }}
+          >
+            <CareAlertSettings />
           </motion.div>
 
           {/* Sign Out */}

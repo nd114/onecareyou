@@ -19,6 +19,8 @@ import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
 import { Switch } from '@/components/ui/switch';
 import { DiscontinueMedicationDialog } from '@/components/medications/DiscontinueMedicationDialog';
+import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
+import { Separator } from '@/components/ui/separator';
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },
@@ -280,6 +282,15 @@ const EditMedication = () => {
                     rows={3}
                   />
                 </div>
+
+                {/* Photo Gallery */}
+                <Separator />
+                {id && (
+                  <MedicationPhotoGallery 
+                    medicationId={id} 
+                    medicationName={formData.name}
+                  />
+                )}
 
                 {/* Active Toggle */}
                 <div className="flex items-center justify-between rounded-lg border p-4">

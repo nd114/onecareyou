@@ -68,6 +68,97 @@ export type Database = {
           },
         ]
       }
+      care_alert_logs: {
+        Row: {
+          id: string
+          message: string | null
+          missed_count: number
+          recipient_email: string
+          sent_at: string
+          setting_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message?: string | null
+          missed_count: number
+          recipient_email: string
+          sent_at?: string
+          setting_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message?: string | null
+          missed_count?: number
+          recipient_email?: string
+          sent_at?: string
+          setting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_alert_logs_setting_id_fkey"
+            columns: ["setting_id"]
+            isOneToOne: false
+            referencedRelation: "care_alert_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_alert_settings: {
+        Row: {
+          alert_recipient_email: string
+          alert_recipient_name: string
+          created_at: string
+          family_member_id: string | null
+          id: string
+          is_active: boolean | null
+          last_alert_sent_at: string | null
+          missed_dose_threshold: number
+          notify_by_email: boolean | null
+          notify_by_push: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_recipient_email: string
+          alert_recipient_name: string
+          created_at?: string
+          family_member_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_alert_sent_at?: string | null
+          missed_dose_threshold?: number
+          notify_by_email?: boolean | null
+          notify_by_push?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_recipient_email?: string
+          alert_recipient_name?: string
+          created_at?: string
+          family_member_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_alert_sent_at?: string | null
+          missed_dose_threshold?: number
+          notify_by_email?: boolean | null
+          notify_by_push?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_alert_settings_family_member_id_fkey"
+            columns: ["family_member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       caregiver_access: {
         Row: {
           caregiver_user_id: string
@@ -459,6 +550,44 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      medication_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          medication_id: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          medication_id: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          medication_id?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_photos_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       medications: {
         Row: {
