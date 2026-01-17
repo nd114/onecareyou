@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { 
   User, Shield, Bell, Moon, Sun, 
   Brain, History, ChevronRight, LogOut,
-  Mail, Phone, Heart, AlertTriangle, Globe, Scale, Thermometer, Droplets
+  Mail, Phone, Heart, AlertTriangle, Globe, Scale, Thermometer, Droplets,
+  BellRing
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAIConsent } from '@/hooks/useAIConsent';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -77,6 +79,7 @@ const COMMON_TIMEZONES = [
 const Settings = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const { hasConsent, consentUpdatedAt, grantConsent, revokeConsent } = useAIConsent();
+  const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
   const navigate = useNavigate();
   
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
@@ -393,7 +396,34 @@ const Settings = () => {
 
                 <Separator />
 
-                {/* Dark Mode */}
+                {/* Push Notifications */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <BellRing className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Push Notifications</p>
+                      <p className="text-sm text-muted-foreground">
+                        {notificationsSupported 
+                          ? 'Get reminders for scheduled medications' 
+                          : 'Not supported in this browser'}
+                      </p>
+                    </div>
+                  </div>
+                  {notificationsSupported && (
+                    <Switch
+                      checked={notificationsEnabled}
+                      onCheckedChange={() => {
+                        if (!notificationsEnabled) {
+                          requestPermission();
+                        } else {
+                          toast.info('To disable notifications, use your browser settings');
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+
+                <Separator />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {theme === 'light' ? (

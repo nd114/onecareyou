@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { TrendingUp, TrendingDown, Minus, LucideIcon } from 'lucide-react';
 import { VitalRecord } from '@/hooks/useVitals';
+import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 
 interface VitalStatsCardProps {
   type: VitalType;
@@ -22,10 +23,15 @@ interface VitalStatsCardProps {
 
 export function VitalStatsCard({ type, latestVital, stats, icon: Icon, colorClass }: VitalStatsCardProps) {
   const config = VITAL_CONFIG[type];
+  const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
+
+  const normalRange = getNormalRange(type);
+  const displayUnit = getDisplayUnit(type);
 
   const getStatus = (value: number): 'normal' | 'high' | 'low' => {
-    if (value < config.normalMin) return 'low';
-    if (value > config.normalMax) return 'high';
+    const converted = convertVitalValue(type, value);
+    if (converted.value < normalRange.min) return 'low';
+    if (converted.value > normalRange.max) return 'high';
     return 'normal';
   };
 
@@ -50,38 +56,45 @@ export function VitalStatsCard({ type, latestVital, stats, icon: Icon, colorClas
     if (type === 'blood_pressure' && latestVital.secondary_value) {
       return `${latestVital.value}/${latestVital.secondary_value}`;
     }
-    return latestVital.value;
+    const converted = convertVitalValue(type, latestVital.value);
+    return converted.value;
+  };
+
+  const formatAverage = () => {
+    if (!stats) return null;
+    const converted = convertVitalValue(type, stats.average);
+    return converted.value;
   };
 
   return (
-    <Card className="hover-lift">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Icon className={`h-5 w-5 ${colorClass}`} />
+    <Card className="hover-lift h-full">
+      <CardContent className="p-3 sm:p-4 md:p-6">
+        <div className="flex items-start justify-between mb-2 sm:mb-4 gap-2">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${colorClass}`} />
           </div>
-          <Badge variant="outline" className={statusColors[status]}>
-            <StatusIcon className="h-3 w-3 mr-1" />
+          <Badge variant="outline" className={`${statusColors[status]} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5`}>
+            <StatusIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
             {status}
           </Badge>
         </div>
         
-        <p className="text-sm text-muted-foreground mb-1">{config.label}</p>
-        <p className="text-2xl font-bold">
+        <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{config.label}</p>
+        <p className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">
           {formatValue()}
-          <span className="text-sm font-normal text-muted-foreground ml-1">
-            {config.unit}
+          <span className="text-[10px] sm:text-xs md:text-sm font-normal text-muted-foreground ml-0.5 sm:ml-1">
+            {displayUnit}
           </span>
         </p>
 
         {stats && stats.count > 1 && (
-          <div className="mt-3 pt-3 border-t border-border/50">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">30-day avg</span>
-              <span className="font-medium">{stats.average} {config.unit}</span>
+          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-border/50 space-y-0.5 sm:space-y-1">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs gap-1">
+              <span className="text-muted-foreground whitespace-nowrap">30-day avg</span>
+              <span className="font-medium truncate">{formatAverage()} {displayUnit}</span>
             </div>
             {stats.trend !== 0 && (
-              <div className="flex items-center justify-between text-xs mt-1">
+              <div className="flex items-center justify-between text-[10px] sm:text-xs">
                 <span className="text-muted-foreground">Trend</span>
                 <span className={stats.trend > 0 ? 'text-severity-high' : 'text-ocean'}>
                   {stats.trend > 0 ? '+' : ''}{stats.trend}%

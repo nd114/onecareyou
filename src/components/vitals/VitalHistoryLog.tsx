@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/collapsible';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
+import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 
 interface VitalHistoryLogProps {
   vitals: VitalRecord[];
@@ -62,6 +63,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
   const [typeFilter, setTypeFilter] = useState<VitalType | 'all'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
   // Group vitals by created_at timestamp (within 2 seconds = same save session)
   const groupedEntries = useMemo(() => {
@@ -108,13 +110,19 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
       return `${vital.value}/${vital.secondary_value}`;
     }
-    return vital.value;
+    const converted = convertVitalValue(vital.type, vital.value);
+    return converted.value;
+  };
+
+  const getDisplayUnitForVital = (vital: VitalRecord) => {
+    return getDisplayUnit(vital.type);
   };
 
   const getStatus = (vital: VitalRecord): 'normal' | 'high' | 'low' => {
-    const config = VITAL_CONFIG[vital.type];
-    if (vital.value < config.normalMin) return 'low';
-    if (vital.value > config.normalMax) return 'high';
+    const normalRange = getNormalRange(vital.type);
+    const converted = convertVitalValue(vital.type, vital.value);
+    if (converted.value < normalRange.min) return 'low';
+    if (converted.value > normalRange.max) return 'high';
     return 'normal';
   };
 
@@ -207,10 +215,10 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                         </span>
                       </div>
                       
-                      <p className="text-2xl font-bold mt-1">
+                      <p className="text-xl sm:text-2xl font-bold mt-1">
                         {formatValue(vital)}
-                        <span className="text-sm font-normal text-muted-foreground ml-1">
-                          {config.unit}
+                        <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
+                          {getDisplayUnitForVital(vital)}
                         </span>
                       </p>
 
@@ -282,11 +290,11 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                         </div>
 
                         {/* Summary of values */}
-                        <div className="flex flex-wrap gap-3 mt-2">
+                        <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
                           {group.vitals.map((v) => (
-                            <div key={v.id} className="text-sm">
+                            <div key={v.id} className="text-xs sm:text-sm">
                               <span className="text-muted-foreground">{VITAL_CONFIG[v.type].label}:</span>{' '}
-                              <span className="font-semibold">{formatValue(v)} {VITAL_CONFIG[v.type].unit}</span>
+                              <span className="font-semibold">{formatValue(v)} {getDisplayUnitForVital(v)}</span>
                             </div>
                           ))}
                         </div>
@@ -329,17 +337,17 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                       return (
                         <div 
                           key={vital.id} 
-                          className="flex items-center justify-between py-2 px-3 bg-background rounded-lg border"
+                          className="flex items-center justify-between py-2 px-2 sm:px-3 bg-background rounded-lg border gap-2"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                          <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
+                            <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border ${statusColors[status]} flex-shrink-0`}>
                               {status}
                             </span>
-                            <span className="font-medium">{config.label}</span>
-                            <span className="text-lg font-bold">
+                            <span className="font-medium text-xs sm:text-sm">{config.label}</span>
+                            <span className="text-sm sm:text-lg font-bold">
                               {formatValue(vital)}
-                              <span className="text-sm font-normal text-muted-foreground ml-1">
-                                {config.unit}
+                              <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
+                                {getDisplayUnitForVital(vital)}
                               </span>
                             </span>
                           </div>
