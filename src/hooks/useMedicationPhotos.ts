@@ -34,16 +34,16 @@ export function useMedicationPhotos(medicationId?: string) {
 
       if (error) throw error;
 
-      // Get signed URLs for each photo
+      // Get signed URLs for each photo (bucket is private)
       const photosWithUrls = await Promise.all(
         (data || []).map(async (photo) => {
-          const { data: urlData } = supabase.storage
+          const { data: urlData, error: urlError } = await supabase.storage
             .from('medication-photos')
-            .getPublicUrl(photo.storage_path);
+            .createSignedUrl(photo.storage_path, 3600); // 1 hour expiration
           
           return {
             ...photo,
-            url: urlData.publicUrl,
+            url: urlError ? undefined : urlData?.signedUrl,
           } as MedicationPhoto;
         })
       );
