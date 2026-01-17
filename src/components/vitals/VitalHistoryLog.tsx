@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Pencil, Trash2, Filter, ChevronDown } from 'lucide-react';
+import { Pencil, Trash2, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 
@@ -27,6 +32,14 @@ interface VitalHistoryLogProps {
   vitals: VitalRecord[];
   onEdit: (vital: VitalRecord) => void;
   onDelete: (id: string) => void;
+}
+
+interface GroupedEntry {
+  key: string;
+  recordedAt: string;
+  createdAt: string;
+  vitals: VitalRecord[];
+  notes: string | null;
 }
 
 const vitalTypeOptions: { value: VitalType | 'all'; label: string }[] = [
@@ -48,10 +61,48 @@ const vitalTypeOptions: { value: VitalType | 'all'; label: string }[] = [
 export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogProps) {
   const [typeFilter, setTypeFilter] = useState<VitalType | 'all'>('all');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  const filteredVitals = typeFilter === 'all' 
-    ? vitals 
-    : vitals.filter(v => v.type === typeFilter);
+  // Group vitals by created_at timestamp (within 2 seconds = same save session)
+  const groupedEntries = useMemo(() => {
+    const filtered = typeFilter === 'all' 
+      ? vitals 
+      : vitals.filter(v => v.type === typeFilter);
+
+    const groups: Map<string, GroupedEntry> = new Map();
+    
+    for (const vital of filtered) {
+      const createdTime = new Date(vital.created_at).getTime();
+      
+      // Find existing group within 2 seconds
+      let foundGroup: string | null = null;
+      for (const [key, group] of groups) {
+        const groupTime = new Date(group.createdAt).getTime();
+        if (Math.abs(createdTime - groupTime) < 2000) {
+          foundGroup = key;
+          break;
+        }
+      }
+
+      if (foundGroup) {
+        groups.get(foundGroup)!.vitals.push(vital);
+      } else {
+        const key = vital.created_at;
+        groups.set(key, {
+          key,
+          recordedAt: vital.recorded_at,
+          createdAt: vital.created_at,
+          vitals: [vital],
+          notes: vital.notes,
+        });
+      }
+    }
+
+    // Sort by created_at descending
+    return Array.from(groups.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [vitals, typeFilter]);
 
   const formatValue = (vital: VitalRecord) => {
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
@@ -80,12 +131,19 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     }
   };
 
-  const wasEdited = (vital: VitalRecord) => {
-    const created = new Date(vital.created_at).getTime();
-    const recorded = new Date(vital.recorded_at).getTime();
-    // If difference is more than 5 minutes, it was likely edited
-    return Math.abs(created - recorded) > 5 * 60 * 1000;
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
   };
+
+  const totalVitals = typeFilter === 'all' ? vitals.length : vitals.filter(v => v.type === typeFilter).length;
 
   if (vitals.length === 0) {
     return (
@@ -101,7 +159,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
       {/* Filter Controls */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredVitals.length} of {vitals.length} entries
+          {groupedEntries.length} session{groupedEntries.length !== 1 ? 's' : ''} ({totalVitals} readings)
         </p>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -125,78 +183,197 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
         </DropdownMenu>
       </div>
 
-      {/* Entries List */}
+      {/* Grouped Entries List */}
       <div className="space-y-3">
-        {filteredVitals.map((vital) => {
-          const config = VITAL_CONFIG[vital.type];
-          const status = getStatus(vital);
-          const edited = wasEdited(vital);
+        {groupedEntries.map((group) => {
+          const isExpanded = expandedGroups.has(group.key);
+          const isSingleEntry = group.vitals.length === 1;
 
-          return (
-            <Card key={vital.id} className="border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  {/* Main Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">{config.label}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
-                        {status}
-                      </span>
-                      {edited && (
-                        <Badge variant="outline" className="text-xs">
-                          edited
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <p className="text-2xl font-bold mt-1">
-                      {formatValue(vital)}
-                      <span className="text-sm font-normal text-muted-foreground ml-1">
-                        {config.unit}
-                      </span>
-                    </p>
+          // For single entries, render directly without collapsible
+          if (isSingleEntry) {
+            const vital = group.vitals[0];
+            const config = VITAL_CONFIG[vital.type];
+            const status = getStatus(vital);
 
-                    {vital.notes && (
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                        {vital.notes}
+            return (
+              <Card key={group.key} className="border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">{config.label}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                          {status}
+                        </span>
+                      </div>
+                      
+                      <p className="text-2xl font-bold mt-1">
+                        {formatValue(vital)}
+                        <span className="text-sm font-normal text-muted-foreground ml-1">
+                          {config.unit}
+                        </span>
                       </p>
-                    )}
 
-                    {/* Timestamps */}
-                    <div className="flex flex-col sm:flex-row sm:gap-4 mt-3 text-xs text-muted-foreground">
-                      <div>
-                        <span className="font-medium">Recorded:</span>{' '}
-                        {format(new Date(vital.recorded_at), "MMM d, yyyy 'at' h:mm a")}
-                      </div>
-                      <div>
-                        <span className="font-medium">Logged:</span>{' '}
-                        {format(new Date(vital.created_at), "MMM d, yyyy 'at' h:mm a")}
+                      {vital.notes && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {vital.notes}
+                        </p>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row sm:gap-4 mt-3 text-xs text-muted-foreground">
+                        <div>
+                          <span className="font-medium">Recorded:</span>{' '}
+                          {format(new Date(vital.recorded_at), "MMM d, yyyy 'at' h:mm a")}
+                        </div>
+                        <div>
+                          <span className="font-medium">Logged:</span>{' '}
+                          {format(new Date(vital.created_at), "MMM d, yyyy 'at' h:mm a")}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEdit(vital)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => setDeleteConfirm(vital.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => onEdit(vital)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteConfirm(vital.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
+                </CardContent>
+              </Card>
+            );
+          }
+
+          // For multiple entries, render as collapsible group
+          return (
+            <Card key={group.key} className="border-border/50">
+              <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.key)}>
+                <CollapsibleTrigger asChild>
+                  <CardContent className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {group.vitals.length} metrics
+                          </Badge>
+                          {group.vitals.map((v) => {
+                            const status = getStatus(v);
+                            return (
+                              <span 
+                                key={v.id} 
+                                className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}
+                              >
+                                {VITAL_CONFIG[v.type].label}
+                              </span>
+                            );
+                          })}
+                        </div>
+
+                        {/* Summary of values */}
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          {group.vitals.map((v) => (
+                            <div key={v.id} className="text-sm">
+                              <span className="text-muted-foreground">{VITAL_CONFIG[v.type].label}:</span>{' '}
+                              <span className="font-semibold">{formatValue(v)} {VITAL_CONFIG[v.type].unit}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {group.notes && (
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
+                            {group.notes}
+                          </p>
+                        )}
+
+                        <div className="flex flex-col sm:flex-row sm:gap-4 mt-3 text-xs text-muted-foreground">
+                          <div>
+                            <span className="font-medium">Recorded:</span>{' '}
+                            {format(new Date(group.recordedAt), "MMM d, yyyy 'at' h:mm a")}
+                          </div>
+                          <div>
+                            <span className="font-medium">Logged:</span>{' '}
+                            {format(new Date(group.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center">
+                        {isExpanded ? (
+                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <div className="border-t px-4 pb-4 pt-3 space-y-2 bg-muted/30">
+                    {group.vitals.map((vital) => {
+                      const config = VITAL_CONFIG[vital.type];
+                      const status = getStatus(vital);
+
+                      return (
+                        <div 
+                          key={vital.id} 
+                          className="flex items-center justify-between py-2 px-3 bg-background rounded-lg border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                              {status}
+                            </span>
+                            <span className="font-medium">{config.label}</span>
+                            <span className="text-lg font-bold">
+                              {formatValue(vital)}
+                              <span className="text-sm font-normal text-muted-foreground ml-1">
+                                {config.unit}
+                              </span>
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(vital);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirm(vital.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </Card>
           );
         })}
