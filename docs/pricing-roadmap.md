@@ -47,14 +47,38 @@ The existing pricing structure has several issues:
 - Shared medication lists
 - Family health reports
 
-### Provider (Future - $29.99/month)
-**Target:** Clinicians, pharmacists, healthcare practices
-- Multi-patient dashboard
-- Bulk patient data access via share links
-- HIPAA compliance documentation
-- Practice branding options
+### Clinician Solo ($49/month | $399/year)
+**Target:** Independent practitioners, solo clinicians
+- Up to 50 active patient connections
+- Real-time vitals monitoring dashboard
+- Guidance sending & tracking
+- Alert rules (5 max per patient)
+- Basic EHR sync (Vericlaim, HealthBridge)
+- Email notifications
+- Standard support
+
+### Clinician Pro ($99/month | $799/year)
+**Target:** Busy clinicians, small practices
+- Up to 200 active patient connections
+- Unlimited alert rules
+- Team member access (2 seats included)
+- Priority EHR sync with conflict resolution
+- Custom practice branding
+- Bulk guidance templates
+- Push + email notifications
 - Priority support
-- API access for EHR integration
+
+### Practice/Enterprise ($249/month | Custom annually)
+**Target:** Multi-provider practices, clinics, hospitals
+- Unlimited patient connections
+- Unlimited team seats
+- Dedicated account manager
+- HIPAA BAA documentation
+- Full API access
+- White-label options
+- Custom EHR integrations
+- SLA guarantees
+- Onboarding assistance
 
 ---
 
@@ -105,12 +129,44 @@ The existing pricing structure has several issues:
 - [ ] Caregiver role & permissions
 - [ ] Shared medication list UI
 
-### Provider Tier Requirements (Phase 2)
-- [ ] Multi-patient dashboard
-- [ ] Practice settings & branding
-- [ ] HIPAA documentation
-- [ ] API access layer
-- [ ] Billing per-seat
+### Clinician Solo Tier Requirements
+- [x] Multi-patient dashboard (already built)
+- [x] Patient vitals monitoring (already built)
+- [x] Guidance system (already built)
+- [x] Alert rules (already built)
+- [ ] Patient connection limits (50 max)
+- [ ] EHR OAuth integration (Vericlaim, HealthBridge)
+
+### Clinician Pro Tier Requirements
+- [ ] Increased patient limit (200 max)
+- [ ] Unlimited alert rules
+- [ ] Team member seats (invite system)
+- [ ] Practice branding settings
+- [ ] Bulk guidance templates
+- [ ] Priority EHR sync queue
+
+### Practice/Enterprise Tier Requirements
+- [ ] Unlimited patients/seats
+- [ ] HIPAA BAA document generation
+- [ ] Full API access layer
+- [ ] White-label configuration
+- [ ] Custom EHR integration support
+- [ ] SLA monitoring dashboard
+
+---
+
+## Competitive Positioning
+
+### vs. Traditional EHR Add-ons
+| Factor | Traditional EHR | OneCare Clinician |
+|--------|-----------------|-------------------|
+| Per-seat cost | $200-500/month | $49-99/month |
+| Implementation | $10K-50K upfront | $0 |
+| Patient portal | Separate cost | Included |
+| EHR integration | Extra fees | Built-in |
+| Mobile experience | Poor/none | Native PWA |
+
+**Value proposition:** 50-80% cost savings while adding patient engagement features traditional EHRs lack.
 
 ---
 
