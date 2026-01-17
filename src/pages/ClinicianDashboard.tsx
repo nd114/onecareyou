@@ -251,11 +251,11 @@ const ClinicianDashboard = () => {
                             >
                               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                                 <span className="font-semibold text-primary">
-                                  {patient.patient_name.charAt(0)}
+                                  {(patient.patient_name || 'Unknown Patient').charAt(0)}
                                 </span>
                               </div>
                               <div>
-                                <p className="font-medium">{patient.patient_name}</p>
+                                <p className="font-medium">{patient.patient_name || 'Unknown Patient'}</p>
                                 <div className="flex gap-1 mt-1">
                                   {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
                                   {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
