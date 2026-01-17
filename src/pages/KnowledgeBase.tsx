@@ -185,39 +185,32 @@ const KnowledgeBase = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
                 >
-                  <Card 
-                    className="h-full hover:shadow-md transition-shadow cursor-pointer group"
-                    onClick={() => navigate(`/medication-info/${encodeURIComponent(topic.searchTerms[0])}`)}
-                  >
+                  <Card className="h-full">
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4">
                         <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${topic.color}`}>
                           <topic.icon className="h-6 w-6" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
+                          <h3 className="font-semibold mb-1">
                             {topic.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground mb-2">
                             {topic.description}
                           </p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {topic.searchTerms.slice(0, 3).map((term) => (
+                          <div className="flex flex-wrap gap-1">
+                            {topic.searchTerms.map((term) => (
                               <Badge 
                                 key={term} 
                                 variant="secondary" 
-                                className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/medication-info/${encodeURIComponent(term)}`);
-                                }}
+                                className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                                onClick={() => navigate(`/medication-info/${encodeURIComponent(term)}`)}
                               >
                                 {term}
                               </Badge>
                             ))}
                           </div>
                         </div>
-                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                       </div>
                     </CardContent>
                   </Card>
