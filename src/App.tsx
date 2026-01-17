@@ -16,6 +16,7 @@ import CareCircle from "./pages/CareCircle";
 import ClinicianPortal from "./pages/ClinicianPortal";
 import ClinicianSignUp from "./pages/ClinicianSignUp";
 import ClinicianDashboard from "./pages/ClinicianDashboard";
+import ClinicianSettings from "./pages/ClinicianSettings";
 import FamilyDashboard from "./pages/FamilyDashboard";
 import FamilyMemberDetail from "./pages/FamilyMemberDetail";
 import Onboarding from "./pages/Onboarding";
@@ -61,6 +62,11 @@ const App = () => (
             <Route path="/clinician/dashboard" element={
               <ProtectedRoute>
                 <ClinicianDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/settings" element={
+              <ProtectedRoute>
+                <ClinicianSettings />
               </ProtectedRoute>
             } />
             <Route path="/onboarding" element={

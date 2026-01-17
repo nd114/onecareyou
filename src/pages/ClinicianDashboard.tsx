@@ -12,12 +12,12 @@ import {
   Activity,
   Loader2,
   Plus,
-  Settings,
   FileText,
   RefreshCw,
   StickyNote,
   Search,
   Mail,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,29 +25,21 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { Header } from '@/components/layout/Header';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
+import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
+import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
   const { clinicianProfile, isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
   const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
-  const { clinicianGuidance, isLoading: isLoadingGuidance } = useClinicianGuidance();
-  const { alertRules, alertLogs, isLoading: isLoadingAlerts } = useAlertRules();
-  const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
-  const { 
-    settings: notificationSettings, 
-    updatePushNotifications, 
-    updateEmailNotifications,
-    isSaving: savingNotifications 
-  } = useClinicianNotificationSettings();
+  const { clinicianGuidance, isLoading: isLoadingGuidance, deleteGuidance } = useClinicianGuidance();
+  const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule } = useAlertRules();
   
   const [notesDialog, setNotesDialog] = useState<{
     open: boolean;
@@ -214,7 +206,7 @@ const ClinicianDashboard = () => {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="patients" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="patients" className="text-xs sm:text-sm">
                 <Users className="h-4 w-4 mr-0 sm:mr-2" />
                 <span className="hidden sm:inline">Patients</span>
@@ -226,10 +218,6 @@ const ClinicianDashboard = () => {
               <TabsTrigger value="alerts" className="text-xs sm:text-sm">
                 <Bell className="h-4 w-4 mr-0 sm:mr-2" />
                 <span className="hidden sm:inline">Alerts</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="text-xs sm:text-sm">
-                <Settings className="h-4 w-4 mr-0 sm:mr-2" />
-                <span className="hidden sm:inline">Settings</span>
               </TabsTrigger>
             </TabsList>
 
@@ -364,10 +352,15 @@ const ClinicianDashboard = () => {
                       Send instructions and guidance to your patients
                     </CardDescription>
                   </div>
-                  <Button className="gradient-primary border-0" disabled>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Guidance
-                  </Button>
+                  <CreateGuidanceDialog
+                    trigger={
+                      <Button className="gradient-primary border-0" disabled={patients.length === 0}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Guidance
+                      </Button>
+                    }
+                    patients={patients.map(p => ({ id: p.id, user_id: p.user_id, patient_name: p.patient_name, patient_email: p.patient_email }))}
+                  />
                 </CardHeader>
                 <CardContent>
                   {clinicianGuidance.length === 0 ? (
@@ -383,10 +376,10 @@ const ClinicianDashboard = () => {
                       {clinicianGuidance.map((guidance) => (
                         <div key={guidance.id} className="p-4 rounded-lg border">
                           <div className="flex items-start justify-between gap-4">
-                            <div>
+                            <div className="flex-1">
                               <p className="font-medium">{guidance.title}</p>
                               <p className="text-sm text-muted-foreground mt-1">
-                                {guidance.instruction.substring(0, 100)}...
+                                {guidance.instruction.length > 100 ? `${guidance.instruction.substring(0, 100)}...` : guidance.instruction}
                               </p>
                               <div className="flex gap-2 mt-2">
                                 <Badge variant={
@@ -397,11 +390,21 @@ const ClinicianDashboard = () => {
                                   {guidance.status}
                                 </Badge>
                                 <Badge variant="outline">{guidance.priority}</Badge>
+                                <Badge variant="outline">{guidance.category}</Badge>
                               </div>
                             </div>
-                            {guidance.status === 'completed' && (
-                              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                            )}
+                            <div className="flex items-center gap-2">
+                              {guidance.status === 'completed' && (
+                                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => deleteGuidance.mutate(guidance.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -421,10 +424,15 @@ const ClinicianDashboard = () => {
                       Set up automatic alerts for patient vitals
                     </CardDescription>
                   </div>
-                  <Button className="gradient-primary border-0" disabled>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Rule
-                  </Button>
+                  <CreateAlertRuleDialog
+                    trigger={
+                      <Button className="gradient-primary border-0" disabled={patients.length === 0}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Rule
+                      </Button>
+                    }
+                    patients={patients.map(p => ({ id: p.id, user_id: p.user_id, patient_name: p.patient_name, patient_email: p.patient_email }))}
+                  />
                 </CardHeader>
                 <CardContent>
                   {alertRules.length === 0 ? (
@@ -440,16 +448,26 @@ const ClinicianDashboard = () => {
                       {alertRules.map((rule) => (
                         <div key={rule.id} className="p-4 rounded-lg border">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{rule.vital_type}</p>
+                            <div className="flex-1">
+                              <p className="font-medium capitalize">{rule.vital_type.replace('_', ' ')}</p>
                               <p className="text-sm text-muted-foreground">
                                 Alert when {rule.condition} {rule.threshold_value}
-                                {rule.threshold_secondary && `/${rule.threshold_secondary}`}
+                                {rule.threshold_secondary && ` - ${rule.threshold_secondary}`}
                               </p>
                             </div>
-                            <Badge variant={rule.is_active ? 'default' : 'secondary'}>
-                              {rule.is_active ? 'Active' : 'Disabled'}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={rule.is_active}
+                                onCheckedChange={(checked) => toggleAlertRule.mutate({ id: rule.id, is_active: checked })}
+                              />
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => deleteAlertRule.mutate(rule.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
