@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Upload, FileText, Check, X, Loader2, Shield } from 'lucide-react';
+import { CalendarIcon, Upload, FileText, Check, X, Loader2, Shield, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +17,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
+import { performLocalOCR, isOCRSupported, requiresServerProcessing, type OCRProgress } from '@/lib/ocr';
+import { Progress } from '@/components/ui/progress';
 
 interface AddVitalDialogProps {
   open: boolean;
@@ -59,6 +61,10 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Local OCR progress state
+  const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null);
+  const [usedLocalOCR, setUsedLocalOCR] = useState(false);
+  
   // Consent dialog state
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -73,6 +79,8 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setUploadError(null);
     setMode('manual');
     setPendingFile(null);
+    setOcrProgress(null);
+    setUsedLocalOCR(false);
   };
 
   const handleSaveManual = async () => {
@@ -98,28 +106,63 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setUploading(true);
     setUploadError(null);
     setExtractedVitals([]);
+    setOcrProgress(null);
+    setUsedLocalOCR(false);
 
     try {
-      // Convert to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
       // Get current session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Please sign in to upload lab reports');
       }
 
-      // Call edge function to parse
-      const { data, error } = await supabase.functions.invoke('parse-lab-report', {
-        body: { 
+      let requestBody: { preExtractedText?: string; imageBase64?: string; reportDate: string };
+
+      // Check if we can use local OCR (for images, not PDFs)
+      if (isOCRSupported(file) && !requiresServerProcessing(file)) {
+        // Perform OCR locally - image never leaves device
+        console.log('Using local OCR for privacy-preserving processing');
+        
+        setOcrProgress({ status: 'Initializing OCR...', progress: 0 });
+        
+        const ocrResult = await performLocalOCR(file, (progress) => {
+          setOcrProgress(progress);
+        });
+
+        setOcrProgress({ status: 'Processing text...', progress: 100 });
+        
+        if (!ocrResult.text.trim()) {
+          throw new Error('Could not read text from image. Try a clearer photo.');
+        }
+
+        console.log('Local OCR complete, confidence:', ocrResult.confidence);
+        setUsedLocalOCR(true);
+
+        // Send only the extracted text - no image data
+        requestBody = {
+          preExtractedText: ocrResult.text,
+          reportDate: selectedDate.toISOString()
+        };
+      } else {
+        // For PDFs, fall back to server-side processing
+        console.log('Using server-side OCR for PDF processing');
+        
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        requestBody = {
           imageBase64: base64,
           reportDate: selectedDate.toISOString()
-        }
+        };
+      }
+
+      // Call edge function to parse
+      const { data, error } = await supabase.functions.invoke('parse-lab-report', {
+        body: requestBody
       });
 
       if (error) {
@@ -133,7 +176,10 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
 
       if (data.extractedVitals && data.extractedVitals.length > 0) {
         setExtractedVitals(data.extractedVitals.map((v: any) => ({ ...v, selected: true })));
-        toast.success(`Found ${data.extractedVitals.length} health metrics!`);
+        const privacyMessage = data.usedLocalOCR 
+          ? 'Image processed on your device - maximum privacy!' 
+          : 'Document processed securely';
+        toast.success(`Found ${data.extractedVitals.length} health metrics! ${privacyMessage}`);
       } else {
         setUploadError('No health metrics found in the image. Try a clearer photo of your lab report.');
       }
@@ -142,6 +188,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
       setUploadError(error instanceof Error ? error.message : 'Failed to process file');
     } finally {
       setUploading(false);
+      setOcrProgress(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -381,6 +428,15 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                     className="hidden"
                   />
                   
+                  {/* Privacy Info Banner */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                    <Lock className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-foreground">Privacy-First Processing</p>
+                      <p className="text-muted-foreground">Images are processed on your device. Only text is sent for analysis.</p>
+                    </div>
+                  </div>
+                  
                   {/* Consent Status Banner */}
                   {!hasConsent && (
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-amber/10 border border-amber/20 text-sm">
@@ -396,7 +452,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                     <Card 
                       className={cn(
                         "border-dashed border-2 cursor-pointer transition-colors",
-                        uploading ? "opacity-50" : "hover:border-primary/50"
+                        uploading ? "opacity-50 cursor-default" : "hover:border-primary/50"
                       )}
                       onClick={() => !uploading && fileInputRef.current?.click()}
                     >
@@ -404,12 +460,26 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                         {uploading ? (
                           <>
                             <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                            <p className="text-sm text-muted-foreground">
-                              Analyzing lab report with AI...
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Your data is anonymized before processing
-                            </p>
+                            {ocrProgress ? (
+                              <div className="w-full max-w-xs space-y-2">
+                                <p className="text-sm text-center font-medium">
+                                  {ocrProgress.status}
+                                </p>
+                                <Progress value={ocrProgress.progress} className="h-2" />
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Processing on your device...
+                                </p>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-sm text-muted-foreground">
+                                  Extracting health metrics...
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Your data is anonymized before processing
+                                </p>
+                              </>
+                            )}
                           </>
                         ) : (
                           <>
@@ -421,6 +491,10 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                             <p className="text-xs text-muted-foreground mt-2">
                               Supports: JPG, PNG, WebP, PDF (max 10MB)
                             </p>
+                            <Badge variant="secondary" className="mt-3 gap-1">
+                              <Lock className="h-3 w-3" />
+                              Images stay on your device
+                            </Badge>
                           </>
                         )}
                       </CardContent>
@@ -428,7 +502,15 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                   ) : (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Extracted Values</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">Extracted Values</h4>
+                          {usedLocalOCR && (
+                            <Badge variant="outline" className="bg-primary/10 text-primary gap-1 text-xs">
+                              <Lock className="h-3 w-3" />
+                              On-device
+                            </Badge>
+                          )}
+                        </div>
                         <Badge variant="outline" className="bg-status-success/10 text-status-success">
                           {extractedVitals.filter(v => v.selected).length} selected
                         </Badge>

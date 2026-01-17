@@ -142,94 +142,105 @@ Deno.serve(async (req) => {
 
     console.log('Processing lab report for user:', user.id);
 
-    const { imageBase64, imageUrl, reportDate } = await req.json();
+const { imageBase64, imageUrl, reportDate, preExtractedText } = await req.json();
 
-    if (!imageBase64 && !imageUrl) {
+    // Check if we received pre-extracted text from client-side OCR
+    const hasPreExtractedText = preExtractedText && typeof preExtractedText === 'string' && preExtractedText.trim().length > 0;
+
+    if (!imageBase64 && !imageUrl && !hasPreExtractedText) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Image data is required' }),
+        JSON.stringify({ success: false, error: 'Image data or extracted text is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Prepare image content for AI
-    let imageContent;
-    if (imageBase64) {
-      const mimeMatch = imageBase64.match(/^data:([^;]+);base64,/);
-      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
-      
-      imageContent = {
-        type: "image_url",
-        image_url: {
-          url: `data:${mimeType};base64,${base64Data}`
-        }
-      };
-    } else {
-      imageContent = {
-        type: "image_url",
-        image_url: { url: imageUrl }
-      };
-    }
+    let rawText: string;
+    let usedLocalOCR = false;
 
-    // ============================================================
-    // STAGE 1: Extract raw text from document (OCR only)
-    // This extracts all text including PII, which we'll strip next
-    // ============================================================
-    console.log('Stage 1: Extracting text from document (OCR)...');
-    
-    const ocrResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an OCR system. Extract ALL text visible in this document exactly as written.
+    // If we have pre-extracted text from client-side OCR, use it directly
+    // This means the raw image never left the user's device
+    if (hasPreExtractedText) {
+      console.log('Using pre-extracted text from client-side OCR (privacy-preserving mode)');
+      rawText = preExtractedText;
+      usedLocalOCR = true;
+    } else {
+      // Fall back to server-side OCR for PDFs or when client OCR is not available
+      console.log('Stage 1: Extracting text from document (server-side OCR)...');
+      
+      // Prepare image content for AI
+      let imageContent;
+      if (imageBase64) {
+        const mimeMatch = imageBase64.match(/^data:([^;]+);base64,/);
+        const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
+        
+        imageContent = {
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${base64Data}`
+          }
+        };
+      } else {
+        imageContent = {
+          type: "image_url",
+          image_url: { url: imageUrl }
+        };
+      }
+      
+      const ocrResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an OCR system. Extract ALL text visible in this document exactly as written.
 Output ONLY the raw text content, preserving the structure with line breaks.
 Do not interpret, summarize, or analyze - just transcribe the text you see.`
-          },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Extract all text from this document.' },
-              imageContent
-            ]
-          }
-        ],
-        max_tokens: 4000,
-        temperature: 0.1
-      }),
-    });
+            },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: 'Extract all text from this document.' },
+                imageContent
+              ]
+            }
+          ],
+          max_tokens: 4000,
+          temperature: 0.1
+        }),
+      });
 
-    if (!ocrResponse.ok) {
-      const errorText = await ocrResponse.text();
-      console.error('OCR API error:', errorText);
-      
-      if (ocrResponse.status === 429) {
+      if (!ocrResponse.ok) {
+        const errorText = await ocrResponse.text();
+        console.error('OCR API error:', errorText);
+        
+        if (ocrResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again in a moment.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (ocrResponse.status === 402) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'AI service quota exceeded. Please contact support.' }),
+            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         return new Response(
-          JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again in a moment.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ success: false, error: 'Failed to read document' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (ocrResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'AI service quota exceeded. Please contact support.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to read document' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+
+      const ocrData = await ocrResponse.json();
+      rawText = ocrData.choices?.[0]?.message?.content || '';
     }
-
-    const ocrData = await ocrResponse.json();
-    const rawText = ocrData.choices?.[0]?.message?.content || '';
     
     if (!rawText.trim()) {
       console.log('No text extracted from document');
@@ -239,7 +250,7 @@ Do not interpret, summarize, or analyze - just transcribe the text you see.`
       );
     }
     
-    console.log('Raw text extracted, length:', rawText.length);
+    console.log('Raw text extracted, length:', rawText.length, usedLocalOCR ? '(local OCR)' : '(server OCR)');
 
     // ============================================================
     // STAGE 2: Strip PII from extracted text
@@ -394,13 +405,18 @@ Important:
     console.log('Valid vitals to return:', validVitals);
     console.log('Processing complete. PII stripped, vitals extracted from anonymized data.');
 
+    const privacyNote = usedLocalOCR 
+      ? 'Maximum privacy: OCR performed on-device. Only anonymized text was sent for analysis. Raw image never left your device.'
+      : 'Document processed with PII stripping. Personal information was not sent to AI for vital analysis.';
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         extractedVitals: validVitals,
         count: validVitals.length,
         reportDate: reportDate || new Date().toISOString(),
-        privacyNote: 'Document processed with PII stripping. Personal information was not sent to AI for analysis.'
+        privacyNote,
+        usedLocalOCR
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
