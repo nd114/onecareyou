@@ -140,7 +140,7 @@ const PatientGuidance = () => {
             {item.clinician_name && (
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3" />
-                Dr. {item.clinician_name}
+                {item.clinician_name}
                 {item.clinician_specialty && (
                   <span className="text-muted-foreground">• {item.clinician_specialty}</span>
                 )}
