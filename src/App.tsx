@@ -22,6 +22,7 @@ import Onboarding from "./pages/Onboarding";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Settings from "./pages/Settings";
+import PatientGuidance from "./pages/PatientGuidance";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataProcessing from "./pages/DataProcessing";
@@ -115,6 +116,11 @@ const App = () => (
             <Route path="/settings" element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/guidance" element={
+              <ProtectedRoute>
+                <PatientGuidance />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
