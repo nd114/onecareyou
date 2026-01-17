@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.send-vitals-report]
 verify_jwt = false
+
+[functions.check-vital-alerts]
+verify_jwt = false
