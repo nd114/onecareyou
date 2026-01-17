@@ -20,6 +20,12 @@ import Settings from "./pages/Settings";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataProcessing from "./pages/DataProcessing";
+import About from "./pages/About";
+import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
+import Contact from "./pages/Contact";
+import MedicalDisclaimer from "./pages/MedicalDisclaimer";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,9 +41,15 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/data-processing" element={<DataProcessing />} />
+            <Route path="/disclaimer" element={<MedicalDisclaimer />} />
+            <Route path="/help" element={<HelpCenter />} />
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />

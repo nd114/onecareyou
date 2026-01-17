@@ -30,8 +30,10 @@ export function Header() {
         { href: '/vitals', label: 'Vitals' },
       ]
     : [
-        { href: '/#features', label: 'Features' },
-        { href: '/#pricing', label: 'Pricing' },
+        { href: '/features', label: 'Features' },
+        { href: '/pricing', label: 'Pricing' },
+        { href: '/about', label: 'About' },
+        { href: '/contact', label: 'Contact' },
       ];
 
   const handleSignOut = async () => {
@@ -63,7 +65,11 @@ export function Header() {
             <Link
               key={link.href}
               to={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className={`text-sm font-medium transition-colors hover:text-foreground ${
+                location.pathname === link.href 
+                  ? 'text-primary' 
+                  : 'text-muted-foreground'
+              }`}
             >
               {link.label}
             </Link>
@@ -96,8 +102,14 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/onboarding" className="flex items-center gap-2">
+                    <Link to="/settings" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/onboarding" className="flex items-center gap-2">
+                      <Heart className="h-4 w-4" />
                       Health Profile
                     </Link>
                   </DropdownMenuItem>
@@ -144,7 +156,11 @@ export function Header() {
               <Link
                 key={link.href}
                 to={link.href}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                className={`px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg ${
+                  location.pathname === link.href 
+                    ? 'text-primary bg-primary/5' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
@@ -158,6 +174,13 @@ export function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Care Circle
+                </Link>
+                <Link
+                  to="/settings"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Settings
                 </Link>
                 <button
                   onClick={() => {
