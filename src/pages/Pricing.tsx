@@ -1,10 +1,15 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Check, X, Sparkles, HelpCircle } from 'lucide-react';
+import { Check, X, Sparkles, HelpCircle, Crown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription, STRIPE_PRICES, PRICE_INFO } from '@/hooks/useSubscription';
 import {
   Accordion,
   AccordionContent,
@@ -12,67 +17,32 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
-const plans = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for getting started with medication tracking',
-    features: [
-      { text: 'Track up to 3 medications', included: true },
-      { text: 'Basic interaction checking', included: true },
-      { text: 'Daily schedule view', included: true },
-      { text: 'Health profile storage', included: true },
-      { text: 'Mobile-friendly access', included: true },
-      { text: 'Vitals tracking', included: false },
-      { text: 'Care Circle sharing', included: false },
-      { text: 'AI lab report parsing', included: false },
-      { text: 'Health reports export', included: false },
-      { text: 'Priority support', included: false },
-    ],
-    cta: 'Start Free',
-    popular: false,
-  },
-  {
-    name: 'Premium',
-    price: '$9.99',
-    period: '/month',
-    description: 'For comprehensive health management',
-    features: [
-      { text: 'Unlimited medications', included: true },
-      { text: 'Advanced interaction database', included: true },
-      { text: 'Daily schedule view', included: true },
-      { text: 'Health profile storage', included: true },
-      { text: 'Mobile-friendly access', included: true },
-      { text: 'Vitals & lab tracking', included: true },
-      { text: 'Care Circle sharing', included: true },
-      { text: 'AI lab report parsing', included: true },
-      { text: 'Health reports export', included: true },
-      { text: 'Priority support', included: true },
-    ],
-    cta: 'Go Premium',
-    popular: true,
-  },
-  {
-    name: 'Family',
-    price: '$19.99',
-    period: '/month',
-    description: 'Manage health for the whole family',
-    features: [
-      { text: 'Up to 5 family members', included: true },
-      { text: 'All Premium features', included: true },
-      { text: 'Family dashboard', included: true },
-      { text: 'Caregiver access controls', included: true },
-      { text: 'Shared reminders', included: true },
-      { text: 'Family health calendar', included: true },
-      { text: 'Multi-user Care Circle', included: true },
-      { text: 'Bulk report export', included: true },
-      { text: 'Family analytics', included: true },
-      { text: 'Dedicated support', included: true },
-    ],
-    cta: 'Start Family Plan',
-    popular: false,
-  },
+const freeFeatures = [
+  { text: 'Track up to 3 medications', included: true },
+  { text: 'Basic interaction checking', included: true },
+  { text: 'Daily schedule view', included: true },
+  { text: 'Health profile storage', included: true },
+  { text: 'Mobile-friendly access', included: true },
+  { text: 'Unlimited medications', included: false },
+  { text: 'Vitals & lab tracking', included: false },
+  { text: 'Care Circle sharing', included: false },
+  { text: 'AI lab report parsing', included: false },
+  { text: 'Health reports export', included: false },
+  { text: 'Priority support', included: false },
+];
+
+const premiumFeatures = [
+  { text: 'Track up to 3 medications', included: true },
+  { text: 'Basic interaction checking', included: true },
+  { text: 'Daily schedule view', included: true },
+  { text: 'Health profile storage', included: true },
+  { text: 'Mobile-friendly access', included: true },
+  { text: 'Unlimited medications', included: true },
+  { text: 'Vitals & lab tracking', included: true },
+  { text: 'Care Circle sharing', included: true },
+  { text: 'AI lab report parsing', included: true },
+  { text: 'Health reports export', included: true },
+  { text: 'Priority support', included: true },
 ];
 
 const faqs = [
@@ -103,6 +73,27 @@ const faqs = [
 ];
 
 const Pricing = () => {
+  const [isAnnual, setIsAnnual] = useState(true);
+  const { user, profile } = useAuth();
+  const { createCheckout, loading, isPremium } = useSubscription();
+
+  const monthlyPrice = PRICE_INFO.premium_monthly.price;
+  const annualPrice = PRICE_INFO.premium_annual.price;
+  const annualMonthly = (annualPrice / 12).toFixed(2);
+  const savingsPercent = Math.round((1 - annualPrice / (monthlyPrice * 12)) * 100);
+
+  const handleSubscribe = () => {
+    const priceId = isAnnual ? STRIPE_PRICES.premium_annual : STRIPE_PRICES.premium_monthly;
+    createCheckout(priceId);
+  };
+
+  const currentTier = profile?.subscription_tier || 'free';
+  const isCurrentPlan = (plan: string) => {
+    if (plan === 'free') return currentTier === 'free';
+    if (plan === 'premium') return currentTier === 'premium' || currentTier === 'family' || currentTier === 'enterprise';
+    return false;
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -132,9 +123,28 @@ const Pricing = () => {
               </span>
             </h1>
             
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
               Start free and upgrade when you're ready. No hidden fees, cancel anytime.
             </p>
+
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center gap-3">
+              <span className={`text-sm font-medium ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Monthly
+              </span>
+              <Switch
+                checked={isAnnual}
+                onCheckedChange={setIsAnnual}
+              />
+              <span className={`text-sm font-medium ${isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Annual
+              </span>
+              {isAnnual && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                  Save {savingsPercent}%
+                </Badge>
+              )}
+            </div>
           </motion.div>
         </div>
       </section>
@@ -142,57 +152,139 @@ const Pricing = () => {
       {/* Pricing Cards */}
       <section className="py-24 bg-background">
         <div className="container">
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {plans.map((plan, index) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className={`h-full relative ${plan.popular ? 'border-primary shadow-lg shadow-primary/10' : 'border-border/50'}`}>
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold gradient-primary text-primary-foreground">
-                        Most Popular
-                      </span>
-                    </div>
-                  )}
-                  <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                    <div className="pt-4">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      <span className="text-muted-foreground">{plan.period}</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature) => (
-                        <li key={feature.text} className="flex items-center gap-3">
-                          {feature.included ? (
-                            <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                          ) : (
-                            <X className="h-5 w-5 text-muted-foreground/50 flex-shrink-0" />
-                          )}
-                          <span className={`text-sm ${!feature.included ? 'text-muted-foreground/50' : ''}`}>
-                            {feature.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button 
-                      className={`w-full ${plan.popular ? 'gradient-primary border-0' : ''}`}
-                      variant={plan.popular ? 'default' : 'outline'}
-                      asChild
-                    >
-                      <Link to="/sign-up">{plan.cta}</Link>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <Card className={`h-full relative ${isCurrentPlan('free') ? 'border-primary shadow-lg' : 'border-border/50'}`}>
+                {isCurrentPlan('free') && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary text-primary-foreground">
+                      Your Current Plan
+                    </span>
+                  </div>
+                )}
+                <CardHeader className="text-center pb-2">
+                  <CardTitle className="text-2xl">Free</CardTitle>
+                  <CardDescription>Perfect for getting started</CardDescription>
+                  <div className="pt-4">
+                    <span className="text-4xl font-bold">$0</span>
+                    <span className="text-muted-foreground">/forever</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="space-y-3 mb-8">
+                    {freeFeatures.map((feature) => (
+                      <li key={feature.text} className="flex items-center gap-3">
+                        {feature.included ? (
+                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                        ) : (
+                          <X className="h-5 w-5 text-muted-foreground/50 flex-shrink-0" />
+                        )}
+                        <span className={`text-sm ${!feature.included ? 'text-muted-foreground/50' : ''}`}>
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    className="w-full"
+                    variant="outline"
+                    asChild
+                    disabled={isCurrentPlan('free')}
+                  >
+                    <Link to={user ? "/dashboard" : "/sign-up"}>
+                      {isCurrentPlan('free') ? 'Current Plan' : 'Get Started'}
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Premium Plan */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className={`h-full relative ${isCurrentPlan('premium') ? 'border-primary shadow-lg shadow-primary/10' : 'border-primary/50 shadow-lg shadow-primary/10'}`}>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold gradient-primary text-primary-foreground flex items-center gap-1">
+                    <Crown className="h-3 w-3" />
+                    {isCurrentPlan('premium') ? 'Your Current Plan' : 'Most Popular'}
+                  </span>
+                </div>
+                <CardHeader className="text-center pb-2">
+                  <CardTitle className="text-2xl">Premium</CardTitle>
+                  <CardDescription>For comprehensive health management</CardDescription>
+                  <div className="pt-4">
+                    {isAnnual ? (
+                      <>
+                        <span className="text-4xl font-bold">${annualMonthly}</span>
+                        <span className="text-muted-foreground">/month</span>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Billed ${annualPrice}/year
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-bold">${monthlyPrice}</span>
+                        <span className="text-muted-foreground">/month</span>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="space-y-3 mb-8">
+                    {premiumFeatures.map((feature) => (
+                      <li key={feature.text} className="flex items-center gap-3">
+                        {feature.included ? (
+                          <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                        ) : (
+                          <X className="h-5 w-5 text-muted-foreground/50 flex-shrink-0" />
+                        )}
+                        <span className={`text-sm ${!feature.included ? 'text-muted-foreground/50' : ''}`}>
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {user ? (
+                    isCurrentPlan('premium') ? (
+                      <Button className="w-full" variant="outline" disabled>
+                        Current Plan
+                      </Button>
+                    ) : (
+                      <Button 
+                        className="w-full gradient-primary border-0"
+                        onClick={handleSubscribe}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Crown className="mr-2 h-4 w-4" />
+                            Go Premium
+                          </>
+                        )}
+                      </Button>
+                    )
+                  ) : (
+                    <Button className="w-full gradient-primary border-0" asChild>
+                      <Link to="/sign-up">Start Free Trial</Link>
                     </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </section>

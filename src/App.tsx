@@ -37,6 +37,7 @@ import NotFound from "./pages/NotFound";
 import AdherenceReport from "./pages/AdherenceReport";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import MedicationInfo from "./pages/MedicationInfo";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 
 const queryClient = new QueryClient();
 
@@ -145,6 +146,11 @@ const App = () => (
             <Route path="/medication-info/:drugName" element={
               <ProtectedRoute>
                 <MedicationInfo />
+              </ProtectedRoute>
+            } />
+            <Route path="/subscription-success" element={
+              <ProtectedRoute>
+                <SubscriptionSuccess />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
