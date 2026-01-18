@@ -437,6 +437,65 @@ ALTER TABLE practices ADD COLUMN custom_domain TEXT;
 
 ---
 
+## Future Feature Gaps (Role-Based Analysis)
+
+### Doctor/Physician Perspective
+
+The following features are commonly expected by doctors but not currently available:
+
+| Feature | Description | Priority | Effort |
+|---------|-------------|----------|--------|
+| **Differential Diagnosis Notes** | Ability to document and track potential diagnoses for a patient, with reasoning and rule-out notes | MEDIUM | 3-4 days |
+| **Visit History / Encounter Logs** | Chronological record of all patient interactions, including virtual and in-person visits | HIGH | 4-5 days |
+| **Prescription Writing (e-Prescribe)** | Digital prescription creation with pharmacy integration (EPCS for controlled substances) | HIGH | 2-3 weeks |
+| **Referral Management** | Create, track, and receive referrals to/from specialists with status tracking | MEDIUM | 1 week |
+| **Lab & Imaging Orders** | Order labs/imaging through the platform with results integration | HIGH | 2-3 weeks |
+| **Clinical Decision Support** | Evidence-based alerts and recommendations based on patient data | MEDIUM | 2 weeks |
+| **Patient Communication Log** | Audit trail of all communications with patients (emails, calls, messages) | MEDIUM | 2-3 days |
+| **Patient Summary View** | One-page overview of patient: conditions, meds, allergies, recent vitals, last visit | HIGH | 2-3 days |
+| **Problem List Management** | Active/inactive problem tracking with ICD-10 codes | MEDIUM | 3-4 days |
+| **Care Team Assignment** | Assign primary care team to patients (PCP, specialists, nurses) | LOW | 2-3 days |
+
+**Implementation Notes:**
+- e-Prescribe requires Surescripts integration (complex, regulatory compliance)
+- Lab orders require HL7/FHIR integration with lab networks
+- Clinical decision support can start simple (drug interactions) and expand
+
+---
+
+### Cross-Role Missing Features
+
+Features needed across all clinical roles:
+
+| Feature | Description | Priority | Effort |
+|---------|-------------|----------|--------|
+| **Secure In-App Messaging** | HIPAA-compliant direct messaging between clinicians and patients | HIGH | 1 week |
+| **Appointment Scheduling** | Book, reschedule, cancel appointments with calendar integration | HIGH | 1-2 weeks |
+| **Consent Form Management** | Create, send, and track signed consent forms digitally | MEDIUM | 4-5 days |
+| **Patient Portal Invites** | Invite patients to create accounts and access their data | HIGH | 2-3 days |
+| **Multi-Language Support** | UI and content in multiple languages for diverse patient populations | MEDIUM | 1-2 weeks |
+| **Voice Dictation** | Speech-to-text for clinical notes and documentation | LOW | 3-4 days |
+| **Mobile App / PWA** | Native or progressive web app for mobile clinical workflows | HIGH | 2-3 weeks |
+| **Offline Mode** | Continue documenting when internet is unavailable, sync when back online | MEDIUM | 1-2 weeks |
+| **Print/Fax Support** | Generate printable documents, send faxes to external providers | LOW | 3-4 days |
+| **ICD/CPT Code Lookup** | Search and attach diagnosis (ICD-10) and procedure (CPT) codes | MEDIUM | 3-4 days |
+| **Document Scanning/Upload** | Upload and OCR external documents into patient records | MEDIUM | 4-5 days |
+| **Export to PDF** | Export patient records, vitals history, medication lists as PDFs | HIGH | 2 days |
+| **Audit Trail/Activity Log** | Full audit log of who accessed/modified patient data and when | HIGH | 3-4 days |
+| **Two-Factor Authentication** | 2FA for clinician accounts (required for HIPAA) | CRITICAL | 2-3 days |
+| **Session Timeout Controls** | Configurable auto-logout for security compliance | HIGH | 1 day |
+| **Bulk Actions** | Select multiple patients for bulk operations (send guidance, export) | MEDIUM | 2-3 days |
+| **Notification Preferences** | Fine-grained control over when and how to receive notifications | MEDIUM | 2-3 days |
+| **Dark Mode** | Dark theme option for clinical settings with low light | LOW | 1 day |
+
+**Quick Wins from Cross-Role:**
+1. Patient Portal Invites - Simple email with registration link
+2. Export to PDF - Extend existing vitals export
+3. Session Timeout Controls - Configure existing auth
+4. Dark Mode - Already have theming infrastructure
+
+---
+
 ## Related Documents
 
 - [Pricing Roadmap](./pricing-roadmap.md) - Detailed pricing tiers
