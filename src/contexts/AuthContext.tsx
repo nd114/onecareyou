@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAllUserData } from '@/lib/query-client';
 
 interface Profile {
   id: string;
@@ -73,10 +74,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Track previous user ID to detect user switches
+  const previousUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        const newUserId = session?.user?.id ?? null;
+        const previousUserId = previousUserIdRef.current;
+        
+        // Detect user switch (different user logging in) - clear all cached data
+        if (previousUserId && newUserId && previousUserId !== newUserId) {
+          console.log('[Auth] User switch detected, clearing cached data');
+          clearAllUserData();
+        }
+        
+        // Update tracked user ID
+        previousUserIdRef.current = newUserId;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -136,6 +152,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear all user-specific data BEFORE signing out to prevent data leakage
+    clearAllUserData();
+    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
