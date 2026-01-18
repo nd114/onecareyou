@@ -21,6 +21,38 @@ interface SharePermissions {
   profile: boolean;
 }
 
+// Track failed attempts per invite code for rate limiting
+const failedAttempts = new Map<string, { count: number; firstAttempt: number }>();
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(inviteCode: string): { blocked: boolean; remainingTime?: number } {
+  const attempts = failedAttempts.get(inviteCode);
+  if (!attempts) return { blocked: false };
+  
+  const timeSinceFirst = Date.now() - attempts.firstAttempt;
+  if (timeSinceFirst > LOCKOUT_DURATION_MS) {
+    // Reset after lockout period
+    failedAttempts.delete(inviteCode);
+    return { blocked: false };
+  }
+  
+  if (attempts.count >= MAX_FAILED_ATTEMPTS) {
+    return { blocked: true, remainingTime: LOCKOUT_DURATION_MS - timeSinceFirst };
+  }
+  
+  return { blocked: false };
+}
+
+function recordFailedAttempt(inviteCode: string): void {
+  const existing = failedAttempts.get(inviteCode);
+  if (existing) {
+    existing.count++;
+  } else {
+    failedAttempts.set(inviteCode, { count: 1, firstAttempt: Date.now() });
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -28,6 +60,36 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // SECURITY: Require authentication to access shared patient data
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error("No authorization header - authentication required for shared patient data");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - you must be logged in as a clinician to access shared patient data' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error("Auth error:", claimsError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const clinicianUserId = claimsData.claims.sub;
+    console.log('Authenticated clinician:', clinicianUserId);
+
     // Parse and validate input
     const rawBody = await req.json();
     const parseResult = GetSharedPatientDataSchema.safeParse(rawBody);
@@ -41,6 +103,19 @@ Deno.serve(async (req) => {
     }
     
     const { inviteCode } = parseResult.data;
+
+    // Check rate limiting for brute-force protection
+    const rateLimitCheck = checkRateLimit(inviteCode);
+    if (rateLimitCheck.blocked) {
+      console.log(`Rate limit exceeded for invite code attempt`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many failed attempts. Please try again later.',
+          retryAfterMs: rateLimitCheck.remainingTime 
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Looking up share with invite code');
 
@@ -68,6 +143,8 @@ Deno.serve(async (req) => {
 
     if (!share) {
       console.log('Share not found or inactive');
+      // Record failed attempt for rate limiting
+      recordFailedAttempt(inviteCode);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired share link' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -83,12 +160,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // SECURITY: Link clinician to this share if not already linked
+    // This ensures future accesses are tracked properly
+    if (!share.clinician_user_id && clinicianUserId) {
+      await supabaseAdmin
+        .from('provider_shares')
+        .update({ clinician_user_id: clinicianUserId })
+        .eq('id', share.id);
+      console.log('Linked clinician to share:', clinicianUserId);
+    }
+
     const permissions = share.permissions as SharePermissions;
     const userId = share.user_id;
     const result: Record<string, unknown> = {
       providerName: share.provider_name,
       permissions,
       sharedAt: share.created_at,
+      shareId: share.id,
     };
 
     // Fetch patient profile if permitted
