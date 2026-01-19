@@ -25,6 +25,7 @@ import { AddVitalDialog } from '@/components/vitals/AddVitalDialog';
 import { EditVitalDialog } from '@/components/vitals/EditVitalDialog';
 import { VitalHistoryLog } from '@/components/vitals/VitalHistoryLog';
 import { ExportDialog } from '@/components/vitals/ExportDialog';
+import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 
 const vitalCards = [
   { type: 'blood_pressure' as VitalType, icon: Heart, color: 'text-rose' },
@@ -50,6 +51,7 @@ const Vitals = () => {
   const [editingVital, setEditingVital] = useState<VitalRecord | null>(null);
   const [view, setView] = useState<'overview' | 'analytics' | 'history'>('overview');
   const { vitals, loading, addVital, updateVital, deleteVital, getLatestVital, getVitalHistory, getVitalStats } = useVitals();
+  const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
   const handleEditVital = (vital: VitalRecord) => {
     setEditingVital(vital);
@@ -189,10 +191,13 @@ const Vitals = () => {
                             const config = VITAL_CONFIG[type];
                             const vital = getLatestVital(type);
                             const stats = getVitalStats(type);
+                            const displayUnit = getDisplayUnit(type);
+                            const normalRange = getNormalRange(type);
                             
                             const getStatus = (value: number): 'normal' | 'high' | 'low' => {
-                              if (value < config.normalMin) return 'low';
-                              if (value > config.normalMax) return 'high';
+                              const converted = convertVitalValue(type, value);
+                              if (converted.value < normalRange.min) return 'low';
+                              if (converted.value > normalRange.max) return 'high';
                               return 'normal';
                             };
                             
@@ -209,7 +214,8 @@ const Vitals = () => {
                               if (type === 'blood_pressure' && vital.secondary_value) {
                                 return `${vital.value}/${vital.secondary_value}`;
                               }
-                              return vital.value;
+                              const converted = convertVitalValue(type, vital.value);
+                              return Math.round(converted.value * 10) / 10;
                             };
                             
                             return (
@@ -221,11 +227,11 @@ const Vitals = () => {
                                       <p className="text-lg sm:text-xl md:text-2xl font-bold mt-0.5 sm:mt-1">
                                         {formatValue()}
                                         <span className="text-[10px] sm:text-xs md:text-sm font-normal text-muted-foreground ml-0.5 sm:ml-1">
-                                          {config.unit}
+                                          {displayUnit}
                                         </span>
                                       </p>
                                       <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                                        Normal: {config.normalMin}-{config.normalMax}
+                                        Normal: {Math.round(normalRange.min * 10) / 10}-{Math.round(normalRange.max * 10) / 10}
                                       </p>
                                       {stats && stats.count > 0 && (
                                         <p className="text-[10px] sm:text-xs text-muted-foreground">
@@ -264,6 +270,13 @@ const Vitals = () => {
               {vitalCards.map((card) => {
                 const stats = getVitalStats(card.type);
                 const config = VITAL_CONFIG[card.type];
+                const displayUnit = getDisplayUnit(card.type);
+                
+                const formatAvg = () => {
+                  if (!stats) return null;
+                  const converted = convertVitalValue(card.type, stats.average);
+                  return Math.round(converted.value * 10) / 10;
+                };
                 
                 return (
                   <Card key={card.type}>
@@ -274,7 +287,7 @@ const Vitals = () => {
                       </div>
                       {stats ? (
                         <div className="space-y-0.5 sm:space-y-1">
-                          <p className="text-base sm:text-lg font-bold">{stats.average} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">{config.unit}</span></p>
+                          <p className="text-base sm:text-lg font-bold">{formatAvg()} <span className="text-[10px] sm:text-xs font-normal text-muted-foreground">{displayUnit}</span></p>
                           <p className="text-[10px] sm:text-xs text-muted-foreground">{stats.count} readings • {stats.inRange} in range</p>
                         </div>
                       ) : (
