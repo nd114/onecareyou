@@ -123,13 +123,19 @@ const Schedule = () => {
   };
 
   const handleTestReminder = async () => {
+    // If not enabled, prompt to enable first
+    if (!remindersEnabled) {
+      const granted = await requestPermission();
+      if (!granted) return;
+    }
+    
     setTestingReminder(true);
     try {
       const success = await sendTestReminder('Your Medication');
       if (success) {
         toast.success('Test notification sent! Check your notifications.');
       } else {
-        toast.error('Failed to send test notification. Make sure notifications are enabled.');
+        toast.error('Failed to send test notification. Please try again.');
       }
     } finally {
       setTestingReminder(false);
