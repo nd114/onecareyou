@@ -19,6 +19,7 @@ import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { performLocalOCR, isOCRSupported, requiresServerProcessing, type OCRProgress } from '@/lib/ocr';
 import { Progress } from '@/components/ui/progress';
+import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 
 interface AddVitalDialogProps {
   open: boolean;
@@ -46,6 +47,7 @@ const vitalCategories = [
 
 export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogProps) {
   const { hasConsent, grantConsent, checkConsentRequired } = useAIConsent();
+  const { getDisplayUnit, getNormalRange } = useUnitPreferences();
   
   const [mode, setMode] = useState<'manual' | 'upload'>('manual');
   const [step, setStep] = useState<'entry' | 'confirm'>('entry');
@@ -388,19 +390,21 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                         {category.types.map((type) => {
                           const config = VITAL_CONFIG[type];
                           const hasBPSecondary = type === 'blood_pressure';
+                          const displayUnit = getDisplayUnit(type);
+                          const normalRange = getNormalRange(type);
                           
                           return (
                             <div key={type} className="space-y-2">
                               <Label htmlFor={type}>
                                 {config.label} 
-                                <span className="text-muted-foreground ml-1">({config.unit})</span>
+                                <span className="text-muted-foreground ml-1">({displayUnit})</span>
                               </Label>
                               <div className="flex gap-2">
                                 <Input
                                   id={type}
                                   type="number"
                                   step="0.1"
-                                  placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
+                                  placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${normalRange.min}-${normalRange.max}`}
                                   value={values[type] || ''}
                                   onChange={(e) => setValues({ ...values, [type]: e.target.value })}
                                   className="flex-1"
@@ -416,7 +420,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                Normal range: {config.normalMin}–{config.normalMax} {config.unit}
+                                Normal range: {normalRange.min}–{normalRange.max} {normalRange.unit}
                               </p>
                             </div>
                           );

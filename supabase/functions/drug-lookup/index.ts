@@ -27,16 +27,95 @@ const cleanLabelText = (text: string | undefined): string => {
     .substring(0, 2000);
 };
 
-// Search DailyMed for medications
+// Get related drug names from RxNorm (brand to generic, generic to brand)
+async function getRelatedDrugNames(drugName: string): Promise<string[]> {
+  const relatedNames: string[] = [drugName];
+  
+  try {
+    // First, get the RxCUI for the drug
+    const rxcui = await getRxCui(drugName);
+    if (!rxcui) return relatedNames;
+    
+    // Get related concepts (brand names, generic names, ingredients)
+    const relatedResponse = await fetch(
+      `https://rxnav.nlm.nih.gov/REST/rxcui/${rxcui}/related.json?tty=BN+IN+MIN+PIN+SBD+SCD+GPCK+BPCK`
+    );
+    
+    if (relatedResponse.ok) {
+      const relatedData = await relatedResponse.json();
+      const conceptGroups = relatedData.relatedGroup?.conceptGroup || [];
+      
+      for (const group of conceptGroups) {
+        for (const concept of group.conceptProperties || []) {
+          if (concept.name && !relatedNames.includes(concept.name)) {
+            relatedNames.push(concept.name);
+          }
+        }
+      }
+    }
+    
+    // Also get the brand name / generic name specifically
+    const allRelatedResponse = await fetch(
+      `https://rxnav.nlm.nih.gov/REST/rxcui/${rxcui}/allrelated.json`
+    );
+    
+    if (allRelatedResponse.ok) {
+      const allRelatedData = await allRelatedResponse.json();
+      const allGroups = allRelatedData.allRelatedGroup?.conceptGroup || [];
+      
+      for (const group of allGroups) {
+        // Focus on brand name (BN) and ingredient (IN) types
+        if (group.tty === 'BN' || group.tty === 'IN') {
+          for (const concept of group.conceptProperties || []) {
+            if (concept.name && !relatedNames.includes(concept.name)) {
+              relatedNames.push(concept.name);
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error getting related drug names:', error);
+  }
+  
+  return relatedNames;
+}
+
+// Search DailyMed for medications with brand name fallback
 async function searchMedications(query: string) {
   try {
-    const response = await fetch(
+    // First, try direct search
+    let response = await fetch(
       `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?drug_name=${encodeURIComponent(query)}&pagesize=10`
     );
     
-    if (!response.ok) return [];
+    let data = response.ok ? await response.json() : { data: [] };
     
-    const data = await response.json();
+    // If no results found, try to get related drug names (brand/generic mapping)
+    if (!data.data || data.data.length === 0) {
+      console.log(`No direct results for "${query}", trying brand/generic lookup...`);
+      
+      const relatedNames = await getRelatedDrugNames(query);
+      console.log(`Found ${relatedNames.length} related names:`, relatedNames.slice(0, 5));
+      
+      // Search for each related name until we find results
+      for (const name of relatedNames) {
+        if (name === query) continue; // Skip the original query we already tried
+        
+        const relatedResponse = await fetch(
+          `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?drug_name=${encodeURIComponent(name)}&pagesize=10`
+        );
+        
+        if (relatedResponse.ok) {
+          const relatedData = await relatedResponse.json();
+          if (relatedData.data && relatedData.data.length > 0) {
+            console.log(`Found results using related name: "${name}"`);
+            data = relatedData;
+            break;
+          }
+        }
+      }
+    }
     
     return (data.data || []).map((item: any) => ({
       setId: item.setid,
@@ -50,11 +129,11 @@ async function searchMedications(query: string) {
   }
 }
 
-// Get detailed medication info
+// Get detailed medication info with brand name fallback
 async function getMedicationInfo(drugName: string) {
   try {
     // First, search for the drug to get its setId
-    const searchResponse = await fetch(
+    let searchResponse = await fetch(
       `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?drug_name=${encodeURIComponent(drugName)}&pagesize=1`
     );
     
@@ -62,7 +141,31 @@ async function getMedicationInfo(drugName: string) {
       throw new Error('Failed to search medication');
     }
     
-    const searchData = await searchResponse.json();
+    let searchData = await searchResponse.json();
+    
+    // If no results found, try to get related drug names (brand/generic mapping)
+    if (!searchData.data || searchData.data.length === 0) {
+      console.log(`No direct results for "${drugName}" in getMedicationInfo, trying related names...`);
+      
+      const relatedNames = await getRelatedDrugNames(drugName);
+      
+      for (const name of relatedNames) {
+        if (name === drugName) continue;
+        
+        const relatedResponse = await fetch(
+          `https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json?drug_name=${encodeURIComponent(name)}&pagesize=1`
+        );
+        
+        if (relatedResponse.ok) {
+          const relatedData = await relatedResponse.json();
+          if (relatedData.data && relatedData.data.length > 0) {
+            console.log(`Found medication info using related name: "${name}"`);
+            searchData = relatedData;
+            break;
+          }
+        }
+      }
+    }
     
     if (!searchData.data || searchData.data.length === 0) {
       return null;
