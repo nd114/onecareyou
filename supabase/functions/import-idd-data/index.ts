@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,35 +10,62 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Parse CSV line handling quoted fields
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, fileUrl } = await req.json();
+    const { action, fileUrl, csvContent } = await req.json();
 
-    if (action === 'import-from-url') {
-      // Fetch the Excel file
-      console.log('Fetching Excel file from:', fileUrl);
-      const response = await fetch(fileUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file: ${response.status}`);
+    if (action === 'import-from-url' || action === 'import-csv') {
+      let csvText: string;
+      
+      if (action === 'import-csv' && csvContent) {
+        // Direct CSV content provided
+        csvText = csvContent;
+        console.log('Processing direct CSV content...');
+      } else if (fileUrl) {
+        // Fetch the CSV file from URL
+        console.log('Fetching CSV file from:', fileUrl);
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.status}`);
+        }
+        csvText = await response.text();
+      } else {
+        throw new Error('Either fileUrl or csvContent is required');
       }
       
-      const arrayBuffer = await response.arrayBuffer();
-      const data = new Uint8Array(arrayBuffer);
+      const lines = csvText.split('\n').filter(line => line.trim());
+      console.log(`Found ${lines.length} lines in CSV`);
       
-      // Parse Excel file
-      console.log('Parsing Excel file...');
-      const workbook = read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const rows = utils.sheet_to_json(sheet);
+      // Skip header row
+      const dataLines = lines.slice(1);
       
-      console.log(`Found ${rows.length} rows in Excel file`);
-      
-      // Map to our schema - IDD columns are: DRUGNAME, STR, RXCUI, SAB
+      // Headers: DRUGNAME,RXAUI,RXCUI,STR,SAB,TTY,CODE
+      // Map: DRUGNAME→brand_name, STR→generic_name, RXCUI→rxcui, SAB→country_code
       const mappings: Array<{
         brand_name: string;
         brand_name_normalized: string;
@@ -49,19 +75,20 @@ serve(async (req) => {
         source: string;
       }> = [];
       
-      for (const row of rows as any[]) {
-        const brandName = row['DRUGNAME'] || row['drugname'] || row['DrugName'] || row['Brand_Name'] || row['brand_name'];
-        const genericName = row['STR'] || row['str'] || row['Generic_Name'] || row['generic_name'] || row['GENERIC'];
-        const rxcui = row['RXCUI'] || row['rxcui'] || row['RxCUI'];
-        const countryCode = row['SAB'] || row['sab'] || row['Country'] || row['country_code'];
+      for (const line of dataLines) {
+        const cols = parseCSVLine(line);
+        const brandName = cols[0]; // DRUGNAME
+        const rxcui = cols[2];     // RXCUI
+        const genericName = cols[3]; // STR
+        const countryCode = cols[4]; // SAB
         
         if (brandName && genericName) {
           mappings.push({
-            brand_name: String(brandName).trim(),
-            brand_name_normalized: String(brandName).trim().toLowerCase(),
-            generic_name: String(genericName).trim(),
-            rxcui: rxcui ? String(rxcui).trim() : null,
-            country_code: countryCode ? String(countryCode).trim() : null,
+            brand_name: brandName,
+            brand_name_normalized: brandName.toLowerCase(),
+            generic_name: genericName,
+            rxcui: rxcui || null,
+            country_code: countryCode || null,
             source: 'mendeley_idd',
           });
         }
@@ -71,7 +98,7 @@ serve(async (req) => {
       
       if (mappings.length === 0) {
         return new Response(
-          JSON.stringify({ error: 'No valid mappings found in file', columns: Object.keys(rows[0] || {}) }),
+          JSON.stringify({ error: 'No valid mappings found in file' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -96,14 +123,14 @@ serve(async (req) => {
           errors += batch.length;
         } else {
           inserted += batch.length;
-          console.log(`Inserted batch ${i / batchSize + 1}: ${batch.length} records`);
+          console.log(`Inserted batch ${Math.floor(i / batchSize) + 1}: ${batch.length} records`);
         }
       }
       
       return new Response(
         JSON.stringify({
           success: true,
-          total_rows: rows.length,
+          total_lines: lines.length,
           valid_mappings: mappings.length,
           inserted,
           errors,
