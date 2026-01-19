@@ -96,7 +96,7 @@ const AdherenceReport = () => {
     <div className="min-h-screen bg-muted/30">
       <Header />
       
-      <main className="container py-8 max-w-5xl">
+      <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -376,10 +376,11 @@ const AdherenceReport = () => {
                     <div className="space-y-4">
                       {report.medicationData.map((med) => (
                         <div key={med.medicationId} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{med.medicationName}</span>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+                            <span className="font-medium text-sm sm:text-base truncate">{med.medicationName}</span>
                             <Badge 
                               variant={med.adherenceRate >= 80 ? 'default' : med.adherenceRate >= 50 ? 'secondary' : 'destructive'}
+                              className="self-start sm:self-center"
                             >
                               {med.adherenceRate}%
                             </Badge>
@@ -388,7 +389,7 @@ const AdherenceReport = () => {
                             value={med.adherenceRate} 
                             className="h-2"
                           />
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
                             <span>{med.taken} taken</span>
                             <span>{med.skipped} skipped</span>
                             <span>{med.missed} missed</span>
