@@ -52,7 +52,7 @@ export function VitalStatsCard({ type, latestVital, stats, icon: Icon, colorClas
   const StatusIcon = statusIcons[status];
 
   const formatValue = () => {
-    if (!latestVital) return '—';
+    if (!latestVital) return '-';
     if (type === 'blood_pressure' && latestVital.secondary_value) {
       return `${latestVital.value}/${latestVital.secondary_value}`;
     }

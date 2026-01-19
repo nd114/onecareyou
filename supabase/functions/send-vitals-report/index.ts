@@ -114,7 +114,7 @@ function generateEmailHTML(
         <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0;">${label}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">${formatValue(vital)} ${vital.unit}</td>
         <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #666;">${formatDate(vital.recorded_at)}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #666; font-size: 12px;">${vital.notes || '—'}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #666; font-size: 12px;">${vital.notes || '-'}</td>
       </tr>
     `;
   }).join('');

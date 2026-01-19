@@ -406,17 +406,17 @@ const MedicationInfo = () => {
                       <li>
                         <a href="https://dailymed.nlm.nih.gov" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           FDA DailyMed / openFDA
-                        </a> — U.S. drug labeling information
+                        </a>: U.S. drug labeling information
                       </li>
                       <li>
                         <a href="https://www.nlm.nih.gov/research/umls/rxnorm/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           RxNorm (NIH/NLM)
-                        </a> — Drug interaction data via RxCUI identifiers
+                        </a>: Drug interaction data via RxCUI identifiers
                       </li>
                       <li>
                         <a href="https://data.mendeley.com/datasets/hj5yt5wdv8/1" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           Mendeley IDD Dataset
-                        </a> — International brand-to-generic drug mappings
+                        </a>: International brand-to-generic drug mappings
                       </li>
                     </ul>
                   </div>

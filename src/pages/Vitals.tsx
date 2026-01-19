@@ -210,7 +210,7 @@ const Vitals = () => {
                             };
                             
                             const formatValue = () => {
-                              if (!vital) return '—';
+                              if (!vital) return '-';
                               if (type === 'blood_pressure' && vital.secondary_value) {
                                 return `${vital.value}/${vital.secondary_value}`;
                               }
