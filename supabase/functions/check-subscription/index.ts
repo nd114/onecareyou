@@ -18,9 +18,6 @@ const PRODUCT_TIER_MAP: Record<string, string> = {
   "prod_To9oGDfKrPJphC": "premium",  // Annual Premium
 };
 
-// 12-hour trial period in milliseconds
-const TRIAL_PERIOD_MS = 12 * 60 * 60 * 1000;
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -49,30 +46,21 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Check if user is in trial period (registered within last 12 hours)
-    const userCreatedAt = new Date(user.created_at).getTime();
-    const now = Date.now();
-    const isInTrialPeriod = (now - userCreatedAt) < TRIAL_PERIOD_MS;
-    const trialEndsAt = isInTrialPeriod ? new Date(userCreatedAt + TRIAL_PERIOD_MS).toISOString() : null;
+    // Check if user already has permanent premium in their profile (lifetime access)
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('user_id', user.id)
+      .single();
 
-    if (isInTrialPeriod) {
-      logStep("User is in 12-hour trial period", { 
-        trialEndsAt,
-        hoursRemaining: Math.round((userCreatedAt + TRIAL_PERIOD_MS - now) / (60 * 60 * 1000) * 10) / 10
-      });
-      
-      // Update profile to premium (trial)
-      await supabaseClient
-        .from('profiles')
-        .update({ subscription_tier: 'premium' })
-        .eq('user_id', user.id);
-
+    if (profile?.subscription_tier === 'premium') {
+      logStep("User has permanent premium access", { userId: user.id });
       return new Response(JSON.stringify({ 
         subscribed: true,
         tier: "premium",
-        subscription_end: trialEndsAt,
+        subscription_end: null,
         is_annual: false,
-        is_trial: true
+        is_lifetime: true
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
