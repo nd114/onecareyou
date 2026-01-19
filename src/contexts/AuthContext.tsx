@@ -24,6 +24,11 @@ interface Profile {
   onboarding_completed: boolean;
   timezone: string | null;
   weekly_adherence_report_enabled: boolean | null;
+  unit_preferences: {
+    glucose: 'mg/dL' | 'mmol/L';
+    weight: 'kg' | 'lbs';
+    temperature: '°C' | '°F';
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -60,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       }
       
-      return data as Profile | null;
+      return data as unknown as Profile | null;
     } catch (error) {
       console.error('Error fetching profile:', error);
       return null;

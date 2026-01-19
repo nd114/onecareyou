@@ -11,33 +11,70 @@ import {
   VitalType,
   VITAL_CONFIG
 } from '@/types/health';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const STORAGE_KEY = 'onecare_unit_preferences';
 
 export function useUnitPreferences() {
+  const { user, profile } = useAuth();
   const [preferences, setPreferences] = useState<UnitPreferences>(DEFAULT_UNIT_PREFERENCES);
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  // Load preferences from database first, then fallback to localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setPreferences({ ...DEFAULT_UNIT_PREFERENCES, ...JSON.parse(stored) });
-      } catch (e) {
-        console.error('Failed to parse unit preferences:', e);
+    const loadPreferences = async () => {
+      // Try to load from profile first (database)
+      if (profile && (profile as any).unit_preferences) {
+        const dbPrefs = (profile as any).unit_preferences as UnitPreferences;
+        setPreferences({ ...DEFAULT_UNIT_PREFERENCES, ...dbPrefs });
+        // Also sync to localStorage for offline access
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dbPrefs));
+        setIsLoaded(true);
+        return;
       }
-    }
-  }, []);
 
-  const updatePreference = useCallback(<K extends keyof UnitPreferences>(
+      // Fallback to localStorage
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          setPreferences({ ...DEFAULT_UNIT_PREFERENCES, ...JSON.parse(stored) });
+        } catch (e) {
+          console.error('Failed to parse unit preferences:', e);
+        }
+      }
+      setIsLoaded(true);
+    };
+
+    loadPreferences();
+  }, [profile]);
+
+  const updatePreference = useCallback(async <K extends keyof UnitPreferences>(
     key: K, 
     value: UnitPreferences[K]
   ) => {
-    setPreferences(prev => {
-      const updated = { ...prev, [key]: value };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+    const updated = { ...preferences, [key]: value };
+    setPreferences(updated);
+    
+    // Save to localStorage immediately for instant feedback
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+    // Also save to database if user is logged in
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ unit_preferences: updated })
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error('Failed to save unit preferences to database:', error);
+        }
+      } catch (e) {
+        console.error('Failed to save unit preferences:', e);
+      }
+    }
+  }, [preferences, user]);
 
   // Convert a vital value to the user's preferred unit
   const convertVitalValue = useCallback((
@@ -124,6 +161,7 @@ export function useUnitPreferences() {
     updatePreference,
     convertVitalValue,
     getDisplayUnit,
-    getNormalRange
+    getNormalRange,
+    isLoaded
   };
 }

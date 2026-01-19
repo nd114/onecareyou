@@ -745,6 +745,7 @@ export type Database = {
           push_subscription: Json | null
           subscription_tier: string | null
           timezone: string | null
+          unit_preferences: Json | null
           updated_at: string | null
           user_id: string
           weekly_adherence_report_enabled: boolean | null
@@ -774,6 +775,7 @@ export type Database = {
           push_subscription?: Json | null
           subscription_tier?: string | null
           timezone?: string | null
+          unit_preferences?: Json | null
           updated_at?: string | null
           user_id: string
           weekly_adherence_report_enabled?: boolean | null
@@ -803,6 +805,7 @@ export type Database = {
           push_subscription?: Json | null
           subscription_tier?: string | null
           timezone?: string | null
+          unit_preferences?: Json | null
           updated_at?: string | null
           user_id?: string
           weekly_adherence_report_enabled?: boolean | null

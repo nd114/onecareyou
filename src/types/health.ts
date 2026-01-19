@@ -5,7 +5,7 @@ export type MedicationType = 'prescription' | 'otc' | 'vitamin' | 'supplement' |
 export type ScheduleStatus = 'pending' | 'taken' | 'skipped' | 'missed';
 
 export type VitalType = 
-  | 'weight' | 'blood_pressure' | 'heart_rate' | 'temperature' | 'glucose'
+  | 'weight' | 'blood_pressure' | 'heart_rate' | 'oxygen_saturation' | 'temperature' | 'glucose'
   | 'hba1c' | 'urea' | 'creatinine' | 'gfr'
   | 'cholesterol_total' | 'ldl' | 'hdl'
   | 'alt' | 'ast'
@@ -148,6 +148,7 @@ export const VITAL_CONFIG: Record<VitalType, {
   weight: { label: 'Weight', unit: 'kg', category: 'Daily Vitals', normalMin: 0, normalMax: 999, alternativeUnits: ['lbs'] },
   blood_pressure: { label: 'Blood Pressure', unit: 'mmHg', category: 'Daily Vitals', normalMin: 90, normalMax: 120, secondaryLabel: 'Diastolic' },
   heart_rate: { label: 'Heart Rate', unit: 'bpm', category: 'Daily Vitals', normalMin: 60, normalMax: 100 },
+  oxygen_saturation: { label: 'SpO₂', unit: '%', category: 'Daily Vitals', normalMin: 95, normalMax: 100 },
   temperature: { label: 'Temperature', unit: '°C', category: 'Daily Vitals', normalMin: 36.1, normalMax: 37.2, alternativeUnits: ['°F'] },
   glucose: { label: 'Blood Glucose', unit: 'mg/dL', category: 'Sugar', normalMin: 70, normalMax: 100, alternativeUnits: ['mmol/L'] },
   hba1c: { label: 'HbA1c', unit: '%', category: 'Sugar', normalMin: 4, normalMax: 5.6 },
