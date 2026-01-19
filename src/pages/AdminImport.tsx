@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 // Parse CSV line handling quoted fields
@@ -30,6 +30,12 @@ export default function AdminImport() {
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stats, setStats] = useState<{ inserted: number; errors: number; total: number } | null>(null);
+  const [log, setLog] = useState<string[]>([]);
+
+  const addLog = (msg: string) => {
+    setLog(prev => [...prev, msg]);
+    console.log(msg);
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -38,15 +44,17 @@ export default function AdminImport() {
     setIsImporting(true);
     setProgress(0);
     setStats(null);
+    setLog([]);
 
     try {
+      addLog('Reading file...');
       const text = await file.text();
       const lines = text.split('\n').filter(line => line.trim());
       const dataLines = lines.slice(1); // Skip header
       
-      console.log(`Processing ${dataLines.length} lines...`);
+      addLog(`Found ${dataLines.length} data lines`);
       
-      // Headers: DRUGNAME,RXAUI,RXCUI,STR,SAB,TTY,CODE
+      // Headers: DRUGNAME,RXAUI,RXCUI,STR,SAB,TTY,CODE,,,
       const mappings: Array<{
         brand_name: string;
         brand_name_normalized: string;
@@ -56,12 +64,13 @@ export default function AdminImport() {
         source: string;
       }> = [];
       
+      let skipped = 0;
       for (const line of dataLines) {
         const cols = parseCSVLine(line);
-        const brandName = cols[0]; // DRUGNAME
-        const rxcui = cols[2];     // RXCUI
-        const genericName = cols[3]; // STR
-        const countryCode = cols[4]; // SAB
+        const brandName = cols[0]?.trim(); // DRUGNAME
+        const rxcui = cols[2]?.trim();     // RXCUI
+        const genericName = cols[3]?.trim(); // STR
+        const countryCode = cols[4]?.trim(); // SAB
         
         if (brandName && genericName) {
           mappings.push({
@@ -72,50 +81,60 @@ export default function AdminImport() {
             country_code: countryCode || null,
             source: 'mendeley_idd',
           });
+        } else {
+          skipped++;
         }
       }
       
-      console.log(`Prepared ${mappings.length} valid mappings`);
+      addLog(`Prepared ${mappings.length} valid mappings (${skipped} skipped)`);
       
-      // Insert in batches of 500
-      const batchSize = 500;
+      // Call edge function which has service_role access
+      const batchSize = 1000;
       let inserted = 0;
       let errors = 0;
       
       for (let i = 0; i < mappings.length; i += batchSize) {
         const batch = mappings.slice(i, i + batchSize);
         
-        const { error } = await supabase
-          .from('international_drug_mappings')
-          .upsert(batch, {
-            onConflict: 'brand_name_normalized',
-            ignoreDuplicates: false,
-          });
+        const { data, error } = await supabase.functions.invoke('import-idd-data', {
+          body: { action: 'import-batch', mappings: batch },
+        });
         
         if (error) {
-          console.error(`Batch ${Math.floor(i / batchSize) + 1} error:`, error);
+          addLog(`Batch ${Math.floor(i / batchSize) + 1} error: ${error.message}`);
           errors += batch.length;
         } else {
-          inserted += batch.length;
+          inserted += data?.inserted || batch.length;
+          if (data?.errors) errors += data.errors;
         }
         
         setProgress(Math.round((i + batch.length) / mappings.length * 100));
       }
       
       setStats({ inserted, errors, total: mappings.length });
-      toast.success(`Import complete: ${inserted} records inserted`);
+      toast.success(`Import complete: ${inserted} records processed`);
       
     } catch (error) {
       console.error('Import error:', error);
+      addLog(`Error: ${error}`);
       toast.error('Import failed');
     } finally {
       setIsImporting(false);
     }
   };
 
+  const checkStats = async () => {
+    const { data, error } = await supabase.functions.invoke('import-idd-data', {
+      body: { action: 'get-stats' },
+    });
+    if (data) {
+      addLog(`Database has ${data.count} records`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-8">
-      <Card className="max-w-xl mx-auto">
+      <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Import IDD Drug Mappings</CardTitle>
         </CardHeader>
@@ -124,13 +143,18 @@ export default function AdminImport() {
             Upload CSV file with headers: DRUGNAME, RXAUI, RXCUI, STR, SAB, TTY, CODE
           </p>
           
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileUpload}
-            disabled={isImporting}
-            className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-primary-foreground"
-          />
+          <div className="flex gap-2">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileUpload}
+              disabled={isImporting}
+              className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-primary-foreground"
+            />
+            <Button variant="outline" onClick={checkStats} disabled={isImporting}>
+              Check Stats
+            </Button>
+          </div>
           
           {isImporting && (
             <div className="space-y-2">
@@ -144,6 +168,15 @@ export default function AdminImport() {
               <p><strong>Total mappings:</strong> {stats.total}</p>
               <p><strong>Inserted:</strong> {stats.inserted}</p>
               <p><strong>Errors:</strong> {stats.errors}</p>
+            </div>
+          )}
+          
+          {log.length > 0 && (
+            <div className="p-4 bg-muted rounded-lg max-h-48 overflow-y-auto">
+              <p className="font-medium mb-2">Log:</p>
+              {log.map((msg, i) => (
+                <p key={i} className="text-xs font-mono">{msg}</p>
+              ))}
             </div>
           )}
         </CardContent>
