@@ -159,7 +159,7 @@ const Settings = () => {
     checkSubscription();
   }, [checkSubscription]);
   
-  // Unit preferences - stored in localStorage for now (could be moved to profile later)
+  // Unit preferences - synced to database for cross-device persistence
   const [glucoseUnit, setGlucoseUnit] = useState<GlucoseUnit>(() => {
     const saved = localStorage.getItem('unitPref_glucose');
     return (saved as GlucoseUnit) || DEFAULT_UNIT_PREFERENCES.glucose;
@@ -172,6 +172,16 @@ const Settings = () => {
     const saved = localStorage.getItem('unitPref_temperature');
     return (saved as TemperatureUnit) || DEFAULT_UNIT_PREFERENCES.temperature;
   });
+
+  // Load unit preferences from profile on mount
+  useEffect(() => {
+    if ((profile as any)?.unit_preferences) {
+      const prefs = (profile as any).unit_preferences;
+      if (prefs.glucose) setGlucoseUnit(prefs.glucose);
+      if (prefs.weight) setWeightUnit(prefs.weight);
+      if (prefs.temperature) setTemperatureUnit(prefs.temperature);
+    }
+  }, [profile]);
 
   useEffect(() => {
     // Check current theme
@@ -214,11 +224,40 @@ const Settings = () => {
     }
   };
 
-  const handleUnitChange = (type: 'glucose' | 'weight' | 'temperature', value: string) => {
-    localStorage.setItem(`unitPref_${type}`, value);
+  const handleUnitChange = async (type: 'glucose' | 'weight' | 'temperature', value: string) => {
+    // Update local state
     if (type === 'glucose') setGlucoseUnit(value as GlucoseUnit);
     if (type === 'weight') setWeightUnit(value as WeightUnit);
     if (type === 'temperature') setTemperatureUnit(value as TemperatureUnit);
+    
+    // Build the updated preferences object
+    const updatedPrefs = {
+      glucose: type === 'glucose' ? value : glucoseUnit,
+      weight: type === 'weight' ? value : weightUnit,
+      temperature: type === 'temperature' ? value : temperatureUnit,
+    };
+    
+    // Save to localStorage for immediate use
+    localStorage.setItem('onecare_unit_preferences', JSON.stringify(updatedPrefs));
+    
+    // Also save to database for cross-device sync
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ unit_preferences: updatedPrefs })
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error('Failed to save unit preferences:', error);
+          toast.error('Failed to sync preferences');
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to save unit preferences:', e);
+      }
+    }
+    
     toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} unit updated to ${value}`);
   };
 

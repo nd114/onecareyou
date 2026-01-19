@@ -35,7 +35,7 @@ const vitalCards = [
 ];
 
 const vitalCategories = [
-  { id: 'daily', label: 'Daily Vitals', types: ['weight', 'blood_pressure', 'heart_rate', 'temperature'] as VitalType[] },
+  { id: 'daily', label: 'Daily Vitals', types: ['weight', 'blood_pressure', 'heart_rate', 'oxygen_saturation', 'temperature'] as VitalType[] },
   { id: 'sugar', label: 'Sugar', types: ['glucose', 'hba1c'] as VitalType[] },
   { id: 'kidneys', label: 'Kidneys', types: ['urea', 'creatinine', 'gfr'] as VitalType[] },
   { id: 'heart', label: 'Heart', types: ['cholesterol_total', 'ldl', 'hdl'] as VitalType[] },

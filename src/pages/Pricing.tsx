@@ -48,27 +48,27 @@ const premiumFeatures = [
 const faqs = [
   {
     question: 'Can I switch plans at any time?',
-    answer: 'Yes! You can upgrade or downgrade your plan at any time. If you upgrade, you\'ll be charged the prorated difference. If you downgrade, the change will take effect at the end of your billing cycle.',
+    answer: 'Yes! You can upgrade to Premium at any time. If you downgrade, the change will take effect at the end of your current billing period.',
   },
   {
-    question: 'Is there a free trial for Premium?',
-    answer: 'Yes, we offer a 14-day free trial for Premium plans. You can try all features risk-free before committing.',
+    question: 'What\'s the difference between Free and Premium?',
+    answer: 'The Free plan lets you track up to 3 medications with basic features. Premium unlocks unlimited medications, vitals tracking, Care Circle sharing, AI lab report parsing, and priority support.',
   },
   {
     question: 'What payment methods do you accept?',
-    answer: 'We accept all major credit cards (Visa, MasterCard, American Express) as well as PayPal and Apple Pay.',
-  },
-  {
-    question: 'Is my health data secure?',
-    answer: 'Absolutely. We use bank-level encryption to protect your data. Your health information is never sold or shared with third parties. See our Privacy Policy for details.',
+    answer: 'We accept all major credit cards including Visa, MasterCard, and American Express.',
   },
   {
     question: 'Can I cancel my subscription?',
-    answer: 'Yes, you can cancel anytime from your account settings. Your data will remain accessible, and you\'ll continue to have access until the end of your billing period.',
+    answer: 'Yes, you can cancel anytime from your account settings. You\'ll continue to have Premium access until the end of your current billing period.',
   },
   {
-    question: 'Do you offer refunds?',
-    answer: 'We offer a 30-day money-back guarantee. If you\'re not satisfied with Premium, contact us within 30 days for a full refund.',
+    question: 'Is my health data secure?',
+    answer: 'Yes, we take data security seriously. Your health information is encrypted and never sold or shared with third parties. See our Privacy Policy for full details on how we protect your data.',
+  },
+  {
+    question: 'How does billing work?',
+    answer: 'You can choose monthly or annual billing. Annual plans offer significant savings. Your subscription will automatically renew unless you cancel before the renewal date.',
   },
 ];
 
@@ -279,7 +279,7 @@ const Pricing = () => {
                     )
                   ) : (
                     <Button className="w-full gradient-primary border-0" asChild>
-                      <Link to="/sign-up">Start Free Trial</Link>
+                      <Link to="/sign-up">Get Started</Link>
                     </Button>
                   )}
                 </CardContent>
