@@ -539,6 +539,42 @@ export type Database = {
         }
         Relationships: []
       }
+      international_drug_mappings: {
+        Row: {
+          brand_name: string
+          brand_name_normalized: string
+          country_code: string | null
+          created_at: string
+          generic_name: string
+          id: string
+          rxcui: string | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand_name: string
+          brand_name_normalized: string
+          country_code?: string | null
+          created_at?: string
+          generic_name: string
+          id?: string
+          rxcui?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand_name?: string
+          brand_name_normalized?: string
+          country_code?: string | null
+          created_at?: string
+          generic_name?: string
+          id?: string
+          rxcui?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       legal_acceptances: {
         Row: {
           accepted_at: string

@@ -1,18 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Initialize Supabase client for database lookups
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
 // Input validation schemas
 const SearchRequestSchema = z.object({
-  action: z.enum(['search', 'get-info', 'get-rxcui', 'check-interactions', 'lookup-ndc']),
+  action: z.enum(['search', 'get-info', 'get-rxcui', 'check-interactions', 'lookup-ndc', 'import-mappings']),
   query: z.string().max(200).optional(),
   drugName: z.string().max(200).optional(),
   drugNames: z.array(z.string().max(200)).max(20).optional(),
   ndc: z.string().max(20).regex(/^[\d\-]+$/, 'Invalid NDC format').optional(),
+  mappings: z.array(z.object({
+    brand_name: z.string(),
+    generic_name: z.string(),
+    rxcui: z.string().optional(),
+    country_code: z.string().optional(),
+  })).max(1000).optional(),
 });
 
 type SearchRequest = z.infer<typeof SearchRequestSchema>;
@@ -176,18 +188,95 @@ const cleanLabelText = (text: string | undefined): string => {
     .substring(0, 2000);
 };
 
-// Look up international brand name to get generic equivalent
-function getGenericFromBrandName(brandName: string): string | null {
+// Look up international brand name to get generic equivalent from hardcoded mapping
+function getGenericFromHardcodedMapping(brandName: string): string | null {
   const normalized = brandName.toLowerCase().trim();
   return INTERNATIONAL_BRAND_MAPPING[normalized] || null;
+}
+
+// Look up international brand name from database table
+async function getGenericFromDatabase(brandName: string): Promise<string | null> {
+  try {
+    const normalized = brandName.toLowerCase().trim();
+    const { data, error } = await supabase
+      .from('international_drug_mappings')
+      .select('generic_name')
+      .eq('brand_name_normalized', normalized)
+      .limit(1)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Database lookup error:', error);
+      return null;
+    }
+    
+    return data?.generic_name || null;
+  } catch (err) {
+    console.error('Database lookup error:', err);
+    return null;
+  }
+}
+
+// Look up drug using EMA (European Medicines Agency) API
+async function getGenericFromEMA(brandName: string): Promise<string | null> {
+  try {
+    // Search EMA's public product data
+    const response = await fetch(
+      `https://www.ema.europa.eu/en/medicines/field_ema_web_categories%253Aname_field/Human/search_api_aggregation_ema_medicine_types/field_ema_authorisation_status/valid?search_api_views_fulltext=${encodeURIComponent(brandName)}`
+    );
+    
+    // EMA returns HTML, so we need to check if it's a valid drug and try to extract info
+    // For now, we'll use the older JSON endpoint if available
+    const jsonResponse = await fetch(
+      `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${encodeURIComponent(brandName)}"&limit=1`
+    );
+    
+    if (jsonResponse.ok) {
+      const data = await jsonResponse.json();
+      if (data.results?.[0]?.openfda?.generic_name?.[0]) {
+        console.log(`Found via FDA fallback: "${brandName}" -> "${data.results[0].openfda.generic_name[0]}"`);
+        return data.results[0].openfda.generic_name[0].toLowerCase();
+      }
+    }
+    
+    return null;
+  } catch (err) {
+    console.error('EMA/FDA lookup error:', err);
+    return null;
+  }
+}
+
+// Combined lookup: hardcoded -> database -> EMA API
+async function getGenericFromBrandName(brandName: string): Promise<string | null> {
+  // 1. Check hardcoded mapping first (fastest)
+  const fromHardcoded = getGenericFromHardcodedMapping(brandName);
+  if (fromHardcoded) {
+    console.log(`Found in hardcoded mapping: "${brandName}" -> "${fromHardcoded}"`);
+    return fromHardcoded;
+  }
+  
+  // 2. Check database table (Mendeley IDD imports)
+  const fromDatabase = await getGenericFromDatabase(brandName);
+  if (fromDatabase) {
+    console.log(`Found in database: "${brandName}" -> "${fromDatabase}"`);
+    return fromDatabase;
+  }
+  
+  // 3. Try EMA/FDA API as fallback
+  const fromEMA = await getGenericFromEMA(brandName);
+  if (fromEMA) {
+    return fromEMA;
+  }
+  
+  return null;
 }
 
 // Get related drug names from RxNorm (brand to generic, generic to brand)
 async function getRelatedDrugNames(drugName: string): Promise<string[]> {
   const relatedNames: string[] = [drugName];
   
-  // First, check our international brand mapping
-  const genericFromMapping = getGenericFromBrandName(drugName);
+  // First, check our multi-layer brand mapping
+  const genericFromMapping = await getGenericFromBrandName(drugName);
   if (genericFromMapping) {
     console.log(`Found international brand mapping: "${drugName}" -> "${genericFromMapping}"`);
     relatedNames.push(genericFromMapping);
@@ -624,6 +713,49 @@ serve(async (req) => {
           );
         }
         result = await lookupNDC(body.ndc);
+        break;
+      
+      case 'import-mappings':
+        // Bulk import international drug mappings (for Mendeley IDD data)
+        if (!body.mappings || body.mappings.length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'Mappings array is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // Prepare data with normalized brand names
+        const mappingsToInsert = body.mappings.map(m => ({
+          brand_name: m.brand_name,
+          brand_name_normalized: m.brand_name.toLowerCase().trim(),
+          generic_name: m.generic_name.toLowerCase().trim(),
+          rxcui: m.rxcui || null,
+          country_code: m.country_code || null,
+          source: 'mendeley_idd',
+        }));
+        
+        // Upsert to avoid duplicates
+        const { data: insertedData, error: insertError } = await supabase
+          .from('international_drug_mappings')
+          .upsert(mappingsToInsert, { 
+            onConflict: 'brand_name_normalized',
+            ignoreDuplicates: true 
+          })
+          .select('id');
+        
+        if (insertError) {
+          console.error('Import error:', insertError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to import mappings', details: insertError.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        result = { 
+          success: true, 
+          imported: mappingsToInsert.length,
+          message: `Successfully imported ${mappingsToInsert.length} drug mappings`
+        };
         break;
         
       default:
