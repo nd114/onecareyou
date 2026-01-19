@@ -224,20 +224,21 @@ const ClinicianDashboard = () => {
             {/* Patients Tab */}
             <TabsContent value="patients">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle>Your Patients</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-base sm:text-lg">Your Patients</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
                       Patients who have shared their health data with you
                     </CardDescription>
                   </div>
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="h-8 px-3 text-xs w-full sm:w-auto"
                     onClick={() => autoClaimShares.mutate()}
                     disabled={autoClaimShares.isPending}
                   >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${autoClaimShares.isPending ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${autoClaimShares.isPending ? 'animate-spin' : ''}`} />
                     Refresh
                   </Button>
                 </CardHeader>
@@ -281,37 +282,38 @@ const ClinicianDashboard = () => {
                       {filteredPatients.map((patient) => (
                         <div
                           key={patient.id}
-                          className="p-4 rounded-lg border hover:shadow-sm transition-shadow"
+                          className="p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow"
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <div 
-                              className="flex items-center gap-3 flex-1 cursor-pointer"
+                              className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                               onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
                             >
-                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
                                 <span className="font-semibold text-primary">
                                   {(patient.patient_name || 'Unknown Patient').charAt(0)}
                                 </span>
                               </div>
-                              <div>
-                                <p className="font-medium">{patient.patient_name || 'Unknown Patient'}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium truncate">{patient.patient_name || 'Unknown Patient'}</p>
                                 {patient.patient_email && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Mail className="h-3 w-3" />
-                                    {patient.patient_email}
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                                    <Mail className="h-3 w-3 flex-shrink-0" />
+                                    <span className="truncate">{patient.patient_email}</span>
                                   </p>
                                 )}
-                                <div className="flex gap-1 mt-1">
+                                <div className="flex flex-wrap gap-1 mt-1">
                                   {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
                                   {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
                                   {patient.permissions.adherence && <Badge variant="secondary" className="text-xs">Adherence</Badge>}
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
                               <Button 
                                 variant="ghost" 
                                 size="icon"
+                                className="h-8 w-8"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setNotesDialog({
@@ -328,6 +330,7 @@ const ClinicianDashboard = () => {
                               <Button 
                                 variant="outline" 
                                 size="sm"
+                                className="h-8 px-3 text-xs"
                                 onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
                               >
                                 View
@@ -345,17 +348,17 @@ const ClinicianDashboard = () => {
             {/* Guidance Tab */}
             <TabsContent value="guidance">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle>Patient Guidance</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-base sm:text-lg">Patient Guidance</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
                       Send instructions and guidance to your patients
                     </CardDescription>
                   </div>
                   <CreateGuidanceDialog
                     trigger={
-                      <Button className="gradient-primary border-0" disabled={patients.length === 0}>
-                        <Plus className="h-4 w-4 mr-2" />
+                      <Button className="gradient-primary border-0 h-8 sm:h-9 px-3 text-xs sm:text-sm w-full sm:w-auto" disabled={patients.length === 0}>
+                        <Plus className="h-4 w-4 mr-1 sm:mr-2" />
                         New Guidance
                       </Button>
                     }
@@ -374,32 +377,33 @@ const ClinicianDashboard = () => {
                   ) : (
                     <div className="space-y-3">
                       {clinicianGuidance.map((guidance) => (
-                        <div key={guidance.id} className="p-4 rounded-lg border">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <p className="font-medium">{guidance.title}</p>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {guidance.instruction.length > 100 ? `${guidance.instruction.substring(0, 100)}...` : guidance.instruction}
+                        <div key={guidance.id} className="p-3 sm:p-4 rounded-lg border">
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm sm:text-base truncate">{guidance.title}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
+                                {guidance.instruction}
                               </p>
-                              <div className="flex gap-2 mt-2">
+                              <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                                 <Badge variant={
                                   guidance.status === 'completed' ? 'default' :
                                   guidance.status === 'acknowledged' ? 'secondary' :
                                   'outline'
-                                }>
+                                } className="text-xs">
                                   {guidance.status}
                                 </Badge>
-                                <Badge variant="outline">{guidance.priority}</Badge>
-                                <Badge variant="outline">{guidance.category}</Badge>
+                                <Badge variant="outline" className="text-xs">{guidance.priority}</Badge>
+                                <Badge variant="outline" className="text-xs">{guidance.category}</Badge>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 self-end sm:self-start flex-shrink-0">
                               {guidance.status === 'completed' && (
                                 <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                               )}
                               <Button 
                                 variant="ghost" 
                                 size="icon"
+                                className="h-8 w-8"
                                 onClick={() => deleteGuidance.mutate(guidance.id)}
                               >
                                 <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
@@ -417,17 +421,17 @@ const ClinicianDashboard = () => {
             {/* Alerts Tab */}
             <TabsContent value="alerts">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle>Alert Rules</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-base sm:text-lg">Alert Rules</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
                       Set up automatic alerts for patient vitals
                     </CardDescription>
                   </div>
                   <CreateAlertRuleDialog
                     trigger={
-                      <Button className="gradient-primary border-0" disabled={patients.length === 0}>
-                        <Plus className="h-4 w-4 mr-2" />
+                      <Button className="gradient-primary border-0 h-8 sm:h-9 px-3 text-xs sm:text-sm w-full sm:w-auto" disabled={patients.length === 0}>
+                        <Plus className="h-4 w-4 mr-1 sm:mr-2" />
                         New Rule
                       </Button>
                     }
@@ -446,16 +450,16 @@ const ClinicianDashboard = () => {
                   ) : (
                     <div className="space-y-3">
                       {alertRules.map((rule) => (
-                        <div key={rule.id} className="p-4 rounded-lg border">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="font-medium capitalize">{rule.vital_type.replace('_', ' ')}</p>
-                              <p className="text-sm text-muted-foreground">
+                        <div key={rule.id} className="p-3 sm:p-4 rounded-lg border">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm sm:text-base capitalize">{rule.vital_type.replace('_', ' ')}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">
                                 Alert when {rule.condition} {rule.threshold_value}
                                 {rule.threshold_secondary && ` - ${rule.threshold_secondary}`}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
                               <Switch
                                 checked={rule.is_active}
                                 onCheckedChange={(checked) => toggleAlertRule.mutate({ id: rule.id, is_active: checked })}
@@ -463,6 +467,7 @@ const ClinicianDashboard = () => {
                               <Button 
                                 variant="ghost" 
                                 size="icon"
+                                className="h-8 w-8"
                                 onClick={() => deleteAlertRule.mutate(rule.id)}
                               >
                                 <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
