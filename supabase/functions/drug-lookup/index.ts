@@ -17,6 +17,155 @@ const SearchRequestSchema = z.object({
 
 type SearchRequest = z.infer<typeof SearchRequestSchema>;
 
+// International brand name to generic name mapping
+// These are brand names used outside the US that map to their generic equivalents
+const INTERNATIONAL_BRAND_MAPPING: Record<string, string> = {
+  // Heart failure / Cardiovascular
+  'vymada': 'sacubitril valsartan',
+  'entresto': 'sacubitril valsartan',
+  'cardicor': 'bisoprolol',
+  'concor': 'bisoprolol',
+  'emcor': 'bisoprolol',
+  'spiractin': 'spironolactone',
+  'aldactone': 'spironolactone',
+  'inspra': 'eplerenone',
+  'lanoxin': 'digoxin',
+  'cordarone': 'amiodarone',
+  
+  // Blood pressure
+  'tritace': 'ramipril',
+  'altace': 'ramipril',
+  'coversyl': 'perindopril',
+  'aceon': 'perindopril',
+  'zestril': 'lisinopril',
+  'prinivil': 'lisinopril',
+  'cozaar': 'losartan',
+  'atacand': 'candesartan',
+  'micardis': 'telmisartan',
+  'diovan': 'valsartan',
+  'norvasc': 'amlodipine',
+  'istin': 'amlodipine',
+  'adalat': 'nifedipine',
+  'cardizem': 'diltiazem',
+  'isoptin': 'verapamil',
+  
+  // Diuretics
+  'lasix': 'furosemide',
+  'frumil': 'furosemide amiloride',
+  'burinex': 'bumetanide',
+  'natrilix': 'indapamide',
+  'lozide': 'indapamide',
+  'moduretic': 'amiloride hydrochlorothiazide',
+  
+  // Beta blockers
+  'tenormin': 'atenolol',
+  'lopressor': 'metoprolol',
+  'betaloc': 'metoprolol',
+  'seloken': 'metoprolol',
+  'toprol': 'metoprolol',
+  'inderal': 'propranolol',
+  'trandate': 'labetalol',
+  'coreg': 'carvedilol',
+  
+  // Statins
+  'lipitor': 'atorvastatin',
+  'crestor': 'rosuvastatin',
+  'zocor': 'simvastatin',
+  'pravachol': 'pravastatin',
+  'lescol': 'fluvastatin',
+  
+  // Anticoagulants / Antiplatelets
+  'xarelto': 'rivaroxaban',
+  'eliquis': 'apixaban',
+  'pradaxa': 'dabigatran',
+  'plavix': 'clopidogrel',
+  'brilinta': 'ticagrelor',
+  'clexane': 'enoxaparin',
+  'lovenox': 'enoxaparin',
+  
+  // Diabetes
+  'glucophage': 'metformin',
+  'januvia': 'sitagliptin',
+  'jardiance': 'empagliflozin',
+  'forxiga': 'dapagliflozin',
+  'farxiga': 'dapagliflozin',
+  'ozempic': 'semaglutide',
+  'trulicity': 'dulaglutide',
+  'victoza': 'liraglutide',
+  
+  // Pain / Anti-inflammatory
+  'voltaren': 'diclofenac',
+  'celebrex': 'celecoxib',
+  'arcoxia': 'etoricoxib',
+  'brufen': 'ibuprofen',
+  'nurofen': 'ibuprofen',
+  'panadol': 'paracetamol',
+  'tylenol': 'acetaminophen',
+  
+  // Gastrointestinal
+  'nexium': 'esomeprazole',
+  'losec': 'omeprazole',
+  'prilosec': 'omeprazole',
+  'pariet': 'rabeprazole',
+  'aciphex': 'rabeprazole',
+  'pantoloc': 'pantoprazole',
+  'protonix': 'pantoprazole',
+  'zantac': 'ranitidine',
+  'pepcid': 'famotidine',
+  
+  // Respiratory
+  'ventolin': 'salbutamol',
+  'proventil': 'albuterol',
+  'serevent': 'salmeterol',
+  'symbicort': 'budesonide formoterol',
+  'seretide': 'fluticasone salmeterol',
+  'advair': 'fluticasone salmeterol',
+  'spiriva': 'tiotropium',
+  'atrovent': 'ipratropium',
+  'pulmicort': 'budesonide',
+  'flixotide': 'fluticasone',
+  'flovent': 'fluticasone',
+  
+  // Mental health
+  'lexapro': 'escitalopram',
+  'cipralex': 'escitalopram',
+  'zoloft': 'sertraline',
+  'lustral': 'sertraline',
+  'prozac': 'fluoxetine',
+  'effexor': 'venlafaxine',
+  'cymbalta': 'duloxetine',
+  'wellbutrin': 'bupropion',
+  'xanax': 'alprazolam',
+  'valium': 'diazepam',
+  'ativan': 'lorazepam',
+  'seroquel': 'quetiapine',
+  'zyprexa': 'olanzapine',
+  'risperdal': 'risperidone',
+  'abilify': 'aripiprazole',
+  
+  // Thyroid
+  'synthroid': 'levothyroxine',
+  'eltroxin': 'levothyroxine',
+  'euthyrox': 'levothyroxine',
+  
+  // Antibiotics
+  'augmentin': 'amoxicillin clavulanate',
+  'amoxil': 'amoxicillin',
+  'zithromax': 'azithromycin',
+  'cipro': 'ciprofloxacin',
+  'keflex': 'cephalexin',
+  'flagyl': 'metronidazole',
+  
+  // Allergies
+  'zyrtec': 'cetirizine',
+  'claritin': 'loratadine',
+  'clarityn': 'loratadine',
+  'aerius': 'desloratadine',
+  'allegra': 'fexofenadine',
+  'telfast': 'fexofenadine',
+  'benadryl': 'diphenhydramine',
+};
+
 // Clean HTML from label text
 const cleanLabelText = (text: string | undefined): string => {
   if (!text) return '';
@@ -27,13 +176,32 @@ const cleanLabelText = (text: string | undefined): string => {
     .substring(0, 2000);
 };
 
+// Look up international brand name to get generic equivalent
+function getGenericFromBrandName(brandName: string): string | null {
+  const normalized = brandName.toLowerCase().trim();
+  return INTERNATIONAL_BRAND_MAPPING[normalized] || null;
+}
+
 // Get related drug names from RxNorm (brand to generic, generic to brand)
 async function getRelatedDrugNames(drugName: string): Promise<string[]> {
   const relatedNames: string[] = [drugName];
   
+  // First, check our international brand mapping
+  const genericFromMapping = getGenericFromBrandName(drugName);
+  if (genericFromMapping) {
+    console.log(`Found international brand mapping: "${drugName}" -> "${genericFromMapping}"`);
+    relatedNames.push(genericFromMapping);
+    // Also add individual ingredients if it's a combination drug
+    const ingredients = genericFromMapping.split(' ');
+    if (ingredients.length > 1) {
+      relatedNames.push(...ingredients.filter(i => i.length > 3));
+    }
+  }
+  
   try {
-    // First, get the RxCUI for the drug
-    const rxcui = await getRxCui(drugName);
+    // Try to get the RxCUI for the drug (or the generic we mapped to)
+    const searchTerm = genericFromMapping || drugName;
+    const rxcui = await getRxCui(searchTerm);
     if (!rxcui) return relatedNames;
     
     // Get related concepts (brand names, generic names, ingredients)
