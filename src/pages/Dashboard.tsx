@@ -82,7 +82,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-muted/30">
       <Header />
       
-      <main className="container py-8">
+      <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -228,59 +228,66 @@ const Dashboard = () => {
                     {entries.slice(0, 5).map((entry) => (
                       <div
                         key={entry.id}
-                        className={`flex items-center justify-between p-4 rounded-xl border ${
+                        className={`p-3 sm:p-4 rounded-xl border ${
                           entry.status === 'taken' 
                             ? 'bg-emerald-light border-primary/20' 
                             : 'bg-card border-border'
                         }`}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="text-center min-w-[60px]">
-                            <p className="text-lg font-semibold">
-                              {format(new Date(entry.scheduled_time), 'HH:mm')}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="font-medium">{entry.medication?.name || 'Unknown'}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              {entry.medication && (
-                                <>
-                                  <Badge 
-                                    variant="secondary" 
-                                    className={`text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as keyof typeof MEDICATION_TYPE_COLORS] || ''}`}
-                                  >
-                                    {entry.medication.type}
-                                  </Badge>
-                                  <span className="text-sm text-muted-foreground">
-                                    {entry.medication.dosage}
-                                  </span>
-                                </>
-                              )}
+                        <div className="flex items-start sm:items-center justify-between gap-3">
+                          <div className="flex items-start sm:items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                            <div className="text-center min-w-[45px] sm:min-w-[60px] flex-shrink-0">
+                              <p className="text-sm sm:text-lg font-semibold">
+                                {format(new Date(entry.scheduled_time), 'HH:mm')}
+                              </p>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm sm:text-base truncate">
+                                {entry.medication?.name || 'Unknown'}
+                              </p>
+                              <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
+                                {entry.medication && (
+                                  <>
+                                    <Badge 
+                                      variant="secondary" 
+                                      className={`text-[10px] sm:text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as keyof typeof MEDICATION_TYPE_COLORS] || ''}`}
+                                    >
+                                      {entry.medication.type}
+                                    </Badge>
+                                    <span className="text-xs sm:text-sm text-muted-foreground truncate">
+                                      {entry.medication.dosage}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div>
-                          {entry.status === 'taken' ? (
-                            <div className="flex items-center gap-2 text-primary">
-                              <Check className="h-5 w-5" />
-                              <span className="text-sm font-medium">Taken</span>
-                            </div>
-                          ) : entry.status === 'skipped' ? (
-                            <Badge variant="secondary">Skipped</Badge>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              className="gradient-primary border-0"
-                              onClick={() => handleMarkTaken(entry.id)}
-                              disabled={markAsTaken.isPending}
-                            >
-                              {markAsTaken.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                'Mark Taken'
-                              )}
-                            </Button>
-                          )}
+                          <div className="flex-shrink-0">
+                            {entry.status === 'taken' ? (
+                              <div className="flex items-center gap-1 sm:gap-2 text-primary">
+                                <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <span className="text-xs sm:text-sm font-medium hidden sm:inline">Taken</span>
+                              </div>
+                            ) : entry.status === 'skipped' ? (
+                              <Badge variant="secondary" className="text-xs">Skipped</Badge>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                className="gradient-primary border-0 h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                                onClick={() => handleMarkTaken(entry.id)}
+                                disabled={markAsTaken.isPending}
+                              >
+                                {markAsTaken.isPending ? (
+                                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Check className="h-3 w-3 sm:hidden" />
+                                    <span className="hidden sm:inline">Mark Taken</span>
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -288,14 +295,14 @@ const Dashboard = () => {
                 )}
 
                 {pending.length > 0 && (
-                  <div className="mt-6 p-4 rounded-xl bg-muted/50 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Bell className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
+                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl bg-muted/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-muted-foreground">
                         {pending.length} dose{pending.length !== 1 ? 's' : ''} remaining today
                       </span>
                     </div>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="h-8 text-xs sm:text-sm w-full sm:w-auto">
                       Enable Reminders
                     </Button>
                   </div>

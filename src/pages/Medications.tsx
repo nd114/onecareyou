@@ -74,7 +74,7 @@ const Medications = () => {
     <div className="min-h-screen bg-muted/30">
       <Header />
       
-      <main className="container py-8">
+      <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

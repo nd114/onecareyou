@@ -101,7 +101,7 @@ const PatientGuidance = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
-        <main className="container py-8 flex justify-center">
+        <main className="container px-4 sm:px-6 py-4 sm:py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
       </div>
@@ -113,66 +113,69 @@ const PatientGuidance = () => {
       key={item.id}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 rounded-lg border hover:shadow-sm transition-shadow"
+      className="p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">{getCategoryIcon(item.category)}</span>
-            <h3 className="font-semibold">{item.title}</h3>
-            <Badge variant={getPriorityColor(item.priority)} className="text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-base sm:text-lg">{getCategoryIcon(item.category)}</span>
+            <h3 className="font-semibold text-sm sm:text-base truncate">{item.title}</h3>
+            <Badge variant={getPriorityColor(item.priority)} className="text-[10px] sm:text-xs">
               {item.priority}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">
             {item.instruction}
           </p>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
+              <Calendar className="h-3 w-3 flex-shrink-0" />
               {format(new Date(item.created_at), 'MMM d, yyyy')}
             </span>
             {item.due_date && (
               <span className="flex items-center gap-1 text-orange-600">
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3 flex-shrink-0" />
                 Due: {format(new Date(item.due_date), 'MMM d')}
               </span>
             )}
             {item.clinician_name && (
               <span className="flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {item.clinician_title || 'Dr.'} {item.clinician_name}
+                <User className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{item.clinician_title || 'Dr.'} {item.clinician_name}</span>
                 {item.clinician_specialty && (
-                  <span className="text-muted-foreground">• {item.clinician_specialty}</span>
+                  <span className="text-muted-foreground hidden sm:inline">• {item.clinician_specialty}</span>
                 )}
               </span>
             )}
             {item.clinician_practice && (
-              <span className="text-muted-foreground italic">
+              <span className="text-muted-foreground italic hidden sm:inline truncate">
                 {item.clinician_practice}
               </span>
             )}
           </div>
         </div>
         {showActions && (
-          <div className="flex flex-col gap-2">
+          <div className="flex sm:flex-col gap-2 self-end sm:self-start flex-shrink-0">
             {item.status === 'pending' && (
               <Button
                 size="sm"
                 variant="outline"
+                className="h-8 text-xs sm:text-sm"
                 onClick={() => handleAcknowledge(item.id)}
                 disabled={acknowledgeGuidance.isPending}
               >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Acknowledge
+                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Acknowledge</span>
               </Button>
             )}
             {(item.status === 'pending' || item.status === 'acknowledged') && (
               <Button
                 size="sm"
+                className="h-8 text-xs sm:text-sm"
                 onClick={() => setSelectedGuidance(item)}
               >
-                Mark Complete
+                <span className="sm:hidden">Complete</span>
+                <span className="hidden sm:inline">Mark Complete</span>
               </Button>
             )}
           </div>

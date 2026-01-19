@@ -87,24 +87,24 @@ const CareCircle = () => {
     <div className="min-h-screen bg-muted/30">
       <Header />
       
-      <main className="container py-8">
+      <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8"
         >
           <div>
-            <h1 className="font-display text-3xl font-bold mb-2">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
               Care Circle
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Securely share your health data with healthcare providers
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gradient-primary border-0">
+              <Button className="gradient-primary border-0 w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Invite Provider
               </Button>
@@ -253,44 +253,45 @@ const CareCircle = () => {
                   {shares.map((share) => (
                     <div
                       key={share.id}
-                      className="p-4 rounded-xl border border-border bg-card hover:shadow-sm transition-shadow"
+                      className="p-3 sm:p-4 rounded-xl border border-border bg-card hover:shadow-sm transition-shadow"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-lg font-semibold text-primary">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-base sm:text-lg font-semibold text-primary">
                               {share.provider_name.charAt(0)}
                             </span>
                           </div>
-                          <div>
-                            <p className="font-semibold">{share.provider_name}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm sm:text-base truncate">{share.provider_name}</p>
                             {share.provider_email && (
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {share.provider_email}
+                              <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 truncate">
+                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{share.provider_email}</span>
                               </p>
                             )}
                             <div className="flex flex-wrap gap-1 mt-2">
-                              {share.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
-                              {share.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
-                              {share.permissions.adherence && <Badge variant="secondary" className="text-xs">Adherence</Badge>}
-                              {share.permissions.profile && <Badge variant="secondary" className="text-xs">Profile</Badge>}
+                              {share.permissions.vitals && <Badge variant="secondary" className="text-[10px] sm:text-xs">Vitals</Badge>}
+                              {share.permissions.meds && <Badge variant="secondary" className="text-[10px] sm:text-xs">Meds</Badge>}
+                              {share.permissions.adherence && <Badge variant="secondary" className="text-[10px] sm:text-xs">Adherence</Badge>}
+                              {share.permissions.profile && <Badge variant="secondary" className="text-[10px] sm:text-xs">Profile</Badge>}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 self-end sm:self-start flex-shrink-0">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
                             onClick={() => copyShareLink(share.invite_code)}
                           >
-                            <Copy className="h-4 w-4 mr-1" />
-                            Copy Link
+                            <Copy className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Copy Link</span>
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -313,14 +314,14 @@ const CareCircle = () => {
                           </AlertDialog>
                         </div>
                       </div>
-                      <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="mt-3 pt-3 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-0 text-[10px] sm:text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-3 w-3 flex-shrink-0" />
                           Added {new Date(share.created_at).toLocaleDateString()}
                         </span>
                         {share.last_accessed_at && (
                           <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
+                            <Eye className="h-3 w-3 flex-shrink-0" />
                             Last viewed {new Date(share.last_accessed_at).toLocaleDateString()}
                           </span>
                         )}

@@ -331,7 +331,7 @@ const Schedule = () => {
                             {timeEntries.map((entry) => (
                               <div
                                 key={entry.id}
-                                className={`p-4 rounded-xl border transition-all ${
+                                className={`p-3 sm:p-4 rounded-xl border transition-all ${
                                   entry.status === 'taken'
                                     ? 'bg-emerald-light border-primary/20'
                                     : entry.status === 'skipped'
@@ -339,9 +339,9 @@ const Schedule = () => {
                                     : 'bg-card border-border hover:border-primary/50'
                                 }`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                    <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                       entry.status === 'taken'
                                         ? 'bg-primary text-primary-foreground'
                                         : entry.status === 'skipped'
@@ -349,25 +349,25 @@ const Schedule = () => {
                                         : 'bg-muted'
                                     }`}>
                                       {entry.status === 'taken' ? (
-                                        <Check className="h-5 w-5" />
+                                        <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                                       ) : entry.status === 'skipped' ? (
-                                        <X className="h-5 w-5" />
+                                        <X className="h-4 w-4 sm:h-5 sm:w-5" />
                                       ) : (
-                                        <Clock className="h-5 w-5 text-muted-foreground" />
+                                        <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                                       )}
                                     </div>
-                                    <div>
-                                      <p className="font-medium">{entry.medication?.name || 'Unknown Medication'}</p>
-                                      <div className="flex items-center gap-2 mt-0.5">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium text-sm sm:text-base truncate">{entry.medication?.name || 'Unknown Medication'}</p>
+                                      <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
                                         {entry.medication && (
                                           <>
                                             <Badge 
                                               variant="secondary" 
-                                              className={`text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as MedicationType] || ''}`}
+                                              className={`text-[10px] sm:text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as MedicationType] || ''}`}
                                             >
                                               {entry.medication.type}
                                             </Badge>
-                                            <span className="text-sm text-muted-foreground">
+                                            <span className="text-xs sm:text-sm text-muted-foreground truncate">
                                               {entry.medication.dosage}
                                             </span>
                                           </>
@@ -375,16 +375,17 @@ const Schedule = () => {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
                                     {entry.status === 'taken' ? (
-                                      <span className="text-sm text-primary font-medium">
-                                        ✓ Taken
+                                      <span className="text-xs sm:text-sm text-primary font-medium flex items-center gap-1">
+                                        <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                                        Taken
                                       </span>
                                     ) : entry.status === 'skipped' ? (
                                       <div className="text-right">
-                                        <span className="text-sm text-muted-foreground">Skipped</span>
+                                        <span className="text-xs sm:text-sm text-muted-foreground">Skipped</span>
                                         {entry.skipped_reason && (
-                                          <p className="text-xs text-muted-foreground">{entry.skipped_reason}</p>
+                                          <p className="text-[10px] sm:text-xs text-muted-foreground max-w-[120px] truncate">{entry.skipped_reason}</p>
                                         )}
                                       </div>
                                     ) : (
@@ -392,7 +393,7 @@ const Schedule = () => {
                                         <Button 
                                           size="sm" 
                                           variant="ghost" 
-                                          className="text-muted-foreground"
+                                          className="text-muted-foreground h-8 px-2 sm:px-3 text-xs sm:text-sm"
                                           onClick={() => handleOpenSkipDialog(entry.id)}
                                           disabled={markAsSkipped.isPending}
                                         >
@@ -400,14 +401,17 @@ const Schedule = () => {
                                         </Button>
                                         <Button 
                                           size="sm" 
-                                          className="gradient-primary border-0"
+                                          className="gradient-primary border-0 h-8 px-2 sm:px-3 text-xs sm:text-sm"
                                           onClick={() => handleMarkTaken(entry.id)}
                                           disabled={markAsTaken.isPending}
                                         >
                                           {markAsTaken.isPending ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                                           ) : (
-                                            'Mark Taken'
+                                            <>
+                                              <Check className="h-3 w-3 sm:hidden" />
+                                              <span className="hidden sm:inline">Mark Taken</span>
+                                            </>
                                           )}
                                         </Button>
                                       </>
@@ -415,9 +419,9 @@ const Schedule = () => {
                                   </div>
                                 </div>
                                 {entry.notes && (
-                                  <div className="mt-2 pl-13 flex items-center gap-2 text-sm text-muted-foreground">
-                                    <MessageSquare className="h-3 w-3" />
-                                    {entry.notes}
+                                  <div className="mt-2 pl-10 sm:pl-13 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                                    <MessageSquare className="h-3 w-3 flex-shrink-0" />
+                                    <span className="truncate">{entry.notes}</span>
                                   </div>
                                 )}
                               </div>
