@@ -42,11 +42,18 @@ serve(async (req) => {
 
     // Direct batch import from client
     if (action === 'import-batch' && mappings) {
-      console.log(`Importing batch of ${mappings.length} mappings`);
+      // Deduplicate by brand_name_normalized within this batch (keep last occurrence)
+      const uniqueMap = new Map<string, typeof mappings[0]>();
+      for (const m of mappings) {
+        uniqueMap.set(m.brand_name_normalized, m);
+      }
+      const dedupedMappings = Array.from(uniqueMap.values());
+      
+      console.log(`Importing batch: ${mappings.length} -> ${dedupedMappings.length} after dedup`);
       
       const { error } = await supabase
         .from('international_drug_mappings')
-        .upsert(mappings, {
+        .upsert(dedupedMappings, {
           onConflict: 'brand_name_normalized',
           ignoreDuplicates: false,
         });
@@ -54,13 +61,13 @@ serve(async (req) => {
       if (error) {
         console.error('Batch upsert error:', error);
         return new Response(
-          JSON.stringify({ success: false, error: error.message, errors: mappings.length }),
+          JSON.stringify({ success: false, error: error.message, errors: dedupedMappings.length }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       return new Response(
-        JSON.stringify({ success: true, inserted: mappings.length, errors: 0 }),
+        JSON.stringify({ success: true, inserted: dedupedMappings.length, duplicatesRemoved: mappings.length - dedupedMappings.length, errors: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -391,14 +391,44 @@ const MedicationInfo = () => {
                 </CardContent>
               </Card>
 
-              {/* Disclaimer */}
-              <Card className="bg-muted/50 border-dashed">
-                <CardContent className="p-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    <AlertTriangle className="h-4 w-4 inline mr-1" />
-                    This information is for educational purposes only and is not a substitute for professional medical advice. 
-                    Always consult your healthcare provider before making decisions about your medications.
-                  </p>
+              {/* Data Sources & Disclaimer */}
+              <Card className="border-muted">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Data Sources & Disclaimer
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs text-muted-foreground space-y-3">
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Sources:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>
+                        <a href="https://dailymed.nlm.nih.gov" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          FDA DailyMed / openFDA
+                        </a> — U.S. drug labeling information
+                      </li>
+                      <li>
+                        <a href="https://www.nlm.nih.gov/research/umls/rxnorm/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          RxNorm (NIH/NLM)
+                        </a> — Drug interaction data via RxCUI identifiers
+                      </li>
+                      <li>
+                        <a href="https://data.mendeley.com/datasets/hj5yt5wdv8/1" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          Mendeley IDD Dataset
+                        </a> — International brand-to-generic drug mappings
+                      </li>
+                    </ul>
+                  </div>
+                  <Separator />
+                  <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3">
+                    <p className="font-semibold text-destructive mb-1">⚠️ Medical Disclaimer</p>
+                    <p>
+                      This information is for <strong>educational purposes only</strong> and is not a substitute for professional medical advice, diagnosis, or treatment. 
+                      Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medication or medical condition. 
+                      Never disregard professional medical advice or delay seeking it because of information provided here.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
