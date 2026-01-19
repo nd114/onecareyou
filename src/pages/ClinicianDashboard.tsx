@@ -499,9 +499,11 @@ const ClinicianDashboard = () => {
                       {alertLogs.map((log) => (
                         <div key={log.id} className="p-3 rounded-lg bg-muted/50 flex items-start gap-3">
                           <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">{log.alert_type}</p>
-                            <p className="text-xs text-muted-foreground">{log.message}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium capitalize">
+                              {log.alert_type.replace(/_/g, ' ')}
+                            </p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{log.message}</p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {new Date(log.sent_at).toLocaleString()}
                             </p>
