@@ -170,7 +170,24 @@ Allow clinicians to email documents to a patient-specific address, and have thos
 
 ---
 
-## Phase 7: Advanced Features (FUTURE)
+## Phase 7: Analytics Enhancements (PLANNED)
+
+### Chart Features
+- [x] Expandable full-screen chart modals with detailed statistics
+- [ ] Date range selector (7 days, 30 days, 90 days, 1 year, custom)
+- [ ] Export chart as PNG image for sharing with clinicians
+- [ ] Zoom and pan for dense data exploration
+
+### Advanced Analytics
+- [ ] Overlay multiple metrics on one chart (e.g., glucose + weight correlations)
+- [ ] Chart annotations - mark events on timeline (medication changes, lifestyle events)
+- [ ] Shareable chart snapshots - generate links/PDFs for clinician review
+- [ ] Trend predictions with confidence intervals
+- [ ] Weekly/monthly summary reports with key insights
+
+---
+
+## Phase 8: Advanced Features (FUTURE)
 
 ### AI-Powered
 - [ ] Medication interaction checker (enhanced version with database)
