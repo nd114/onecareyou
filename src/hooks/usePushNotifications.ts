@@ -22,31 +22,58 @@ export function usePushNotifications() {
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!permissionState.isSupported) {
-      toast.error('Push notifications are not supported in this browser');
+      toast.error('Notifications not supported', {
+        description: 'Your browser does not support push notifications. Try using Chrome, Firefox, or Safari.',
+      });
       return false;
     }
 
+    // If already granted, just return true
+    if (permissionState.permission === 'granted') {
+      return true;
+    }
+
+    // If previously denied, guide user to browser settings
+    if (permissionState.permission === 'denied') {
+      toast.error('Notifications previously blocked', {
+        description: 'To enable notifications, click the lock/info icon in your browser\'s address bar → Site settings → Allow notifications',
+        duration: 8000,
+      });
+      return false;
+    }
+
+    // Permission is 'default' - request it
     try {
       const permission = await Notification.requestPermission();
       setPermissionState(prev => ({ ...prev, permission }));
       
       if (permission === 'granted') {
-        toast.success('Notifications enabled! You\'ll receive medication reminders.');
+        toast.success('Notifications enabled!', {
+          description: 'You\'ll receive medication reminders before each scheduled dose.',
+        });
         return true;
       } else if (permission === 'denied') {
-        toast.error('Notifications are blocked', {
-          description: 'Click the lock/info icon in your browser\'s address bar → Site settings → Allow notifications',
-          duration: 8000,
+        // User just clicked "Block" on the prompt
+        toast.error('Notifications blocked', {
+          description: 'You blocked notifications. To enable them later, click the lock icon in your browser\'s address bar.',
+          duration: 6000,
+        });
+        return false;
+      } else {
+        // User dismissed the prompt without choosing
+        toast.info('Permission required', {
+          description: 'Please allow notifications when prompted to receive medication reminders.',
         });
         return false;
       }
-      return false;
     } catch (error) {
       console.error('Error requesting notification permission:', error);
-      toast.error('Failed to enable notifications');
+      toast.error('Something went wrong', {
+        description: 'Could not request notification permission. Please try again.',
+      });
       return false;
     }
-  }, [permissionState.isSupported]);
+  }, [permissionState]);
 
   const sendNotification = useCallback((title: string, options?: NotificationOptions): void => {
     if (!permissionState.isSupported || permissionState.permission !== 'granted') {
