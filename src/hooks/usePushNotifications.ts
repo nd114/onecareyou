@@ -34,7 +34,10 @@ export function usePushNotifications() {
         toast.success('Notifications enabled! You\'ll receive medication reminders.');
         return true;
       } else if (permission === 'denied') {
-        toast.error('Notifications blocked. Please enable them in your browser settings.');
+        toast.error('Notifications are blocked', {
+          description: 'Click the lock/info icon in your browser\'s address bar → Site settings → Allow notifications',
+          duration: 8000,
+        });
         return false;
       }
       return false;
