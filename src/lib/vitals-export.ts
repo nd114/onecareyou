@@ -250,7 +250,7 @@ export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vit
                   <td><strong>${config.label}</strong></td>
                   <td>${formatValue(vital)} ${config.unit}</td>
                   <td><span class="status ${statusClass}">${status}</span></td>
-                  <td>${vital.notes || '—'}</td>
+                  <td>${vital.notes || '-'}</td>
                   <td>${format(new Date(vital.recorded_at), 'MMM d, yyyy h:mm a')}</td>
                 </tr>
               `;

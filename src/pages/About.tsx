@@ -93,9 +93,9 @@ const About = () => {
                 preventable complications occur.
               </p>
               <p className="text-lg text-muted-foreground mb-6">
-                OneCare bridges this gap by enabling patients to share their health updates—vitals, 
-                medications, and lab results—directly with their care team. No more waiting for 
-                appointments to communicate critical changes.
+              OneCare bridges this gap by enabling patients to share their health updates (vitals, 
+              medications, and lab results) directly with their care team. No more waiting for 
+              appointments to communicate critical changes.
               </p>
               <Button asChild className="gradient-primary border-0">
                 <Link to="/sign-up">

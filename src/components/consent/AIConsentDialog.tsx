@@ -98,7 +98,7 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
               </h4>
               <ul className="text-sm text-muted-foreground space-y-2 ml-6">
                 <li>• You can withdraw consent at any time via Settings</li>
-                <li>• Request deletion of your data under GDPR/CCPA</li>
+                <li>• Request deletion of your data under GDPR, CCPA, POPIA, or PIPEDA</li>
                 <li>• Access your consent history in your profile</li>
               </ul>
             </div>

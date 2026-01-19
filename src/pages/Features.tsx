@@ -48,7 +48,7 @@ const coreFeatures = [
   {
     icon: Shield,
     title: 'Drug Interaction Checking',
-    description: 'Real-time analysis of potential interactions—keeping both you and your providers informed.',
+    description: 'Real-time analysis of potential interactions: keeping both you and your providers informed.',
     details: [
       'Check interactions across all medications',
       'Severity levels from low to high risk',
@@ -71,7 +71,7 @@ const coreFeatures = [
 
 const additionalFeatures = [
   { icon: Pill, title: 'Multi-Type Support', description: 'Track prescriptions, OTC, vitamins, supplements, and herbal remedies' },
-  { icon: Heart, title: 'Health Profile', description: 'Store allergies, conditions, blood type—accessible to your care team' },
+  { icon: Heart, title: 'Health Profile', description: 'Store allergies, conditions, blood type: accessible to your care team' },
   { icon: Bell, title: 'Smart Notifications', description: 'Timely reminders that adapt to your schedule' },
   { icon: FileText, title: 'Health Reports', description: 'Export comprehensive reports for doctor visits' },
   { icon: Lock, title: 'Privacy First', description: 'End-to-end encryption and data anonymization' },

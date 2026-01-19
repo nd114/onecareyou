@@ -202,7 +202,7 @@ const PrivacyPolicy = () => {
                   6. Your Rights
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>Depending on your location, you may have the following rights under GDPR, CCPA, and other privacy laws:</p>
+                  <p>Depending on your location, you may have the following rights under applicable privacy laws including GDPR (EU), CCPA (California, USA), POPIA (South Africa), PIPEDA (Canada), and other regional regulations:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Access:</strong> Request a copy of all personal data we hold about you</li>
                     <li><strong>Rectification:</strong> Correct inaccurate or incomplete personal data</li>
@@ -214,7 +214,15 @@ const PrivacyPolicy = () => {
                     <li><strong>Non-Discrimination:</strong> We will not discriminate against you for exercising your privacy rights</li>
                   </ul>
                   <Separator className="my-4" />
-                  <p><strong>Exercising Your Rights:</strong> To exercise these rights, contact us at <strong>privacy@onecare.health</strong> or use the data management features in your account settings. We will respond to all requests within 30 days.</p>
+                  <p><strong>Jurisdiction-Specific Rights:</strong></p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>South Africa (POPIA):</strong> You have the right to object to processing, request correction or deletion of personal information, and lodge complaints with the Information Regulator</li>
+                    <li><strong>Canada (PIPEDA):</strong> You may access your personal information, challenge its accuracy, and withdraw consent (subject to legal or contractual restrictions)</li>
+                    <li><strong>European Union (GDPR):</strong> You have rights to data portability, restriction of processing, and to lodge complaints with your local supervisory authority</li>
+                    <li><strong>California (CCPA/CPRA):</strong> You have the right to know, delete, opt-out of sale/sharing, and non-discrimination for exercising your rights</li>
+                  </ul>
+                  <Separator className="my-4" />
+                  <p><strong>Exercising Your Rights:</strong> To exercise these rights, contact us at <strong>privacy@onecare.health</strong> or use the data management features in your account settings. We will respond to all requests within the timeframe required by applicable law (typically 30 days).</p>
                   <p><strong>Verification:</strong> We may need to verify your identity before processing certain requests.</p>
                 </div>
               </CardContent>
@@ -313,17 +321,30 @@ const PrivacyPolicy = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Shield className="h-5 w-5 text-primary" />
-                  12. HIPAA Notice
+                  12. Regulatory Compliance Notices
                 </h2>
-                <div className="space-y-3 text-muted-foreground">
-                  <p className="font-semibold text-foreground">OneCare is not a Covered Entity or Business Associate under HIPAA.</p>
-                  <p>However, we implement security measures aligned with HIPAA standards as a best practice for protecting health information. This includes:</p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Administrative safeguards (access controls, audit logging)</li>
-                    <li>Physical safeguards (secure data centers)</li>
-                    <li>Technical safeguards (encryption, access controls)</li>
-                  </ul>
-                  <p>If you are a healthcare provider using OneCare to view patient data, you are responsible for ensuring your use complies with HIPAA and other applicable regulations.</p>
+                <div className="space-y-4 text-muted-foreground">
+                  <div>
+                    <p className="font-semibold text-foreground">HIPAA (United States)</p>
+                    <p>OneCare is not a Covered Entity or Business Associate under HIPAA. However, we implement security measures aligned with HIPAA standards as a best practice for protecting health information, including administrative, physical, and technical safeguards.</p>
+                  </div>
+                  <Separator />
+                  <div>
+                    <p className="font-semibold text-foreground">POPIA (South Africa)</p>
+                    <p>For users in South Africa, we comply with the Protection of Personal Information Act. Your personal information is processed lawfully, and you have the right to access, correct, or delete your data. Complaints may be directed to the Information Regulator.</p>
+                  </div>
+                  <Separator />
+                  <div>
+                    <p className="font-semibold text-foreground">PIPEDA (Canada)</p>
+                    <p>For users in Canada, we comply with the Personal Information Protection and Electronic Documents Act. We obtain meaningful consent for collection, use, and disclosure of personal information. You may withdraw consent at any time, subject to legal restrictions.</p>
+                  </div>
+                  <Separator />
+                  <div>
+                    <p className="font-semibold text-foreground">GDPR (European Union)</p>
+                    <p>For users in the EU/EEA, we process personal data in accordance with the General Data Protection Regulation. Our lawful basis for processing includes consent (for AI features) and legitimate interests (for service provision). Data transfers outside the EU are protected by Standard Contractual Clauses.</p>
+                  </div>
+                  <Separator />
+                  <p className="text-sm">If you are a healthcare provider using OneCare to view patient data, you are responsible for ensuring your use complies with HIPAA and other applicable regulations in your jurisdiction.</p>
                 </div>
               </CardContent>
             </Card>

@@ -47,7 +47,7 @@ const features = [
   {
     icon: Heart,
     title: 'Health Profile',
-    description: 'Store allergies, conditions, and emergency contacts—instantly accessible to your care team.',
+    description: 'Store allergies, conditions, and emergency contacts: instantly accessible to your care team.',
   },
 ];
 
@@ -133,7 +133,7 @@ const Landing = () => {
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               OneCare eliminates information asymmetry. Continue sharing your health updates with doctors 
-              after leaving the hospital—no appointments needed. Your care team stays informed.
+              after leaving the hospital - no appointments needed. Your care team stays informed.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -91,7 +91,7 @@ const EHRComparison = () => {
     {
       icon: Heart,
       title: "Whole-Family Health Hub",
-      description: "Manage medications, vitals, and appointments for parents, children, and dependents—all in one dashboard.",
+      description: "Manage medications, vitals, and appointments for parents, children, and dependents - all in one dashboard.",
       color: "bg-rose/10 text-rose-500"
     },
     {
@@ -136,7 +136,7 @@ const EHRComparison = () => {
               className="max-w-4xl mx-auto text-center"
             >
               <Badge variant="secondary" className="mb-4">
-                Internal Document — Not Public
+                Internal Document - Not Public
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
                 Why OneCare Beats{" "}
