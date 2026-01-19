@@ -6,7 +6,6 @@ import {
   Bell,
   BellRing,
   Mail,
-  User,
   Save,
   Loader2,
   CheckCircle,
@@ -54,13 +53,9 @@ const ClinicianSettings = () => {
   // Initialize service worker for push notifications
   useServiceWorker();
 
-  const [personalForm, setPersonalForm] = useState({
-    name: profile?.name || '',
-    email: user?.email || '',
-    phone_number: profile?.phone_number || '',
-  });
-
   const [profileForm, setProfileForm] = useState({
+    name: profile?.name || '',
+    phone_number: profile?.phone_number || '',
     practice_name: clinicianProfile?.practice_name || '',
     specialty: clinicianProfile?.specialty || '',
     license_number: clinicianProfile?.license_number || '',
@@ -70,64 +65,51 @@ const ClinicianSettings = () => {
 
   const [avatarUrl, setAvatarUrl] = useState(clinicianProfile?.avatar_url || '');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [isSavingPersonal, setIsSavingPersonal] = useState(false);
 
   // Update form when profile loads
   useEffect(() => {
-    if (clinicianProfile) {
+    if (clinicianProfile || profile || user) {
       setProfileForm({
-        practice_name: clinicianProfile.practice_name || '',
-        specialty: clinicianProfile.specialty || '',
-        license_number: clinicianProfile.license_number || '',
-        country: clinicianProfile.country || '',
-        title: clinicianProfile.title || 'Dr.',
-      });
-      setAvatarUrl(clinicianProfile.avatar_url || '');
-    }
-  }, [clinicianProfile]);
-
-  // Update personal form when user profile loads
-  useEffect(() => {
-    if (profile || user) {
-      setPersonalForm({
         name: profile?.name || '',
-        email: user?.email || '',
         phone_number: profile?.phone_number || '',
+        practice_name: clinicianProfile?.practice_name || '',
+        specialty: clinicianProfile?.specialty || '',
+        license_number: clinicianProfile?.license_number || '',
+        country: clinicianProfile?.country || '',
+        title: clinicianProfile?.title || 'Dr.',
       });
+      setAvatarUrl(clinicianProfile?.avatar_url || '');
     }
-  }, [profile, user]);
+  }, [clinicianProfile, profile, user]);
 
-  const handleSavePersonal = async () => {
+  const handleSaveProfile = async () => {
     if (!user) return;
-    setIsSavingPersonal(true);
+    setIsSavingProfile(true);
     try {
-      const { error } = await supabase
+      // Save personal info to profiles table
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          name: personalForm.name,
-          phone_number: personalForm.phone_number,
+          name: profileForm.name,
+          phone_number: profileForm.phone_number,
         })
         .eq('user_id', user.id);
 
-      if (error) throw error;
-      toast.success('Personal information saved');
-    } catch (error) {
-      console.error('Error saving personal info:', error);
-      toast.error('Failed to save personal information');
-    } finally {
-      setIsSavingPersonal(false);
-    }
-  };
+      if (profileError) throw profileError;
 
-  const handleSaveProfile = async () => {
-    setIsSavingProfile(true);
-    try {
+      // Save clinician info
       await updateClinicianProfile.mutateAsync({
-        ...profileForm,
+        practice_name: profileForm.practice_name,
+        specialty: profileForm.specialty,
+        license_number: profileForm.license_number,
+        country: profileForm.country,
+        title: profileForm.title,
         avatar_url: avatarUrl || null,
       });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile');
     } finally {
       setIsSavingProfile(false);
     }
@@ -219,78 +201,7 @@ const ClinicianSettings = () => {
             </p>
           </div>
 
-          {/* Personal Information */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Personal Information
-              </CardTitle>
-              <CardDescription>
-                Your basic account information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={personalForm.name}
-                    onChange={(e) => setPersonalForm({ ...personalForm, name: e.target.value })}
-                    placeholder="Dr. Jane Smith"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      value={personalForm.email}
-                      disabled
-                      className="bg-muted"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Email cannot be changed here</p>
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      value={personalForm.phone_number}
-                      onChange={(e) => setPersonalForm({ ...personalForm, phone_number: e.target.value })}
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 border-t">
-                <Button 
-                  onClick={handleSavePersonal}
-                  disabled={isSavingPersonal}
-                  variant="outline"
-                >
-                  {isSavingPersonal ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Personal Info
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Profile Settings */}
+          {/* Professional Profile (merged with Personal Info) */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -298,7 +209,7 @@ const ClinicianSettings = () => {
                 Professional Profile
               </CardTitle>
               <CardDescription>
-                Your professional credentials and practice information
+                Your personal and professional information
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -308,7 +219,7 @@ const ClinicianSettings = () => {
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={avatarUrl} alt="Profile photo" />
                     <AvatarFallback className="text-lg bg-primary/10">
-                      {personalForm.name?.charAt(0) || 'C'}
+                      {profileForm.name?.charAt(0) || 'C'}
                     </AvatarFallback>
                   </Avatar>
                   <label 
@@ -345,83 +256,131 @@ const ClinicianSettings = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Title Prefix */}
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Select
-                    value={profileForm.title}
-                    onValueChange={(value) => setProfileForm({ ...profileForm, title: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select title" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CLINICIAN_TITLES.map(title => (
-                        <SelectItem key={title} value={title}>
-                          {title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="practice_name">Practice/Hospital Name</Label>
-                  <Input
-                    id="practice_name"
-                    value={profileForm.practice_name}
-                    onChange={(e) => setProfileForm({ ...profileForm, practice_name: e.target.value })}
-                    placeholder="City General Hospital"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Specialty</Label>
-                  <Select
-                    value={profileForm.specialty}
-                    onValueChange={(value) => setProfileForm({ ...profileForm, specialty: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select specialty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MEDICAL_SPECIALTIES.map(specialty => (
-                        <SelectItem key={specialty} value={specialty}>
-                          {specialty}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="license_number">License Number</Label>
-                  <Input
-                    id="license_number"
-                    value={profileForm.license_number}
-                    onChange={(e) => setProfileForm({ ...profileForm, license_number: e.target.value })}
-                    placeholder="For verification"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Country</Label>
-                  <Select
-                    value={profileForm.country}
-                    onValueChange={(value) => setProfileForm({ ...profileForm, country: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COUNTRY_LIST.map(country => (
-                        <SelectItem key={country.code} value={country.code}>
-                          {country.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Personal Info Section */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={profileForm.name}
+                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                      placeholder="Dr. Jane Smith"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        value={user?.email || ''}
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Email cannot be changed here</p>
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        value={profileForm.phone_number}
+                        onChange={(e) => setProfileForm({ ...profileForm, phone_number: e.target.value })}
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t">
+              <Separator />
+
+              {/* Professional Info Section */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Professional Details</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Title Prefix */}
+                  <div className="space-y-2">
+                    <Label>Title</Label>
+                    <Select
+                      value={profileForm.title}
+                      onValueChange={(value) => setProfileForm({ ...profileForm, title: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select title" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLINICIAN_TITLES.map(title => (
+                          <SelectItem key={title} value={title}>
+                            {title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="practice_name">Practice/Hospital Name</Label>
+                    <Input
+                      id="practice_name"
+                      value={profileForm.practice_name}
+                      onChange={(e) => setProfileForm({ ...profileForm, practice_name: e.target.value })}
+                      placeholder="City General Hospital"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Specialty</Label>
+                    <Select
+                      value={profileForm.specialty}
+                      onValueChange={(value) => setProfileForm({ ...profileForm, specialty: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select specialty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MEDICAL_SPECIALTIES.map(specialty => (
+                          <SelectItem key={specialty} value={specialty}>
+                            {specialty}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="license_number">License Number</Label>
+                    <Input
+                      id="license_number"
+                      value={profileForm.license_number}
+                      onChange={(e) => setProfileForm({ ...profileForm, license_number: e.target.value })}
+                      placeholder="For verification"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Country</Label>
+                    <Select
+                      value={profileForm.country}
+                      onValueChange={(value) => setProfileForm({ ...profileForm, country: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRY_LIST.map(country => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification Status & Save Button - stacked on mobile */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">Verification Status:</span>
                   <Badge variant={clinicianProfile?.is_verified ? 'default' : 'secondary'}>
@@ -431,7 +390,7 @@ const ClinicianSettings = () => {
                 <Button 
                   onClick={handleSaveProfile}
                   disabled={isSavingProfile}
-                  className="gradient-primary border-0"
+                  className="gradient-primary border-0 w-full sm:w-auto"
                 >
                   {isSavingProfile ? (
                     <>
