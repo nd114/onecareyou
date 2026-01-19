@@ -37,17 +37,41 @@ serve(async (req) => {
   }
 
   try {
-    const { action, fileUrl, csvContent } = await req.json();
+    const body = await req.json();
+    const { action, fileUrl, csvContent, mappings } = body;
+
+    // Direct batch import from client
+    if (action === 'import-batch' && mappings) {
+      console.log(`Importing batch of ${mappings.length} mappings`);
+      
+      const { error } = await supabase
+        .from('international_drug_mappings')
+        .upsert(mappings, {
+          onConflict: 'brand_name_normalized',
+          ignoreDuplicates: false,
+        });
+      
+      if (error) {
+        console.error('Batch upsert error:', error);
+        return new Response(
+          JSON.stringify({ success: false, error: error.message, errors: mappings.length }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, inserted: mappings.length, errors: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (action === 'import-from-url' || action === 'import-csv') {
       let csvText: string;
       
       if (action === 'import-csv' && csvContent) {
-        // Direct CSV content provided
         csvText = csvContent;
         console.log('Processing direct CSV content...');
       } else if (fileUrl) {
-        // Fetch the CSV file from URL
         console.log('Fetching CSV file from:', fileUrl);
         const response = await fetch(fileUrl);
         if (!response.ok) {
@@ -61,12 +85,9 @@ serve(async (req) => {
       const lines = csvText.split('\n').filter(line => line.trim());
       console.log(`Found ${lines.length} lines in CSV`);
       
-      // Skip header row
       const dataLines = lines.slice(1);
       
-      // Headers: DRUGNAME,RXAUI,RXCUI,STR,SAB,TTY,CODE
-      // Map: DRUGNAME→brand_name, STR→generic_name, RXCUI→rxcui, SAB→country_code
-      const mappings: Array<{
+      const parsedMappings: Array<{
         brand_name: string;
         brand_name_normalized: string;
         generic_name: string;
@@ -77,13 +98,13 @@ serve(async (req) => {
       
       for (const line of dataLines) {
         const cols = parseCSVLine(line);
-        const brandName = cols[0]; // DRUGNAME
-        const rxcui = cols[2];     // RXCUI
-        const genericName = cols[3]; // STR
-        const countryCode = cols[4]; // SAB
+        const brandName = cols[0];
+        const rxcui = cols[2];
+        const genericName = cols[3];
+        const countryCode = cols[4];
         
         if (brandName && genericName) {
-          mappings.push({
+          parsedMappings.push({
             brand_name: brandName,
             brand_name_normalized: brandName.toLowerCase(),
             generic_name: genericName,
@@ -94,22 +115,21 @@ serve(async (req) => {
         }
       }
       
-      console.log(`Prepared ${mappings.length} valid mappings for import`);
+      console.log(`Prepared ${parsedMappings.length} valid mappings for import`);
       
-      if (mappings.length === 0) {
+      if (parsedMappings.length === 0) {
         return new Response(
           JSON.stringify({ error: 'No valid mappings found in file' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      // Insert in batches of 500
       const batchSize = 500;
       let inserted = 0;
       let errors = 0;
       
-      for (let i = 0; i < mappings.length; i += batchSize) {
-        const batch = mappings.slice(i, i + batchSize);
+      for (let i = 0; i < parsedMappings.length; i += batchSize) {
+        const batch = parsedMappings.slice(i, i + batchSize);
         
         const { error } = await supabase
           .from('international_drug_mappings')
@@ -131,10 +151,10 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           total_lines: lines.length,
-          valid_mappings: mappings.length,
+          valid_mappings: parsedMappings.length,
           inserted,
           errors,
-          sample: mappings.slice(0, 5),
+          sample: parsedMappings.slice(0, 5),
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -148,7 +168,7 @@ serve(async (req) => {
       if (error) throw error;
       
       return new Response(
-        JSON.stringify({ total_mappings: count }),
+        JSON.stringify({ count }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
