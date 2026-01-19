@@ -42,6 +42,7 @@ import KnowledgeBaseTopic from "./pages/KnowledgeBaseTopic";
 import MedicationInfo from "./pages/MedicationInfo";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import EHRComparison from "./pages/EHRComparison";
+import AdminImport from "./pages/AdminImport";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -163,6 +164,7 @@ const App = () => (
             } />
             {/* Internal/unlisted pages */}
             <Route path="/ehr-comparison" element={<EHRComparison />} />
+            <Route path="/admin/import" element={<AdminImport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
