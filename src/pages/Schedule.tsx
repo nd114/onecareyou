@@ -112,14 +112,7 @@ const Schedule = () => {
   const isToday = checkIsToday(selectedDate);
 
   const handleEnableReminders = async () => {
-    if (!isSupported) {
-      toast.error('Push notifications are not supported in this browser');
-      return;
-    }
-    const granted = await requestPermission();
-    if (granted) {
-      toast.success('Medication reminders enabled! You will receive notifications before each scheduled dose.');
-    }
+    await requestPermission();
   };
 
   const handleTestReminder = async () => {
