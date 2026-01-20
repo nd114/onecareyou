@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pill, Loader2, Camera, ScanBarcode, Crown } from 'lucide-react';
+import { ArrowLeft, Pill, Loader2, Camera, Crown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -153,19 +153,29 @@ const AddMedication = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Quick Add Options */}
-                <div className="space-y-3">
-                  <Label className="text-muted-foreground">Quick Add</Label>
-                  <MedicationScanner 
-                    onMedicationIdentified={(info) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        name: info.name,
-                        dosage: info.strength || prev.dosage,
-                      }));
-                    }}
-                  />
-                </div>
+                {/* Quick Add Options - Photo ID and Barcode Scanner */}
+                <Card className="border-dashed border-primary/30 bg-primary/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Camera className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">Quick Add</p>
+                        <p className="text-xs text-muted-foreground">Identify medication by photo or barcode</p>
+                      </div>
+                    </div>
+                    <MedicationScanner 
+                      onMedicationIdentified={(info) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          name: info.name,
+                          dosage: info.strength || prev.dosage,
+                        }));
+                      }}
+                    />
+                  </CardContent>
+                </Card>
                 
                 <div className="relative">
                   <Separator />

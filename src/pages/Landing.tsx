@@ -51,6 +51,29 @@ const features = [
   },
 ];
 
+const howItWorks = [
+  {
+    step: 1,
+    title: 'Sign Up & Set Up Your Profile',
+    description: 'Create your account, add your health information, allergies, and medications.',
+  },
+  {
+    step: 2,
+    title: 'Track Your Health Daily',
+    description: 'Log vitals, take medications on schedule, and use photo scanning to add new medications.',
+  },
+  {
+    step: 3,
+    title: 'Invite Your Care Team',
+    description: 'Generate secure share links for your doctors and caregivers to access your data.',
+  },
+  {
+    step: 4,
+    title: 'Stay Connected Continuously',
+    description: 'Your providers see updates in real-time. Receive guidance and instructions directly in the app.',
+  },
+];
+
 const pricingPlans = [
   {
     name: 'Free',
@@ -143,8 +166,8 @@ const Landing = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="text-lg h-12 px-8">
-                <Link to="#features">Learn More</Link>
+              <Button size="lg" variant="outline" className="text-lg h-12 px-8" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
+                Learn More
               </Button>
             </div>
             
@@ -293,6 +316,49 @@ const Landing = () => {
                     </Button>
                   </CardContent>
                 </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-24 bg-background">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
+              How It Works
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Get started in minutes and stay connected with your healthcare team.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
+            {howItWorks.map((item, index) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="relative"
+              >
+                <div className="text-center">
+                  <div className="h-16 w-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-4 text-primary-foreground text-2xl font-bold">
+                    {item.step}
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                </div>
+                {index < howItWorks.length - 1 && (
+                  <div className="hidden lg:block absolute top-8 left-[calc(50%+40px)] w-[calc(100%-80px)] h-0.5 bg-border" />
+                )}
               </motion.div>
             ))}
           </div>
