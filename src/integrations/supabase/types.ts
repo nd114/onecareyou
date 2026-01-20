@@ -761,6 +761,8 @@ export type Database = {
           ai_consent_updated_at: string | null
           ai_processing_consent: boolean | null
           allergies: Json | null
+          avatar_shared_with_clinicians: boolean | null
+          avatar_url: string | null
           bio: string | null
           blood_type: string | null
           created_at: string | null
@@ -791,6 +793,8 @@ export type Database = {
           ai_consent_updated_at?: string | null
           ai_processing_consent?: boolean | null
           allergies?: Json | null
+          avatar_shared_with_clinicians?: boolean | null
+          avatar_url?: string | null
           bio?: string | null
           blood_type?: string | null
           created_at?: string | null
@@ -821,6 +825,8 @@ export type Database = {
           ai_consent_updated_at?: string | null
           ai_processing_consent?: boolean | null
           allergies?: Json | null
+          avatar_shared_with_clinicians?: boolean | null
+          avatar_url?: string | null
           bio?: string | null
           blood_type?: string | null
           created_at?: string | null

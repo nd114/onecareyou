@@ -25,20 +25,6 @@ const contactMethods = [
     contact: 'support@onecare.app',
     href: 'mailto:support@onecare.app',
   },
-  {
-    icon: Phone,
-    title: 'Phone',
-    description: 'Mon-Fri from 8am to 6pm',
-    contact: '+1 (555) 123-4567',
-    href: 'tel:+15551234567',
-  },
-  {
-    icon: MapPin,
-    title: 'Office',
-    description: 'Come say hello',
-    contact: 'San Francisco, CA',
-    href: '#',
-  },
 ];
 
 const inquiryTypes = [

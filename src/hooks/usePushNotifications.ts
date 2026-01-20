@@ -4,27 +4,96 @@ import { toast } from 'sonner';
 interface NotificationPermissionState {
   permission: NotificationPermission | 'unsupported';
   isSupported: boolean;
+  browserInfo: {
+    name: string;
+    canUseNotifications: boolean;
+    limitations?: string;
+  };
+}
+
+// Detect browser for notification support info
+function detectBrowser(): { name: string; canUseNotifications: boolean; limitations?: string } {
+  const ua = navigator.userAgent;
+  
+  // iOS Safari doesn't support web push at all
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+  if (isIOS) {
+    // Check if it's iOS 16.4+ which added limited support
+    const match = ua.match(/OS (\d+)_/);
+    const version = match ? parseInt(match[1], 10) : 0;
+    if (version >= 16) {
+      return { 
+        name: 'Safari (iOS)', 
+        canUseNotifications: true,
+        limitations: 'Requires adding to Home Screen (PWA mode) for notifications to work'
+      };
+    }
+    return { 
+      name: 'Safari (iOS)', 
+      canUseNotifications: false,
+      limitations: 'iOS 15 and below do not support web notifications. Please update to iOS 16.4+'
+    };
+  }
+  
+  // macOS Safari
+  if (/^((?!chrome|android).)*safari/i.test(ua)) {
+    return { 
+      name: 'Safari (macOS)', 
+      canUseNotifications: true,
+      limitations: 'Notifications work, but may require allowing in Safari preferences'
+    };
+  }
+  
+  // Chrome
+  if (/Chrome/.test(ua) && !/Edg/.test(ua)) {
+    return { name: 'Chrome', canUseNotifications: true };
+  }
+  
+  // Firefox
+  if (/Firefox/.test(ua)) {
+    return { name: 'Firefox', canUseNotifications: true };
+  }
+  
+  // Edge
+  if (/Edg/.test(ua)) {
+    return { name: 'Edge', canUseNotifications: true };
+  }
+  
+  return { name: 'Unknown', canUseNotifications: true };
 }
 
 export function usePushNotifications() {
   const [permissionState, setPermissionState] = useState<NotificationPermissionState>({
     permission: 'default',
-    isSupported: false
+    isSupported: false,
+    browserInfo: { name: 'Unknown', canUseNotifications: false },
   });
 
   useEffect(() => {
     const isSupported = 'Notification' in window;
+    const browserInfo = detectBrowser();
+    
     setPermissionState({
       permission: isSupported ? Notification.permission : 'unsupported',
-      isSupported
+      isSupported: isSupported && browserInfo.canUseNotifications,
+      browserInfo,
     });
   }, []);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
+    const { browserInfo } = permissionState;
+    
     if (!permissionState.isSupported) {
-      toast.error('Notifications not supported', {
-        description: 'Your browser does not support push notifications. Try using Chrome, Firefox, or Safari.',
-      });
+      if (browserInfo.limitations) {
+        toast.error(`Notifications not supported`, {
+          description: browserInfo.limitations,
+          duration: 8000,
+        });
+      } else {
+        toast.error('Notifications not supported', {
+          description: 'Your browser does not support push notifications. Try using Chrome, Firefox, or Edge.',
+        });
+      }
       return false;
     }
 
@@ -36,7 +105,7 @@ export function usePushNotifications() {
     // If previously denied, guide user to browser settings
     if (permissionState.permission === 'denied') {
       toast.error('Notifications previously blocked', {
-        description: 'To enable notifications, click the lock/info icon in your browser\'s address bar → Site settings → Allow notifications',
+        description: 'To enable notifications, click the lock/info icon in your browser\'s address bar, then allow notifications',
         duration: 8000,
       });
       return false;
@@ -123,6 +192,7 @@ export function usePushNotifications() {
     permission: permissionState.permission,
     isSupported: permissionState.isSupported,
     isGranted: permissionState.permission === 'granted',
+    browserInfo: permissionState.browserInfo,
     requestPermission,
     sendNotification,
     scheduleMedicationReminder
