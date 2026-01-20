@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Send, MessageSquare, Loader2 } from 'lucide-react';
+import { Send, MessageSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,15 +17,8 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { toast } from 'sonner';
 
-const contactMethods = [
-  {
-    icon: Mail,
-    title: 'Email',
-    description: 'Send us an email anytime',
-    contact: 'support@onecare.app',
-    href: 'mailto:support@onecare.app',
-  },
-];
+// Contact methods removed - form handles communication directly
+const contactMethods: { icon: any; title: string; description: string; contact: string; href: string; }[] = [];
 
 const inquiryTypes = [
   { value: 'general', label: 'General Inquiry' },
@@ -101,38 +94,6 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Contact Methods */}
-      <section className="py-12 bg-background">
-        <div className="container">
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {contactMethods.map((method, index) => (
-              <motion.div
-                key={method.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="h-full text-center hover-lift">
-                  <CardContent className="pt-6">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <method.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-1">{method.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{method.description}</p>
-                    <a 
-                      href={method.href} 
-                      className="text-primary font-medium hover:underline"
-                    >
-                      {method.contact}
-                    </a>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Contact Form */}
       <section className="py-24 bg-muted/30">

@@ -46,13 +46,18 @@ export function useDrugInteractions() {
     setError(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke('drug-lookup', {
+      const { data, error: invokeError } = await supabase.functions.invoke('drug-lookup', {
         body: { action: 'check-interactions', drugNames }
       });
       
-      if (error) {
-        console.error('Error fetching drug interactions:', error);
-        setError('Failed to check drug interactions. Please try again later.');
+      if (invokeError) {
+        console.error('Error fetching drug interactions:', invokeError);
+        // Check if it's a network/timeout issue
+        if (invokeError.message?.includes('Failed to fetch') || invokeError.message?.includes('network')) {
+          setError('Network error. Please check your connection and try again.');
+        } else {
+          setError('Unable to check interactions. The drug database may be temporarily unavailable.');
+        }
         return [];
       }
       
@@ -61,10 +66,16 @@ export function useDrugInteractions() {
         return [];
       }
       
+      // Successfully got data (even if empty array)
       return data || [];
     } catch (err) {
       console.error('Error fetching drug interactions:', err);
-      setError('Failed to check drug interactions. Please try again later.');
+      // More specific error handling
+      if (err instanceof Error && err.message?.includes('timeout')) {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError('Unable to check interactions. Please try again later.');
+      }
       return [];
     } finally {
       setIsLoading(false);

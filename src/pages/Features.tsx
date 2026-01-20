@@ -57,6 +57,17 @@ const coreFeatures = [
     ]
   },
   {
+    icon: Smartphone,
+    title: 'Photo Medication Identification',
+    description: 'Use your camera to identify pills and add medications quickly by scanning barcodes or photos.',
+    details: [
+      'AI-powered pill identification',
+      'Barcode scanning for instant lookup',
+      'Automatic dosage and name extraction',
+      'Works with most common medications'
+    ]
+  },
+  {
     icon: Clock,
     title: 'Smart Scheduling',
     description: 'Customizable medication reminders that fit your daily routine.',
@@ -75,7 +86,7 @@ const additionalFeatures = [
   { icon: Bell, title: 'Smart Notifications', description: 'Timely reminders that adapt to your schedule' },
   { icon: FileText, title: 'Health Reports', description: 'Export comprehensive reports for doctor visits' },
   { icon: Lock, title: 'Privacy First', description: 'End-to-end encryption and data anonymization' },
-  { icon: Smartphone, title: 'Works Everywhere', description: 'Access from any device, anywhere' },
+  { icon: Share2, title: 'Provider Integration', description: 'Works seamlessly with your healthcare team' },
 ];
 
 const Features = () => {

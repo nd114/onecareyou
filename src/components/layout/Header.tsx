@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Pill, Activity, Users, Stethoscope, UserPlus, Inbox, TrendingUp, BookOpen, CheckCircle, Eye, Clock, XCircle } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Stethoscope, UserPlus, Inbox, TrendingUp, BookOpen, CheckCircle, Eye, Clock, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -76,6 +76,7 @@ export function Header() {
   };
   
   // Clinicians get a simplified nav - they don't need patient features like medications/vitals in main nav
+  // Patients get core navigation in header, secondary items in dropdown
   const navLinks = isAuthenticated 
     ? isClinician
       ? [
@@ -87,6 +88,7 @@ export function Header() {
           { href: '/medications', label: 'Medications' },
           { href: '/vitals', label: 'Vitals' },
           { href: '/schedule', label: 'Schedule' },
+          { href: '/care-circle', label: 'Care Circle' },
         ]
     : [
         { href: '/features', label: 'Features' },
@@ -279,27 +281,9 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {/* Patient-only menu items */}
+                  {/* Patient-only menu items - reduced since core items are in header */}
                   {!isClinician && (
                     <>
-                      <DropdownMenuItem asChild>
-                        <Link to="/medications" className="flex items-center gap-2">
-                          <Pill className="h-4 w-4" />
-                          Medications
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/vitals" className="flex items-center gap-2">
-                          <Activity className="h-4 w-4" />
-                          Vitals
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/care-circle" className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          Care Circle
-                        </Link>
-                      </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/guidance" className="flex items-center gap-2">
                           <Inbox className="h-4 w-4" />
@@ -328,6 +312,7 @@ export function Header() {
                           </Link>
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <Link to="/onboarding" className="flex items-center gap-2">
                           <Heart className="h-4 w-4" />
