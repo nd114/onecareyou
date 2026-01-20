@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { 
   User, Shield, Bell, Moon, Sun, 
   Brain, History, ChevronRight, LogOut,
-  Mail, Phone, Heart, AlertTriangle, Globe, Scale, Thermometer, Droplets,
-  BellRing, TrendingUp, Crown, CreditCard, Loader2, ExternalLink
+  Mail, Heart, AlertTriangle, Globe, Scale, Thermometer, Droplets,
+  BellRing, TrendingUp, Crown, CreditCard, Loader2, ExternalLink, Camera
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ import {
 } from '@/components/ui/select';
 import { GlucoseUnit, WeightUnit, TemperatureUnit, DEFAULT_UNIT_PREFERENCES } from '@/types/health';
 import { CareAlertSettings } from '@/components/care/CareAlertSettings';
+import { PatientAvatarUpload } from '@/components/settings/PatientAvatarUpload';
 
 interface ConsentLogEntry {
   id: string;
@@ -327,12 +328,17 @@ const Settings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Patient Avatar Upload */}
+                <PatientAvatarUpload
+                  avatarUrl={(profile as any)?.avatar_url || null}
+                  avatarSharedWithClinicians={(profile as any)?.avatar_shared_with_clinicians || false}
+                  onAvatarChange={() => refreshProfile?.()}
+                  onSharingChange={() => refreshProfile?.()}
+                />
+                
+                <Separator />
+
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">
-                      {(profile as any)?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                    </span>
-                  </div>
                   <div>
                     <p className="font-semibold">{(profile as any)?.name || 'User'}</p>
                     <p className="text-sm text-muted-foreground">{user?.email}</p>
@@ -459,20 +465,13 @@ const Settings = () => {
 
                 <Separator />
                 
-                <div className="space-y-3">
-                  {(profile as any)?.phone_number && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{(profile as any).phone_number}</span>
-                    </div>
-                  )}
-                  {(profile as any)?.emergency_contact_name && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <Heart className="h-4 w-4 text-muted-foreground" />
-                      <span>Emergency: {(profile as any).emergency_contact_name}</span>
-                    </div>
-                  )}
-                </div>
+                {/* Emergency Contact */}
+                {(profile as any)?.emergency_contact_name && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <span>Emergency: {(profile as any).emergency_contact_name}</span>
+                  </div>
+                )}
 
                 {/* Edit Profile Link */}
                 <Link to="/onboarding">
