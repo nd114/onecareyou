@@ -30,9 +30,12 @@ import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
+import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
+import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
+import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
@@ -40,6 +43,22 @@ const ClinicianDashboard = () => {
   const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
   const { clinicianGuidance, isLoading: isLoadingGuidance, deleteGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule } = useAlertRules();
+  
+  // Get patient user IDs for vitals summaries
+  const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
+  const { data: vitalsSummaries = [] } = usePatientVitalsSummaries(patientUserIds);
+  
+  // Create a map for quick lookup
+  const vitalsByPatient = useMemo(() => {
+    const map: Record<string, { vitals: any[]; adherenceRate?: number }> = {};
+    vitalsSummaries.forEach(summary => {
+      map[summary.userId] = {
+        vitals: summary.vitals,
+        adherenceRate: summary.adherenceRate,
+      };
+    });
+    return map;
+  }, [vitalsSummaries]);
   
   const [notesDialog, setNotesDialog] = useState<{
     open: boolean;
@@ -279,66 +298,99 @@ const ClinicianDashboard = () => {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {filteredPatients.map((patient) => (
-                        <div
-                          key={patient.id}
-                          className="p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <div 
-                              className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                              onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
-                            >
-                              <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="font-semibold text-primary">
-                                  {(patient.patient_name || 'Unknown Patient').charAt(0)}
-                                </span>
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="font-medium truncate">{patient.patient_name || 'Unknown Patient'}</p>
-                                {patient.patient_email && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                                    <Mail className="h-3 w-3 flex-shrink-0" />
-                                    <span className="truncate">{patient.patient_email}</span>
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
-                                  {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
-                                  {patient.permissions.adherence && <Badge variant="secondary" className="text-xs">Adherence</Badge>}
+                      {filteredPatients.map((patient) => {
+                        const patientData = vitalsByPatient[patient.user_id];
+                        
+                        return (
+                          <div
+                            key={patient.id}
+                            className="p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow"
+                          >
+                            <div className="flex flex-col gap-3">
+                              {/* Patient Info Row */}
+                              <div className="flex items-start gap-3">
+                                <div 
+                                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                                  onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
+                                >
+                                  <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="font-semibold text-primary">
+                                      {(patient.patient_name || 'Unknown Patient').charAt(0)}
+                                    </span>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="font-medium truncate">{patient.patient_name || 'Unknown Patient'}</p>
+                                      {patientData?.vitals && patientData.vitals.length > 0 && (
+                                        <PatientRiskIndicator 
+                                          vitals={patientData.vitals}
+                                          adherenceRate={patientData.adherenceRate}
+                                        />
+                                      )}
+                                    </div>
+                                    {patient.patient_email && (
+                                      <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                                        <Mail className="h-3 w-3 flex-shrink-0" />
+                                        <span className="truncate">{patient.patient_email}</span>
+                                      </p>
+                                    )}
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
+                                      {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
+                                      {patient.permissions.adherence && <Badge variant="secondary" className="text-xs">Adherence</Badge>}
+                                    </div>
+                                  </div>
                                 </div>
+                                
+                                {/* Notes Button */}
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-8 w-8 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNotesDialog({
+                                      open: true,
+                                      patientId: patient.id,
+                                      patientName: patient.patient_name,
+                                      notes: patient.clinician_notes || '',
+                                    });
+                                  }}
+                                  title="Patient notes"
+                                >
+                                  <StickyNote className={`h-4 w-4 ${patient.clinician_notes ? 'text-primary' : 'text-muted-foreground'}`} />
+                                </Button>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setNotesDialog({
+                              
+                              {/* Quick Actions Row */}
+                              <div className="flex items-center justify-between gap-2 pt-2 border-t">
+                                <PatientQuickActions
+                                  patient={{
+                                    id: patient.id,
+                                    user_id: patient.user_id,
+                                    patient_name: patient.patient_name,
+                                    patient_email: patient.patient_email,
+                                  }}
+                                  onViewNotes={() => setNotesDialog({
                                     open: true,
                                     patientId: patient.id,
                                     patientName: patient.patient_name,
                                     notes: patient.clinician_notes || '',
-                                  });
-                                }}
-                                title="Patient notes"
-                              >
-                                <StickyNote className={`h-4 w-4 ${patient.clinician_notes ? 'text-primary' : 'text-muted-foreground'}`} />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="h-8 px-3 text-xs"
-                                onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
-                              >
-                                View
-                              </Button>
+                                  })}
+                                />
+                                <Button 
+                                  variant="default" 
+                                  size="sm"
+                                  className="h-8 px-3 text-xs gradient-primary border-0"
+                                  onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
+                                >
+                                  View Details
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
