@@ -58,6 +58,11 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
     }
   }, [vital, convertVitalValue]);
 
+  // Early return if no vital
+  if (!vital) {
+    return null;
+  }
+
   const config = VITAL_CONFIG[vital.type];
   const hasBPSecondary = vital.type === 'blood_pressure';
   const displayUnit = getDisplayUnit(vital.type);
@@ -75,12 +80,12 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
     
     try {
       // Convert from user's preferred unit back to base unit before saving
-      const baseValue = convertToBaseUnit(vital!.type, parseFloat(value));
+      const baseValue = convertToBaseUnit(vital.type, parseFloat(value));
       const baseSecondaryValue = secondaryValue 
-        ? convertToBaseUnit(vital!.type, parseFloat(secondaryValue)) 
+        ? convertToBaseUnit(vital.type, parseFloat(secondaryValue)) 
         : undefined;
       
-      const success = await onSave(vital!.id, {
+      const success = await onSave(vital.id, {
         value: baseValue,
         secondaryValue: baseSecondaryValue,
         notes: notes || undefined,
@@ -96,8 +101,6 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
   };
 
   const isValid = value && !isNaN(parseFloat(value));
-
-  if (!vital) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
