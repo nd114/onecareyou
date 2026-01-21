@@ -76,7 +76,7 @@ export function useUnitPreferences() {
     }
   }, [preferences, user]);
 
-  // Convert a vital value to the user's preferred unit
+  // Convert a vital value to the user's preferred unit (for display)
   const convertVitalValue = useCallback((
     type: VitalType, 
     value: number, 
@@ -103,6 +103,31 @@ export function useUnitPreferences() {
       }
       default:
         return { value, unit: config.unit };
+    }
+  }, [preferences]);
+
+  // Convert a vital value FROM user's preferred unit TO base unit (for saving)
+  const convertToBaseUnit = useCallback((
+    type: VitalType, 
+    value: number
+  ): number => {
+    const config = VITAL_CONFIG[type];
+
+    switch (type) {
+      case 'glucose': {
+        const fromUnit = preferences.glucose;
+        return convertGlucose(value, fromUnit, 'mg/dL' as GlucoseUnit);
+      }
+      case 'weight': {
+        const fromUnit = preferences.weight;
+        return convertWeight(value, fromUnit, 'kg' as WeightUnit);
+      }
+      case 'temperature': {
+        const fromUnit = preferences.temperature;
+        return convertTemperature(value, fromUnit, '°C' as TemperatureUnit);
+      }
+      default:
+        return value;
     }
   }, [preferences]);
 
@@ -160,6 +185,7 @@ export function useUnitPreferences() {
     preferences,
     updatePreference,
     convertVitalValue,
+    convertToBaseUnit,
     getDisplayUnit,
     getNormalRange,
     isLoaded

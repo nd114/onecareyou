@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
+import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 
 interface EditVitalDialogProps {
   open: boolean;
@@ -28,6 +29,8 @@ interface EditVitalDialogProps {
 }
 
 export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVitalDialogProps) {
+  const { getDisplayUnit, getNormalRange, convertVitalValue, convertToBaseUnit } = useUnitPreferences();
+  
   const [value, setValue] = useState('');
   const [secondaryValue, setSecondaryValue] = useState('');
   const [notes, setNotes] = useState('');
@@ -37,19 +40,28 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
 
   useEffect(() => {
     if (vital) {
-      setValue(vital.value.toString());
-      setSecondaryValue(vital.secondary_value?.toString() || '');
+      // Convert stored base unit value to user's preferred unit for display
+      const converted = convertVitalValue(vital.type, vital.value);
+      setValue(converted.value.toString());
+      
+      if (vital.secondary_value) {
+        const convertedSecondary = convertVitalValue(vital.type, vital.secondary_value);
+        setSecondaryValue(convertedSecondary.value.toString());
+      } else {
+        setSecondaryValue('');
+      }
+      
       setNotes(vital.notes || '');
       const recordedDate = new Date(vital.recorded_at);
       setSelectedDate(recordedDate);
       setSelectedTime(format(recordedDate, 'HH:mm'));
     }
-  }, [vital]);
-
-  if (!vital) return null;
+  }, [vital, convertVitalValue]);
 
   const config = VITAL_CONFIG[vital.type];
   const hasBPSecondary = vital.type === 'blood_pressure';
+  const displayUnit = getDisplayUnit(vital.type);
+  const normalRange = getNormalRange(vital.type);
 
   const getRecordedDateTime = () => {
     const [hours, minutes] = selectedTime.split(':').map(Number);
@@ -62,9 +74,15 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
     setSaving(true);
     
     try {
-      const success = await onSave(vital.id, {
-        value: parseFloat(value),
-        secondaryValue: secondaryValue ? parseFloat(secondaryValue) : undefined,
+      // Convert from user's preferred unit back to base unit before saving
+      const baseValue = convertToBaseUnit(vital!.type, parseFloat(value));
+      const baseSecondaryValue = secondaryValue 
+        ? convertToBaseUnit(vital!.type, parseFloat(secondaryValue)) 
+        : undefined;
+      
+      const success = await onSave(vital!.id, {
+        value: baseValue,
+        secondaryValue: baseSecondaryValue,
         notes: notes || undefined,
         recordedAt: getRecordedDateTime(),
       });
@@ -78,6 +96,8 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
   };
 
   const isValid = value && !isNaN(parseFloat(value));
+
+  if (!vital) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,14 +153,14 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
           <div className="space-y-2">
             <Label htmlFor="editValue">
               {config.label}
-              <span className="text-muted-foreground ml-1">({config.unit})</span>
+              <span className="text-muted-foreground ml-1">({displayUnit})</span>
             </Label>
             <div className="flex gap-2">
               <Input
                 id="editValue"
                 type="number"
                 step="0.1"
-                placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${config.normalMin}-${config.normalMax}`}
+                placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${normalRange.min}-${normalRange.max}`}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 className="flex-1"
@@ -156,7 +176,7 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Normal range: {config.normalMin}–{config.normalMax} {config.unit}
+              Normal range: {normalRange.min}–{normalRange.max} {normalRange.unit}
             </p>
           </div>
 

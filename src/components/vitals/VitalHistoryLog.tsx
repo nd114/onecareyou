@@ -1,14 +1,18 @@
 import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
-import { Pencil, Trash2, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { format, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
+import { Pencil, Trash2, Filter, ChevronDown, ChevronUp, CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -25,6 +29,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
@@ -42,6 +54,11 @@ interface GroupedEntry {
   vitals: VitalRecord[];
   notes: string | null;
 }
+
+type DateFilterType = 'recorded' | 'logged';
+type DateRangePreset = 'all' | 'today' | 'week' | 'month' | 'custom';
+
+const ITEMS_PER_PAGE = 10;
 
 const vitalTypeOptions: { value: VitalType | 'all'; label: string }[] = [
   { value: 'all', label: 'All Types' },
@@ -65,11 +82,51 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
+  // Date filtering state
+  const [dateFilterType, setDateFilterType] = useState<DateFilterType>('recorded');
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('all');
+  const [customDateStart, setCustomDateStart] = useState<Date | undefined>(undefined);
+  const [customDateEnd, setCustomDateEnd] = useState<Date | undefined>(undefined);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Calculate date range based on preset
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    switch (dateRangePreset) {
+      case 'today':
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case 'week':
+        return { start: startOfDay(subDays(now, 7)), end: endOfDay(now) };
+      case 'month':
+        return { start: startOfDay(subDays(now, 30)), end: endOfDay(now) };
+      case 'custom':
+        if (customDateStart && customDateEnd) {
+          return { start: startOfDay(customDateStart), end: endOfDay(customDateEnd) };
+        }
+        return null;
+      default:
+        return null;
+    }
+  }, [dateRangePreset, customDateStart, customDateEnd]);
+
   // Group vitals by created_at timestamp (within 2 seconds = same save session)
   const groupedEntries = useMemo(() => {
-    const filtered = typeFilter === 'all' 
+    // First filter by type
+    let filtered = typeFilter === 'all' 
       ? vitals 
       : vitals.filter(v => v.type === typeFilter);
+
+    // Then filter by date range if applicable
+    if (dateRange) {
+      filtered = filtered.filter(v => {
+        const dateToCheck = dateFilterType === 'recorded' 
+          ? new Date(v.recorded_at) 
+          : new Date(v.created_at);
+        return isWithinInterval(dateToCheck, { start: dateRange.start, end: dateRange.end });
+      });
+    }
 
     const groups: Map<string, GroupedEntry> = new Map();
     
@@ -104,7 +161,19 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     return Array.from(groups.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [vitals, typeFilter]);
+  }, [vitals, typeFilter, dateRange, dateFilterType]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(groupedEntries.length / ITEMS_PER_PAGE);
+  const paginatedEntries = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return groupedEntries.slice(start, start + ITEMS_PER_PAGE);
+  }, [groupedEntries, currentPage]);
+
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [typeFilter, dateRange, dateFilterType]);
 
   const formatValue = (vital: VitalRecord) => {
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
@@ -151,7 +220,14 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     });
   };
 
+  const clearDateFilter = () => {
+    setDateRangePreset('all');
+    setCustomDateStart(undefined);
+    setCustomDateEnd(undefined);
+  };
+
   const totalVitals = typeFilter === 'all' ? vitals.length : vitals.filter(v => v.type === typeFilter).length;
+  const filteredVitalsCount = groupedEntries.reduce((acc, g) => acc + g.vitals.length, 0);
 
   if (vitals.length === 0) {
     return (
@@ -165,19 +241,17 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
   return (
     <div className="space-y-4">
       {/* Filter Controls */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {groupedEntries.length} session{groupedEntries.length !== 1 ? 's' : ''} ({totalVitals} readings)
-        </p>
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Type Filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto">
               <Filter className="h-4 w-4" />
               {vitalTypeOptions.find(o => o.value === typeFilter)?.label || 'Filter'}
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto">
+          <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
             {vitalTypeOptions.map((option) => (
               <DropdownMenuItem
                 key={option.value}
@@ -189,203 +263,377 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Date Filter */}
+        <div className="flex gap-2 flex-1">
+          <Select value={dateFilterType} onValueChange={(v) => setDateFilterType(v as DateFilterType)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recorded">Recorded Date</SelectItem>
+              <SelectItem value="logged">Logged Date</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-initial">
+                <CalendarIcon className="h-4 w-4" />
+                {dateRangePreset === 'all' && 'All Time'}
+                {dateRangePreset === 'today' && 'Today'}
+                {dateRangePreset === 'week' && 'Last 7 Days'}
+                {dateRangePreset === 'month' && 'Last 30 Days'}
+                {dateRangePreset === 'custom' && customDateStart && customDateEnd && 
+                  `${format(customDateStart, 'MMM d')} - ${format(customDateEnd, 'MMM d')}`}
+                {dateRangePreset === 'custom' && (!customDateStart || !customDateEnd) && 'Custom Range'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Quick Filters</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setDateRangePreset('all')}>
+                All Time
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateRangePreset('today')}>
+                Today
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateRangePreset('week')}>
+                Last 7 Days
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateRangePreset('month')}>
+                Last 30 Days
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Custom Range</DropdownMenuLabel>
+              <div className="px-2 py-2">
+                <div className="space-y-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Start Date</p>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full justify-start text-left">
+                          <CalendarIcon className="mr-2 h-3 w-3" />
+                          {customDateStart ? format(customDateStart, 'MMM d, yyyy') : 'Select'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={customDateStart}
+                          onSelect={(date) => {
+                            setCustomDateStart(date);
+                            setDateRangePreset('custom');
+                          }}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">End Date</p>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full justify-start text-left">
+                          <CalendarIcon className="mr-2 h-3 w-3" />
+                          {customDateEnd ? format(customDateEnd, 'MMM d, yyyy') : 'Select'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={customDateEnd}
+                          onSelect={(date) => {
+                            setCustomDateEnd(date);
+                            setDateRangePreset('custom');
+                          }}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {dateRangePreset !== 'all' && (
+            <Button variant="ghost" size="sm" onClick={clearDateFilter} className="px-2">
+              ×
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Results Summary */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <p>
+          {groupedEntries.length} session{groupedEntries.length !== 1 ? 's' : ''} ({filteredVitalsCount} readings)
+          {dateRangePreset !== 'all' && ` • Filtered from ${totalVitals} total`}
+        </p>
+        {totalPages > 1 && (
+          <p>Page {currentPage} of {totalPages}</p>
+        )}
       </div>
 
       {/* Grouped Entries List */}
       <div className="space-y-3">
-        {groupedEntries.map((group) => {
-          const isExpanded = expandedGroups.has(group.key);
-          const isSingleEntry = group.vitals.length === 1;
+        {paginatedEntries.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No records match the current filters</p>
+            <Button variant="link" onClick={clearDateFilter} className="mt-2">
+              Clear filters
+            </Button>
+          </div>
+        ) : (
+          paginatedEntries.map((group) => {
+            const isExpanded = expandedGroups.has(group.key);
+            const isSingleEntry = group.vitals.length === 1;
 
-          // For single entries, render directly without collapsible
-          if (isSingleEntry) {
-            const vital = group.vitals[0];
-            const config = VITAL_CONFIG[vital.type];
-            const status = getStatus(vital);
+            // For single entries, render directly without collapsible
+            if (isSingleEntry) {
+              const vital = group.vitals[0];
+              const config = VITAL_CONFIG[vital.type];
+              const status = getStatus(vital);
 
-            return (
-              <Card key={group.key} className="border-border/50">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{config.label}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
-                          {status}
-                        </span>
-                      </div>
-                      
-                      <p className="text-xl sm:text-2xl font-bold mt-1">
-                        {formatValue(vital)}
-                        <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
-                          {getDisplayUnitForVital(vital)}
-                        </span>
-                      </p>
-
-                      {vital.notes && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                          {vital.notes}
-                        </p>
-                      )}
-
-                      <div className="flex flex-col sm:flex-row sm:gap-4 mt-3 text-xs text-muted-foreground">
-                        <div>
-                          <span className="font-medium">Recorded:</span>{' '}
-                          {format(new Date(vital.recorded_at), "MMM d, yyyy 'at' h:mm a")}
-                        </div>
-                        <div>
-                          <span className="font-medium">Logged:</span>{' '}
-                          {format(new Date(vital.created_at), "MMM d, yyyy 'at' h:mm a")}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => onEdit(vital)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteConfirm(vital.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          }
-
-          // For multiple entries, render as collapsible group
-          return (
-            <Card key={group.key} className="border-border/50">
-              <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.key)}>
-                <CollapsibleTrigger asChild>
-                  <CardContent className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+              return (
+                <Card key={group.key} className="border-border/50">
+                  <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {group.vitals.length} metrics
-                          </Badge>
-                          {group.vitals.map((v) => {
-                            const status = getStatus(v);
-                            return (
-                              <span 
-                                key={v.id} 
-                                className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}
-                              >
-                                {VITAL_CONFIG[v.type].label}
-                              </span>
-                            );
-                          })}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{config.label}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                            {status}
+                          </span>
                         </div>
+                        
+                        <p className="text-xl sm:text-2xl font-bold mt-1">
+                          {formatValue(vital)}
+                          <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
+                            {getDisplayUnitForVital(vital)}
+                          </span>
+                        </p>
 
-                        {/* Summary of values */}
-                        <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
-                          {group.vitals.map((v) => (
-                            <div key={v.id} className="text-xs sm:text-sm">
-                              <span className="text-muted-foreground">{VITAL_CONFIG[v.type].label}:</span>{' '}
-                              <span className="font-semibold">{formatValue(v)} {getDisplayUnitForVital(v)}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {group.notes && (
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
-                            {group.notes}
+                        {vital.notes && (
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                            {vital.notes}
                           </p>
                         )}
 
                         <div className="flex flex-col sm:flex-row sm:gap-4 mt-3 text-xs text-muted-foreground">
                           <div>
                             <span className="font-medium">Recorded:</span>{' '}
-                            {format(new Date(group.recordedAt), "MMM d, yyyy 'at' h:mm a")}
+                            {format(new Date(vital.recorded_at), "MMM d, yyyy 'at' h:mm a")}
                           </div>
                           <div>
                             <span className="font-medium">Logged:</span>{' '}
-                            {format(new Date(group.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                            {format(new Date(vital.created_at), "MMM d, yyyy 'at' h:mm a")}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center">
-                        {isExpanded ? (
-                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                        )}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => onEdit(vital)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setDeleteConfirm(vital.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <div className="border-t px-4 pb-4 pt-3 space-y-2 bg-muted/30">
-                    {group.vitals.map((vital) => {
-                      const config = VITAL_CONFIG[vital.type];
-                      const status = getStatus(vital);
+                </Card>
+              );
+            }
 
-                      return (
-                        <div 
-                          key={vital.id} 
-                          className="flex items-center justify-between py-2 px-2 sm:px-3 bg-background rounded-lg border gap-2"
-                        >
-                          <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-                            <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border ${statusColors[status]} flex-shrink-0`}>
-                              {status}
-                            </span>
-                            <span className="font-medium text-xs sm:text-sm">{config.label}</span>
-                            <span className="text-sm sm:text-lg font-bold">
-                              {formatValue(vital)}
-                              <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
-                                {getDisplayUnitForVital(vital)}
-                              </span>
-                            </span>
+            // For multiple entries, render as collapsible group
+            return (
+              <Card key={group.key} className="border-border/50">
+                <Collapsible open={isExpanded} onOpenChange={() => toggleGroup(group.key)}>
+                  <CollapsibleTrigger asChild>
+                    <CardContent className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {group.vitals.length} metrics
+                            </Badge>
+                            {group.vitals.map((v) => {
+                              const status = getStatus(v);
+                              return (
+                                <span 
+                                  key={v.id} 
+                                  className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}
+                                >
+                                  {VITAL_CONFIG[v.type].label}
+                                </span>
+                              );
+                            })}
                           </div>
-                          
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit(vital);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteConfirm(vital.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+
+                          {/* Summary of values */}
+                          <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
+                            {group.vitals.map((v) => (
+                              <div key={v.id} className="text-xs sm:text-sm">
+                                <span className="text-muted-foreground">{VITAL_CONFIG[v.type].label}:</span>{' '}
+                                <span className="font-semibold">{formatValue(v)} {getDisplayUnitForVital(v)}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {group.notes && (
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
+                              {group.notes}
+                            </p>
+                          )}
+
+                          <div className="flex flex-col sm:flex-row sm:gap-4 mt-3 text-xs text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Recorded:</span>{' '}
+                              {format(new Date(group.recordedAt), "MMM d, yyyy 'at' h:mm a")}
+                            </div>
+                            <div>
+                              <span className="font-medium">Logged:</span>{' '}
+                              {format(new Date(group.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                            </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </Card>
-          );
-        })}
+
+                        <div className="flex items-center">
+                          {isExpanded ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <div className="border-t px-4 pb-4 pt-3 space-y-2 bg-muted/30">
+                      {group.vitals.map((vital) => {
+                        const config = VITAL_CONFIG[vital.type];
+                        const status = getStatus(vital);
+
+                        return (
+                          <div 
+                            key={vital.id} 
+                            className="flex items-center justify-between py-2 px-2 sm:px-3 bg-background rounded-lg border gap-2"
+                          >
+                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
+                              <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border ${statusColors[status]} flex-shrink-0`}>
+                                {status}
+                              </span>
+                              <span className="font-medium text-xs sm:text-sm">{config.label}</span>
+                              <span className="text-sm sm:text-lg font-bold">
+                                {formatValue(vital)}
+                                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1">
+                                  {getDisplayUnitForVital(vital)}
+                                </span>
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEdit(vital);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirm(vital.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
+            );
+          })
+        )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="gap-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum: number;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? 'default' : 'outline'}
+                  size="sm"
+                  className="w-8 h-8 p-0"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="gap-1"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>

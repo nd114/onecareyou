@@ -47,7 +47,7 @@ const vitalCategories = [
 
 export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogProps) {
   const { hasConsent, grantConsent, checkConsentRequired } = useAIConsent();
-  const { getDisplayUnit, getNormalRange } = useUnitPreferences();
+  const { getDisplayUnit, getNormalRange, convertToBaseUnit } = useUnitPreferences();
   
   const [mode, setMode] = useState<'manual' | 'upload'>('manual');
   const [step, setStep] = useState<'entry' | 'confirm'>('entry');
@@ -101,12 +101,17 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const getEntriesToSave = () => {
     return Object.entries(values)
       .filter(([_, v]) => v && !isNaN(parseFloat(v)))
-      .map(([type, value]) => ({
-        type: type as VitalType,
-        value: parseFloat(value),
-        secondaryValue: secondaryValues[type] ? parseFloat(secondaryValues[type]) : undefined,
-        config: VITAL_CONFIG[type as VitalType],
-      }));
+      .map(([type, value]) => {
+        const vitalType = type as VitalType;
+        const displayUnit = getDisplayUnit(vitalType);
+        return {
+          type: vitalType,
+          value: parseFloat(value),
+          displayUnit,
+          secondaryValue: secondaryValues[type] ? parseFloat(secondaryValues[type]) : undefined,
+          config: VITAL_CONFIG[vitalType],
+        };
+      });
   };
 
   const handleProceedToConfirm = () => {
@@ -123,7 +128,13 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
       const recordedDateTime = getRecordedDateTime();
       
       for (const entry of entries) {
-        await onSave(entry.type, entry.value, entry.secondaryValue, notes || undefined, recordedDateTime);
+        // Convert from user's preferred unit to base unit before saving
+        const baseValue = convertToBaseUnit(entry.type, entry.value);
+        const baseSecondaryValue = entry.secondaryValue !== undefined 
+          ? convertToBaseUnit(entry.type, entry.secondaryValue) 
+          : undefined;
+        
+        await onSave(entry.type, baseValue, baseSecondaryValue, notes || undefined, recordedDateTime);
       }
 
       resetForm();
@@ -488,7 +499,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                                 ? `${entry.value}/${entry.secondaryValue}`
                                 : entry.value}
                               <span className="text-sm font-normal text-muted-foreground ml-1">
-                                {entry.config.unit}
+                                {entry.displayUnit}
                               </span>
                             </span>
                           </div>
