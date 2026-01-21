@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
 import { Pencil, Trash2, Filter, ChevronDown, ChevronUp, CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -171,11 +171,12 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
   }, [groupedEntries, currentPage]);
 
   // Reset to page 1 when filters change
-  useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
-  }, [typeFilter, dateRange, dateFilterType]);
+  }, [typeFilter, dateRangePreset, dateFilterType, customDateStart, customDateEnd]);
 
   const formatValue = (vital: VitalRecord) => {
+    if (!vital || !vital.type) return '-';
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
       return `${vital.value}/${vital.secondary_value}`;
     }
@@ -184,10 +185,12 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
   };
 
   const getDisplayUnitForVital = (vital: VitalRecord) => {
+    if (!vital || !vital.type) return '';
     return getDisplayUnit(vital.type);
   };
 
   const getStatus = (vital: VitalRecord): 'normal' | 'high' | 'low' => {
+    if (!vital || !vital.type) return 'normal';
     const normalRange = getNormalRange(vital.type);
     const converted = convertVitalValue(vital.type, vital.value);
     if (converted.value < normalRange.min) return 'low';
@@ -395,6 +398,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
             // For single entries, render directly without collapsible
             if (isSingleEntry) {
               const vital = group.vitals[0];
+              if (!vital || !vital.type || !VITAL_CONFIG[vital.type]) return null;
               const config = VITAL_CONFIG[vital.type];
               const status = getStatus(vital);
 
@@ -471,7 +475,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                             <Badge variant="secondary" className="text-xs">
                               {group.vitals.length} metrics
                             </Badge>
-                            {group.vitals.map((v) => {
+                            {group.vitals.filter(v => v && v.type && VITAL_CONFIG[v.type]).map((v) => {
                               const status = getStatus(v);
                               return (
                                 <span 
@@ -484,9 +488,8 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                             })}
                           </div>
 
-                          {/* Summary of values */}
                           <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
-                            {group.vitals.map((v) => (
+                            {group.vitals.filter(v => v && v.type && VITAL_CONFIG[v.type]).map((v) => (
                               <div key={v.id} className="text-xs sm:text-sm">
                                 <span className="text-muted-foreground">{VITAL_CONFIG[v.type].label}:</span>{' '}
                                 <span className="font-semibold">{formatValue(v)} {getDisplayUnitForVital(v)}</span>
@@ -525,7 +528,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                   
                   <CollapsibleContent>
                     <div className="border-t px-4 pb-4 pt-3 space-y-2 bg-muted/30">
-                      {group.vitals.map((vital) => {
+                      {group.vitals.filter(v => v && v.type && VITAL_CONFIG[v.type]).map((vital) => {
                         const config = VITAL_CONFIG[vital.type];
                         const status = getStatus(vital);
 
