@@ -52,6 +52,7 @@ import { GlucoseUnit, WeightUnit, TemperatureUnit } from '@/types/health';
 import { CareAlertSettings } from '@/components/care/CareAlertSettings';
 import { PatientAvatarUpload } from '@/components/settings/PatientAvatarUpload';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
+import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
 
 interface ConsentLogEntry {
   id: string;
@@ -816,6 +817,14 @@ const Settings = () => {
             </Card>
           </motion.div>
 
+          {/* Emergency Information */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+          >
+            <EmergencySettingsSection />
+          </motion.div>
           {/* Care Alerts */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
