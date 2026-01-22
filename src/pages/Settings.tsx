@@ -152,7 +152,7 @@ const Settings = () => {
   const [showConsentHistory, setShowConsentHistory] = useState(false);
   const [consentLogs, setConsentLogs] = useState<ConsentLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [timezone, setTimezone] = useState<string>((profile as any)?.timezone || 'UTC');
   const [savingTimezone, setSavingTimezone] = useState(false);
   
@@ -165,9 +165,14 @@ const Settings = () => {
   const { preferences: unitPreferences, updatePreference } = useUnitPreferences();
 
   useEffect(() => {
-    // Check current theme
-    const isDark = document.documentElement.classList.contains('dark');
-    setTheme(isDark ? 'dark' : 'light');
+    // Check stored theme preference
+    const storedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
+    if (storedTheme) {
+      setTheme(storedTheme);
+    } else {
+      // Default to system
+      setTheme('system');
+    }
   }, []);
 
   useEffect(() => {
@@ -176,11 +181,31 @@ const Settings = () => {
     }
   }, [profile]);
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+  const applyTheme = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    localStorage.setItem('theme', newTheme);
+    
+    if (newTheme === 'system') {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', systemPrefersDark);
+    } else {
+      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    }
   };
+
+  // Listen for system theme changes when in system mode
+  useEffect(() => {
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        document.documentElement.classList.toggle('dark', e.matches);
+      };
+      mediaQuery.addEventListener('change', handleChange);
+      // Apply current system preference
+      document.documentElement.classList.toggle('dark', mediaQuery.matches);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [theme]);
 
   const handleTimezoneChange = async (newTimezone: string) => {
     if (!user) return;
@@ -665,17 +690,43 @@ const Settings = () => {
                 <Separator />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {theme === 'light' ? (
+                    {theme === 'dark' ? (
+                      <Moon className="h-5 w-5 text-muted-foreground" />
+                    ) : theme === 'light' ? (
                       <Sun className="h-5 w-5 text-muted-foreground" />
                     ) : (
-                      <Moon className="h-5 w-5 text-muted-foreground" />
+                      <Globe className="h-5 w-5 text-muted-foreground" />
                     )}
                     <div>
-                      <p className="font-medium">Dark Mode</p>
-                      <p className="text-sm text-muted-foreground">Toggle dark theme</p>
+                      <p className="font-medium">Theme</p>
+                      <p className="text-sm text-muted-foreground">Choose your preferred appearance</p>
                     </div>
                   </div>
-                  <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
+                  <Select value={theme} onValueChange={(value: 'light' | 'dark' | 'system') => applyTheme(value)}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">
+                        <div className="flex items-center gap-2">
+                          <Sun className="h-4 w-4" />
+                          Light
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="dark">
+                        <div className="flex items-center gap-2">
+                          <Moon className="h-4 w-4" />
+                          Dark
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="system">
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-4 w-4" />
+                          System
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>

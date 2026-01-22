@@ -14,6 +14,7 @@ interface Profile {
   location: string | null;
   address: string | null;
   bio: string | null;
+  avatar_url: string | null;
   date_of_birth: string | null;
   gender: string | null;
   blood_type: string | null;
