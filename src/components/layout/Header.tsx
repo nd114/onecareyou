@@ -12,7 +12,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState, useEffect } from 'react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { usePatientGuidance } from '@/hooks/usePatientGuidance';
@@ -24,7 +25,7 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
-  const { isClinician } = useClinicianProfile();
+  const { isClinician, clinicianProfile } = useClinicianProfile();
   const { guidance } = usePatientGuidance();
   const { unreadNotifications: clinicianNotifications, unreadCount: clinicianUnreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -32,9 +33,13 @@ export function Header() {
   
   const isAuthenticated = !!user;
   const userName = profile?.name || user?.email?.split('@')[0] || 'User';
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const subscriptionTier = (profile?.subscription_tier || 'free') as string;
   const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
   const showAdherenceReport = profile?.weekly_adherence_report_enabled ?? true;
+  
+  // Get avatar URL - for patients from profile, for clinicians from clinician profile
+  const avatarUrl = isClinician ? clinicianProfile?.avatar_url : profile?.avatar_url;
   
   // Get unread notifications for patients (guidance items that haven't been acknowledged)
   const unreadGuidance = !isClinician ? guidance.filter(g => g.status === 'pending' || g.status === 'sent') : [];
@@ -274,9 +279,14 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="h-4 w-4 text-primary" />
-                    </div>
+                    <Avatar className="h-8 w-8">
+                      {avatarUrl ? (
+                        <AvatarImage src={avatarUrl} alt={userName} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                        {userInitials || <User className="h-4 w-4" />}
+                      </AvatarFallback>
+                    </Avatar>
                     <span className="font-medium max-w-[120px] truncate">{userName}</span>
                   </Button>
                 </DropdownMenuTrigger>
