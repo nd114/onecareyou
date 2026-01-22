@@ -1,7 +1,7 @@
-# OneCare - Clinician Feature Gaps & Implementation Plan
+# Marpe - Clinician Feature Gaps & Implementation Plan
 
 ## Overview
-This document identifies gaps in OneCare's clinician offering compared to competitors and outlines an implementation plan prioritized by revenue impact.
+This document identifies gaps in Marpe's clinician offering compared to competitors and outlines an implementation plan prioritized by revenue impact.
 
 **Last Updated:** January 2026
 **Analysis Scope:** Clinician-focused features, subscription system, enterprise capabilities

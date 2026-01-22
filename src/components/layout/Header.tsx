@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Menu, X, User, LogOut, Settings, Bell, Loader2, Stethoscope, UserPlus, Inbox, TrendingUp, BookOpen, CheckCircle, Eye, Clock, XCircle } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, Bell, Loader2, Stethoscope, UserPlus, Inbox, TrendingUp, BookOpen, CheckCircle, Eye, Clock, XCircle, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MarpeLogoIcon } from '@/components/ui/MarpeLogoIcon';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -116,11 +117,11 @@ export function Header() {
             whileHover={{ scale: 1.05 }}
             className="flex items-center gap-2"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
-              <Heart className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary p-1">
+              <MarpeLogoIcon size="lg" />
             </div>
             <span className="font-display text-xl font-bold text-foreground">
-              OneCare
+              Marpe
             </span>
           </motion.div>
         </Link>

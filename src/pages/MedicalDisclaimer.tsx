@@ -141,13 +141,13 @@ const MedicalDisclaimer = () => {
                     Vital Signs & Health Metrics
                   </h2>
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    OneCare allows you to track vital signs and health metrics. This tracking is for personal organization and does not constitute medical monitoring.
+                    Marpe allows you to track vital signs and health metrics. This tracking is for personal organization and does not constitute medical monitoring.
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                     <li>Vital sign ranges and alerts are general guidelines, not personalized medical advice</li>
                     <li>Abnormal readings should be discussed with your healthcare provider</li>
-                    <li>OneCare is not a substitute for medical monitoring devices or professional supervision</li>
-                    <li>Do not rely on OneCare alerts for detecting medical emergencies</li>
+                    <li>Marpe is not a substitute for medical monitoring devices or professional supervision</li>
+                    <li>Do not rely on Marpe alerts for detecting medical emergencies</li>
                   </ul>
                 </div>
 

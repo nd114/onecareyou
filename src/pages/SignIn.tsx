@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Heart, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Stethoscope } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Stethoscope } from 'lucide-react';
+import { MarpeLogoIcon } from '@/components/ui/MarpeLogoIcon';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,10 +99,10 @@ const SignIn = () => {
       >
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
-            <Heart className="h-6 w-6 text-primary-foreground" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary p-1.5">
+            <MarpeLogoIcon size="lg" />
           </div>
-          <span className="font-display text-2xl font-bold">OneCare</span>
+          <span className="font-display text-2xl font-bold">Marpe</span>
         </Link>
 
         <Card className="border-border/50 shadow-xl">

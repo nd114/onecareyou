@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { MarpeLogoIcon } from '@/components/ui/MarpeLogoIcon';
 
 export function Footer() {
   return (
@@ -9,10 +9,10 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
-                <Heart className="h-5 w-5 text-primary-foreground" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary p-1">
+                <MarpeLogoIcon size="lg" />
               </div>
-              <span className="font-display text-xl font-bold">OneCare</span>
+              <span className="font-display text-xl font-bold">Marpe</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Your intelligent medication tracker. Manage your health safely with real-time interaction warnings.
@@ -64,10 +64,10 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} OneCare. All rights reserved.
+            © {new Date().getFullYear()} Marpe. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground text-center md:text-right max-w-lg">
-            OneCare is not a substitute for professional medical advice. Always consult your healthcare provider.
+            Marpe is not a substitute for professional medical advice. Always consult your healthcare provider.
             <Link to="/disclaimer" className="ml-1 underline hover:text-foreground">
               Read our Medical Disclaimer
             </Link>

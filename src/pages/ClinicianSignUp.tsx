@@ -113,7 +113,7 @@ const ClinicianSignUp = () => {
             <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center">
               <Stethoscope className="h-5 w-5 text-white" />
             </div>
-            <span className="font-display text-2xl font-bold">OneCare</span>
+            <span className="font-display text-2xl font-bold">Marpe</span>
           </Link>
           <h1 className="font-display text-2xl font-bold">Healthcare Provider Sign Up</h1>
           <p className="text-muted-foreground mt-2">

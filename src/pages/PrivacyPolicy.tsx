@@ -30,11 +30,11 @@ const PrivacyPolicy = () => {
             <Card>
               <CardContent className="p-6 space-y-4">
                 <p className="text-muted-foreground leading-relaxed">
-                  At OneCare, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, 
+                  At Marpe, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, 
                   and safeguard your information when you use our health tracking and medication management platform.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  By using OneCare, you consent to the data practices described in this policy. If you do not agree with 
+                  By using Marpe, you consent to the data practices described in this policy. If you do not agree with 
                   the practices described herein, please do not use our Service.
                 </p>
               </CardContent>

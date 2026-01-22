@@ -46,9 +46,9 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'OneCare <welcome@updates.lovable.app>',
+        from: 'Marpe <welcome@updates.lovable.app>',
         to: [email],
-        subject: 'Welcome to OneCare - Your Health Journey Starts Here',
+        subject: 'Welcome to Marpe - Your Health Journey Starts Here',
         html: `
           <!DOCTYPE html>
           <html>
