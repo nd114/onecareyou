@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MarpeLogoIcon } from '@/components/ui/MarpeLogoIcon';
+import { Heart } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -9,8 +9,8 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary p-1">
-                <MarpeLogoIcon size="lg" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
+                <Heart className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="font-display text-xl font-bold">Marpe</span>
             </Link>
