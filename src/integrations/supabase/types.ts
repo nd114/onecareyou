@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string | null
+          share_id: string | null
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          share_id?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          share_id?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_audit_logs_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "provider_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_logs: {
         Row: {
           acknowledged_at: string | null
@@ -452,6 +502,95 @@ export type Database = {
         }
         Relationships: []
       }
+      ehr_connections: {
+        Row: {
+          clinician_user_id: string
+          created_at: string
+          credentials_encrypted: string | null
+          error_message: string | null
+          fhir_base_url: string | null
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          patient_id_mapping: Json | null
+          provider_name: string
+          provider_type: string
+          sync_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          clinician_user_id: string
+          created_at?: string
+          credentials_encrypted?: string | null
+          error_message?: string | null
+          fhir_base_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          patient_id_mapping?: Json | null
+          provider_name: string
+          provider_type: string
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clinician_user_id?: string
+          created_at?: string
+          credentials_encrypted?: string | null
+          error_message?: string | null
+          fhir_base_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          patient_id_mapping?: Json | null
+          provider_name?: string
+          provider_type?: string
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ehr_sync_logs: {
+        Row: {
+          connection_id: string
+          created_at: string
+          error_details: Json | null
+          id: string
+          record_count: number | null
+          resource_type: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          record_count?: number | null
+          resource_type: string
+          status: string
+          sync_type: string
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          record_count?: number | null
+          resource_type?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ehr_sync_logs_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "ehr_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emergency_numbers: {
         Row: {
           ambulance_number: string | null
@@ -755,6 +894,56 @@ export type Database = {
           },
         ]
       }
+      patient_invitations: {
+        Row: {
+          accepted_at: string | null
+          clinician_user_id: string
+          created_at: string
+          declined_at: string | null
+          expires_at: string | null
+          id: string
+          invite_code: string
+          patient_email: string
+          patient_name: string | null
+          provider_share_id: string | null
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          clinician_user_id: string
+          created_at?: string
+          declined_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          patient_email: string
+          patient_name?: string | null
+          provider_share_id?: string | null
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          clinician_user_id?: string
+          created_at?: string
+          declined_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          patient_email?: string
+          patient_name?: string | null
+          provider_share_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_invitations_provider_share_id_fkey"
+            columns: ["provider_share_id"]
+            isOneToOne: false
+            referencedRelation: "provider_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -765,6 +954,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           blood_type: string | null
+          country_code: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
@@ -797,6 +987,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           blood_type?: string | null
+          country_code?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
@@ -829,6 +1020,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           blood_type?: string | null
+          country_code?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
