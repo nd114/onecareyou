@@ -223,17 +223,19 @@ export function PatientRiskIndicator({ vitals, adherenceRate, className, showDet
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge 
-              variant="outline" 
-              className={cn(
-                'gap-1 font-medium cursor-help',
-                getStatusColor(riskAssessment.level),
-                className
-              )}
-            >
-              {getStatusIcon(riskAssessment.level)}
-              {getStatusLabel(riskAssessment.level)}
-            </Badge>
+            <span className="inline-flex">
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  'gap-1 font-medium cursor-help',
+                  getStatusColor(riskAssessment.level),
+                  className
+                )}
+              >
+                {getStatusIcon(riskAssessment.level)}
+                {getStatusLabel(riskAssessment.level)}
+              </Badge>
+            </span>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
             {riskAssessment.factors.length === 0 ? (
