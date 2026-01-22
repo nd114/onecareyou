@@ -36,6 +36,7 @@ import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialo
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
+import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
@@ -250,16 +251,19 @@ const ClinicianDashboard = () => {
                       Patients who have shared their health data with you
                     </CardDescription>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="h-8 px-3 text-xs w-full sm:w-auto"
-                    onClick={() => autoClaimShares.mutate()}
-                    disabled={autoClaimShares.isPending}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${autoClaimShares.isPending ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <InvitePatientDialog />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                      onClick={() => autoClaimShares.mutate()}
+                      disabled={autoClaimShares.isPending}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${autoClaimShares.isPending ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {/* Search Input */}
