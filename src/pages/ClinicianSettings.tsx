@@ -35,6 +35,7 @@ import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
@@ -550,6 +551,9 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* EHR Connections */}
+          <EHRConnectionsSection />
         </motion.div>
       </main>
     </div>

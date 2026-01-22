@@ -25,6 +25,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useVitals } from '@/hooks/useVitals';
 import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
+import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
 
 const getQuickLinks = (showAdherence: boolean) => [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
@@ -96,6 +97,9 @@ const Dashboard = () => {
             Here's your health overview for today, <span className="font-semibold text-foreground">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
           </p>
         </motion.div>
+
+        {/* Pending Invitations from Clinicians */}
+        <PendingInvitationsCard />
 
         {/* Onboarding Prompt */}
         {profile && !profile.onboarding_completed && (
