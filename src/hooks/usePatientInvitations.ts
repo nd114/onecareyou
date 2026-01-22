@@ -56,12 +56,14 @@ export function usePatientInvitations() {
     enabled: !!user?.email,
   });
 
-  // Generate unique invite code
-  const generateInviteCode = () => {
+  // Generate cryptographically secure invite code (16 chars for strong entropy)
+  const generateInviteCode = (): string => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    const randomValues = new Uint8Array(16);
+    crypto.getRandomValues(randomValues);
+    for (let i = 0; i < 16; i++) {
+      code += chars[randomValues[i] % chars.length];
     }
     return code;
   };
@@ -122,8 +124,14 @@ export function usePatientInvitations() {
         .eq('user_id', inv.clinician_user_id)
         .single();
 
-      // Create a provider share
-      const shareInviteCode = `PS${Date.now().toString(36).toUpperCase()}`;
+      // Create a provider share with cryptographically secure code
+      const shareRandomValues = new Uint8Array(12);
+      crypto.getRandomValues(shareRandomValues);
+      const shareChars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let shareInviteCode = '';
+      for (let i = 0; i < 12; i++) {
+        shareInviteCode += shareChars[shareRandomValues[i] % shareChars.length];
+      }
       const { data: share, error: shareError } = await supabase
         .from('provider_shares')
         .insert({
