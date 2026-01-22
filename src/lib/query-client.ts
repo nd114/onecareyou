@@ -6,6 +6,7 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches
     },
   },
 });
@@ -16,8 +17,10 @@ const USER_SPECIFIC_STORAGE_KEYS = [
   'unitPref_weight', 
   'unitPref_temperature',
   'unitPreferences',
+  'onecare_unit_preferences',
   'lastSelectedFamilyMember',
   'dashboardPreferences',
+  'theme', // Reset theme to system on logout
 ] as const;
 
 /**
@@ -25,8 +28,11 @@ const USER_SPECIFIC_STORAGE_KEYS = [
  * Should be called on sign-out to prevent data leakage between users.
  */
 export function clearAllUserData(): void {
-  // Clear React Query cache completely
+  // Clear React Query cache completely - removes ALL cached queries
   queryClient.clear();
+  
+  // Also reset query client to ensure no stale observers
+  queryClient.resetQueries();
   
   // Clear user-specific localStorage items
   USER_SPECIFIC_STORAGE_KEYS.forEach(key => {

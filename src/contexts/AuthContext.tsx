@@ -170,13 +170,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // Clear all user-specific data BEFORE signing out to prevent data leakage
-    clearAllUserData();
-    
-    await supabase.auth.signOut();
+    // Clear state FIRST to prevent any UI from showing stale data
     setUser(null);
     setSession(null);
     setProfile(null);
+    previousUserIdRef.current = null;
+    
+    // Clear all user-specific data from caches and storage
+    clearAllUserData();
+    
+    // Then sign out from Supabase (this triggers onAuthStateChange)
+    await supabase.auth.signOut();
+    
+    console.log('[Auth] Sign out complete');
   };
 
   return (
