@@ -138,7 +138,7 @@ serve(async (req) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                from: 'OneCare <alerts@updates.lovable.app>',
+                from: 'Marpe <alerts@updates.lovable.app>',
                 to: [setting.alert_recipient_email],
                 subject: `⚠️ Care Alert: ${userName} has missed ${missedCount} medication dose${missedCount > 1 ? 's' : ''}`,
                 html: `
@@ -150,7 +150,7 @@ serve(async (req) => {
                     <p>You may want to check in with them to ensure they're okay.</p>
                     <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e5e5;" />
                     <p style="color: #666; font-size: 12px;">
-                      This alert was sent because you're set up as a care contact in OneCare.
+                      This alert was sent because you're set up as a care contact in Marpe.
                       You'll receive at most one alert per day for missed doses.
                     </p>
                   </div>

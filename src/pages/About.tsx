@@ -67,7 +67,7 @@ const About = () => {
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              OneCare was founded to solve a critical gap in healthcare: the disconnect 
+              Marpe was founded to solve a critical gap in healthcare: the disconnect 
               between patients and providers after leaving the hospital. We believe 
               continuous care coordination saves lives.
             </p>

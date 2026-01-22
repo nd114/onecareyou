@@ -30,7 +30,7 @@ const TermsOfService = () => {
             <Card>
               <CardContent className="p-6 space-y-4">
                 <p className="text-muted-foreground leading-relaxed">
-                  Welcome to OneCare. These Terms of Service ("Terms") govern your access to and use of the OneCare platform, 
+                  Welcome to Marpe. These Terms of Service ("Terms") govern your access to and use of the Marpe platform, 
                   including our website, mobile applications, and all related services (collectively, the "Service"). 
                   Please read these Terms carefully before using our Service.
                 </p>
