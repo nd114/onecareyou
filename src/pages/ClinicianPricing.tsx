@@ -265,6 +265,31 @@ const ClinicianPricing = () => {
           ))}
         </motion.div>
 
+        {/* Why Marpe Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+          className="max-w-4xl mx-auto mb-16"
+        >
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6">
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Why choose Marpe over traditional EHRs?</h3>
+                <p className="text-sm text-muted-foreground">
+                  See how we compare to Epic, Veradigm, HealthBridge, and other patient portals
+                </p>
+              </div>
+              <Button variant="outline" asChild className="shrink-0">
+                <Link to="/clinician/why-marpe">
+                  Compare Platforms
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
