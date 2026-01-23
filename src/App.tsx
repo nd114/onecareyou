@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { queryClient } from "@/lib/query-client";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
@@ -167,6 +168,7 @@ const App = () => (
             <Route path="/admin/import" element={<AdminImport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <CookieConsentBanner />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
