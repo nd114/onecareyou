@@ -48,7 +48,7 @@ const TermsOfService = () => {
                   1. Acceptance of Terms
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>By accessing or using OneCare ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
+                  <p>By accessing or using Marpe ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
                   <p>The Service is intended for personal health tracking and informational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment.</p>
                   <p><strong>Eligibility:</strong> You must be at least 18 years of age to use this Service. If you are under 18, you may only use the Service with the involvement of a parent or legal guardian who agrees to these Terms.</p>
                   <p><strong>Account Registration:</strong> To access certain features, you must register for an account. You agree to provide accurate, current, and complete information during registration and to update such information to keep it accurate, current, and complete.</p>
@@ -64,7 +64,7 @@ const TermsOfService = () => {
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p className="font-semibold text-foreground bg-destructive/10 p-4 rounded-lg border border-destructive/20">
-                    IMPORTANT: OneCare is not a medical device and is not intended to diagnose, treat, cure, or prevent any disease. 
+                    IMPORTANT: Marpe is not a medical device and is not intended to diagnose, treat, cure, or prevent any disease. 
                     The Service is designed to help you organize and track health information, but it does not provide medical advice.
                   </p>
                   <ul className="list-disc pl-6 space-y-2">
@@ -112,7 +112,7 @@ const TermsOfService = () => {
                   4. Healthcare Provider Access
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>OneCare allows you to share your health data with healthcare providers ("Clinicians"). By using this feature:</p>
+                  <p>Marpe allows you to share your health data with healthcare providers ("Clinicians"). By using this feature:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Voluntary Sharing:</strong> You control which healthcare providers can access your data. Sharing is always initiated by you.</li>
                     <li><strong>Access Duration:</strong> You may revoke a provider's access at any time through your account settings.</li>
@@ -152,7 +152,7 @@ const TermsOfService = () => {
                   6. Third-Party Services & APIs
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>OneCare integrates with various third-party services to provide enhanced functionality:</p>
+                  <p>Marpe integrates with various third-party services to provide enhanced functionality:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Drug Information:</strong> NIH DailyMed, OpenFDA, and RxNorm APIs provide drug label and interaction data. This information is sourced from official FDA databases but may not be complete or current.</li>
                     <li><strong>AI Processing:</strong> With your explicit consent, we may use AI services to process uploaded documents. See our Privacy Policy for details on data handling.</li>
@@ -170,7 +170,7 @@ const TermsOfService = () => {
                   7. Intellectual Property
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p><strong>Our Content:</strong> The Service, including its design, features, and content (excluding user-provided data), is owned by OneCare and protected by copyright, trademark, and other intellectual property laws.</p>
+                  <p><strong>Our Content:</strong> The Service, including its design, features, and content (excluding user-provided data), is owned by Marpe and protected by copyright, trademark, and other intellectual property laws.</p>
                   <p><strong>Your Content:</strong> You retain ownership of all health data and documents you upload to the Service. By using the Service, you grant us a limited license to store, process, and display your content solely to provide the Service to you.</p>
                   <p><strong>Feedback:</strong> If you provide suggestions, ideas, or feedback about the Service, we may use this feedback without any obligation to compensate you.</p>
                 </div>
@@ -206,7 +206,7 @@ const TermsOfService = () => {
                   9. Indemnification
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>You agree to indemnify, defend, and hold harmless OneCare, its affiliates, officers, directors, employees, and agents from any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising from:</p>
+                  <p>You agree to indemnify, defend, and hold harmless Marpe, its affiliates, officers, directors, employees, and agents from any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising from:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Your use of the Service</li>
                     <li>Your violation of these Terms</li>
@@ -253,7 +253,7 @@ const TermsOfService = () => {
                     <li>Technical difficulties or outages</li>
                     <li>Circumstances beyond our control</li>
                   </ul>
-                  <p><strong>Critical Reminder:</strong> Do not rely solely on OneCare for critical medication reminders. Always have backup reminder methods for essential medications.</p>
+                  <p><strong>Critical Reminder:</strong> Do not rely solely on Marpe for critical medication reminders. Always have backup reminder methods for essential medications.</p>
                 </div>
               </CardContent>
             </Card>
@@ -295,11 +295,11 @@ const TermsOfService = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold">14. Miscellaneous</h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p><strong>Entire Agreement:</strong> These Terms, together with our Privacy Policy and Medical Disclaimer, constitute the entire agreement between you and OneCare regarding the Service.</p>
+                  <p><strong>Entire Agreement:</strong> These Terms, together with our Privacy Policy and Medical Disclaimer, constitute the entire agreement between you and Marpe regarding the Service.</p>
                   <p><strong>Severability:</strong> If any provision of these Terms is found to be unenforceable, the remaining provisions will continue in full force and effect.</p>
                   <p><strong>Waiver:</strong> Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights.</p>
                   <p><strong>Assignment:</strong> You may not assign or transfer these Terms or your rights under them without our prior written consent. We may assign our rights and obligations without restriction.</p>
-                  <p><strong>Contact Us:</strong> For questions about these Terms, please contact us at legal@onecare.health</p>
+                  <p><strong>Contact Us:</strong> For questions about these Terms, please contact us at legal@marpe.health</p>
                 </div>
               </CardContent>
             </Card>

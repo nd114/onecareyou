@@ -10,7 +10,7 @@ const values = [
   {
     icon: Share2,
     title: 'Care Continuity',
-    description: 'We believe the care relationship shouldn\'t end when you leave the hospital. OneCare keeps you connected to your providers.',
+    description: 'We believe the care relationship shouldn\'t end when you leave the hospital. Marpe keeps you connected to your providers.',
   },
   {
     icon: Users,
@@ -93,7 +93,7 @@ const About = () => {
                 preventable complications occur.
               </p>
               <p className="text-lg text-muted-foreground mb-6">
-              OneCare bridges this gap by enabling patients to share their health updates (vitals, 
+              Marpe bridges this gap by enabling patients to share their health updates (vitals, 
               medications, and lab results) directly with their care team. No more waiting for 
               appointments to communicate critical changes.
               </p>
@@ -137,7 +137,7 @@ const About = () => {
               Our Core Values
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              These principles guide everything we do at OneCare.
+              These principles guide everything we do at Marpe.
             </p>
           </motion.div>
 

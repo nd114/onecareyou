@@ -37,7 +37,7 @@ interface FHIRObservation {
 
 interface PatientMapping {
   fhirPatientId: string;
-  onecareUserId: string;
+  marpeUserId: string;
 }
 
 serve(async (req) => {
@@ -120,7 +120,7 @@ serve(async (req) => {
         for (const mapping of patientMappings) {
           logStep("Syncing patient", { 
             fhirId: mapping.fhirPatientId, 
-            onecareId: mapping.onecareUserId 
+            marpeId: mapping.marpeUserId 
           });
 
           try {
@@ -159,7 +159,7 @@ serve(async (req) => {
               patientId: mapping.fhirPatientId 
             });
 
-            // Convert FHIR observations to OneCare vitals
+            // Convert FHIR observations to Marpe vitals
             for (const obs of observations) {
               const loincCode = obs.code?.coding?.find(c => c.system === 'http://loinc.org')?.code;
               const vitalType = loincCode ? VITAL_LOINC_MAP[loincCode] : null;
@@ -182,14 +182,14 @@ serve(async (req) => {
                   const { data: existing } = await supabaseClient
                     .from('vitals')
                     .select('id')
-                    .eq('user_id', mapping.onecareUserId)
+                    .eq('user_id', mapping.marpeUserId)
                     .eq('type', 'blood_pressure')
                     .eq('recorded_at', recordedAt)
                     .single();
 
                   if (!existing) {
                     await supabaseClient.from('vitals').insert({
-                      user_id: mapping.onecareUserId,
+                      user_id: mapping.marpeUserId,
                       type: 'blood_pressure',
                       value: systolic,
                       secondary_value: diastolic,
@@ -207,14 +207,14 @@ serve(async (req) => {
                 const { data: existing } = await supabaseClient
                   .from('vitals')
                   .select('id')
-                  .eq('user_id', mapping.onecareUserId)
+                  .eq('user_id', mapping.marpeUserId)
                   .eq('type', vitalType)
                   .eq('recorded_at', recordedAt)
                   .single();
 
                 if (!existing) {
                   await supabaseClient.from('vitals').insert({
-                    user_id: mapping.onecareUserId,
+                    user_id: mapping.marpeUserId,
                     type: vitalType,
                     value: obs.valueQuantity.value,
                     unit: obs.valueQuantity.unit || getDefaultUnit(vitalType),

@@ -123,7 +123,7 @@ const Onboarding = () => {
     e.preventDefault();
     const success = await saveProfile(true);
     if (success) {
-      toast.success('Health profile saved! Welcome to OneCare.');
+      toast.success('Health profile saved! Welcome to Marpe.');
       navigate('/dashboard');
     }
     setIsLoading(false);
