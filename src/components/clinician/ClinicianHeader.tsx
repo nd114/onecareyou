@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, Moon, Sun } from 'lucide-react';
+import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, Moon, Sun, CheckCircle, Eye, Clock, XCircle, Inbox, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,25 +9,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 type Theme = 'light' | 'dark';
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
   const { clinicianProfile } = useClinicianProfile();
-  const { notifications } = useClinicianNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>('light');
-
-  const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
 
   // Initialize theme from localStorage
   useEffect(() => {
@@ -58,6 +60,39 @@ export function ClinicianHeader() {
     navigate('/');
   };
 
+  // Helper to get icon for notification type
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />;
+      case 'acknowledged':
+        return <Eye className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />;
+      case 'expired':
+        return <Clock className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />;
+      case 'dismissed':
+        return <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />;
+      default:
+        return <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />;
+    }
+  };
+
+  // Helper to get notification message
+  const getNotificationMessage = (type: string, patientName: string | null | undefined) => {
+    const name = patientName || 'Patient';
+    switch (type) {
+      case 'completed':
+        return `${name} completed your guidance`;
+      case 'acknowledged':
+        return `${name} acknowledged your guidance`;
+      case 'expired':
+        return `Guidance for ${name} has expired`;
+      case 'dismissed':
+        return `${name} dismissed your guidance`;
+      default:
+        return `Update from ${name}`;
+    }
+  };
+
   // Build display name from first_name/last_name or fall back to email
   const getDisplayName = () => {
     if (clinicianProfile?.first_name || clinicianProfile?.last_name) {
@@ -86,11 +121,12 @@ export function ClinicianHeader() {
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
+  // Alert badge uses unreadCount from notifications
   const navLinks = [
     { to: '/clinician/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/clinician/patients', label: 'Patients', icon: Users },
     { to: '/clinician/guidance', label: 'Guidance', icon: FileText },
-    { to: '/clinician/alerts', label: 'Alerts', icon: Bell, badge: unreadCount },
+    { to: '/clinician/alerts', label: 'Alerts', icon: AlertTriangle },
   ];
 
   return (
@@ -121,17 +157,12 @@ export function ClinicianHeader() {
               >
                 <link.icon className="h-4 w-4 mr-2" />
                 {link.label}
-                {link.badge !== undefined && link.badge > 0 && (
-                  <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    {link.badge > 9 ? '9+' : link.badge}
-                  </Badge>
-                )}
               </Button>
             </Link>
           ))}
         </nav>
 
-        {/* Right Side - Theme Toggle, Notifications, Profile */}
+        {/* Right Side - Theme Toggle, Notifications Popover, Profile */}
         <div className="flex items-center gap-1">
           {/* Theme Toggle Icon */}
           <Button
@@ -148,21 +179,86 @@ export function ClinicianHeader() {
             )}
           </Button>
 
-          {/* Notification Bell */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden md:flex relative"
-            onClick={() => navigate('/clinician/alerts')}
-            aria-label="View notifications"
-          >
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </Button>
+          {/* Notification Bell - Popover with notifications */}
+          <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden md:flex relative"
+                aria-label="View notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0">
+              <div className="p-3 border-b flex items-center justify-between">
+                <h4 className="font-medium text-sm">Notifications</h4>
+                {unreadCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7 px-2"
+                    onClick={() => markAllAsRead.mutate()}
+                  >
+                    Mark all read
+                  </Button>
+                )}
+              </div>
+              {notifications && notifications.length > 0 ? (
+                <ScrollArea className="max-h-80">
+                  <div className="divide-y">
+                    {notifications.slice(0, 10).map((notification) => (
+                      <div
+                        key={notification.id}
+                        onClick={() => {
+                          if (!notification.is_read) {
+                            markAsRead.mutate(notification.id);
+                          }
+                          setNotificationsOpen(false);
+                          navigate('/clinician/patients');
+                        }}
+                        className={`block p-3 hover:bg-muted/50 transition-colors cursor-pointer ${
+                          !notification.is_read ? 'bg-muted/30' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {getNotificationIcon(notification.notification_type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">
+                              {notification.guidance?.title || 'Guidance Update'}
+                            </p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {getNotificationMessage(notification.notification_type, notification.patient_profile?.name)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {notification.notification_type}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">
+                                {format(new Date(notification.created_at), 'MMM d, h:mm a')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No new notifications</p>
+                  <p className="text-xs mt-1">You'll be notified when patients respond to your guidance</p>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
 
           {/* Desktop Profile Dropdown */}
           <div className="hidden md:block">
@@ -237,11 +333,6 @@ export function ClinicianHeader() {
               >
                 <link.icon className="h-4 w-4" />
                 {link.label}
-                {link.badge !== undefined && link.badge > 0 && (
-                  <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-xs">
-                    {link.badge}
-                  </Badge>
-                )}
               </Link>
             ))}
             
