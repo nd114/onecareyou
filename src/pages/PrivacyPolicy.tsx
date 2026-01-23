@@ -167,7 +167,7 @@ const PrivacyPolicy = () => {
                     <li><strong>Care Alerts:</strong> When you configure care alerts, we send notifications to your designated contacts about missed medications</li>
                     <li><strong>Service Providers:</strong> With third-party vendors who assist in operating our Service (hosting, email, analytics), under strict confidentiality agreements</li>
                     <li><strong>Legal Requirements:</strong> When required by law, court order, or government request</li>
-                    <li><strong>Safety:</strong> To protect the safety, rights, or property of OneCare, our users, or the public</li>
+                    <li><strong>Safety:</strong> To protect the safety, rights, or property of Marpe, our users, or the public</li>
                     <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets (you will be notified beforehand)</li>
                   </ul>
                   <Separator className="my-4" />
@@ -222,7 +222,7 @@ const PrivacyPolicy = () => {
                     <li><strong>California (CCPA/CPRA):</strong> You have the right to know, delete, opt-out of sale/sharing, and non-discrimination for exercising your rights</li>
                   </ul>
                   <Separator className="my-4" />
-                  <p><strong>Exercising Your Rights:</strong> To exercise these rights, contact us at <strong>privacy@onecare.health</strong> or use the data management features in your account settings. We will respond to all requests within the timeframe required by applicable law (typically 30 days).</p>
+                  <p><strong>Exercising Your Rights:</strong> To exercise these rights, contact us at <strong>privacy@marpe.health</strong> or use the data management features in your account settings. We will respond to all requests within the timeframe required by applicable law (typically 30 days).</p>
                   <p><strong>Verification:</strong> We may need to verify your identity before processing certain requests.</p>
                 </div>
               </CardContent>
@@ -310,7 +310,7 @@ const PrivacyPolicy = () => {
                   11. International Data Transfers
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>If you access OneCare from outside the United States, please be aware that your data may be transferred to, stored, and processed in the United States.</p>
+                  <p>If you access Marpe from outside the United States, please be aware that your data may be transferred to, stored, and processed in the United States.</p>
                   <p>By using our Service, you consent to such transfers. We take steps to ensure that your data is treated securely and in accordance with this Privacy Policy, regardless of where it is processed.</p>
                   <p>For EU/EEA users: We rely on Standard Contractual Clauses and other appropriate safeguards for international data transfers.</p>
                 </div>
@@ -326,7 +326,7 @@ const PrivacyPolicy = () => {
                 <div className="space-y-4 text-muted-foreground">
                   <div>
                     <p className="font-semibold text-foreground">HIPAA (United States)</p>
-                    <p>OneCare is not a Covered Entity or Business Associate under HIPAA. However, we implement security measures aligned with HIPAA standards as a best practice for protecting health information, including administrative, physical, and technical safeguards.</p>
+                    <p>Marpe is not a Covered Entity or Business Associate under HIPAA. However, we implement security measures aligned with HIPAA standards as a best practice for protecting health information, including administrative, physical, and technical safeguards.</p>
                   </div>
                   <Separator />
                   <div>
@@ -344,7 +344,7 @@ const PrivacyPolicy = () => {
                     <p>For users in the EU/EEA, we process personal data in accordance with the General Data Protection Regulation. Our lawful basis for processing includes consent (for AI features) and legitimate interests (for service provision). Data transfers outside the EU are protected by Standard Contractual Clauses.</p>
                   </div>
                   <Separator />
-                  <p className="text-sm">If you are a healthcare provider using OneCare to view patient data, you are responsible for ensuring your use complies with HIPAA and other applicable regulations in your jurisdiction.</p>
+                  <p className="text-sm">If you are a healthcare provider using Marpe to view patient data, you are responsible for ensuring your use complies with HIPAA and other applicable regulations in your jurisdiction.</p>
                 </div>
               </CardContent>
             </Card>
@@ -373,12 +373,12 @@ const PrivacyPolicy = () => {
                 <div className="space-y-3 text-muted-foreground">
                   <p>For privacy-related inquiries or to exercise your rights:</p>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                    <p><strong>Privacy Team:</strong> privacy@onecare.health</p>
-                    <p><strong>Data Protection Officer:</strong> dpo@onecare.health</p>
-                    <p><strong>General Support:</strong> support@onecare.health</p>
+                    <p><strong>Privacy Team:</strong> privacy@marpe.health</p>
+                    <p><strong>Data Protection Officer:</strong> dpo@marpe.health</p>
+                    <p><strong>General Support:</strong> support@marpe.health</p>
                   </div>
                   <p>We will respond to all privacy requests within 30 days.</p>
-                  <p><strong>EU Representative:</strong> For users in the European Union, our EU representative can be contacted at eu-privacy@onecare.health</p>
+                  <p><strong>EU Representative:</strong> For users in the European Union, our EU representative can be contacted at eu-privacy@marpe.health</p>
                 </div>
               </CardContent>
             </Card>
