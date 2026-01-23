@@ -121,7 +121,7 @@ export function ClinicianHeader() {
               >
                 <link.icon className="h-4 w-4 mr-2" />
                 {link.label}
-                {link.badge && link.badge > 0 && (
+                {link.badge !== undefined && link.badge > 0 && (
                   <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
                     {link.badge > 9 ? '9+' : link.badge}
                   </Badge>
@@ -237,7 +237,7 @@ export function ClinicianHeader() {
               >
                 <link.icon className="h-4 w-4" />
                 {link.label}
-                {link.badge && link.badge > 0 && (
+                {link.badge !== undefined && link.badge > 0 && (
                   <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-xs">
                     {link.badge}
                   </Badge>
