@@ -14,9 +14,8 @@ import {
   Clock,
   Calendar,
   Loader2,
-  User,
   Mail,
-  Phone
+  BarChart3
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,7 @@ import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
+import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
@@ -334,10 +334,14 @@ const ClinicianPatientDetail = () => {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="vitals" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="vitals">Vitals</TabsTrigger>
               <TabsTrigger value="medications">Meds</TabsTrigger>
               <TabsTrigger value="adherence">Adherence</TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-1">
+                <BarChart3 className="h-3 w-3" />
+                Analytics
+              </TabsTrigger>
               <TabsTrigger value="guidance">Guidance</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
@@ -518,6 +522,34 @@ const ClinicianPatientDetail = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics">
+              {!patient.permissions?.adherence ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">Adherence access not granted by patient</p>
+                  </CardContent>
+                </Card>
+              ) : loadingSchedule ? (
+                <Card>
+                  <CardContent className="py-12">
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <PatientAdherenceAnalytics
+                  scheduleEntries={scheduleEntries}
+                  medications={medications}
+                  patientName={patient.patient_name || 'Patient'}
+                  patientId={patient.user_id}
+                  isLoading={loadingSchedule}
+                />
+              )}
             </TabsContent>
 
             {/* Guidance Tab */}
