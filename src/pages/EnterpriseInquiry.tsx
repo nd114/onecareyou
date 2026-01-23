@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Header } from '@/components/layout/Header';
+import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile, MEDICAL_SPECIALTIES } from '@/hooks/useClinicianProfile';
@@ -108,7 +108,7 @@ const EnterpriseInquiry = () => {
   if (submitted) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ClinicianHeader />
         <main className="container py-16 px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -140,7 +140,7 @@ const EnterpriseInquiry = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <ClinicianHeader />
       
       <main className="container py-8 px-4">
         <motion.div

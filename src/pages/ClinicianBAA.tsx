@@ -16,9 +16,12 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Header } from '@/components/layout/Header';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { SignaturePad } from '@/components/signature/SignaturePad';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
+import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -28,10 +31,10 @@ This Business Associate Agreement ("Agreement") is entered into as of the date o
 
 PARTIES:
 - Covered Entity: The healthcare practice/provider identified below
-- Business Associate: OneCare Health Technologies ("OneCare")
+- Business Associate: Marpe Health Technologies ("Marpe")
 
 RECITALS:
-OneCare provides remote patient monitoring and care coordination services that may involve the creation, receipt, maintenance, or transmission of Protected Health Information (PHI) as defined under the Health Insurance Portability and Accountability Act of 1996 (HIPAA).
+Marpe provides remote patient monitoring and care coordination services that may involve the creation, receipt, maintenance, or transmission of Protected Health Information (PHI) as defined under the Health Insurance Portability and Accountability Act of 1996 (HIPAA).
 
 TERMS AND CONDITIONS:
 
@@ -93,15 +96,32 @@ const ClinicianBAA = () => {
   const [signed, setSigned] = useState(false);
   const [hasReadAgreement, setHasReadAgreement] = useState(false);
   const [agreesToTerms, setAgreesToTerms] = useState(false);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     practice_name: clinicianProfile?.practice_name || '',
-    practice_address: '',
+    practice_street: '',
+    practice_city: '',
+    practice_state: '',
+    practice_postal_code: '',
+    practice_country: clinicianProfile?.country || '',
     practice_npi: '',
     contact_name: profile?.name || '',
     contact_email: user?.email || '',
     contact_phone: profile?.phone_number || '',
+    contact_title: '',
   });
+
+  const buildFullAddress = () => {
+    const parts = [
+      formData.practice_street,
+      formData.practice_city,
+      formData.practice_state,
+      formData.practice_postal_code,
+      COUNTRY_LIST.find(c => c.code === formData.practice_country)?.name,
+    ].filter(Boolean);
+    return parts.join(', ');
+  };
 
   const handleSign = async () => {
     if (!user) {
@@ -114,23 +134,30 @@ const ClinicianBAA = () => {
       return;
     }
 
-    if (!formData.practice_name || !formData.contact_name || !formData.contact_email) {
-      toast.error('Please fill in all required fields');
+    if (!formData.practice_name || !formData.contact_name || !formData.contact_email || !formData.contact_phone) {
+      toast.error('Please fill in all required fields including phone number');
+      return;
+    }
+
+    if (!signatureDataUrl) {
+      toast.error('Please provide your signature');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const fullAddress = buildFullAddress();
+      
       const { error } = await supabase
         .from('baa_agreements' as any)
         .insert({
           clinician_user_id: user.id,
           practice_name: formData.practice_name,
-          practice_address: formData.practice_address || null,
+          practice_address: fullAddress || null,
           practice_npi: formData.practice_npi || null,
           contact_name: formData.contact_name,
           contact_email: formData.contact_email,
-          contact_phone: formData.contact_phone || null,
+          contact_phone: formData.contact_phone,
           user_agent: navigator.userAgent,
           agreement_version: '1.0',
         });
@@ -147,10 +174,19 @@ const ClinicianBAA = () => {
     }
   };
 
+  const isFormValid = 
+    hasReadAgreement && 
+    agreesToTerms && 
+    formData.practice_name && 
+    formData.contact_name && 
+    formData.contact_email && 
+    formData.contact_phone &&
+    signatureDataUrl;
+
   if (signed) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ClinicianHeader />
         <main className="container py-16 px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -182,7 +218,7 @@ const ClinicianBAA = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <ClinicianHeader />
       
       <main className="container py-8 px-4">
         <motion.div
@@ -248,14 +284,68 @@ const ClinicianBAA = () => {
                           placeholder="1234567890"
                         />
                       </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="practice_address">Practice Address</Label>
+                    </div>
+
+                    {/* Address Fields */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">Practice Address</h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="practice_street">Street Address</Label>
                         <Input
-                          id="practice_address"
-                          value={formData.practice_address}
-                          onChange={(e) => setFormData({ ...formData, practice_address: e.target.value })}
-                          placeholder="123 Medical Center Dr, City, State 12345"
+                          id="practice_street"
+                          value={formData.practice_street}
+                          onChange={(e) => setFormData({ ...formData, practice_street: e.target.value })}
+                          placeholder="123 Medical Center Dr, Suite 100"
                         />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="practice_city">City</Label>
+                          <Input
+                            id="practice_city"
+                            value={formData.practice_city}
+                            onChange={(e) => setFormData({ ...formData, practice_city: e.target.value })}
+                            placeholder="New York"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="practice_state">State/Province</Label>
+                          <Input
+                            id="practice_state"
+                            value={formData.practice_state}
+                            onChange={(e) => setFormData({ ...formData, practice_state: e.target.value })}
+                            placeholder="NY"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="practice_postal_code">Postal/ZIP Code</Label>
+                          <Input
+                            id="practice_postal_code"
+                            value={formData.practice_postal_code}
+                            onChange={(e) => setFormData({ ...formData, practice_postal_code: e.target.value })}
+                            placeholder="10001"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="practice_country">Country</Label>
+                          <Select
+                            value={formData.practice_country}
+                            onValueChange={(value) => setFormData({ ...formData, practice_country: value })}
+                          >
+                            <SelectTrigger id="practice_country">
+                              <SelectValue placeholder="Select country" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {COUNTRY_LIST.map(country => (
+                                <SelectItem key={country.code} value={country.code}>
+                                  {country.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -272,8 +362,17 @@ const ClinicianBAA = () => {
                           id="contact_name"
                           value={formData.contact_name}
                           onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                          placeholder="Dr. Jane Smith"
+                          placeholder="Jane Smith"
                           required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contact_title">Title/Position</Label>
+                        <Input
+                          id="contact_title"
+                          value={formData.contact_title}
+                          onChange={(e) => setFormData({ ...formData, contact_title: e.target.value })}
+                          placeholder="Chief Medical Officer"
                         />
                       </div>
                       <div className="space-y-2">
@@ -288,16 +387,22 @@ const ClinicianBAA = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contact_phone">Phone Number</Label>
+                        <Label htmlFor="contact_phone">Phone Number *</Label>
                         <Input
                           id="contact_phone"
                           value={formData.contact_phone}
                           onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
                           placeholder="+1 (555) 123-4567"
+                          required
                         />
                       </div>
                     </div>
                   </div>
+
+                  <Separator />
+
+                  {/* Signature Pad */}
+                  <SignaturePad onSignatureChange={setSignatureDataUrl} />
 
                   <Separator />
 
@@ -329,7 +434,7 @@ const ClinicianBAA = () => {
                   <Button
                     onClick={handleSign}
                     className="w-full gradient-primary border-0"
-                    disabled={isSubmitting || !hasReadAgreement || !agreesToTerms}
+                    disabled={isSubmitting || !isFormValid}
                   >
                     {isSubmitting ? (
                       <>
@@ -359,7 +464,7 @@ const ClinicianBAA = () => {
                     provider handles Protected Health Information (PHI) on behalf of a healthcare provider.
                   </p>
                   <p>
-                    This agreement establishes the legal framework for how OneCare will protect 
+                    This agreement establishes the legal framework for how Marpe will protect 
                     and handle your patients' health information.
                   </p>
                 </CardContent>
