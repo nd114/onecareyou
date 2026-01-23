@@ -58,7 +58,8 @@ const ClinicianSettings = () => {
   useServiceWorker();
 
   const [profileForm, setProfileForm] = useState({
-    name: profile?.name || '',
+    first_name: clinicianProfile?.first_name || '',
+    last_name: clinicianProfile?.last_name || '',
     phone_number: profile?.phone_number || '',
     practice_name: clinicianProfile?.practice_name || '',
     specialty: clinicianProfile?.specialty || '',
@@ -75,7 +76,8 @@ const ClinicianSettings = () => {
   useEffect(() => {
     if (clinicianProfile || profile || user) {
       setProfileForm({
-        name: profile?.name || '',
+        first_name: clinicianProfile?.first_name || '',
+        last_name: clinicianProfile?.last_name || '',
         phone_number: profile?.phone_number || '',
         practice_name: clinicianProfile?.practice_name || '',
         specialty: clinicianProfile?.specialty || '',
@@ -91,24 +93,27 @@ const ClinicianSettings = () => {
     if (!user) return;
     setIsSavingProfile(true);
     try {
-      // Save personal info to profiles table
+      // Save personal info to profiles table (update full name for backward compatibility)
+      const fullName = `${profileForm.first_name} ${profileForm.last_name}`.trim();
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          name: profileForm.name,
+          name: fullName,
           phone_number: profileForm.phone_number,
         })
         .eq('user_id', user.id);
 
       if (profileError) throw profileError;
 
-      // Save clinician info
+      // Save clinician info including first/last name
       await updateClinicianProfile.mutateAsync({
         practice_name: profileForm.practice_name,
         specialty: profileForm.specialty,
         license_number: profileForm.license_number,
         country: profileForm.country,
         title: profileForm.title,
+        first_name: profileForm.first_name,
+        last_name: profileForm.last_name,
         avatar_url: avatarUrl || null,
       });
     } catch (error) {
@@ -223,7 +228,7 @@ const ClinicianSettings = () => {
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={avatarUrl} alt="Profile photo" />
                     <AvatarFallback className="text-lg bg-primary/10">
-                      {profileForm.name?.charAt(0) || 'C'}
+                      {profileForm.first_name?.charAt(0) || profileForm.last_name?.charAt(0) || 'C'}
                     </AvatarFallback>
                   </Avatar>
                   <label 
@@ -265,12 +270,21 @@ const ClinicianSettings = () => {
                 <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Personal Information</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="first_name">First Name</Label>
                     <Input
-                      id="name"
-                      value={profileForm.name}
-                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      placeholder="Dr. Jane Smith"
+                      id="first_name"
+                      value={profileForm.first_name}
+                      onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                      placeholder="Jane"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name">Last Name</Label>
+                    <Input
+                      id="last_name"
+                      value={profileForm.last_name}
+                      onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                      placeholder="Smith"
                     />
                   </div>
                   <div className="space-y-2">

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, Moon, Sun, Monitor } from 'lucide-react';
+import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,9 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,7 +16,7 @@ import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -28,38 +25,32 @@ export function ClinicianHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setTheme] = useState<Theme>('light');
 
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
 
   // Initialize theme from localStorage
   useEffect(() => {
     const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored) {
+    if (stored && (stored === 'light' || stored === 'dark')) {
       setTheme(stored);
+    } else {
+      // Check system preference
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(systemDark ? 'dark' : 'light');
     }
   }, []);
 
   // Apply theme changes
   useEffect(() => {
     const root = document.documentElement;
-    
-    if (theme === 'system') {
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.toggle('dark', systemDark);
-      
-      const listener = (e: MediaQueryListEvent) => {
-        root.classList.toggle('dark', e.matches);
-      };
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    } else {
-      root.classList.toggle('dark', theme === 'dark');
-    }
-    
+    root.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -67,11 +58,31 @@ export function ClinicianHeader() {
     navigate('/');
   };
 
-  const displayName = clinicianProfile?.title 
-    ? `${clinicianProfile.title}` 
-    : user?.email?.split('@')[0] || 'Clinician';
+  // Build display name from first_name/last_name or fall back to email
+  const getDisplayName = () => {
+    if (clinicianProfile?.first_name || clinicianProfile?.last_name) {
+      const firstName = clinicianProfile.first_name || '';
+      const lastName = clinicianProfile.last_name || '';
+      const title = clinicianProfile.title || '';
+      return `${title} ${firstName} ${lastName}`.trim();
+    }
+    return user?.email?.split('@')[0] || 'Clinician';
+  };
 
-  const initials = displayName.slice(0, 2).toUpperCase();
+  const displayName = getDisplayName();
+
+  // Get initials from first and last name
+  const getInitials = () => {
+    if (clinicianProfile?.first_name && clinicianProfile?.last_name) {
+      return `${clinicianProfile.first_name.charAt(0)}${clinicianProfile.last_name.charAt(0)}`.toUpperCase();
+    }
+    if (clinicianProfile?.first_name) {
+      return clinicianProfile.first_name.slice(0, 2).toUpperCase();
+    }
+    return displayName.slice(0, 2).toUpperCase();
+  };
+
+  const initials = getInitials();
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -81,14 +92,6 @@ export function ClinicianHeader() {
     { to: '/clinician/guidance', label: 'Guidance', icon: FileText },
     { to: '/clinician/alerts', label: 'Alerts', icon: Bell, badge: unreadCount },
   ];
-
-  const getThemeIcon = () => {
-    switch (theme) {
-      case 'light': return <Sun className="h-4 w-4" />;
-      case 'dark': return <Moon className="h-4 w-4" />;
-      default: return <Monitor className="h-4 w-4" />;
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -128,8 +131,39 @@ export function ClinicianHeader() {
           ))}
         </nav>
 
-        {/* Right Side - Profile */}
-        <div className="flex items-center gap-2">
+        {/* Right Side - Theme Toggle, Notifications, Profile */}
+        <div className="flex items-center gap-1">
+          {/* Theme Toggle Icon */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="hidden md:flex"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+
+          {/* Notification Bell */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex relative"
+            onClick={() => navigate('/clinician/alerts')}
+            aria-label="View notifications"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Button>
+
           {/* Desktop Profile Dropdown */}
           <div className="hidden md:block">
             <DropdownMenu>
@@ -145,7 +179,7 @@ export function ClinicianHeader() {
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-background border">
                 <div className="px-2 py-1.5">
                   <p className="text-sm font-medium">{displayName}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
@@ -163,37 +197,6 @@ export function ClinicianHeader() {
                     Why Marpe?
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {/* Theme Submenu */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="flex items-center gap-2">
-                    {getThemeIcon()}
-                    Theme
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem 
-                      onClick={() => setTheme('light')}
-                      className={theme === 'light' ? 'bg-muted' : ''}
-                    >
-                      <Sun className="h-4 w-4 mr-2" />
-                      Light
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => setTheme('dark')}
-                      className={theme === 'dark' ? 'bg-muted' : ''}
-                    >
-                      <Moon className="h-4 w-4 mr-2" />
-                      Dark
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => setTheme('system')}
-                      className={theme === 'system' ? 'bg-muted' : ''}
-                    >
-                      <Monitor className="h-4 w-4 mr-2" />
-                      System
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={handleSignOut}
@@ -261,36 +264,27 @@ export function ClinicianHeader() {
               Why Marpe?
             </Link>
             
-            {/* Mobile Theme Selector */}
+            {/* Mobile Theme Toggle */}
             <div className="border-t border-border my-3" />
-            <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Theme</p>
-            <div className="flex gap-2 px-2">
+            <div className="flex items-center justify-between px-2 py-2">
+              <span className="text-sm text-muted-foreground">Theme</span>
               <Button
-                variant={theme === 'light' ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                onClick={() => setTheme('light')}
-                className="flex-1"
+                onClick={toggleTheme}
+                className="flex items-center gap-2"
               >
-                <Sun className="h-4 w-4 mr-1" />
-                Light
-              </Button>
-              <Button
-                variant={theme === 'dark' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setTheme('dark')}
-                className="flex-1"
-              >
-                <Moon className="h-4 w-4 mr-1" />
-                Dark
-              </Button>
-              <Button
-                variant={theme === 'system' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setTheme('system')}
-                className="flex-1"
-              >
-                <Monitor className="h-4 w-4 mr-1" />
-                Auto
+                {theme === 'dark' ? (
+                  <>
+                    <Sun className="h-4 w-4" />
+                    Light
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-4 w-4" />
+                    Dark
+                  </>
+                )}
               </Button>
             </div>
             
