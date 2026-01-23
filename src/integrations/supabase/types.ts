@@ -463,8 +463,10 @@ export type Database = {
           country: string | null
           created_at: string
           email_notifications_enabled: boolean | null
+          first_name: string | null
           id: string
           is_verified: boolean | null
+          last_name: string | null
           license_number: string | null
           notify_on_guidance_acknowledged: boolean | null
           notify_on_guidance_completed: boolean | null
@@ -490,8 +492,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           email_notifications_enabled?: boolean | null
+          first_name?: string | null
           id?: string
           is_verified?: boolean | null
+          last_name?: string | null
           license_number?: string | null
           notify_on_guidance_acknowledged?: boolean | null
           notify_on_guidance_completed?: boolean | null
@@ -517,8 +521,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           email_notifications_enabled?: boolean | null
+          first_name?: string | null
           id?: string
           is_verified?: boolean | null
+          last_name?: string | null
           license_number?: string | null
           notify_on_guidance_acknowledged?: boolean | null
           notify_on_guidance_completed?: boolean | null

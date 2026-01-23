@@ -11,6 +11,8 @@ export interface ClinicianProfile {
   license_number: string | null;
   country: string | null;
   title: string | null;
+  first_name: string | null;
+  last_name: string | null;
   avatar_url: string | null;
   is_verified: boolean;
   created_at: string;
@@ -23,6 +25,8 @@ export interface CreateClinicianProfileData {
   license_number?: string;
   country?: string;
   title?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 // Professional title prefixes

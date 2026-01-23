@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Header } from '@/components/layout/Header';
+import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
@@ -170,7 +170,7 @@ const ClinicianPatientDetail = () => {
   if (!patient) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <Header />
+        <ClinicianHeader />
         <main className="container py-8">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
@@ -183,7 +183,7 @@ const ClinicianPatientDetail = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Header />
+      <ClinicianHeader />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6">
         {/* Back Button & Header */}
@@ -366,23 +366,22 @@ const ClinicianPatientDetail = () => {
                       <p>No vital signs recorded yet</p>
                     </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                       {Object.entries(vitalsByType).map(([type, typeVitals]) => {
                         const config = VITAL_CONFIG[type as keyof typeof VITAL_CONFIG];
                         return (
-                          <div key={type}>
-                            <h4 className="font-medium mb-3 flex items-center gap-2">
-                              {config?.label || type}
+                          <div key={type} className="border-b border-border pb-6 last:border-0 last:pb-0">
+                            <div className="flex items-center gap-2 mb-4">
+                              <h4 className="font-medium">{config?.label || type}</h4>
                               <Badge variant="outline" className="text-xs">
                                 {typeVitals.length} readings
                               </Badge>
-                            </h4>
-                            <div className="h-[200px]">
-                              <VitalTrendChart
-                                data={typeVitals.slice(0, 30) as any}
-                                type={type as any}
-                              />
                             </div>
+                            <VitalTrendChart
+                              data={typeVitals.slice(0, 30) as any}
+                              type={type as any}
+                              title={config?.label || type}
+                            />
                           </div>
                         );
                       })}
