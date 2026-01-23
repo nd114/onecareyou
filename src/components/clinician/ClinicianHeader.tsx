@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, Moon, Sun, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,6 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +19,8 @@ import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
+type Theme = 'light' | 'dark' | 'system';
+
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
   const { clinicianProfile } = useClinicianProfile();
@@ -23,8 +28,38 @@ export function ClinicianHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>('system');
 
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
+
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('theme') as Theme | null;
+    if (stored) {
+      setTheme(stored);
+    }
+  }, []);
+
+  // Apply theme changes
+  useEffect(() => {
+    const root = document.documentElement;
+    
+    if (theme === 'system') {
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.classList.toggle('dark', systemDark);
+      
+      const listener = (e: MediaQueryListEvent) => {
+        root.classList.toggle('dark', e.matches);
+      };
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    } else {
+      root.classList.toggle('dark', theme === 'dark');
+    }
+    
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,18 +75,26 @@ export function ClinicianHeader() {
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
-  const managementLinks = [
-    { to: '/clinician', label: 'Dashboard', icon: LayoutDashboard },
+  const navLinks = [
+    { to: '/clinician/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/clinician/patients', label: 'Patients', icon: Users },
     { to: '/clinician/guidance', label: 'Guidance', icon: FileText },
-    { to: '/clinician/alerts', label: 'Alerts', icon: Bell },
+    { to: '/clinician/alerts', label: 'Alerts', icon: Bell, badge: unreadCount },
   ];
+
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'light': return <Sun className="h-4 w-4" />;
+      case 'dark': return <Moon className="h-4 w-4" />;
+      default: return <Monitor className="h-4 w-4" />;
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link to="/clinician" className="flex items-center gap-2">
+        <Link to="/clinician/dashboard" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
             <Heart className="h-5 w-5 text-primary-foreground" />
           </div>
@@ -61,54 +104,28 @@ export function ClinicianHeader() {
           </div>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation - Tab Style */}
         <nav className="hidden md:flex items-center gap-1">
-          {/* Management Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {navLinks.map((link) => (
+            <Link key={link.to} to={link.to}>
               <Button 
                 variant="ghost" 
-                className={`flex items-center gap-1 ${
-                  isActive('/clinician') && !location.pathname.includes('/settings') 
-                    ? 'bg-muted' 
-                    : ''
+                className={`relative ${
+                  isActive(link.to) 
+                    ? 'bg-muted text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <LayoutDashboard className="h-4 w-4" />
-                Management
-                <ChevronDown className="h-3 w-3" />
-                {unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                <link.icon className="h-4 w-4 mr-2" />
+                {link.label}
+                {link.badge && link.badge > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {link.badge > 9 ? '9+' : link.badge}
                   </Badge>
                 )}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              {managementLinks.map((link) => (
-                <DropdownMenuItem key={link.to} asChild>
-                  <Link to={link.to} className="flex items-center gap-2 cursor-pointer">
-                    <link.icon className="h-4 w-4" />
-                    {link.label}
-                    {link.label === 'Alerts' && unreadCount > 0 && (
-                      <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-xs">
-                        {unreadCount}
-                      </Badge>
-                    )}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Link to="/clinician/pricing">
-            <Button 
-              variant="ghost" 
-              className={isActive('/clinician/pricing') ? 'bg-muted' : ''}
-            >
-              Pricing
-            </Button>
-          </Link>
+            </Link>
+          ))}
         </nav>
 
         {/* Right Side - Profile */}
@@ -147,6 +164,37 @@ export function ClinicianHeader() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                {/* Theme Submenu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex items-center gap-2">
+                    {getThemeIcon()}
+                    Theme
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem 
+                      onClick={() => setTheme('light')}
+                      className={theme === 'light' ? 'bg-muted' : ''}
+                    >
+                      <Sun className="h-4 w-4 mr-2" />
+                      Light
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setTheme('dark')}
+                      className={theme === 'dark' ? 'bg-muted' : ''}
+                    >
+                      <Moon className="h-4 w-4 mr-2" />
+                      Dark
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setTheme('system')}
+                      className={theme === 'system' ? 'bg-muted' : ''}
+                    >
+                      <Monitor className="h-4 w-4 mr-2" />
+                      System
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={handleSignOut}
                   className="flex items-center gap-2 cursor-pointer text-destructive"
@@ -174,8 +222,8 @@ export function ClinicianHeader() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container py-4 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Management</p>
-            {managementLinks.map((link) => (
+            <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Navigation</p>
+            {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -186,9 +234,9 @@ export function ClinicianHeader() {
               >
                 <link.icon className="h-4 w-4" />
                 {link.label}
-                {link.label === 'Alerts' && unreadCount > 0 && (
+                {link.badge && link.badge > 0 && (
                   <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-xs">
-                    {unreadCount}
+                    {link.badge}
                   </Badge>
                 )}
               </Link>
@@ -196,13 +244,6 @@ export function ClinicianHeader() {
             
             <div className="border-t border-border my-3" />
             
-            <Link
-              to="/clinician/pricing"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
-            >
-              Pricing
-            </Link>
             <Link
               to="/clinician/settings"
               onClick={() => setMobileMenuOpen(false)}
@@ -219,6 +260,39 @@ export function ClinicianHeader() {
               <Heart className="h-4 w-4" />
               Why Marpe?
             </Link>
+            
+            {/* Mobile Theme Selector */}
+            <div className="border-t border-border my-3" />
+            <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Theme</p>
+            <div className="flex gap-2 px-2">
+              <Button
+                variant={theme === 'light' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setTheme('light')}
+                className="flex-1"
+              >
+                <Sun className="h-4 w-4 mr-1" />
+                Light
+              </Button>
+              <Button
+                variant={theme === 'dark' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setTheme('dark')}
+                className="flex-1"
+              >
+                <Moon className="h-4 w-4 mr-1" />
+                Dark
+              </Button>
+              <Button
+                variant={theme === 'system' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setTheme('system')}
+                className="flex-1"
+              >
+                <Monitor className="h-4 w-4 mr-1" />
+                Auto
+              </Button>
+            </div>
             
             <div className="border-t border-border my-3" />
             

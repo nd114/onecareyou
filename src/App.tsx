@@ -50,6 +50,9 @@ import ClinicianBAA from "./pages/ClinicianBAA";
 import ClinicianSubscriptionSuccess from "./pages/ClinicianSubscriptionSuccess";
 import ClinicianWhyMarpe from "./pages/ClinicianWhyMarpe";
 import ClinicianPatientDetail from "./pages/ClinicianPatientDetail";
+import ClinicianPatients from "./pages/ClinicianPatients";
+import ClinicianGuidance from "./pages/ClinicianGuidance";
+import ClinicianAlerts from "./pages/ClinicianAlerts";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -77,6 +80,21 @@ const App = () => (
             <Route path="/clinician/dashboard" element={
               <ProtectedRoute>
                 <ClinicianDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/patients" element={
+              <ProtectedRoute>
+                <ClinicianPatients />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/guidance" element={
+              <ProtectedRoute>
+                <ClinicianGuidance />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/alerts" element={
+              <ProtectedRoute>
+                <ClinicianAlerts />
               </ProtectedRoute>
             } />
             <Route path="/clinician/settings" element={
