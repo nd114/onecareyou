@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { Header } from '@/components/layout/Header';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
@@ -100,7 +100,7 @@ const ClinicianDashboard = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <ClinicianHeader />
+        <Header />
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -111,7 +111,7 @@ const ClinicianDashboard = () => {
   if (!isClinician) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <ClinicianHeader />
+        <Header />
         <main className="container py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -141,7 +141,7 @@ const ClinicianDashboard = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <ClinicianHeader />
+      <Header />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6">
         {/* Header */}

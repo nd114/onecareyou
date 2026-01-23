@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { Header } from '@/components/layout/Header';
 import { useClinicianProfile, MEDICAL_SPECIALTIES, CLINICIAN_TITLES } from '@/hooks/useClinicianProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -170,7 +170,7 @@ const ClinicianSettings = () => {
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <ClinicianHeader />
+        <Header />
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -180,7 +180,7 @@ const ClinicianSettings = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <ClinicianHeader />
+      <Header />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-3xl">
         <motion.div

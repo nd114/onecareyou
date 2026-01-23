@@ -61,25 +61,46 @@ export function ClinicianHeader() {
           </div>
         </Link>
 
-        {/* Desktop Navigation - Tabs */}
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
-          {managementLinks.map((link) => (
-            <Link key={link.to} to={link.to}>
+          {/* Management Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
-                className={`flex items-center gap-2 ${isActive(link.to) ? 'bg-muted' : ''}`}
+                className={`flex items-center gap-1 ${
+                  isActive('/clinician') && !location.pathname.includes('/settings') 
+                    ? 'bg-muted' 
+                    : ''
+                }`}
               >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-                {link.label === 'Alerts' && unreadCount > 0 && (
+                <LayoutDashboard className="h-4 w-4" />
+                Management
+                <ChevronDown className="h-3 w-3" />
+                {unreadCount > 0 && (
                   <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </Badge>
                 )}
               </Button>
-            </Link>
-          ))}
-          
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              {managementLinks.map((link) => (
+                <DropdownMenuItem key={link.to} asChild>
+                  <Link to={link.to} className="flex items-center gap-2 cursor-pointer">
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                    {link.label === 'Alerts' && unreadCount > 0 && (
+                      <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-xs">
+                        {unreadCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link to="/clinician/pricing">
             <Button 
               variant="ghost" 
