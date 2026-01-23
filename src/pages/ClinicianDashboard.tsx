@@ -323,7 +323,7 @@ const ClinicianDashboard = () => {
                               <div className="flex items-start gap-3">
                                 <div 
                                   className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                                  onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
+                                  onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}
                                 >
                                   <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
                                     <span className="font-semibold text-primary">
@@ -394,7 +394,7 @@ const ClinicianDashboard = () => {
                                   variant="default" 
                                   size="sm"
                                   className="h-8 px-3 text-xs gradient-primary border-0"
-                                  onClick={() => navigate(`/clinician/patient/${patient.invite_code}`)}
+                                  onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}
                                 >
                                   View Details
                                 </Button>
