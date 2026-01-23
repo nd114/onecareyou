@@ -286,6 +286,15 @@ const ClinicianSignUp = () => {
                 Patient sign up
               </Link>
             </div>
+
+            <div className="mt-6 pt-4 border-t border-border text-center">
+              <Link 
+                to="/clinician/why-marpe" 
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Why healthcare providers choose Marpe →
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
