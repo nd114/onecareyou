@@ -409,16 +409,9 @@ export function Header() {
             ))}
             {isAuthenticated ? (
               <>
-                {/* Patient-only mobile menu items */}
+                {/* Patient-only mobile menu items - secondary items not in navLinks */}
                 {!isClinician && (
                   <>
-                    <Link
-                      to="/care-circle"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Care Circle
-                    </Link>
                     {hasFamilyAccess && (
                       <Link
                         to="/family"
