@@ -10,15 +10,16 @@ const corsHeaders = {
 
 // Input validation schema
 const CreateCheckoutSchema = z.object({
-  priceId: z.string()
-    .min(1, 'Price ID is required')
-    .max(100, 'Price ID too long')
-    .regex(/^price_[a-zA-Z0-9]+$/, 'Invalid Stripe price ID format'),
+  priceId: z
+    .string()
+    .min(1, "Price ID is required")
+    .max(100, "Price ID too long")
+    .regex(/^price_[a-zA-Z0-9]+$/, "Invalid Stripe price ID format"),
   isAnnual: z.boolean().optional(),
 });
 
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
@@ -30,58 +31,55 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
+    const supabaseClient = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Authorization required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Authorization required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    
+
     if (userError) {
-      return new Response(
-        JSON.stringify({ error: "Authentication failed" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Authentication failed" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     const user = userData.user;
     if (!user?.email) {
-      return new Response(
-        JSON.stringify({ error: "User email not available" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "User email not available" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     logStep("User authenticated", { userId: user.id });
 
     // Parse and validate input
     const rawBody = await req.json();
     const parseResult = CreateCheckoutSchema.safeParse(rawBody);
-    
+
     if (!parseResult.success) {
-      console.error('Validation error:', parseResult.error.flatten());
+      console.error("Validation error:", parseResult.error.flatten());
       return new Response(
-        JSON.stringify({ error: 'Invalid request', details: parseResult.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Invalid request", details: parseResult.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    
+
     const { priceId, isAnnual } = parseResult.data;
     logStep("Request params validated", { priceId, isAnnual });
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      return new Response(
-        JSON.stringify({ error: "Payment service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Payment service not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -96,7 +94,7 @@ serve(async (req) => {
       logStep("No existing customer found, will create new");
     }
 
-    const origin = req.headers.get("origin") || "https://onecare.health";
+    const origin = req.headers.get("origin") || "https://marpe.care";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

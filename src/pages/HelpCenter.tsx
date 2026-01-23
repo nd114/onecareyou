@@ -1,116 +1,118 @@
-import { motion } from 'framer-motion';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Search, 
-  Pill, 
-  Calendar, 
-  Heart, 
-  Users, 
-  Settings, 
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Search,
+  Pill,
+  Calendar,
+  Heart,
+  Users,
+  Settings,
   CreditCard,
   Shield,
   HelpCircle,
   MessageSquare,
   ChevronRight,
-  BookOpen
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+  BookOpen,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 const categories = [
   {
     icon: Pill,
-    title: 'Medications',
-    description: 'Adding, editing, and managing medications',
+    title: "Medications",
+    description: "Adding, editing, and managing medications",
     articles: 5,
-    href: '#medications',
+    href: "#medications",
   },
   {
     icon: Calendar,
-    title: 'Scheduling',
-    description: 'Reminders, notifications, and schedules',
+    title: "Scheduling",
+    description: "Reminders, notifications, and schedules",
     articles: 4,
-    href: '#scheduling',
+    href: "#scheduling",
   },
   {
     icon: Heart,
-    title: 'Health Tracking',
-    description: 'Vitals, lab reports, and health profile',
+    title: "Health Tracking",
+    description: "Vitals, lab reports, and health profile",
     articles: 6,
-    href: '#health',
+    href: "#health",
   },
   {
     icon: Users,
-    title: 'Care Circle',
-    description: 'Sharing with providers and caregivers',
+    title: "Care Circle",
+    description: "Sharing with providers and caregivers",
     articles: 3,
-    href: '#care-circle',
+    href: "#care-circle",
   },
   {
     icon: Settings,
-    title: 'Account & Settings',
-    description: 'Profile, preferences, and privacy',
+    title: "Account & Settings",
+    description: "Profile, preferences, and privacy",
     articles: 4,
-    href: '#account',
+    href: "#account",
   },
   {
     icon: CreditCard,
-    title: 'Billing & Plans',
-    description: 'Subscriptions, payments, and upgrades',
+    title: "Billing & Plans",
+    description: "Subscriptions, payments, and upgrades",
     articles: 5,
-    href: '#billing',
+    href: "#billing",
   },
 ];
 
 const popularQuestions = [
   {
-    question: 'How do I add a new medication?',
-    answer: 'To add a new medication, go to the Medications page and click the "Add Medication" button. You can search for your medication by name, then fill in the dosage, frequency, and time slots. The medication will be added to your schedule automatically.',
+    question: "How do I add a new medication?",
+    answer:
+      'To add a new medication, go to the Medications page and click the "Add Medication" button. You can search for your medication by name, then fill in the dosage, frequency, and time slots. The medication will be added to your schedule automatically.',
   },
   {
-    question: 'How does drug interaction checking work?',
-    answer: 'OneCare automatically checks for potential interactions between all your medications, vitamins, and supplements. When an interaction is detected, you\'ll see a warning with the severity level (high, moderate, or low) and recommendations. Premium users have access to our advanced interaction database.',
+    question: "How does drug interaction checking work?",
+    answer:
+      "Marpe automatically checks for potential interactions between all your medications, vitamins, and supplements. When an interaction is detected, you'll see a warning with the severity level (high, moderate, or low) and recommendations. Premium users have access to our advanced interaction database.",
   },
   {
-    question: 'Can I share my medication list with my doctor?',
-    answer: 'Yes! With Care Circle (Premium feature), you can invite healthcare providers and caregivers to view your health data. Go to Care Circle, click "Add Provider," and share the unique invite code with them. You control exactly what information they can see.',
+    question: "Can I share my medication list with my doctor?",
+    answer:
+      'Yes! With Care Circle (Premium feature), you can invite healthcare providers and caregivers to view your health data. Go to Care Circle, click "Add Provider," and share the unique invite code with them. You control exactly what information they can see.',
   },
   {
-    question: 'How do I track my vitals?',
-    answer: 'Navigate to the Vitals page to log and track various health metrics like blood pressure, heart rate, weight, and more. You can manually enter values or use our AI-powered lab report parser to extract values from uploaded documents (Premium feature).',
+    question: "How do I track my vitals?",
+    answer:
+      "Navigate to the Vitals page to log and track various health metrics like blood pressure, heart rate, weight, and more. You can manually enter values or use our AI-powered lab report parser to extract values from uploaded documents (Premium feature).",
   },
   {
-    question: 'What happens if I miss a dose?',
-    answer: 'If you don\'t mark a dose as taken within the scheduled time window, it will be marked as "missed" in your schedule. You can see your adherence statistics on the Dashboard. This helps you and your healthcare providers understand your medication patterns.',
+    question: "What happens if I miss a dose?",
+    answer:
+      'If you don\'t mark a dose as taken within the scheduled time window, it will be marked as "missed" in your schedule. You can see your adherence statistics on the Dashboard. This helps you and your healthcare providers understand your medication patterns.',
   },
   {
-    question: 'How do I cancel my subscription?',
-    answer: 'You can cancel your subscription anytime from Settings > Subscription. Your Premium features will remain active until the end of your billing period. Your data will be preserved, and you can reactivate your subscription at any time.',
+    question: "How do I cancel my subscription?",
+    answer:
+      "You can cancel your subscription anytime from Settings > Subscription. Your Premium features will remain active until the end of your billing period. Your data will be preserved, and you can reactivate your subscription at any time.",
   },
 ];
 
 const HelpCenter = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredQuestions = popularQuestions.filter(q => 
-    q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    q.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredQuestions = popularQuestions.filter(
+    (q) =>
+      q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.answer.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="relative overflow-hidden gradient-hero py-24">
         <div className="container">
@@ -128,14 +130,12 @@ const HelpCenter = () => {
               <BookOpen className="h-4 w-4" />
               <span className="text-sm font-medium">Help Center</span>
             </motion.div>
-            
+
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-              How Can We{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Help You?
-              </span>
+              How Can We{" "}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Help You?</span>
             </h1>
-            
+
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
               Find answers to common questions or get in touch with our support team.
             </p>
@@ -188,9 +188,7 @@ const HelpCenter = () => {
                     <CardDescription>{category.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {category.articles} articles
-                    </p>
+                    <p className="text-sm text-muted-foreground">{category.articles} articles</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -216,31 +214,21 @@ const HelpCenter = () => {
             <p className="text-muted-foreground">Quick answers to common questions.</p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             {filteredQuestions.length > 0 ? (
               <Accordion type="single" collapsible className="w-full">
                 {filteredQuestions.map((faq, index) => (
                   <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-left">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      {faq.answer}
-                    </AccordionContent>
+                    <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
             ) : (
               <Card className="text-center py-8">
                 <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    No results found for "{searchQuery}"
-                  </p>
-                  <Button variant="outline" onClick={() => setSearchQuery('')}>
+                  <p className="text-muted-foreground mb-4">No results found for "{searchQuery}"</p>
+                  <Button variant="outline" onClick={() => setSearchQuery("")}>
                     Clear Search
                   </Button>
                 </CardContent>
@@ -260,9 +248,7 @@ const HelpCenter = () => {
             className="max-w-4xl mx-auto text-center rounded-3xl gradient-primary p-12"
           >
             <MessageSquare className="h-12 w-12 text-primary-foreground mx-auto mb-4" />
-            <h2 className="font-display text-3xl font-bold text-primary-foreground mb-4">
-              Still Need Help?
-            </h2>
+            <h2 className="font-display text-3xl font-bold text-primary-foreground mb-4">Still Need Help?</h2>
             <p className="text-lg text-primary-foreground/90 mb-8">
               Can't find what you're looking for? Our support team is here to help.
             </p>
@@ -270,8 +256,13 @@ const HelpCenter = () => {
               <Button size="lg" variant="secondary" asChild>
                 <Link to="/contact">Contact Support</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="bg-transparent border-white/30 text-white hover:bg-white/10">
-                <a href="mailto:support@onecare.app">Email Us</a>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="bg-transparent border-white/30 text-white hover:bg-white/10"
+              >
+                <a href="mailto:support@marpe.care">Email Us</a>
               </Button>
             </div>
           </motion.div>

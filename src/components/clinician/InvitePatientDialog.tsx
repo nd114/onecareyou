@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { UserPlus, Mail, Loader2, Send, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { useState } from "react";
+import { UserPlus, Mail, Loader2, Send, AlertTriangle, ArrowUpRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,13 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { usePatientInvitations } from '@/hooks/usePatientInvitations';
-import { useNavigate } from 'react-router-dom';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { usePatientInvitations } from "@/hooks/usePatientInvitations";
+import { useNavigate } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface InvitePatientDialogProps {
   trigger?: React.ReactNode;
@@ -24,19 +24,19 @@ interface InvitePatientDialogProps {
 
 export function InvitePatientDialog({ trigger, disabled, disabledReason }: InvitePatientDialogProps) {
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const navigate = useNavigate();
   const { sendInvitation } = usePatientInvitations();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email.trim()) return;
 
     await sendInvitation.mutateAsync({ email: email.trim(), name: name.trim() || undefined });
-    setEmail('');
-    setName('');
+    setEmail("");
+    setName("");
     setOpen(false);
   };
 
@@ -60,13 +60,13 @@ export function InvitePatientDialog({ trigger, disabled, disabledReason }: Invit
             <div>
               <p className="font-medium text-sm">Patient Limit Reached</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {disabledReason || 'Upgrade your plan to invite more patients.'}
+                {disabledReason || "Upgrade your plan to invite more patients."}
               </p>
-              <Button 
-                size="sm" 
-                variant="link" 
+              <Button
+                size="sm"
+                variant="link"
                 className="h-auto p-0 mt-1 text-xs"
-                onClick={() => navigate('/clinician/pricing')}
+                onClick={() => navigate("/clinician/pricing")}
               >
                 <ArrowUpRight className="h-3 w-3 mr-1" />
                 Upgrade Plan
@@ -96,7 +96,8 @@ export function InvitePatientDialog({ trigger, disabled, disabledReason }: Invit
               Invite a Patient
             </DialogTitle>
             <DialogDescription>
-              Send an invitation to a patient to connect with you on OneCare. They'll receive access to share their health data with you.
+              Send an invitation to a patient to connect with you on Marpe. They'll receive access to share their health
+              data with you.
             </DialogDescription>
           </DialogHeader>
 
@@ -125,9 +126,7 @@ export function InvitePatientDialog({ trigger, disabled, disabledReason }: Invit
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Helps you identify the patient before they accept
-              </p>
+              <p className="text-xs text-muted-foreground">Helps you identify the patient before they accept</p>
             </div>
 
             <div className="rounded-lg bg-muted/50 p-4 text-sm">
@@ -145,8 +144,8 @@ export function InvitePatientDialog({ trigger, disabled, disabledReason }: Invit
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!email.trim() || sendInvitation.isPending}
               className="gradient-primary border-0"
             >

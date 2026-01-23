@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CUSTOMER-PORTAL] ${step}${detailsStr}`);
 };
 
@@ -26,7 +26,7 @@ serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      { auth: { persistSession: false } },
     );
 
     const authHeader = req.headers.get("Authorization");
@@ -34,7 +34,7 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    
+
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
@@ -44,7 +44,7 @@ serve(async (req) => {
 
     // Find customer by email
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
+
     if (customers.data.length === 0) {
       throw new Error("No Stripe customer found. Please subscribe first.");
     }
@@ -52,8 +52,8 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || "https://onecare.health";
-    
+    const origin = req.headers.get("origin") || "https://marpe.care";
+
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/settings`,

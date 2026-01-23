@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
 
 export function Footer() {
   return (
@@ -23,10 +23,26 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/features" className="hover:text-foreground transition-colors">Features</Link></li>
-              <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-              <li><Link to="/about" className="hover:text-foreground transition-colors">About</Link></li>
-              <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+              <li>
+                <Link to="/features" className="hover:text-foreground transition-colors">
+                  Features
+                </Link>
+              </li>
+              <li>
+                <Link to="/pricing" className="hover:text-foreground transition-colors">
+                  Pricing
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="hover:text-foreground transition-colors">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-foreground transition-colors">
+                  Contact
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -34,9 +50,21 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/help" className="hover:text-foreground transition-colors">Help Center</Link></li>
-              <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact Us</Link></li>
-              <li><a href="mailto:support@onecare.app" className="hover:text-foreground transition-colors">support@onecare.app</a></li>
+              <li>
+                <Link to="/help" className="hover:text-foreground transition-colors">
+                  Help Center
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-foreground transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <a href="mailto:support@marpe.care" className="hover:text-foreground transition-colors">
+                  support@marpe.care
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -44,10 +72,26 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
-              <li><Link to="/disclaimer" className="hover:text-foreground transition-colors">Medical Disclaimer</Link></li>
-              <li><Link to="/data-processing" className="hover:text-foreground transition-colors">Data Processing</Link></li>
+              <li>
+                <Link to="/privacy" className="hover:text-foreground transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="hover:text-foreground transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link to="/disclaimer" className="hover:text-foreground transition-colors">
+                  Medical Disclaimer
+                </Link>
+              </li>
+              <li>
+                <Link to="/data-processing" className="hover:text-foreground transition-colors">
+                  Data Processing
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -55,17 +99,27 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Resources</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/help" className="hover:text-foreground transition-colors">Getting Started</Link></li>
-              <li><Link to="/features" className="hover:text-foreground transition-colors">How It Works</Link></li>
-              <li><Link to="/pricing" className="hover:text-foreground transition-colors">Compare Plans</Link></li>
+              <li>
+                <Link to="/help" className="hover:text-foreground transition-colors">
+                  Getting Started
+                </Link>
+              </li>
+              <li>
+                <Link to="/features" className="hover:text-foreground transition-colors">
+                  How It Works
+                </Link>
+              </li>
+              <li>
+                <Link to="/pricing" className="hover:text-foreground transition-colors">
+                  Compare Plans
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Marpe. All rights reserved.
-          </p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Marpe. All rights reserved.</p>
           <p className="text-xs text-muted-foreground text-center md:text-right max-w-lg">
             Marpe is not a substitute for professional medical advice. Always consult your healthcare provider.
             <Link to="/disclaimer" className="ml-1 underline hover:text-foreground">

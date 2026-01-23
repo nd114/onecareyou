@@ -1,15 +1,5 @@
-import { useState } from 'react';
-import { 
-  Settings2, 
-  Link2, 
-  TestTube, 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle,
-  Server,
-  Key,
-  ExternalLink,
-} from 'lucide-react';
+import { useState } from "react";
+import { Settings2, Link2, TestTube, Loader2, CheckCircle, AlertCircle, Server, Key, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,15 +7,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface EHRConfigDialogProps {
   open: boolean;
@@ -42,14 +32,14 @@ interface EHRConfigDialogProps {
 
 export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUpdated }: EHRConfigDialogProps) {
   const { session } = useAuth();
-  const [fhirUrl, setFhirUrl] = useState(connection?.fhir_base_url || '');
-  const [accessToken, setAccessToken] = useState('');
+  const [fhirUrl, setFhirUrl] = useState(connection?.fhir_base_url || "");
+  const [accessToken, setAccessToken] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleTestConnection = async () => {
     if (!fhirUrl.trim()) {
-      toast.error('Please enter a FHIR server URL');
+      toast.error("Please enter a FHIR server URL");
       return;
     }
 
@@ -57,10 +47,10 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
     setTestResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('ehr-sync', {
+      const { data, error } = await supabase.functions.invoke("ehr-sync", {
         headers: { Authorization: `Bearer ${session?.access_token}` },
         body: {
-          action: 'test_connection',
+          action: "test_connection",
           connectionId: connection?.id,
           fhirBaseUrl: fhirUrl.trim(),
           accessToken: accessToken.trim() || undefined,
@@ -70,18 +60,18 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
       if (error) throw error;
 
       if (data.success) {
-        setTestResult({ 
-          success: true, 
-          message: `Connected! FHIR ${data.fhirVersion}${data.software ? ` - ${data.software}` : ''}` 
+        setTestResult({
+          success: true,
+          message: `Connected! FHIR ${data.fhirVersion}${data.software ? ` - ${data.software}` : ""}`,
         });
         onConnectionUpdated();
-        toast.success('FHIR connection successful');
+        toast.success("FHIR connection successful");
       } else {
-        throw new Error(data.error || 'Connection failed');
+        throw new Error(data.error || "Connection failed");
       }
     } catch (error: any) {
       setTestResult({ success: false, message: error.message });
-      toast.error('Connection test failed');
+      toast.error("Connection test failed");
     } finally {
       setTesting(false);
     }
@@ -89,39 +79,39 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
 
   const getProviderInstructions = () => {
     switch (connection?.provider_type) {
-      case 'veradigm':
+      case "veradigm":
         return {
-          title: 'Veradigm (Vericlaim) Setup',
+          title: "Veradigm (Vericlaim) Setup",
           steps: [
-            'Log into your Veradigm Practice Management portal',
-            'Navigate to Settings → API & Integrations',
-            'Enable SMART on FHIR access and register OneCare as an application',
-            'Copy the FHIR Base URL and OAuth credentials',
-            'Enter the FHIR URL below and authenticate',
+            "Log into your Veradigm Practice Management portal",
+            "Navigate to Settings → API & Integrations",
+            "Enable SMART on FHIR access and register Marpe as an application",
+            "Copy the FHIR Base URL and OAuth credentials",
+            "Enter the FHIR URL below and authenticate",
           ],
-          docsUrl: 'https://developer.veradigm.com/fhir',
+          docsUrl: "https://developer.veradigm.com/fhir",
         };
-      case 'healthbridge':
+      case "healthbridge":
         return {
-          title: 'HealthBridge Clinical Setup',
+          title: "HealthBridge Clinical Setup",
           steps: [
-            'Contact your HealthBridge administrator for API access',
-            'Request a JWT service account token for FHIR R4 access',
-            'Obtain the FHIR Base URL for your practice',
-            'Enter credentials below and test the connection',
+            "Contact your HealthBridge administrator for API access",
+            "Request a JWT service account token for FHIR R4 access",
+            "Obtain the FHIR Base URL for your practice",
+            "Enter credentials below and test the connection",
           ],
           docsUrl: null,
         };
-      case 'fhir_generic':
+      case "fhir_generic":
         return {
-          title: 'Generic FHIR R4 Server',
+          title: "Generic FHIR R4 Server",
           steps: [
-            'Ensure your EHR supports FHIR R4 (4.0.1 or later)',
-            'Obtain the FHIR server base URL',
-            'If authentication is required, obtain an access token',
-            'Test the connection to verify compatibility',
+            "Ensure your EHR supports FHIR R4 (4.0.1 or later)",
+            "Obtain the FHIR server base URL",
+            "If authentication is required, obtain an access token",
+            "Test the connection to verify compatibility",
           ],
-          docsUrl: 'https://www.hl7.org/fhir/',
+          docsUrl: "https://www.hl7.org/fhir/",
         };
       default:
         return null;
@@ -140,9 +130,7 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
             <Settings2 className="h-5 w-5" />
             Configure {connection.provider_name}
           </DialogTitle>
-          <DialogDescription>
-            Set up the FHIR connection to sync patient data with your EHR
-          </DialogDescription>
+          <DialogDescription>Set up the FHIR connection to sync patient data with your EHR</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="setup" className="w-full">
@@ -182,27 +170,27 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Required if your FHIR server uses authentication
-              </p>
+              <p className="text-xs text-muted-foreground">Required if your FHIR server uses authentication</p>
             </div>
 
             {/* Test Result */}
             {testResult && (
-              <div className={`p-3 rounded-lg border ${
-                testResult.success 
-                  ? 'bg-green-500/10 border-green-500/20' 
-                  : 'bg-destructive/10 border-destructive/20'
-              }`}>
+              <div
+                className={`p-3 rounded-lg border ${
+                  testResult.success ? "bg-green-500/10 border-green-500/20" : "bg-destructive/10 border-destructive/20"
+                }`}
+              >
                 <div className="flex items-center gap-2">
                   {testResult.success ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-destructive" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    testResult.success ? 'text-green-700 dark:text-green-400' : 'text-destructive'
-                  }`}>
+                  <span
+                    className={`text-sm font-medium ${
+                      testResult.success ? "text-green-700 dark:text-green-400" : "text-destructive"
+                    }`}
+                  >
                     {testResult.message}
                   </span>
                 </div>
@@ -210,11 +198,7 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
             )}
 
             {/* Test Connection Button */}
-            <Button 
-              onClick={handleTestConnection} 
-              disabled={testing || !fhirUrl.trim()}
-              className="w-full"
-            >
+            <Button onClick={handleTestConnection} disabled={testing || !fhirUrl.trim()} className="w-full">
               {testing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -232,12 +216,20 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
             <div className="pt-2 border-t">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Connection Status:</span>
-                <Badge variant={
-                  connection.sync_status === 'active' ? 'default' :
-                  connection.sync_status === 'error' ? 'destructive' : 'secondary'
-                }>
-                  {connection.sync_status === 'active' ? 'Connected' :
-                   connection.sync_status === 'error' ? 'Error' : 'Pending Setup'}
+                <Badge
+                  variant={
+                    connection.sync_status === "active"
+                      ? "default"
+                      : connection.sync_status === "error"
+                        ? "destructive"
+                        : "secondary"
+                  }
+                >
+                  {connection.sync_status === "active"
+                    ? "Connected"
+                    : connection.sync_status === "error"
+                      ? "Error"
+                      : "Pending Setup"}
                 </Badge>
               </div>
             </div>
@@ -276,12 +268,10 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
 
             {/* HIPAA Notice */}
             <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 mt-4">
-              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                HIPAA Compliance Notice
-              </p>
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">HIPAA Compliance Notice</p>
               <p className="text-xs text-muted-foreground mt-1">
-                EHR integrations are available for Enterprise tier subscribers with a signed BAA. 
-                All data transfers are encrypted and logged for compliance.
+                EHR integrations are available for Enterprise tier subscribers with a signed BAA. All data transfers are
+                encrypted and logged for compliance.
               </p>
             </div>
           </TabsContent>

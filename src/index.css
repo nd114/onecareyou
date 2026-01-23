@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
 
 /* OneCare Design System - Health & Wellness Theme */
 
@@ -46,16 +46,16 @@
     --emerald: 168 76% 36%;
     --emerald-light: 168 76% 95%;
     --emerald-dark: 168 76% 28%;
-    
+
     --ocean: 199 89% 48%;
     --ocean-light: 199 89% 95%;
-    
+
     --indigo: 234 89% 60%;
     --indigo-light: 234 89% 95%;
-    
+
     --amber: 38 92% 50%;
     --amber-light: 38 92% 95%;
-    
+
     --rose: 346 77% 50%;
     --rose-light: 346 77% 95%;
 
@@ -142,11 +142,16 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     @apply font-bold tracking-tight;
   }
 }
@@ -155,7 +160,7 @@
   .gradient-primary {
     background: var(--gradient-primary);
   }
-  
+
   .gradient-hero {
     background: var(--gradient-hero);
   }
