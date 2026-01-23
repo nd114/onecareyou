@@ -9,7 +9,9 @@ import {
   Clock,
   ExternalLink,
   Settings,
-  Loader2
+  Loader2,
+  Settings2,
+  History,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,12 +25,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useEHRConnections, EHR_PROVIDERS } from '@/hooks/useEHRConnections';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useEHRConnections, EHRConnection } from '@/hooks/useEHRConnections';
+import { EHRConfigDialog } from './EHRConfigDialog';
+import { EHRSyncHistoryDialog } from './EHRSyncHistoryDialog';
 import { formatDistanceToNow } from 'date-fns';
+import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
+import { useNavigate } from 'react-router-dom';
 
 export function EHRConnectionsSection() {
+  const navigate = useNavigate();
   const { connections, isLoading, createConnection, deleteConnection, updateConnection, providers } = useEHRConnections();
+  const { tier } = useClinicianSubscription();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [configConnection, setConfigConnection] = useState<EHRConnection | null>(null);
+  const [historyConnection, setHistoryConnection] = useState<EHRConnection | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const isEnterprise = tier === 'enterprise';
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -39,7 +62,7 @@ export function EHRConnectionsSection() {
       case 'error':
         return <Badge variant="destructive"><AlertCircle className="h-3 w-3 mr-1" />Error</Badge>;
       default:
-        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending Setup</Badge>;
     }
   };
 
@@ -48,8 +71,19 @@ export function EHRConnectionsSection() {
     setShowAddDialog(false);
   };
 
+  const handleDeleteConnection = async (connectionId: string) => {
+    await deleteConnection.mutateAsync(connectionId);
+    setDeleteConfirm(null);
+  };
+
+  // Filter providers based on tier - Enterprise gets FHIR integrations
+  const availableProviders = providers.map(p => ({
+    ...p,
+    available: p.id === 'manual_import' || (isEnterprise && p.id !== 'manual_import'),
+  }));
+
   return (
-    <Card>
+    <Card className="mt-6">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -107,6 +141,11 @@ export function EHRConnectionsSection() {
                     <p className="text-sm text-muted-foreground">
                       {providers.find(p => p.id === connection.provider_type)?.description || connection.provider_type}
                     </p>
+                    {connection.fhir_base_url && (
+                      <p className="text-xs text-muted-foreground font-mono truncate max-w-md">
+                        {connection.fhir_base_url}
+                      </p>
+                    )}
                     {connection.last_sync_at && (
                       <p className="text-xs text-muted-foreground">
                         Last synced {formatDistanceToNow(new Date(connection.last_sync_at))} ago
@@ -118,6 +157,29 @@ export function EHRConnectionsSection() {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {/* Configure Button - for FHIR connections */}
+                    {connection.provider_type !== 'manual_import' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setConfigConnection(connection)}
+                        title="Configure connection"
+                      >
+                        <Settings2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    )}
+                    
+                    {/* Sync History Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setHistoryConnection(connection)}
+                      title="View sync history"
+                    >
+                      <History className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+
+                    {/* Active Toggle */}
                     <Switch
                       checked={connection.is_active}
                       onCheckedChange={(checked) => 
@@ -127,10 +189,12 @@ export function EHRConnectionsSection() {
                         })
                       }
                     />
+                    
+                    {/* Delete Button */}
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteConnection.mutate(connection.id)}
+                      onClick={() => setDeleteConfirm(connection.id)}
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
@@ -141,19 +205,30 @@ export function EHRConnectionsSection() {
           </div>
         )}
 
-        {/* Coming Soon Notice */}
-        <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-dashed">
-          <div className="flex items-start gap-3">
-            <Settings className="h-5 w-5 text-muted-foreground mt-0.5" />
-            <div>
-              <p className="font-medium text-sm">EHR Integration Coming Soon</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Full FHIR-based integrations with Veradigm, HealthBridge, and other EHR systems are in development. 
-                Currently, you can use manual import for patient data.
-              </p>
+        {/* Enterprise Notice - show if not enterprise */}
+        {!isEnterprise && (
+          <div className="mt-6 p-4 rounded-lg bg-primary/5 border border-primary/20">
+            <div className="flex items-start gap-3">
+              <Settings className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Full EHR Integration Available</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  FHIR-based integrations with Veradigm, HealthBridge, and other EHR systems 
+                  are available for Enterprise subscribers with a signed BAA.
+                </p>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="h-auto p-0 mt-2 text-xs"
+                  onClick={() => navigate('/clinician/pricing')}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Upgrade to Enterprise
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </CardContent>
 
       {/* Add Connection Dialog */}
@@ -167,7 +242,7 @@ export function EHRConnectionsSection() {
           </DialogHeader>
           
           <div className="space-y-3 py-4">
-            {providers.map((provider) => (
+            {availableProviders.map((provider) => (
               <button
                 key={provider.id}
                 className={`w-full p-4 rounded-lg border text-left transition-colors ${
@@ -184,9 +259,12 @@ export function EHRConnectionsSection() {
                     <p className="text-sm text-muted-foreground">{provider.description}</p>
                   </div>
                   {!provider.available && (
-                    <Badge variant="secondary">Coming Soon</Badge>
+                    <Badge variant="secondary">Enterprise</Badge>
                   )}
-                  {provider.available && (
+                  {provider.available && createConnection.isPending && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  {provider.available && !createConnection.isPending && (
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   )}
                 </div>
@@ -201,6 +279,42 @@ export function EHRConnectionsSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Config Dialog */}
+      <EHRConfigDialog
+        open={!!configConnection}
+        onOpenChange={(open) => !open && setConfigConnection(null)}
+        connection={configConnection}
+        onConnectionUpdated={() => {}}
+      />
+
+      {/* Sync History Dialog */}
+      <EHRSyncHistoryDialog
+        open={!!historyConnection}
+        onOpenChange={(open) => !open && setHistoryConnection(null)}
+        connection={historyConnection}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete EHR Connection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the EHR connection and all sync history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirm && handleDeleteConnection(deleteConfirm)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Connection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
