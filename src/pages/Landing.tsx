@@ -16,7 +16,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
+import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { Footer } from '@/components/layout/Footer';
+import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 
 const features = [
   {
@@ -123,9 +125,11 @@ const item = {
 };
 
 const Landing = () => {
+  const { isClinician } = useClinicianProfile();
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {isClinician ? <ClinicianHeader /> : <Header />}
       
       {/* Hero Section */}
       <section className="relative overflow-hidden gradient-hero">
