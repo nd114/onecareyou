@@ -29,9 +29,9 @@ export interface EHRSyncLog {
 }
 
 export const EHR_PROVIDERS = [
-  { id: 'veradigm', name: 'Veradigm (Vericlaim)', description: 'Connect via SMART on FHIR', available: false },
-  { id: 'healthbridge', name: 'HealthBridge Clinical', description: 'JWT authentication + FHIR R4', available: false },
-  { id: 'fhir_generic', name: 'Generic FHIR Server', description: 'Connect any FHIR R4 compatible system', available: false },
+  { id: 'veradigm', name: 'Veradigm (Vericlaim)', description: 'Connect via SMART on FHIR', available: true },
+  { id: 'healthbridge', name: 'HealthBridge Clinical', description: 'JWT authentication + FHIR R4', available: true },
+  { id: 'fhir_generic', name: 'Generic FHIR Server', description: 'Connect any FHIR R4 compatible system', available: true },
   { id: 'manual_import', name: 'Manual Import', description: 'Import patient data from CSV/Excel files', available: true },
 ];
 
