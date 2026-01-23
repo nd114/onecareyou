@@ -44,6 +44,10 @@ import MedicationInfo from "./pages/MedicationInfo";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import EHRComparison from "./pages/EHRComparison";
 import AdminImport from "./pages/AdminImport";
+import ClinicianPricing from "./pages/ClinicianPricing";
+import EnterpriseInquiry from "./pages/EnterpriseInquiry";
+import ClinicianBAA from "./pages/ClinicianBAA";
+import ClinicianSubscriptionSuccess from "./pages/ClinicianSubscriptionSuccess";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -166,6 +170,23 @@ const App = () => (
             {/* Internal/unlisted pages */}
             <Route path="/ehr-comparison" element={<EHRComparison />} />
             <Route path="/admin/import" element={<AdminImport />} />
+            {/* Clinician pricing and subscription pages */}
+            <Route path="/clinician/pricing" element={<ClinicianPricing />} />
+            <Route path="/clinician/enterprise-inquiry" element={
+              <ProtectedRoute>
+                <EnterpriseInquiry />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/baa" element={
+              <ProtectedRoute>
+                <ClinicianBAA />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/subscription-success" element={
+              <ProtectedRoute>
+                <ClinicianSubscriptionSuccess />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsentBanner />

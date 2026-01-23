@@ -118,6 +118,60 @@ export type Database = {
           },
         ]
       }
+      baa_agreements: {
+        Row: {
+          agreement_version: string
+          clinician_user_id: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          practice_address: string | null
+          practice_name: string
+          practice_npi: string | null
+          signed_at: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          agreement_version?: string
+          clinician_user_id: string
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          practice_address?: string | null
+          practice_name: string
+          practice_npi?: string | null
+          signed_at?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          agreement_version?: string
+          clinician_user_id?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          practice_address?: string | null
+          practice_name?: string
+          practice_npi?: string | null
+          signed_at?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       care_alert_logs: {
         Row: {
           id: string
@@ -415,11 +469,19 @@ export type Database = {
           notify_on_guidance_acknowledged: boolean | null
           notify_on_guidance_completed: boolean | null
           notify_on_guidance_expired: boolean | null
+          patient_limit: number | null
           practice_name: string | null
           push_notifications_enabled: boolean | null
           push_subscription: Json | null
           specialty: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_ends_at: string | null
+          subscription_status: string | null
+          subscription_tier: string | null
+          team_id: string | null
           title: string | null
+          trial_ends_at: string | null
           updated_at: string
           user_id: string
         }
@@ -434,11 +496,19 @@ export type Database = {
           notify_on_guidance_acknowledged?: boolean | null
           notify_on_guidance_completed?: boolean | null
           notify_on_guidance_expired?: boolean | null
+          patient_limit?: number | null
           practice_name?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
           specialty?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          team_id?: string | null
           title?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -453,11 +523,19 @@ export type Database = {
           notify_on_guidance_acknowledged?: boolean | null
           notify_on_guidance_completed?: boolean | null
           notify_on_guidance_expired?: boolean | null
+          patient_limit?: number | null
           practice_name?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
           specialty?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          team_id?: string | null
           title?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -624,6 +702,60 @@ export type Database = {
           id?: string
           notes?: string | null
           police_number?: string | null
+        }
+        Relationships: []
+      }
+      enterprise_inquiries: {
+        Row: {
+          clinician_user_id: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          ehr_system: string | null
+          id: string
+          notes: string | null
+          practice_name: string
+          practice_size: string | null
+          requirements: string | null
+          specialty: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          clinician_user_id?: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          ehr_system?: string | null
+          id?: string
+          notes?: string | null
+          practice_name: string
+          practice_size?: string | null
+          requirements?: string | null
+          specialty?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          clinician_user_id?: string | null
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          ehr_system?: string | null
+          id?: string
+          notes?: string | null
+          practice_name?: string
+          practice_size?: string | null
+          requirements?: string | null
+          specialty?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
