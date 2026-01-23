@@ -76,7 +76,8 @@ const App = () => (
             <Route path="/data-processing" element={<DataProcessing />} />
             <Route path="/disclaimer" element={<MedicalDisclaimer />} />
             <Route path="/help" element={<HelpCenter />} />
-            <Route path="/clinician/patient/:inviteCode" element={<ClinicianPortal />} />
+            {/* Legacy public patient view - redirect to protected patient detail */}
+            <Route path="/clinician/patient/:inviteCode" element={<ClinicianPatientDetail />} />
             <Route path="/clinician/dashboard" element={
               <ProtectedRoute>
                 <ClinicianDashboard />
