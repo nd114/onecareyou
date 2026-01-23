@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Header } from '@/components/layout/Header';
+import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
@@ -170,7 +170,7 @@ const ClinicianPatientDetail = () => {
   if (!patient) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <Header />
+        <ClinicianHeader />
         <main className="container py-8">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
@@ -183,7 +183,7 @@ const ClinicianPatientDetail = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Header />
+      <ClinicianHeader />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6">
         {/* Back Button & Header */}
