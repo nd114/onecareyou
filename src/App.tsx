@@ -48,6 +48,8 @@ import ClinicianPricing from "./pages/ClinicianPricing";
 import EnterpriseInquiry from "./pages/EnterpriseInquiry";
 import ClinicianBAA from "./pages/ClinicianBAA";
 import ClinicianSubscriptionSuccess from "./pages/ClinicianSubscriptionSuccess";
+import ClinicianWhyMarpe from "./pages/ClinicianWhyMarpe";
+import ClinicianPatientDetail from "./pages/ClinicianPatientDetail";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -172,6 +174,12 @@ const App = () => (
             <Route path="/admin/import" element={<AdminImport />} />
             {/* Clinician pricing and subscription pages */}
             <Route path="/clinician/pricing" element={<ClinicianPricing />} />
+            <Route path="/clinician/why-marpe" element={<ClinicianWhyMarpe />} />
+            <Route path="/clinician/patients/:inviteCode" element={
+              <ProtectedRoute>
+                <ClinicianPatientDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/clinician/enterprise-inquiry" element={
               <ProtectedRoute>
                 <EnterpriseInquiry />
