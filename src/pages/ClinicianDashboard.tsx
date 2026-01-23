@@ -31,12 +31,14 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
 import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
+import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
+import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
@@ -44,7 +46,7 @@ const ClinicianDashboard = () => {
   const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
   const { clinicianGuidance, isLoading: isLoadingGuidance, deleteGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule } = useAlertRules();
-  
+  const { patientLimit, tier, isTrial } = useClinicianSubscription();
   // Get patient user IDs for vitals summaries
   const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
   const { data: vitalsSummaries = [] } = usePatientVitalsSummaries(patientUserIds);
@@ -158,6 +160,9 @@ const ClinicianDashboard = () => {
           </p>
         </motion.div>
 
+        {/* Patient Limit Banner - shows when near/at limit */}
+        <PatientLimitBanner patientCount={patientCount} />
+
         {/* Quick Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -252,7 +257,10 @@ const ClinicianDashboard = () => {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto">
-                    <InvitePatientDialog />
+                    <InvitePatientDialog 
+                      disabled={patientCount >= patientLimit}
+                      disabledReason={`You've reached your limit of ${patientLimit} patients. Upgrade to add more.`}
+                    />
                     <Button 
                       variant="outline" 
                       size="sm"

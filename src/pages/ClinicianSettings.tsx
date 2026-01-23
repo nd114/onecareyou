@@ -30,17 +30,20 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
+import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useAuth } from '@/contexts/AuthContext';
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
+import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { clinicianProfile, isLoading: isLoadingProfile, updateClinicianProfile } = useClinicianProfile();
+  const { patients } = useClinicianPatients();
   const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
   const { 
     settings: notificationSettings, 
@@ -551,6 +554,11 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Subscription Management */}
+          <div className="mt-6">
+            <SubscriptionManagementCard patientCount={patients.length} />
+          </div>
 
           {/* EHR Connections */}
           <EHRConnectionsSection />
