@@ -24,7 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/layout/Header";
+import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { Footer } from "@/components/layout/Footer";
 import { useNavigate } from "react-router-dom";
 
@@ -169,7 +169,7 @@ const ClinicianWhyMarpe = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+      <ClinicianHeader />
       
       <main className="flex-1">
         {/* Hero Section */}

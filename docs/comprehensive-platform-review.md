@@ -1,4 +1,4 @@
-# OneCare Platform - Comprehensive Review
+# Marpe Platform - Comprehensive Review
 **Date:** January 19, 2026  
 **Version:** 1.0  
 **Status:** Pre-Major Integration Review
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This document provides a thorough assessment of the OneCare platform across all critical dimensions before proceeding with major feature additions (EHR integrations, API design, diagrams, patient avatars). The review covers bugs, logic gaps, user flow issues, legal compliance, medical compliance, security, and strategic considerations.
+This document provides a thorough assessment of the Marpe platform across all critical dimensions before proceeding with major feature additions (EHR integrations, API design, diagrams, patient avatars). The review covers bugs, logic gaps, user flow issues, legal compliance, medical compliance, security, and strategic considerations.
 
 ---
 
@@ -340,7 +340,7 @@ supabase/
 
 ## Appendix B: API Design Considerations
 
-For the OneCare API:
+For the Marpe API:
 - RESTful design with OpenAPI 3.0 specification
 - OAuth 2.0 / API key authentication
 - Rate limiting per tier (Free: 100/day, Pro: 10,000/day, Enterprise: unlimited)
@@ -399,4 +399,4 @@ USING (
 
 ---
 
-*Document prepared for OneCare product team. Review with engineering and legal before proceeding with major integrations.*
+*Document prepared for Marpe product team. Review with engineering and legal before proceeding with major integrations.*

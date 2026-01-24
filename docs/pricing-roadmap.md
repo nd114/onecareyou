@@ -221,7 +221,7 @@ The existing pricing structure has several issues:
 ## Competitive Positioning
 
 ### vs. Traditional EHR Add-ons
-| Factor | Traditional EHR | OneCare Clinician |
+| Factor | Traditional EHR | Marpe Clinician |
 |--------|-----------------|-------------------|
 | Per-seat cost | $200-500/month | $49-99/month |
 | Implementation | $10K-50K upfront | $0 |

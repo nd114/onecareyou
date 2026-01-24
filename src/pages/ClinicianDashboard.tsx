@@ -151,7 +151,7 @@ const ClinicianDashboard = () => {
           className="mb-6 sm:mb-8"
         >
           <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-            Welcome back, Doctor
+            Welcome back{clinicianProfile?.title ? `, ${clinicianProfile.title}` : ''}{clinicianProfile?.last_name ? ` ${clinicianProfile.last_name}` : ''}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             {clinicianProfile?.practice_name && `${clinicianProfile.practice_name} • `}

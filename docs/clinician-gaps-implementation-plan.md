@@ -12,7 +12,7 @@ This document identifies gaps in Marpe's clinician offering compared to competit
 
 ### Competitive Landscape
 
-| Feature | OneCare (Current) | Practice Fusion | SimplePractice | Kareo |
+| Feature | Marpe (Current) | Practice Fusion | SimplePractice | Kareo |
 |---------|-------------------|-----------------|----------------|-------|
 | Clinician Subscriptions | ❌ None | ✅ $149/mo | ✅ $99/mo | ✅ $110/mo |
 | Patient Limits | ❌ Unlimited (no enforcement) | ✅ Tiered | ✅ Tiered | ✅ Tiered |
@@ -24,7 +24,7 @@ This document identifies gaps in Marpe's clinician offering compared to competit
 | API Access | ❌ Not implemented | ✅ Enterprise | ✅ Enterprise | ✅ Yes |
 | SMS Notifications | ❌ Not implemented | ✅ Yes | ✅ Yes | ✅ Yes |
 
-**Key Insight:** OneCare is currently offering clinician access for free with no resource limits, missing significant revenue opportunity.
+**Key Insight:** Marpe is currently offering clinician access for free with no resource limits, missing significant revenue opportunity.
 
 ---
 

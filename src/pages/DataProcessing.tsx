@@ -225,9 +225,9 @@ const DataProcessing = () => {
                 <h2 className="text-xl font-semibold">8. Contact Information</h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>For questions about data processing or to exercise your rights:</p>
-                  <p><strong>Data Protection Officer:</strong> dpo@marpe.health</p>
-                  <p><strong>Privacy Team:</strong> privacy@marpe.health</p>
-                  <p><strong>General Support:</strong> support@marpe.health</p>
+                  <p><strong>Data Protection Officer:</strong> dpo@marpe.care</p>
+                  <p><strong>Privacy Team:</strong> privacy@marpe.care</p>
+                  <p><strong>General Support:</strong> support@marpe.care</p>
                 </div>
               </CardContent>
             </Card>
