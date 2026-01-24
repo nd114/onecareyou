@@ -25,6 +25,8 @@ import FamilyMemberDetail from "./pages/FamilyMemberDetail";
 import Onboarding from "./pages/Onboarding";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
 import PatientGuidance from "./pages/PatientGuidance";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -66,6 +68,8 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/clinician/sign-up" element={<ClinicianSignUp />} />
             <Route path="/about" element={<About />} />
             <Route path="/features" element={<Features />} />

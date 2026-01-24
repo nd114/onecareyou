@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Stethoscope, ArrowLeft, ArrowRight, Mail, Lock, User, Eye, EyeOff, Building2, Award, Globe } from 'lucide-react';
+import { Loader2, Stethoscope, ArrowLeft, ArrowRight, Mail, Lock, User, Eye, EyeOff, Building2, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -14,8 +14,22 @@ import { MEDICAL_SPECIALTIES } from '@/hooks/useClinicianProfile';
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { z } from 'zod';
 
+const CLINICIAN_TITLES = [
+  'Dr.',
+  'Prof.',
+  'Mr.',
+  'Mrs.',
+  'Ms.',
+  'Nurse',
+  'NP',
+  'PA',
+  'PharmD',
+];
+
 const accountSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
+  title: z.string().min(1, 'Please select a title'),
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name must be less than 50 characters'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name must be less than 50 characters'),
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
   password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password must be less than 72 characters'),
   confirmPassword: z.string(),
@@ -33,10 +47,12 @@ const ClinicianSignUp = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [accountData, setAccountData] = useState({
+    title: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    name: '',
   });
 
   const [profileData, setProfileData] = useState({
@@ -77,11 +93,14 @@ const ClinicianSignUp = () => {
     setIsLoading(true);
 
     try {
+      // Construct full name for the profiles table
+      const fullName = `${accountData.title} ${accountData.firstName} ${accountData.lastName}`.trim();
+      
       // Create the user account
       const { error: signUpError } = await signUp(
         accountData.email, 
         accountData.password, 
-        accountData.name
+        fullName
       );
 
       if (signUpError) {
@@ -101,11 +120,14 @@ const ClinicianSignUp = () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Create clinician profile
+        // Create clinician profile with split name fields
         const { error: profileError } = await supabase
           .from('clinician_profiles')
           .insert({
             user_id: user.id,
+            title: accountData.title || null,
+            first_name: accountData.firstName || null,
+            last_name: accountData.lastName || null,
             practice_name: profileData.practice_name || null,
             specialty: profileData.specialty || null,
             license_number: profileData.license_number || null,
@@ -165,26 +187,66 @@ const ClinicianSignUp = () => {
           <CardContent>
             {step === 'account' ? (
               <form onSubmit={handleAccountSubmit} className="space-y-4">
+                {/* Title and Name Row */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label>Title *</Label>
+                    <Select
+                      value={accountData.title}
+                      onValueChange={(value) => setAccountData({ ...accountData, title: value })}
+                    >
+                      <SelectTrigger className={errors.title ? 'border-destructive' : ''}>
+                        <SelectValue placeholder="Title" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLINICIAN_TITLES.map(title => (
+                          <SelectItem key={title} value={title}>
+                            {title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.title && (
+                      <p className="text-xs text-destructive">{errors.title}</p>
+                    )}
+                  </div>
+                  
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Jane"
+                      value={accountData.firstName}
+                      onChange={(e) => setAccountData({ ...accountData, firstName: e.target.value })}
+                      className={errors.firstName ? 'border-destructive' : ''}
+                    />
+                    {errors.firstName && (
+                      <p className="text-xs text-destructive">{errors.firstName}</p>
+                    )}
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="lastName">Last Name *</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="name"
+                      id="lastName"
                       type="text"
-                      placeholder="Dr. Jane Smith"
-                      value={accountData.name}
-                      onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
-                      className={`pl-10 ${errors.name ? 'border-destructive' : ''}`}
+                      placeholder="Smith"
+                      value={accountData.lastName}
+                      onChange={(e) => setAccountData({ ...accountData, lastName: e.target.value })}
+                      className={`pl-10 ${errors.lastName ? 'border-destructive' : ''}`}
                     />
                   </div>
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.name}</p>
+                  {errors.lastName && (
+                    <p className="text-sm text-destructive">{errors.lastName}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -202,7 +264,7 @@ const ClinicianSignUp = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Password *</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -227,7 +289,7 @@ const ClinicianSignUp = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -296,7 +358,7 @@ const ClinicianSignUp = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="license">License Number (Optional)</Label>
+                  <Label htmlFor="license">License Number</Label>
                   <div className="relative">
                     <Award className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -308,7 +370,7 @@ const ClinicianSignUp = () => {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    This helps verify your credentials
+                    Optional - helps verify your credentials
                   </p>
                 </div>
                 
