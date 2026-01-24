@@ -167,24 +167,81 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
         
         setOcrProgress({ status: 'Initializing OCR...', progress: 0 });
         
-        const ocrResult = await performLocalOCR(file, (progress) => {
-          setOcrProgress(progress);
-        });
+        let ocrResult;
+        try {
+          ocrResult = await performLocalOCR(file, (progress) => {
+            setOcrProgress(progress);
+          });
+        } catch (ocrError) {
+          console.error('Local OCR failed:', ocrError);
+          // Fall back to server-side processing if local OCR fails
+          console.log('Falling back to server-side processing');
+          setOcrProgress({ status: 'Switching to secure server processing...', progress: 50 });
+          
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          requestBody = {
+            imageBase64: base64,
+            reportDate: selectedDate.toISOString()
+          };
+          
+          // Skip the local OCR result processing
+          const { data, error } = await supabase.functions.invoke('parse-lab-report', {
+            body: requestBody
+          });
+
+          if (error) throw new Error(error.message || 'Failed to process lab report');
+          if (!data.success) throw new Error(data.error || 'Failed to extract vitals from report');
+
+          if (data.extractedVitals?.length > 0) {
+            setExtractedVitals(data.extractedVitals.map((v: any) => ({ ...v, selected: true })));
+            toast.success(`Found ${data.extractedVitals.length} health metrics!`);
+          } else {
+            setUploadError('No health metrics found. Try a clearer photo of your lab report.');
+          }
+          return; // Exit early since we handled everything
+        }
 
         setOcrProgress({ status: 'Processing text...', progress: 100 });
         
-        if (!ocrResult.text.trim()) {
-          throw new Error('Could not read text from image. Try a clearer photo.');
+        // Check for meaningful text extraction
+        if (!ocrResult.text || ocrResult.text.length < 10) {
+          console.warn('OCR extracted minimal text, falling back to server');
+          // Fall back to server-side for better results
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          
+          requestBody = {
+            imageBase64: base64,
+            reportDate: selectedDate.toISOString()
+          };
+        } else if (ocrResult.confidence < 40) {
+          // Low confidence - warn but still try with extracted text
+          console.warn('Low OCR confidence:', ocrResult.confidence);
+          toast.info('Image quality may affect results. Try a clearer photo if needed.');
+          setUsedLocalOCR(true);
+          requestBody = {
+            preExtractedText: ocrResult.text,
+            reportDate: selectedDate.toISOString()
+          };
+        } else {
+          console.log('Local OCR complete, confidence:', ocrResult.confidence);
+          setUsedLocalOCR(true);
+          // Send only the extracted text - no image data
+          requestBody = {
+            preExtractedText: ocrResult.text,
+            reportDate: selectedDate.toISOString()
+          };
         }
-
-        console.log('Local OCR complete, confidence:', ocrResult.confidence);
-        setUsedLocalOCR(true);
-
-        // Send only the extracted text - no image data
-        requestBody = {
-          preExtractedText: ocrResult.text,
-          reportDate: selectedDate.toISOString()
-        };
       } else {
         // For PDFs, fall back to server-side processing
         console.log('Using server-side OCR for PDF processing');
