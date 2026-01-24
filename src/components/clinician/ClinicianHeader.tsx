@@ -131,20 +131,22 @@ export function ClinicianHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link to="/clinician/dashboard" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
-            <Heart className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-display text-xl font-bold">Marpe</span>
-            <span className="text-[10px] text-muted-foreground -mt-1">for Clinicians</span>
-          </div>
-        </Link>
+      <div className="container flex h-16 items-center">
+        {/* Logo - fixed width for symmetry */}
+        <div className="flex-1 flex justify-start">
+          <Link to="/clinician/dashboard" className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
+              <Heart className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-display text-xl font-bold">Marpe</span>
+              <span className="text-[10px] text-muted-foreground -mt-1">for Clinicians</span>
+            </div>
+          </Link>
+        </div>
 
-        {/* Desktop Navigation - Tab Style */}
-        <nav className="hidden md:flex items-center gap-1">
+        {/* Desktop Navigation - Tab Style - truly centered */}
+        <nav className="hidden md:flex items-center justify-center gap-1">
           {navLinks.map((link) => (
             <Link key={link.to} to={link.to}>
               <Button 
@@ -162,8 +164,8 @@ export function ClinicianHeader() {
           ))}
         </nav>
 
-        {/* Right Side - Theme Toggle, Notifications Popover, Profile */}
-        <div className="flex items-center gap-1">
+        {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
+        <div className="flex-1 flex items-center justify-end gap-1">
           {/* Theme Toggle Icon */}
           <Button
             variant="ghost"
