@@ -96,6 +96,7 @@ export function Header() {
           { href: '/care-circle', label: 'Care Circle' },
         ]
     : [
+        { href: '/', label: 'Home' },
         { href: '/features', label: 'Features' },
         { href: '/pricing', label: 'Pricing' },
         { href: '/about', label: 'About' },
