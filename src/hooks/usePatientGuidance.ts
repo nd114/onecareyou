@@ -51,10 +51,13 @@ export function usePatientGuidance() {
         .in('user_id', clinicianIds);
 
       // Fetch clinician profiles for specialty, practice name, and title
+      // Use the restricted public view to avoid exposing sensitive data like license numbers
       const { data: clinicianProfiles } = await supabase
-        .from('clinician_profiles')
+        .from('clinician_profiles_public' as any)
         .select('user_id, specialty, practice_name, title')
-        .in('user_id', clinicianIds);
+        .in('user_id', clinicianIds) as unknown as { 
+          data: { user_id: string; specialty: string | null; practice_name: string | null; title: string | null }[] | null 
+        };
 
       const profileMap = new Map(
         (profiles || []).map(p => [p.user_id, p.name])
