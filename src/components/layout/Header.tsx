@@ -110,23 +110,26 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-2"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
-              <Heart className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-display text-xl font-bold text-foreground">
-              Marpe
-            </span>
-          </motion.div>
-        </Link>
+      <div className="container flex h-16 items-center">
+        {/* Logo - fixed width for symmetry */}
+        <div className="flex-1 flex justify-start">
+          <Link to="/" className="flex items-center gap-2">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
+                <Heart className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="font-display text-xl font-bold text-foreground">
+                Marpe
+              </span>
+            </motion.div>
+          </Link>
+        </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        {/* Desktop Navigation - truly centered */}
+        <nav className="hidden md:flex items-center justify-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -143,7 +146,8 @@ export function Header() {
         </nav>
 
         {/* Desktop Auth Buttons / User Menu */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Auth Buttons - fixed width for symmetry */}
+        <div className="flex-1 hidden md:flex items-center justify-end gap-3">
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
