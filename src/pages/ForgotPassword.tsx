@@ -32,18 +32,24 @@ const ForgotPassword = () => {
     
     setIsLoading(true);
     
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    
-    if (error) {
-      toast.error(error.message);
+    try {
+      const response = await supabase.functions.invoke('send-password-reset', {
+        body: { email },
+      });
+      
+      if (response.error) {
+        console.error('Error:', response.error);
+        // Still show success for security - don't reveal if email exists
+      }
+      
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Error:', err);
+      // Still show success for security
+      setIsSubmitted(true);
+    } finally {
       setIsLoading(false);
-      return;
     }
-    
-    setIsSubmitted(true);
-    setIsLoading(false);
   };
 
   return (
