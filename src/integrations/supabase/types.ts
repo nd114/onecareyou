@@ -1335,11 +1335,50 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clinician_profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          practice_name: string | null
+          specialty: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          practice_name?: string | null
+          specialty?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          practice_name?: string | null
+          specialty?: string | null
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       clinician_has_patient_access: {
         Args: { patient_user_id: string }
+        Returns: boolean
+      }
+      clinician_has_patient_permission: {
+        Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
       get_current_user_email: { Args: never; Returns: string }
