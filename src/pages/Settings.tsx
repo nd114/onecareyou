@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
@@ -149,11 +150,13 @@ const Settings = () => {
   
   const navigate = useNavigate();
   
+  // Use centralized theme
+  const { theme, setTheme } = useTheme();
+  
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [showConsentHistory, setShowConsentHistory] = useState(false);
   const [consentLogs, setConsentLogs] = useState<ConsentLogEntry[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [timezone, setTimezone] = useState<string>((profile as any)?.timezone || 'UTC');
   const [savingTimezone, setSavingTimezone] = useState(false);
   
@@ -166,47 +169,10 @@ const Settings = () => {
   const { preferences: unitPreferences, updatePreference } = useUnitPreferences();
 
   useEffect(() => {
-    // Check stored theme preference
-    const storedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
-    if (storedTheme) {
-      setTheme(storedTheme);
-    } else {
-      // Default to system
-      setTheme('system');
-    }
-  }, []);
-
-  useEffect(() => {
     if ((profile as any)?.timezone) {
       setTimezone((profile as any).timezone);
     }
   }, [profile]);
-
-  const applyTheme = (newTheme: 'light' | 'dark' | 'system') => {
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    
-    if (newTheme === 'system') {
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', systemPrefersDark);
-    } else {
-      document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    }
-  };
-
-  // Listen for system theme changes when in system mode
-  useEffect(() => {
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e: MediaQueryListEvent) => {
-        document.documentElement.classList.toggle('dark', e.matches);
-      };
-      mediaQuery.addEventListener('change', handleChange);
-      // Apply current system preference
-      document.documentElement.classList.toggle('dark', mediaQuery.matches);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-  }, [theme]);
 
   const handleTimezoneChange = async (newTimezone: string) => {
     if (!user) return;
@@ -703,7 +669,7 @@ const Settings = () => {
                       <p className="text-sm text-muted-foreground">Choose your preferred appearance</p>
                     </div>
                   </div>
-                  <Select value={theme} onValueChange={(value: 'light' | 'dark' | 'system') => applyTheme(value)}>
+                  <Select value={theme} onValueChange={(value: 'light' | 'dark' | 'system') => setTheme(value)}>
                     <SelectTrigger className="w-[120px]">
                       <SelectValue />
                     </SelectTrigger>
