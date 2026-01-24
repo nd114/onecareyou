@@ -299,7 +299,7 @@ const TermsOfService = () => {
                   <p><strong>Severability:</strong> If any provision of these Terms is found to be unenforceable, the remaining provisions will continue in full force and effect.</p>
                   <p><strong>Waiver:</strong> Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights.</p>
                   <p><strong>Assignment:</strong> You may not assign or transfer these Terms or your rights under them without our prior written consent. We may assign our rights and obligations without restriction.</p>
-                  <p><strong>Contact Us:</strong> For questions about these Terms, please contact us at legal@marpe.health</p>
+                  <p><strong>Contact Us:</strong> For questions about these Terms, please contact us at legal@marpe.care</p>
                 </div>
               </CardContent>
             </Card>

@@ -344,7 +344,7 @@ const PrivacyPolicy = () => {
                   <Separator className="my-4" />
                   <p>
                     <strong>Exercising Your Rights:</strong> To exercise these rights, contact us at{" "}
-                    <strong>privacy@marpe.health</strong> or use the data management features in your account settings.
+                    <strong>privacy@marpe.care</strong> or use the data management features in your account settings.
                     We will respond to all requests within the timeframe required by applicable law (typically 30 days).
                   </p>
                   <p>
@@ -587,19 +587,19 @@ const PrivacyPolicy = () => {
                   <p>For privacy-related inquiries or to exercise your rights:</p>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                     <p>
-                      <strong>Privacy Team:</strong> privacy@marpe.health
+                      <strong>Privacy Team:</strong> privacy@marpe.care
                     </p>
                     <p>
-                      <strong>Data Protection Officer:</strong> dpo@marpe.health
+                      <strong>Data Protection Officer:</strong> dpo@marpe.care
                     </p>
                     <p>
-                      <strong>General Support:</strong> support@marpe.health
+                      <strong>General Support:</strong> support@marpe.care
                     </p>
                   </div>
                   <p>We will respond to all privacy requests within 30 days.</p>
                   <p>
                     <strong>EU Representative:</strong> For users in the European Union, our EU representative can be
-                    contacted at eu-privacy@marpe.health
+                    contacted at eu-privacy@marpe.care
                   </p>
                 </div>
               </CardContent>
