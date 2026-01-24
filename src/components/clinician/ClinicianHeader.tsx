@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, Moon, Sun, CheckCircle, Eye, Clock, XCircle, Inbox, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,45 +13,26 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
-type Theme = 'light' | 'dark';
-
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const { clinicianProfile } = useClinicianProfile();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>('light');
-
-  // Initialize theme from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored && (stored === 'light' || stored === 'dark')) {
-      setTheme(stored);
-    } else {
-      // Check system preference
-      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setTheme(systemDark ? 'dark' : 'light');
-    }
-  }, []);
-
-  // Apply theme changes
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    // Toggle between light and dark, defaulting from resolved if on system
+    setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
   };
 
   const handleSignOut = async () => {
@@ -174,7 +155,7 @@ export function ClinicianHeader() {
             className="hidden md:flex"
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? (
+            {resolvedTheme === 'dark' ? (
               <Sun className="h-5 w-5" />
             ) : (
               <Moon className="h-5 w-5" />
@@ -367,7 +348,7 @@ export function ClinicianHeader() {
                 onClick={toggleTheme}
                 className="flex items-center gap-2"
               >
-                {theme === 'dark' ? (
+                {resolvedTheme === 'dark' ? (
                   <>
                     <Sun className="h-4 w-4" />
                     Light
