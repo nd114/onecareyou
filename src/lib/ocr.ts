@@ -21,7 +21,10 @@ export async function performLocalOCR(
   // Convert file to image data URL
   const imageDataUrl = await fileToDataURL(file);
   
-  // Perform OCR with Tesseract.js
+  // Pre-process: ensure image is loaded and valid
+  await validateImage(imageDataUrl);
+  
+  // Perform OCR with Tesseract.js using optimized settings
   const result = await Tesseract.recognize(
     imageDataUrl,
     'eng',
@@ -37,10 +40,37 @@ export async function performLocalOCR(
     }
   );
 
+  const text = result.data.text?.trim() || '';
+  const confidence = result.data.confidence || 0;
+  
+  console.log('OCR Result - Text length:', text.length, 'Confidence:', confidence);
+  
+  // If confidence is very low or no text, provide helpful error
+  if (confidence < 30 && text.length < 20) {
+    console.warn('OCR produced low confidence result:', { confidence, textLength: text.length });
+  }
+
   return {
-    text: result.data.text,
-    confidence: result.data.confidence
+    text,
+    confidence
   };
+}
+
+/**
+ * Validates that the image data URL can be loaded as an image
+ */
+async function validateImage(dataUrl: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      console.log('Image validated:', img.width, 'x', img.height);
+      resolve();
+    };
+    img.onerror = () => {
+      reject(new Error('Failed to load image. Please try a different file.'));
+    };
+    img.src = dataUrl;
+  });
 }
 
 /**

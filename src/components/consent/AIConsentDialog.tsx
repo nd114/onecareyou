@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield, Brain, Lock, FileText, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface AIConsentDialogProps {
   open: boolean;
@@ -113,20 +114,34 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
               </div>
             </div>
 
-            {/* Consent checkbox */}
-            <div className="flex items-start gap-3 p-4 border rounded-lg bg-card">
+            {/* Consent checkbox - prominent styling */}
+            <div className={cn(
+              "flex items-start gap-3 p-4 rounded-lg border-2 transition-colors",
+              accepted 
+                ? "border-primary bg-primary/5" 
+                : "border-amber-500 bg-amber-50 dark:bg-amber-950/20"
+            )}>
               <Checkbox
                 id="consent"
                 checked={accepted}
                 onCheckedChange={(checked) => setAccepted(checked as boolean)}
-                className="mt-0.5"
+                className="mt-0.5 h-5 w-5"
               />
-              <label htmlFor="consent" className="text-sm cursor-pointer">
+              <label htmlFor="consent" className="text-sm cursor-pointer select-none">
+                <span className={cn("font-medium", !accepted && "text-amber-700 dark:text-amber-400")}>
+                  {!accepted && "☑️ Check this box to continue: "}
+                </span>
                 I understand and consent to the processing of my health data by AI services 
                 for the purpose of extracting health metrics from my lab reports. I acknowledge 
                 that I can revoke this consent at any time.
               </label>
             </div>
+            
+            {!accepted && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 text-center font-medium animate-pulse">
+                ↑ Please check the box above to enable the consent button
+              </p>
+            )}
           </div>
         </ScrollArea>
 
@@ -135,11 +150,16 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
             Decline
           </Button>
           <Button 
-            className="flex-1 gradient-primary border-0" 
+            className={cn(
+              "flex-1 border-0 transition-all",
+              accepted 
+                ? "gradient-primary" 
+                : "bg-muted text-muted-foreground cursor-not-allowed"
+            )}
             onClick={handleConsent}
             disabled={!accepted || processing}
           >
-            {processing ? 'Processing...' : 'I Consent'}
+            {processing ? 'Processing...' : accepted ? '✓ I Consent' : 'Check box above'}
           </Button>
         </div>
       </DialogContent>
