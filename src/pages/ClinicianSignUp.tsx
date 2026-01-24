@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -6,18 +6,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Stethoscope, ArrowLeft } from 'lucide-react';
+import { Loader2, Stethoscope, ArrowLeft, ArrowRight, Mail, Lock, User, Eye, EyeOff, Building2, Award, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MEDICAL_SPECIALTIES } from '@/hooks/useClinicianProfile';
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
+import { z } from 'zod';
+
+const accountSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
+  email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password must be less than 72 characters'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
+});
 
 const ClinicianSignUp = () => {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp, user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState<'account' | 'profile'>('account');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [accountData, setAccountData] = useState({
     email: '',
@@ -33,16 +46,26 @@ const ClinicianSignUp = () => {
     country: '',
   });
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/clinician/dashboard', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+
   const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     
-    if (accountData.password !== accountData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (accountData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    const result = accountSchema.safeParse(accountData);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
       return;
     }
 
@@ -62,7 +85,11 @@ const ClinicianSignUp = () => {
       );
 
       if (signUpError) {
-        toast.error(signUpError.message);
+        if (signUpError.message.includes('already registered')) {
+          toast.error('This email is already registered. Please sign in instead.');
+        } else {
+          toast.error(signUpError.message);
+        }
         setIsLoading(false);
         return;
       }
@@ -101,35 +128,38 @@ const ClinicianSignUp = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center p-4">
+    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Stethoscope className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-display text-2xl font-bold">Marpe</span>
-          </Link>
-          <h1 className="font-display text-2xl font-bold">Healthcare Provider Sign Up</h1>
-          <p className="text-muted-foreground mt-2">
-            Create your clinician account to manage patients
-          </p>
-        </div>
+        {/* Logo */}
+        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
+            <Stethoscope className="h-7 w-7 text-primary-foreground" />
+          </div>
+          <span className="font-display text-2xl font-bold">Marpe</span>
+        </Link>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {step === 'account' ? 'Account Details' : 'Professional Information'}
+        <Card className="border-border/50 shadow-xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">
+              {step === 'account' ? 'Create Clinician Account' : 'Professional Details'}
             </CardTitle>
             <CardDescription>
               {step === 'account' 
-                ? 'Enter your account credentials' 
-                : 'Tell us about your practice'}
+                ? 'Join Marpe to manage your patients remotely' 
+                : 'Tell us about your practice (optional)'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -137,49 +167,86 @@ const ClinicianSignUp = () => {
               <form onSubmit={handleAccountSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Dr. Jane Smith"
-                    value={accountData.name}
-                    onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Dr. Jane Smith"
+                      value={accountData.name}
+                      onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
+                      className={`pl-10 ${errors.name ? 'border-destructive' : ''}`}
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name}</p>
+                  )}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="doctor@hospital.com"
-                    value={accountData.email}
-                    onChange={(e) => setAccountData({ ...accountData, email: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="doctor@hospital.com"
+                      value={accountData.email}
+                      onChange={(e) => setAccountData({ ...accountData, email: e.target.value })}
+                      className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={accountData.password}
-                    onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Minimum 8 characters"
+                      value={accountData.password}
+                      onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
+                      className={`pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={accountData.confirmPassword}
-                    onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Confirm your password"
+                      value={accountData.confirmPassword}
+                      onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
+                      className={`pl-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                    />
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                  )}
                 </div>
+
                 <Button type="submit" className="w-full gradient-primary border-0">
                   Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </form>
             ) : (
@@ -197,12 +264,16 @@ const ClinicianSignUp = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="practice">Practice/Hospital Name</Label>
-                  <Input
-                    id="practice"
-                    placeholder="City General Hospital"
-                    value={profileData.practice_name}
-                    onChange={(e) => setProfileData({ ...profileData, practice_name: e.target.value })}
-                  />
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="practice"
+                      placeholder="City General Hospital"
+                      value={profileData.practice_name}
+                      onChange={(e) => setProfileData({ ...profileData, practice_name: e.target.value })}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -226,14 +297,18 @@ const ClinicianSignUp = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="license">License Number (Optional)</Label>
-                  <Input
-                    id="license"
-                    placeholder="For verification purposes"
-                    value={profileData.license_number}
-                    onChange={(e) => setProfileData({ ...profileData, license_number: e.target.value })}
-                  />
+                  <div className="relative">
+                    <Award className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="license"
+                      placeholder="For verification purposes"
+                      value={profileData.license_number}
+                      onChange={(e) => setProfileData({ ...profileData, license_number: e.target.value })}
+                      className="pl-10"
+                    />
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    This helps verify your credentials (trust-based initially)
+                    This helps verify your credentials
                   </p>
                 </div>
                 
@@ -263,40 +338,44 @@ const ClinicianSignUp = () => {
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating Account...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
                     </>
                   ) : (
-                    'Create Clinician Account'
+                    <>
+                      Create Account
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
                   )}
                 </Button>
               </form>
             )}
 
-            <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Already have an account? </span>
-              <Link to="/sign-in" className="text-primary hover:underline font-medium">
-                Sign in
-              </Link>
-            </div>
-            
-            <div className="mt-4 text-center text-sm">
-              <span className="text-muted-foreground">Not a healthcare provider? </span>
-              <Link to="/sign-up" className="text-primary hover:underline font-medium">
-                Patient sign up
-              </Link>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-border text-center">
-              <Link 
-                to="/clinician/why-marpe" 
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                Why healthcare providers choose Marpe →
-              </Link>
+            <div className="mt-6 text-center space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Link to="/sign-in" className="text-primary font-medium hover:underline">
+                  Sign in
+                </Link>
+              </p>
+              
+              <div className="flex items-center gap-2 justify-center text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Not a healthcare provider?</span>
+                <Link to="/sign-up" className="text-primary font-medium hover:underline">
+                  Patient sign up
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          By creating an account, you agree to our{' '}
+          <Link to="/terms" className="underline hover:text-foreground">Terms</Link>
+          {' '}and{' '}
+          <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
+        </p>
       </motion.div>
     </div>
   );
