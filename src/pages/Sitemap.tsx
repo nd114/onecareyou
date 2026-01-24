@@ -139,29 +139,8 @@ export default function Sitemap() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-
-          {/* XML Sitemap Link */}
-          <div className="mt-12 text-center">
-            <Card className="inline-block">
-              <CardContent className="py-4 px-6">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Looking for the machine-readable version?
-                </p>
-                <a
-                  href="/sitemap.xml"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
-                >
-                  <FileText className="h-4 w-4" />
-                  View XML Sitemap
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+        </div>
+      </section>
       </main>
 
       <Footer />
