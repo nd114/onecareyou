@@ -471,6 +471,9 @@ export type Database = {
           notify_on_guidance_acknowledged: boolean | null
           notify_on_guidance_completed: boolean | null
           notify_on_guidance_expired: boolean | null
+          onboarding_completed: boolean | null
+          onboarding_dismissed_at: string | null
+          onboarding_steps_completed: Json | null
           patient_limit: number | null
           practice_name: string | null
           push_notifications_enabled: boolean | null
@@ -500,6 +503,9 @@ export type Database = {
           notify_on_guidance_acknowledged?: boolean | null
           notify_on_guidance_completed?: boolean | null
           notify_on_guidance_expired?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_dismissed_at?: string | null
+          onboarding_steps_completed?: Json | null
           patient_limit?: number | null
           practice_name?: string | null
           push_notifications_enabled?: boolean | null
@@ -529,6 +535,9 @@ export type Database = {
           notify_on_guidance_acknowledged?: boolean | null
           notify_on_guidance_completed?: boolean | null
           notify_on_guidance_expired?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_dismissed_at?: string | null
+          onboarding_steps_completed?: Json | null
           patient_limit?: number | null
           practice_name?: string | null
           push_notifications_enabled?: boolean | null
