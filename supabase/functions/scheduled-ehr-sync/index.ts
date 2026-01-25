@@ -196,6 +196,9 @@ serve(async (req) => {
                       unit: 'mmHg',
                       recorded_at: recordedAt,
                       notes: `Synced from ${connection.provider_name}`,
+                      source: 'ehr_import',
+                      external_id: obs.id,
+                      ehr_connection_id: connection.id,
                     });
                     totalImported++;
                   }
@@ -220,6 +223,9 @@ serve(async (req) => {
                     unit: obs.valueQuantity.unit || getDefaultUnit(vitalType),
                     recorded_at: recordedAt,
                     notes: `Synced from ${connection.provider_name}`,
+                    source: 'ehr_import',
+                    external_id: obs.id,
+                    ehr_connection_id: connection.id,
                   });
                   totalImported++;
                 }

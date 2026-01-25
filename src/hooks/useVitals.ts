@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { toast } from 'sonner';
 
+export type VitalSource = 'manual' | 'ehr_import' | 'device';
+
 export interface VitalRecord {
   id: string;
   user_id: string;
@@ -14,6 +16,14 @@ export interface VitalRecord {
   recorded_at: string;
   notes: string | null;
   created_at: string;
+  source: VitalSource;
+  external_id: string | null;
+  ehr_connection_id: string | null;
+}
+
+// Check if a vital can be edited (only manual entries can be modified)
+export function isVitalEditable(vital: VitalRecord): boolean {
+  return vital.source === 'manual';
 }
 
 export function useVitals() {
@@ -70,6 +80,7 @@ export function useVitals() {
           unit: config.unit,
           recorded_at: recordedAt?.toISOString() || new Date().toISOString(),
           notes: notes || null,
+          source: 'manual', // Patient-entered vitals are always manual
         })
         .select()
         .single();
@@ -87,6 +98,13 @@ export function useVitals() {
   };
 
   const deleteVital = async (id: string) => {
+    // Check if vital is editable (not from EHR)
+    const vital = vitals.find(v => v.id === id);
+    if (vital && !isVitalEditable(vital)) {
+      toast.error('Cannot delete vitals imported from EHR');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('vitals')
@@ -112,6 +130,13 @@ export function useVitals() {
       recordedAt?: Date;
     }
   ): Promise<boolean> => {
+    // Check if vital is editable (not from EHR)
+    const vital = vitals.find(v => v.id === id);
+    if (vital && !isVitalEditable(vital)) {
+      toast.error('Cannot edit vitals imported from EHR');
+      return false;
+    }
+
     try {
       const updateData: Record<string, unknown> = {};
       
