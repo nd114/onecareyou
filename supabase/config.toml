@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.drug-lookup]
 verify_jwt = false
+
+[functions.ehr-webhook]
+verify_jwt = false
