@@ -39,6 +39,7 @@ import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicato
 import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
+import { ClinicianOnboardingCard } from '@/components/clinician/ClinicianOnboardingCard';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
@@ -159,6 +160,9 @@ const ClinicianDashboard = () => {
             Manage your patients and monitor their health
           </p>
         </motion.div>
+
+        {/* Onboarding Card - shows for new clinicians */}
+        <ClinicianOnboardingCard />
 
         {/* Patient Limit Banner - shows when near/at limit */}
         <PatientLimitBanner patientCount={patientCount} />
