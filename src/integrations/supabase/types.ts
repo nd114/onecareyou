@@ -634,6 +634,63 @@ export type Database = {
         }
         Relationships: []
       }
+      ehr_export_queue: {
+        Row: {
+          attempts: number | null
+          connection_id: string
+          created_at: string
+          error_message: string | null
+          exported_at: string | null
+          fhir_resource_id: string | null
+          id: string
+          last_attempt_at: string | null
+          patient_fhir_id: string
+          status: string
+          vital_id: string
+        }
+        Insert: {
+          attempts?: number | null
+          connection_id: string
+          created_at?: string
+          error_message?: string | null
+          exported_at?: string | null
+          fhir_resource_id?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          patient_fhir_id: string
+          status?: string
+          vital_id: string
+        }
+        Update: {
+          attempts?: number | null
+          connection_id?: string
+          created_at?: string
+          error_message?: string | null
+          exported_at?: string | null
+          fhir_resource_id?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          patient_fhir_id?: string
+          status?: string
+          vital_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ehr_export_queue_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "ehr_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ehr_export_queue_vital_id_fkey"
+            columns: ["vital_id"]
+            isOneToOne: false
+            referencedRelation: "vitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ehr_sync_logs: {
         Row: {
           connection_id: string
@@ -1523,11 +1580,14 @@ export type Database = {
       vitals: {
         Row: {
           created_at: string
+          ehr_connection_id: string | null
+          external_id: string | null
           family_member_id: string | null
           id: string
           notes: string | null
           recorded_at: string
           secondary_value: number | null
+          source: string | null
           type: string
           unit: string
           user_id: string
@@ -1535,11 +1595,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          ehr_connection_id?: string | null
+          external_id?: string | null
           family_member_id?: string | null
           id?: string
           notes?: string | null
           recorded_at?: string
           secondary_value?: number | null
+          source?: string | null
           type: string
           unit: string
           user_id: string
@@ -1547,17 +1610,27 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          ehr_connection_id?: string | null
+          external_id?: string | null
           family_member_id?: string | null
           id?: string
           notes?: string | null
           recorded_at?: string
           secondary_value?: number | null
+          source?: string | null
           type?: string
           unit?: string
           user_id?: string
           value?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "vitals_ehr_connection_id_fkey"
+            columns: ["ehr_connection_id"]
+            isOneToOne: false
+            referencedRelation: "ehr_connections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vitals_family_member_id_fkey"
             columns: ["family_member_id"]
