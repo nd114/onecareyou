@@ -38,6 +38,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
+import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection';
+import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
@@ -568,6 +570,16 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Practice Invitations (if any) */}
+          <div className="mt-6">
+            <PracticeInvitationsCard />
+          </div>
+
+          {/* Practice/Team Management */}
+          <div className="mt-6">
+            <PracticeTeamSection />
+          </div>
 
           {/* Subscription Management */}
           <div className="mt-6">
