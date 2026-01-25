@@ -9,6 +9,7 @@ import {
   Check,
   Download,
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -183,6 +184,62 @@ const ClinicianBAA = () => {
     formData.contact_phone &&
     signatureDataUrl;
 
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BUSINESS ASSOCIATE AGREEMENT', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    // Signing details
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Signed on: ${new Date().toLocaleDateString()}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Practice: ${formData.practice_name}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Signatory: ${formData.contact_name}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Email: ${formData.contact_email}`, margin, yPos);
+    yPos += 15;
+
+    // Agreement text
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(BAA_TEXT, maxWidth);
+    
+    for (const line of lines) {
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.text(line, margin, yPos);
+      yPos += 5;
+    }
+
+    // Signature section
+    if (yPos > 240) {
+      doc.addPage();
+      yPos = 20;
+    }
+    yPos += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.text('ELECTRONIC SIGNATURE', margin, yPos);
+    yPos += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Signed by: ${formData.contact_name}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Date: ${new Date().toLocaleString()}`, margin, yPos);
+
+    doc.save('Marpe_BAA_Agreement.pdf');
+    toast.success('PDF downloaded successfully');
+  };
+
   if (signed) {
     return (
       <div className="min-h-screen bg-background">
@@ -202,7 +259,7 @@ const ClinicianBAA = () => {
               and is available in your account settings.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleDownloadPDF}>
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
