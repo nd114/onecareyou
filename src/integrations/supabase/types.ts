@@ -1082,6 +1082,240 @@ export type Database = {
           },
         ]
       }
+      practice_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          declined_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invited_by: string
+          name: string | null
+          practice_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          declined_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          invited_by: string
+          name?: string | null
+          practice_id: string
+          role?: Database["public"]["Enums"]["practice_role"]
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          declined_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          invited_by?: string
+          name?: string | null
+          practice_id?: string
+          role?: Database["public"]["Enums"]["practice_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_invitations_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_members: {
+        Row: {
+          accepted_at: string | null
+          can_invite_members: boolean | null
+          can_invite_patients: boolean | null
+          can_manage_billing: boolean | null
+          can_manage_settings: boolean | null
+          can_view_all_patients: boolean | null
+          created_at: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          practice_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          can_invite_members?: boolean | null
+          can_invite_patients?: boolean | null
+          can_manage_billing?: boolean | null
+          can_manage_settings?: boolean | null
+          can_view_all_patients?: boolean | null
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          practice_id: string
+          role?: Database["public"]["Enums"]["practice_role"]
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          can_invite_members?: boolean | null
+          can_invite_patients?: boolean | null
+          can_manage_billing?: boolean | null
+          can_manage_settings?: boolean | null
+          can_view_all_patients?: boolean | null
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          practice_id?: string
+          role?: Database["public"]["Enums"]["practice_role"]
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_members_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_patient_access: {
+        Row: {
+          added_at: string
+          id: string
+          is_active: boolean | null
+          patient_user_id: string
+          permissions: Json
+          practice_id: string
+          primary_clinician_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          is_active?: boolean | null
+          patient_user_id: string
+          permissions?: Json
+          practice_id: string
+          primary_clinician_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          is_active?: boolean | null
+          patient_user_id?: string
+          permissions?: Json
+          practice_id?: string
+          primary_clinician_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_patient_access_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practices: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          member_limit: number | null
+          name: string
+          npi: string | null
+          patient_limit: number | null
+          phone: string | null
+          primary_color: string | null
+          state: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_ends_at: string | null
+          subscription_status: string | null
+          subscription_tier: string | null
+          tax_id: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          member_limit?: number | null
+          name: string
+          npi?: string | null
+          patient_limit?: number | null
+          phone?: string | null
+          primary_color?: string | null
+          state?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          member_limit?: number | null
+          name?: string
+          npi?: string | null
+          patient_limit?: number | null
+          phone?: string | null
+          primary_color?: string | null
+          state?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -1373,6 +1607,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
       clinician_has_patient_access: {
         Args: { patient_user_id: string }
         Returns: boolean
@@ -1382,9 +1617,21 @@ export type Database = {
         Returns: boolean
       }
       get_current_user_email: { Args: never; Returns: string }
+      has_practice_role: {
+        Args: {
+          practice_uuid: string
+          required_role: Database["public"]["Enums"]["practice_role"]
+        }
+        Returns: boolean
+      }
+      is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
+      practice_has_patient_access: {
+        Args: { patient_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      practice_role: "owner" | "admin" | "provider" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1511,6 +1758,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      practice_role: ["owner", "admin", "provider", "staff"],
+    },
   },
 } as const
