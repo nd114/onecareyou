@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   ArrowLeft, 
   Shield, 
@@ -8,6 +9,12 @@ import {
   Loader2,
   Check,
   Download,
+  AlertTriangle,
+  Calendar,
+  Building2,
+  User as UserIcon,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { Button } from '@/components/ui/button';
@@ -18,6 +25,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SignaturePad } from '@/components/signature/SignaturePad';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +34,10 @@ import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+
+// Current BAA version - increment when agreement terms change
+const CURRENT_BAA_VERSION = '1.0';
 
 const BAA_TEXT = `BUSINESS ASSOCIATE AGREEMENT
 
@@ -88,13 +101,26 @@ c) The provisions of this Agreement shall survive termination
 
 By signing below, the parties agree to be bound by the terms of this Business Associate Agreement.`;
 
+interface ExistingBAA {
+  id: string;
+  practice_name: string;
+  practice_address: string | null;
+  practice_npi: string | null;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string | null;
+  signed_at: string;
+  agreement_version: string;
+  status: string;
+}
+
 const ClinicianBAA = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { clinicianProfile } = useClinicianProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [signed, setSigned] = useState(false);
+  const [justSigned, setJustSigned] = useState(false);
   const [hasReadAgreement, setHasReadAgreement] = useState(false);
   const [agreesToTerms, setAgreesToTerms] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -112,6 +138,28 @@ const ClinicianBAA = () => {
     contact_phone: profile?.phone_number || '',
     contact_title: '',
   });
+
+  // Query for existing BAA agreement
+  const { data: existingBAA, isLoading: isLoadingBAA, refetch } = useQuery({
+    queryKey: ['baa-agreement', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('baa_agreements')
+        .select('*')
+        .eq('clinician_user_id', user.id)
+        .eq('status', 'active')
+        .order('signed_at', { ascending: false })
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as ExistingBAA | null;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isVersionOutdated = existingBAA && existingBAA.agreement_version !== CURRENT_BAA_VERSION;
 
   const buildFullAddress = () => {
     const parts = [
@@ -160,12 +208,13 @@ const ClinicianBAA = () => {
           contact_email: formData.contact_email,
           contact_phone: formData.contact_phone,
           user_agent: navigator.userAgent,
-          agreement_version: '1.0',
+          agreement_version: CURRENT_BAA_VERSION,
         });
 
       if (error) throw error;
 
-      setSigned(true);
+      setJustSigned(true);
+      refetch();
       toast.success('BAA signed successfully');
     } catch (error: any) {
       console.error('Error signing BAA:', error);
@@ -184,7 +233,7 @@ const ClinicianBAA = () => {
     formData.contact_phone &&
     signatureDataUrl;
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = (baaData?: ExistingBAA) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 20;
@@ -200,13 +249,22 @@ const ClinicianBAA = () => {
     // Signing details
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Signed on: ${new Date().toLocaleDateString()}`, margin, yPos);
+    
+    const practiceName = baaData?.practice_name || formData.practice_name;
+    const contactName = baaData?.contact_name || formData.contact_name;
+    const contactEmail = baaData?.contact_email || formData.contact_email;
+    const signedDate = baaData?.signed_at ? format(new Date(baaData.signed_at), 'MMMM d, yyyy') : new Date().toLocaleDateString();
+    const version = baaData?.agreement_version || CURRENT_BAA_VERSION;
+
+    doc.text(`Signed on: ${signedDate}`, margin, yPos);
     yPos += 6;
-    doc.text(`Practice: ${formData.practice_name}`, margin, yPos);
+    doc.text(`Agreement Version: ${version}`, margin, yPos);
     yPos += 6;
-    doc.text(`Signatory: ${formData.contact_name}`, margin, yPos);
+    doc.text(`Practice: ${practiceName}`, margin, yPos);
     yPos += 6;
-    doc.text(`Email: ${formData.contact_email}`, margin, yPos);
+    doc.text(`Signatory: ${contactName}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Email: ${contactEmail}`, margin, yPos);
     yPos += 15;
 
     // Agreement text
@@ -232,15 +290,28 @@ const ClinicianBAA = () => {
     doc.text('ELECTRONIC SIGNATURE', margin, yPos);
     yPos += 8;
     doc.setFont('helvetica', 'normal');
-    doc.text(`Signed by: ${formData.contact_name}`, margin, yPos);
+    doc.text(`Signed by: ${contactName}`, margin, yPos);
     yPos += 6;
-    doc.text(`Date: ${new Date().toLocaleString()}`, margin, yPos);
+    doc.text(`Date: ${signedDate}`, margin, yPos);
 
     doc.save('Marpe_BAA_Agreement.pdf');
     toast.success('PDF downloaded successfully');
   };
 
-  if (signed) {
+  // Loading state
+  if (isLoadingBAA) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ClinicianHeader />
+        <main className="container py-16 px-4 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
+
+  // Just signed confirmation view
+  if (justSigned) {
     return (
       <div className="min-h-screen bg-background">
         <ClinicianHeader />
@@ -250,8 +321,8 @@ const ClinicianBAA = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-lg mx-auto text-center"
           >
-            <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-              <Check className="h-10 w-10 text-green-600" />
+            <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
+              <Check className="h-10 w-10 text-green-600 dark:text-green-400" />
             </div>
             <h1 className="text-3xl font-bold mb-4">BAA Signed Successfully</h1>
             <p className="text-muted-foreground mb-8">
@@ -259,7 +330,7 @@ const ClinicianBAA = () => {
               and is available in your account settings.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="outline" onClick={handleDownloadPDF}>
+              <Button variant="outline" onClick={() => handleDownloadPDF()}>
                 <Download className="h-4 w-4 mr-2" />
                 Download PDF
               </Button>
@@ -273,6 +344,185 @@ const ClinicianBAA = () => {
     );
   }
 
+  // Existing signed BAA view
+  if (existingBAA) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ClinicianHeader />
+        
+        <main className="container py-8 px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto"
+          >
+            <Button 
+              variant="ghost" 
+              className="mb-6"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+
+            {/* Version Update Banner */}
+            {isVersionOutdated && (
+              <Alert className="mb-6 border-amber-500 bg-amber-50 dark:bg-amber-950/30">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800 dark:text-amber-200">Agreement Updated</AlertTitle>
+                <AlertDescription className="text-amber-700 dark:text-amber-300">
+                  This agreement was updated to version {CURRENT_BAA_VERSION}. By continuing to use Marpe, 
+                  you accept the updated terms. You can review the current terms below and download the 
+                  updated agreement for your records.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Agreement Details */}
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Shield className="h-6 w-6 text-primary" />
+                        <div>
+                          <CardTitle>HIPAA Business Associate Agreement</CardTitle>
+                          <CardDescription>Your signed agreement with Marpe</CardDescription>
+                        </div>
+                      </div>
+                      <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                        <Check className="h-3 w-3 mr-1" />
+                        Active
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Signing Details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/50">
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Signed On</p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(existingBAA.signed_at), 'MMMM d, yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Agreement Version</p>
+                          <p className="text-sm text-muted-foreground">
+                            {existingBAA.agreement_version}
+                            {isVersionOutdated && (
+                              <span className="text-amber-600 ml-1">(Current: {CURRENT_BAA_VERSION})</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Practice</p>
+                          <p className="text-sm text-muted-foreground">{existingBAA.practice_name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <UserIcon className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Signatory</p>
+                          <p className="text-sm text-muted-foreground">{existingBAA.contact_name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">Contact Email</p>
+                          <p className="text-sm text-muted-foreground">{existingBAA.contact_email}</p>
+                        </div>
+                      </div>
+                      {existingBAA.contact_phone && (
+                        <div className="flex items-start gap-3">
+                          <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">Contact Phone</p>
+                            <p className="text-sm text-muted-foreground">{existingBAA.contact_phone}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Agreement Text */}
+                    <div className="space-y-2">
+                      <Label>Agreement Terms {isVersionOutdated && `(Version ${CURRENT_BAA_VERSION})`}</Label>
+                      <ScrollArea className="h-[300px] rounded-md border p-4 bg-muted/30">
+                        <pre className="text-xs whitespace-pre-wrap font-mono">
+                          {BAA_TEXT}
+                        </pre>
+                      </ScrollArea>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Button onClick={() => handleDownloadPDF(existingBAA)} className="flex-1">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Signed Agreement
+                      </Button>
+                      {isVersionOutdated && (
+                        <Button variant="outline" onClick={() => handleDownloadPDF()}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Download Updated Terms
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2 text-green-800 dark:text-green-200">
+                      <Check className="h-5 w-5" />
+                      Compliance Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-green-700 dark:text-green-300 space-y-3">
+                    <p>
+                      Your organization is compliant with HIPAA Business Associate requirements for using Marpe services.
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      This agreement remains in effect for the duration of your service relationship with Marpe.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Need Updates?</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground space-y-3">
+                    <p>
+                      If your practice information has changed (name, address, authorized signatory), 
+                      please contact our support team to update your agreement.
+                    </p>
+                    <Button variant="outline" size="sm" asChild className="w-full">
+                      <a href="mailto:compliance@marpe.care">Contact Support</a>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
+
+  // Signing form (no existing BAA)
   return (
     <div className="min-h-screen bg-background">
       <ClinicianHeader />
