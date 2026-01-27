@@ -1,142 +1,163 @@
 
-# Comprehensive Platform Review: Clinician Test Readiness
 
-## Executive Summary
-The platform has a solid foundation for clinician features, but several issues need resolution before clinical testing. The primary concerns fall into three categories: **Brand Consistency (SSOT violations)**, **Clinician UX Issues**, and **Functional Gaps**.
+# Implementation Plan: BAA View State, Dark Mode Fix, Theme Toggle for Guests, and Careers Page
+
+This plan addresses four distinct requests and a fifth strategic discussion.
 
 ---
 
-## Part 1: Single Source of Truth (SSOT) Violations
+## 1. BAA Page: Show Existing Agreement Instead of Re-signing
 
-### 1.1 Brand Name Inconsistencies
-**Critical Issue**: "OneCare" still appears in multiple files despite rebranding to "Marpe"
+### Problem
+When a clinician who has already signed the BAA visits `/clinician/baa`, they see the signing form again instead of viewing their existing agreement.
 
-| Location | Issue | Priority |
-|----------|-------|----------|
-| `src/pages/EHRComparison.tsx` | 15+ instances of "OneCare" in comparison data, headings, and descriptions | HIGH |
-| `src/index.css:7` | Comment: `/* OneCare Design System */` | LOW |
-| `docs/comprehensive-platform-review.md` | Title and content use "OneCare" | MEDIUM |
-| `docs/requirements-implemented.md` | Title and overview use "OneCare" | MEDIUM |
-| `docs/clinician-gaps-implementation-plan.md` | Competitive table uses "OneCare" | MEDIUM |
-| `docs/pricing-roadmap.md` | Comparison table uses "OneCare" | MEDIUM |
+### Solution
+Query for existing BAA on page load and conditionally render:
+- **If signed**: Show a "view agreement" state with download PDF, signed date, and agreement details
+- **If updated agreement version**: Show a notice that continued use constitutes acceptance of updated terms, with option to review and download
 
-### 1.2 Email Domain Inconsistency
-**Critical Issue**: Two different domains are used inconsistently
+### Technical Changes
 
-| Domain | Used In |
-|--------|---------|
-| `@marpe.health` | Privacy Policy, Data Processing, Terms of Service (legal/DPO emails) |
-| `@marpe.care` | Footer, Help Center, Privacy Policy children's section |
+**File: `src/pages/ClinicianBAA.tsx`**
 
-**Recommendation**: Standardize on ONE domain (suggest `@marpe.care` for consistency with published URL).
+1. Add a query to fetch existing BAA agreement on mount (similar to `useClinicianOnboarding.ts`)
+2. Create a new "Signed Agreement View" component state showing:
+   - Agreement status badge (Active)
+   - Signed date and version
+   - Practice/signatory details (read-only)
+   - Download PDF button
+   - Agreement text in scrollable view
+3. Add version comparison logic:
+   - Store current agreement version as constant (e.g., `CURRENT_BAA_VERSION = '1.0'`)
+   - If user's signed version differs from current, show an "Agreement Updated" banner
+   - Text: "This agreement was updated on [date]. By continuing to use Marpe, you accept the updated terms."
+   - Provide "Review Changes" and "Download Updated Agreement" options
 
-### 1.3 Missing Brand Constants File
-**Problem**: No centralized constants file exists. Brand values are hardcoded across 10+ files.
+### Database Consideration
+The `baa_agreements` table already has an `agreement_version` column and `status` field, which supports this flow without schema changes.
 
-**Recommendation**: Create `src/lib/brand-constants.ts`:
-```typescript
-export const BRAND = {
-  name: 'Marpe',
-  tagline: 'Your Health, Connected',
-  domain: 'marpe.care',
-  emails: {
-    support: 'support@marpe.care',
-    privacy: 'privacy@marpe.care',
-    legal: 'legal@marpe.care',
-    dpo: 'dpo@marpe.care',
-  },
-  urls: {
-    app: 'https://marpecare.lovable.app',
-  }
-} as const;
+---
+
+## 2. Dark Mode: Fix Hero Section Gradient on Landing Page
+
+### Problem
+Looking at the screenshots, in dark mode the hero section background uses `gradient-hero` which is defined as:
+```css
+--gradient-hero: linear-gradient(135deg, hsl(168 76% 95%) 0%, hsl(199 89% 95%) 50%, hsl(234 89% 95%) 100%);
+```
+
+This light gradient is never overridden in the `.dark` class, causing a washed-out light background in dark mode that makes text unreadable (especially "Bridge the Gap Between" which appears in muted colors).
+
+### Solution
+Add a dark mode variant for `--gradient-hero` in `src/index.css`:
+
+**File: `src/index.css`**
+
+In the `.dark` class (around line 98-135), add:
+```css
+--gradient-hero: linear-gradient(135deg, hsl(220 20% 12%) 0%, hsl(220 25% 15%) 50%, hsl(225 25% 18%) 100%);
+```
+
+This creates a subtle dark gradient that matches the dark theme's background tones while providing visual interest.
+
+---
+
+## 3. Theme Toggle for Signed-Out Users
+
+### Problem
+The theme toggle (Sun/Moon icon) is only visible to authenticated users in the ClinicianHeader. Signed-out users on the public Header cannot change themes.
+
+### Solution
+Add theme toggle to the public Header component for all users.
+
+**File: `src/components/layout/Header.tsx`**
+
+1. Import `useTheme` from `@/contexts/ThemeContext`
+2. Add the same theme toggle button pattern used in ClinicianHeader
+3. Position it before the "Sign In" button in the right-side actions area
+4. Include the toggle in the mobile menu as well
+
+Code pattern to add:
+```tsx
+const { resolvedTheme, setTheme } = useTheme();
+
+const toggleTheme = () => {
+  setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
+};
+
+// In the header actions area (before Sign In button):
+<Button
+  variant="ghost"
+  size="icon"
+  onClick={toggleTheme}
+  aria-label="Toggle theme"
+>
+  {resolvedTheme === 'dark' ? (
+    <Sun className="h-5 w-5" />
+  ) : (
+    <Moon className="h-5 w-5" />
+  )}
+</Button>
 ```
 
 ---
 
-## Part 2: Clinician-Side Issues for Testing
+## 4. Jobs/Careers Page
 
-### 2.1 Header Consistency (FIXED)
-The `ClinicianHeader` is now correctly used across clinician pages including BAA and Enterprise Inquiry.
+### Overview
+Create a public-facing careers page at `/careers` that showcases open positions and company culture.
 
-### 2.2 Navigation Alignment (FIXED)
-Desktop navigation is now properly centered using the three-column flexbox pattern.
+### Proposed Structure
 
-### 2.3 Pages Still Using Generic Header
-| Page | Current Header | Should Use |
-|------|----------------|------------|
-| `ClinicianPricing.tsx` | `<Header />` | `<ClinicianHeader />` |
-| `ClinicianWhyMarpe.tsx` | `<Header />` | `<ClinicianHeader />` |
-| `EHRComparison.tsx` | `<Header />` | `<ClinicianHeader />` (if clinician-only) |
+**New File: `src/pages/Careers.tsx`**
 
-### 2.4 Functional Issues to Verify Before Testing
+Sections:
+1. **Hero**: "Join the Marpe Team" with mission statement
+2. **Why Work With Us**: Company values, remote-first culture, healthcare impact
+3. **Open Positions**: List of roles with category, location (remote), and brief description
+4. **Application CTA**: Simple form or email link
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Clinician Sign-Up Flow | Working | Two-step process (account + profile) |
-| Patient Invitation | Working | Email-based invitation with limit enforcement |
-| Guidance Creation | Working | Full category/priority/due date support |
-| Patient Risk Indicator | Working | Uses VITAL_RANGES for assessment |
-| Alert Rules | Working | CRUD operations functional |
-| Subscription Tiers | Working | Solo/Pro/Enterprise with Stripe |
-| BAA Signing | Working | SignaturePad implemented, structured address fields |
-| Notifications Bell | Working | Popover with unread count |
+### Routing
 
-### 2.5 Potential UX Issues for Clinician Testing
+**File: `src/App.tsx`**
+- Add route: `<Route path="/careers" element={<Careers />} />`
 
-1. **Dashboard Welcome Message**: Shows "Welcome back, Doctor" generically - should use clinician's title and name (e.g., "Welcome back, Dr. Smith")
-
-2. **Patient Limit Enforcement**: Works correctly but upgrade flow opens Stripe in new tab (may confuse some users)
-
-3. **Guidance Templates**: Listed as "Coming soon" in Pro tier but no UI indication in the Create Guidance dialog
-
-4. **EHR Connections Section**: Present in settings but not fully functional (placeholder status)
+### Footer/Navigation
+- Add "Careers" link to footer navigation
 
 ---
 
-## Part 3: Pre-Clinician Test Checklist
+## 5. Strategy: First Hires for Lean Growth
 
-### Critical (Must Fix)
-- [ ] Replace all "OneCare" with "Marpe" in `EHRComparison.tsx`
-- [ ] Standardize email domain across all files
-- [ ] Update `ClinicianPricing.tsx` to use `ClinicianHeader`
-- [ ] Update `ClinicianWhyMarpe.tsx` to use `ClinicianHeader`
+You asked for thoughts on who to hire first. Based on your stage and the healthcare B2B2C model:
 
-### High Priority (Should Fix)
-- [ ] Create `brand-constants.ts` for centralized branding
-- [ ] Update Dashboard welcome to use clinician's actual name/title
-- [ ] Update documentation files to use "Marpe" consistently
+### Recommended Priority Order
 
-### Medium Priority (Nice to Have)
-- [ ] Add "templates coming soon" indicator in guidance dialog for Pro users
-- [ ] Update CSS/config comments from "OneCare" to "Marpe"
-- [ ] Review and update internal comparison data
+| Priority | Role | Type | Rationale |
+|----------|------|------|-----------|
+| 1 | **Outbound Sales / Client Acquisition** | Paid, Part-time/Contract | Revenue generation is critical. Someone who can reach out to clinics, schedule demos, and close deals. |
+| 2 | **Clinical Advisor** | Unpaid Advisory | A practicing physician or nurse who can validate features, provide credibility, and make introductions. Offer equity or future paid role. |
+| 3 | **Content/Social Media** | Paid, Part-time/Contract | Healthcare content marketing builds trust. Someone who can write patient education content, case studies, and manage LinkedIn/X presence. |
+| 4 | **Customer Success** | Paid, Part-time (later) | Once you have paying clinician customers, someone to onboard them and reduce churn. Could be combined with sales initially. |
 
----
+### Positions to List on Careers Page
+- **Sales Development Representative** (Remote, Part-time/Contract)
+- **Healthcare Content Specialist** (Remote, Contract)
+- **Clinical Advisory Board** (Unpaid, Physicians/Nurses welcome)
+- **Product Feedback Panel** (Unpaid, Clinicians who want early access)
 
-## Part 4: Technical Debt Summary
-
-| Category | Count | Example |
-|----------|-------|---------|
-| Hardcoded email addresses | 8 locations | Footer, legal pages |
-| "OneCare" references | 20+ | EHRComparison, docs |
-| Inconsistent domain usage | 2 domains | `.health` vs `.care` |
-| Missing centralized constants | 1 file needed | brand-constants.ts |
+This approach keeps costs low while building the sales pipeline and clinical credibility needed for healthcare B2B.
 
 ---
 
-## Implementation Estimate
+## Summary of Files to Modify
 
-| Task | Effort |
-|------|--------|
-| Fix EHRComparison.tsx branding | 15 min |
-| Fix ClinicianWhyMarpe/Pricing headers | 5 min |
-| Standardize email domains | 20 min |
-| Create brand-constants.ts | 30 min |
-| Update documentation files | 30 min |
-| **Total** | **~2 hours** |
+| File | Changes |
+|------|---------|
+| `src/pages/ClinicianBAA.tsx` | Add existing BAA query, signed view state, version update handling |
+| `src/index.css` | Add dark mode `--gradient-hero` variable |
+| `src/components/layout/Header.tsx` | Add theme toggle for all users (authenticated and guests) |
+| `src/pages/Careers.tsx` | New file - careers page |
+| `src/App.tsx` | Add `/careers` route |
+| `src/components/layout/Footer.tsx` | Add Careers link to footer navigation |
 
----
-
-## Conclusion
-
-The clinician features are functionally complete and ready for testing with minor fixes. The primary risk is **brand confusion** from inconsistent naming. Resolving the SSOT issues before clinician review will ensure a professional, polished experience.
