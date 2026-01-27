@@ -23,6 +23,7 @@ import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicato
 import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
+import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinician/BulkPatientActions';
 
 const ClinicianPatients = () => {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ const ClinicianPatients = () => {
   }>({ open: false, patientId: '', patientName: '', notes: '' });
 
   const [patientSearch, setPatientSearch] = useState('');
+  const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
 
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patients;
@@ -180,6 +182,20 @@ const ClinicianPatients = () => {
                 </div>
               )}
 
+              {/* Bulk Actions */}
+              {patients.length > 0 && (
+                <BulkPatientActions
+                  patients={filteredPatients.map(p => ({
+                    id: p.id,
+                    user_id: p.user_id,
+                    patient_name: p.patient_name || 'Unknown',
+                    patient_email: p.patient_email || '',
+                  }))}
+                  selectedIds={selectedPatientIds}
+                  onSelectionChange={setSelectedPatientIds}
+                />
+              )}
+
               {patients.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -203,14 +219,28 @@ const ClinicianPatients = () => {
                 <div className="space-y-3">
                   {filteredPatients.map((patient) => {
                     const patientData = vitalsByPatient[patient.user_id];
+                    const isSelected = selectedPatientIds.has(patient.id);
                     
                     return (
                       <div
                         key={patient.id}
-                        className="p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow"
+                        className={`p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow ${isSelected ? 'border-primary bg-primary/5' : ''}`}
                       >
                         <div className="flex flex-col gap-3">
                           <div className="flex items-start gap-3">
+                            <PatientSelectCheckbox
+                              patientId={patient.id}
+                              isSelected={isSelected}
+                              onToggle={(id) => {
+                                const newSet = new Set(selectedPatientIds);
+                                if (newSet.has(id)) {
+                                  newSet.delete(id);
+                                } else {
+                                  newSet.add(id);
+                                }
+                                setSelectedPatientIds(newSet);
+                              }}
+                            />
                             <div 
                               className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                               onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}

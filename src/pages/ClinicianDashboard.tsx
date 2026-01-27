@@ -18,6 +18,7 @@ import {
   Search,
   Mail,
   Trash2,
+  HelpCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
@@ -32,6 +34,7 @@ import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
 import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
 import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
+import { useClinicianTour } from '@/hooks/useClinicianTour';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
@@ -40,6 +43,7 @@ import { PatientQuickActions } from '@/components/clinician/PatientQuickActions'
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 import { ClinicianOnboardingCard } from '@/components/clinician/ClinicianOnboardingCard';
+import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinician/BulkPatientActions';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
@@ -48,6 +52,8 @@ const ClinicianDashboard = () => {
   const { clinicianGuidance, isLoading: isLoadingGuidance, deleteGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule } = useAlertRules();
   const { patientLimit, tier, isTrial } = useClinicianSubscription();
+  const { startTour } = useClinicianTour();
+  
   // Get patient user IDs for vitals summaries
   const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
   const { data: vitalsSummaries = [] } = usePatientVitalsSummaries(patientUserIds);
@@ -72,6 +78,7 @@ const ClinicianDashboard = () => {
   }>({ open: false, patientId: '', patientName: '', notes: '' });
 
   const [patientSearch, setPatientSearch] = useState('');
+  const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
 
   // Filter patients based on search
   const filteredPatients = useMemo(() => {
@@ -149,16 +156,33 @@ const ClinicianDashboard = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 sm:mb-8"
+          className="mb-6 sm:mb-8 flex items-start justify-between gap-4"
         >
-          <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-            Welcome back{clinicianProfile?.title ? `, ${clinicianProfile.title}` : ''}{clinicianProfile?.last_name ? ` ${clinicianProfile.last_name}` : ''}
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            {clinicianProfile?.practice_name && `${clinicianProfile.practice_name} • `}
-            {clinicianProfile?.specialty && `${clinicianProfile.specialty} • `}
-            Manage your patients and monitor their health
-          </p>
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+              Welcome back{clinicianProfile?.title ? `, ${clinicianProfile.title}` : ''}{clinicianProfile?.last_name ? ` ${clinicianProfile.last_name}` : ''}
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {clinicianProfile?.practice_name && `${clinicianProfile.practice_name} • `}
+              {clinicianProfile?.specialty && `${clinicianProfile.specialty} • `}
+              Manage your patients and monitor their health
+            </p>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={startTour}
+                >
+                  <HelpCircle className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Take a tour</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </motion.div>
 
         {/* Onboarding Card - shows for new clinicians */}
@@ -174,7 +198,7 @@ const ClinicianDashboard = () => {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6"
         >
-          <Card>
+          <Card data-tour="stats-patients">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -187,7 +211,7 @@ const ClinicianDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card data-tour="stats-pending">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
@@ -200,7 +224,7 @@ const ClinicianDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card data-tour="stats-alerts">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -236,15 +260,15 @@ const ClinicianDashboard = () => {
         >
           <Tabs defaultValue="patients" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="patients" className="text-xs sm:text-sm">
+              <TabsTrigger value="patients" className="text-xs sm:text-sm" data-tour="patients-tab">
                 <Users className="h-4 w-4 mr-0 sm:mr-2" />
                 <span className="hidden sm:inline">Patients</span>
               </TabsTrigger>
-              <TabsTrigger value="guidance" className="text-xs sm:text-sm">
+              <TabsTrigger value="guidance" className="text-xs sm:text-sm" data-tour="guidance-tab">
                 <Send className="h-4 w-4 mr-0 sm:mr-2" />
                 <span className="hidden sm:inline">Guidance</span>
               </TabsTrigger>
-              <TabsTrigger value="alerts" className="text-xs sm:text-sm">
+              <TabsTrigger value="alerts" className="text-xs sm:text-sm" data-tour="alerts-tab">
                 <Bell className="h-4 w-4 mr-0 sm:mr-2" />
                 <span className="hidden sm:inline">Alerts</span>
               </TabsTrigger>
@@ -293,6 +317,20 @@ const ClinicianDashboard = () => {
                     </div>
                   )}
 
+                  {/* Bulk Actions */}
+                  {patients.length > 0 && (
+                    <BulkPatientActions
+                      patients={filteredPatients.map(p => ({
+                        id: p.id,
+                        user_id: p.user_id,
+                        patient_name: p.patient_name || 'Unknown',
+                        patient_email: p.patient_email || '',
+                      }))}
+                      selectedIds={selectedPatientIds}
+                      onSelectionChange={setSelectedPatientIds}
+                    />
+                  )}
+
                   {patients.length === 0 ? (
                     <div className="text-center py-8">
                       <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -316,15 +354,29 @@ const ClinicianDashboard = () => {
                     <div className="space-y-3">
                       {filteredPatients.map((patient) => {
                         const patientData = vitalsByPatient[patient.user_id];
+                        const isSelected = selectedPatientIds.has(patient.id);
                         
                         return (
                           <div
                             key={patient.id}
-                            className="p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow"
+                            className={`p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow ${isSelected ? 'border-primary bg-primary/5' : ''}`}
                           >
                             <div className="flex flex-col gap-3">
                               {/* Patient Info Row */}
                               <div className="flex items-start gap-3">
+                                <PatientSelectCheckbox
+                                  patientId={patient.id}
+                                  isSelected={isSelected}
+                                  onToggle={(id) => {
+                                    const newSet = new Set(selectedPatientIds);
+                                    if (newSet.has(id)) {
+                                      newSet.delete(id);
+                                    } else {
+                                      newSet.add(id);
+                                    }
+                                    setSelectedPatientIds(newSet);
+                                  }}
+                                />
                                 <div 
                                   className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
                                   onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}
