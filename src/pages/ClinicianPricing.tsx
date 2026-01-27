@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
@@ -67,7 +68,7 @@ const ClinicianPricing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <ClinicianHeader />
+      {isClinician ? <ClinicianHeader /> : <Header />}
       
       <main className="container py-12 px-4">
         {/* Hero Section */}
