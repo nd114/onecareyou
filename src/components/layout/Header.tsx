@@ -116,21 +116,16 @@ export function Header() {
     }
   };
 
-  // Clinicians get a simplified nav - they don't need patient features like medications/vitals in main nav
   // Patients get core navigation in header, secondary items in dropdown
+  // Clinicians use ClinicianHeader exclusively - this Header is for patients and guests only
   const navLinks = isAuthenticated
-    ? isClinician
-      ? [
-          { href: "/clinician/dashboard", label: "Dashboard" },
-          { href: "/clinician/settings", label: "Settings" },
-        ]
-      : [
-          { href: "/dashboard", label: "Dashboard" },
-          { href: "/medications", label: "Medications" },
-          { href: "/vitals", label: "Vitals" },
-          { href: "/schedule", label: "Schedule" },
-          { href: "/care-circle", label: "Care Circle" },
-        ]
+    ? [
+        { href: "/dashboard", label: "Dashboard" },
+        { href: "/medications", label: "Medications" },
+        { href: "/vitals", label: "Vitals" },
+        { href: "/schedule", label: "Schedule" },
+        { href: "/care-circle", label: "Care Circle" },
+      ]
     : [
         { href: "/", label: "Home" },
         { href: "/about", label: "About" },
