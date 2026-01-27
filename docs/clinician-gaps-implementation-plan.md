@@ -1,7 +1,7 @@
-# Marpe - Clinician Feature Gaps & Implementation Plan
+# OneCare - Clinician Feature Gaps & Implementation Plan
 
 ## Overview
-This document identifies gaps in Marpe's clinician offering compared to competitors and outlines an implementation plan prioritized by revenue impact.
+This document identifies gaps in OneCare's clinician offering compared to competitors and outlines an implementation plan prioritized by revenue impact.
 
 **Last Updated:** January 2026
 **Analysis Scope:** Clinician-focused features, subscription system, enterprise capabilities
@@ -12,7 +12,7 @@ This document identifies gaps in Marpe's clinician offering compared to competit
 
 ### Competitive Landscape
 
-| Feature | Marpe (Current) | Practice Fusion | SimplePractice | Kareo |
+| Feature | OneCare (Current) | Practice Fusion | SimplePractice | Kareo |
 |---------|-------------------|-----------------|----------------|-------|
 | Clinician Subscriptions | ❌ None | ✅ $149/mo | ✅ $99/mo | ✅ $110/mo |
 | Patient Limits | ❌ Unlimited (no enforcement) | ✅ Tiered | ✅ Tiered | ✅ Tiered |
@@ -24,7 +24,7 @@ This document identifies gaps in Marpe's clinician offering compared to competit
 | API Access | ❌ Not implemented | ✅ Enterprise | ✅ Enterprise | ✅ Yes |
 | SMS Notifications | ❌ Not implemented | ✅ Yes | ✅ Yes | ✅ Yes |
 
-**Key Insight:** Marpe is currently offering clinician access for free with no resource limits, missing significant revenue opportunity.
+**Key Insight:** OneCare is currently offering clinician access for free with no resource limits, missing significant revenue opportunity.
 
 ---
 

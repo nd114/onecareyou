@@ -1,4 +1,4 @@
-# Marpe - Future Roadmap
+# OneCare - Future Roadmap
 
 ## Overview
 This document outlines planned features that are not yet implemented but are part of the product vision.
@@ -192,3 +192,19 @@ Currently trust-based. Future implementation should validate license numbers wit
 ### Unit Preferences
 - [x] Settings page allows changing glucose (mg/dL vs mmol/L), weight (kg vs lbs), temperature (°C vs °F)
 - [ ] Apply unit conversion in vitals charts automatically
+
+---
+
+## Advisory Panel & Governance (PLANNED)
+
+### Clinical Advisory Board Page
+- [ ] `/advisory-panel` page showcasing clinical advisors
+- [ ] Advisor profile cards with credentials and expertise
+- [ ] Integration with Careers page for recruitment
+- [ ] Display areas of clinical specialty and guidance contributions
+
+### Product Feedback Panel
+- [ ] Display active beta testers and early adopters
+- [ ] Testimonials and case studies section
+- [ ] Advisory board member bios and photos
+- [ ] Rotating featured advisor spotlight
