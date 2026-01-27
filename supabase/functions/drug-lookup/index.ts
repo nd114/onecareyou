@@ -524,6 +524,20 @@ async function checkInteractions(drugNames: string[]) {
     const interactionResponse = await fetch(
       `https://rxnav.nlm.nih.gov/REST/interaction/list.json?rxcuis=${validRxcuis.join('+')}`
     );
+    
+    // Check if response is OK before parsing JSON
+    if (!interactionResponse.ok) {
+      console.log(`RxNav interaction API returned status ${interactionResponse.status}`);
+      return [];
+    }
+    
+    // Also check content type to ensure it's JSON
+    const contentType = interactionResponse.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.log(`RxNav returned non-JSON content type: ${contentType}`);
+      return [];
+    }
+    
     const interactionData = await interactionResponse.json();
     
     const interactions: any[] = [];
