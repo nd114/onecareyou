@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Heart, 
   MapPin, 
@@ -8,8 +8,6 @@ import {
   Users, 
   Globe2, 
   Stethoscope,
-  TrendingUp,
-  Megaphone,
   ArrowRight,
   Mail,
   CheckCircle,
@@ -17,62 +15,10 @@ import {
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-interface JobListing {
-  id: string;
-  title: string;
-  category: string;
-  type: 'paid' | 'unpaid';
-  commitment: string;
-  location: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-const jobListings: JobListing[] = [
-  {
-    id: 'sdr',
-    title: 'Sales Development Representative',
-    category: 'Sales',
-    type: 'paid',
-    commitment: 'Part-time / Contract',
-    location: 'Remote',
-    description: 'Drive clinic outreach, schedule demos, and help healthcare providers discover how Marpe can transform patient care coordination.',
-    icon: <TrendingUp className="h-5 w-5" />,
-  },
-  {
-    id: 'content',
-    title: 'Healthcare Content Specialist',
-    category: 'Marketing',
-    type: 'paid',
-    commitment: 'Contract',
-    location: 'Remote',
-    description: 'Create compelling patient education content, case studies, and thought leadership pieces for healthcare professionals.',
-    icon: <Megaphone className="h-5 w-5" />,
-  },
-  {
-    id: 'clinical-advisor',
-    title: 'Clinical Advisory Board',
-    category: 'Advisory',
-    type: 'unpaid',
-    commitment: 'Flexible',
-    location: 'Remote',
-    description: 'Physicians and nurses who want to shape the future of remote patient monitoring. Validate features, provide credibility, and help us build what healthcare really needs.',
-    icon: <Stethoscope className="h-5 w-5" />,
-  },
-  {
-    id: 'product-panel',
-    title: 'Product Feedback Panel',
-    category: 'Advisory',
-    type: 'unpaid',
-    commitment: 'Flexible',
-    location: 'Remote',
-    description: 'Clinicians who want early access to new features and the opportunity to influence product direction through regular feedback sessions.',
-    icon: <Users className="h-5 w-5" />,
-  },
-];
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { jobListings, getIconComponent } from '@/lib/job-listings';
 
 const values = [
   {
@@ -98,6 +44,9 @@ const values = [
 ];
 
 const Careers = () => {
+  const [searchParams] = useSearchParams();
+  const applied = searchParams.get('applied') === 'true';
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -191,57 +140,68 @@ const Careers = () => {
             </motion.div>
 
             <div className="max-w-4xl mx-auto space-y-4">
-              {jobListings.map((job, index) => (
-                <motion.div
-                  key={job.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="hover-lift">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                          {job.icon}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg">{job.title}</h3>
-                            <Badge 
-                              variant={job.type === 'paid' ? 'default' : 'outline'}
-                              className={job.type === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
-                            >
-                              {job.type === 'paid' ? 'Paid' : 'Unpaid Advisory'}
-                            </Badge>
+              {applied && (
+                <Alert className="mb-6 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800 dark:text-green-300">
+                    Your application has been submitted successfully! We'll be in touch soon.
+                  </AlertDescription>
+                </Alert>
+              )}
+              {jobListings.map((job, index) => {
+                const IconComponent = getIconComponent(job.iconName);
+                return (
+                  <motion.div
+                    key={job.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="hover-lift">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4">
+                          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                            <IconComponent className="h-5 w-5" />
                           </div>
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
-                            <span className="flex items-center gap-1">
-                              <Briefcase className="h-3.5 w-3.5" />
-                              {job.category}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3.5 w-3.5" />
-                              {job.commitment}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              {job.location}
-                            </span>
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-lg">{job.title}</h3>
+                              <Badge 
+                                variant={job.type === 'paid' ? 'default' : 'outline'}
+                                className={job.type === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
+                              >
+                                {job.type === 'paid' ? 'Paid' : 'Unpaid Advisory'}
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
+                              <span className="flex items-center gap-1">
+                                <Briefcase className="h-3.5 w-3.5" />
+                                {job.category}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                {job.commitment}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3.5 w-3.5" />
+                                {job.location}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{job.description}</p>
                           </div>
-                          <p className="text-sm text-muted-foreground">{job.description}</p>
+                          <Button variant="outline" size="sm" className="shrink-0" asChild>
+                            <Link to={`/careers/${job.id}`}>
+                              View & Apply
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                          </Button>
                         </div>
-                        <Button variant="outline" size="sm" className="shrink-0" asChild>
-                          <a href={`mailto:careers@marpe.care?subject=Application: ${job.title}`}>
-                            Apply
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </a>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
