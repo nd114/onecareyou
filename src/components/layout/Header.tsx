@@ -161,7 +161,7 @@ export function Header() {
         </div>
 
         {/* Desktop Navigation - truly centered */}
-        <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-6">
+        <nav className="hidden md:flex items-center justify-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -177,7 +177,7 @@ export function Header() {
 
         {/* Desktop Auth Buttons / User Menu */}
         {/* Auth Buttons - fixed width for symmetry */}
-        <div className="flex-1 hidden md:flex items-center justify-end gap-2">
+        <div className="flex-1 hidden md:flex items-center justify-end gap-3">
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
@@ -400,18 +400,17 @@ export function Header() {
                 size="icon"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="h-8 w-8"
               >
                 {resolvedTheme === 'dark' ? (
-                  <Sun className="h-4 w-4" />
+                  <Sun className="h-5 w-5" />
                 ) : (
-                  <Moon className="h-4 w-4" />
+                  <Moon className="h-5 w-5" />
                 )}
               </Button>
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" asChild>
                 <Link to="/sign-in">Sign In</Link>
               </Button>
-              <Button size="sm" asChild className="gradient-primary border-0">
+              <Button asChild className="gradient-primary border-0">
                 <Link to="/sign-up">Get Started</Link>
               </Button>
             </>
