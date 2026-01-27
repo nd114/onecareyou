@@ -76,7 +76,7 @@ const popularQuestions = [
   {
     question: "How does drug interaction checking work?",
     answer:
-      "Marpe automatically checks for potential interactions between all your medications, vitamins, and supplements. When an interaction is detected, you'll see a warning with the severity level (high, moderate, or low) and recommendations. Premium users have access to our advanced interaction database.",
+      "OneCare automatically checks for potential interactions between all your medications, vitamins, and supplements. When an interaction is detected, you'll see a warning with the severity level (high, moderate, or low) and recommendations. Premium users have access to our advanced interaction database.",
   },
   {
     question: "Can I share my medication list with my doctor?",
@@ -262,7 +262,7 @@ const HelpCenter = () => {
                 asChild
                 className="bg-transparent border-white/30 text-white hover:bg-white/10"
               >
-                <a href="mailto:support@marpe.care">Email Us</a>
+                <a href="mailto:support@onecare.you">Email Us</a>
               </Button>
             </div>
           </motion.div>

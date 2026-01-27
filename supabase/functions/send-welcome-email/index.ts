@@ -35,16 +35,16 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
     
-    if (claimsError || !claimsData?.claims) {
+    if (userError || !userData?.user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userEmail = claimsData.claims.email as string;
+    const userEmail = userData.user.email;
 
     const { email, name }: WelcomeEmailRequest = await req.json();
 
@@ -83,9 +83,9 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Marpe <welcome@updates.lovable.app>',
+        from: 'OneCare <hello@onecare.you>',
         to: [email],
-        subject: 'Welcome to Marpe - Your Health Journey Starts Here',
+        subject: 'Welcome to OneCare - Your Health Journey Starts Here',
         html: `
           <!DOCTYPE html>
           <html>
@@ -98,10 +98,10 @@ const handler = async (req: Request): Promise<Response> => {
               <div style="background-color: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                 <!-- Header -->
                 <div style="text-align: center; margin-bottom: 32px;">
-                  <div style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                  <div style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #0ea5e9); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
                     <span style="font-size: 32px;">❤️</span>
                   </div>
-                  <h1 style="color: #18181b; font-size: 28px; margin: 0 0 8px 0;">Welcome to Marpe!</h1>
+                  <h1 style="color: #18181b; font-size: 28px; margin: 0 0 8px 0;">Welcome to OneCare!</h1>
                   <p style="color: #71717a; font-size: 16px; margin: 0;">Your complete health companion</p>
                 </div>
 
@@ -111,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </p>
                 
                 <p style="color: #3f3f46; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-                  Thank you for joining Marpe! We're excited to help you take control of your health journey.
+                  Thank you for joining OneCare! We're excited to help you take control of your health journey.
                 </p>
 
                 <!-- Features -->
@@ -128,22 +128,22 @@ const handler = async (req: Request): Promise<Response> => {
 
                 <!-- CTA Button -->
                 <div style="text-align: center; margin-bottom: 24px;">
-                  <a href="https://marpecare.lovable.app/dashboard" 
-                     style="display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                  <a href="https://onecareyou.lovable.app/dashboard" 
+                     style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #0ea5e9); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                     Get Started
                   </a>
                 </div>
 
                 <!-- Support -->
                 <p style="color: #71717a; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">
-                  Need help getting started? Visit our <a href="https://marpecare.lovable.app/help" style="color: #6366f1; text-decoration: underline;">Help Center</a> or reply to this email.
+                  Need help getting started? Visit our <a href="https://onecareyou.lovable.app/help" style="color: #14b8a6; text-decoration: underline;">Help Center</a> or reply to this email.
                 </p>
 
                 <!-- Footer -->
                 <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;" />
                 
                 <p style="color: #a1a1aa; font-size: 12px; text-align: center; margin: 0;">
-                  This email was sent by Marpe. If you didn't create an account, you can safely ignore this email.
+                  This email was sent by OneCare. If you didn't create an account, you can safely ignore this email.
                 </p>
               </div>
             </div>

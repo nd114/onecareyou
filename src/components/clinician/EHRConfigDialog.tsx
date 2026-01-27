@@ -85,7 +85,7 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
           steps: [
             "Log into your Veradigm Practice Management portal",
             "Navigate to Settings → API & Integrations",
-            "Enable SMART on FHIR access and register Marpe as an application",
+            "Enable SMART on FHIR access and register OneCare as an application",
             "Copy the FHIR Base URL and OAuth credentials",
             "Enter the FHIR URL below and authenticate",
           ],

@@ -32,9 +32,9 @@ const DataProcessing = () => {
                   1. Purpose and Scope
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>This Data Processing Agreement ("DPA") outlines how Marpe processes your personal health data, particularly in relation to AI-powered features.</p>
+                  <p>This Data Processing Agreement ("DPA") outlines how OneCare processes your personal health data, particularly in relation to AI-powered features.</p>
                   <p><strong>Data Controller:</strong> You (the user) are the controller of your personal health data.</p>
-                  <p><strong>Data Processor:</strong> Marpe acts as the processor of your data on your behalf.</p>
+                  <p><strong>Data Processor:</strong> OneCare acts as the processor of your data on your behalf.</p>
                   <p><strong>Sub-processors:</strong> Third-party AI services that may process anonymized data.</p>
                 </div>
               </CardContent>
@@ -154,7 +154,7 @@ const DataProcessing = () => {
                     <li>Deleted immediately after processing</li>
                   </ul>
 
-                  <h3 className="font-semibold text-foreground mt-4">4.2 Marpe Retention</h3>
+                  <h3 className="font-semibold text-foreground mt-4">4.2 OneCare Retention</h3>
                   <ul className="list-disc pl-6 space-y-2">
                     <li><strong>Uploaded documents:</strong> Stored in your secure bucket until you delete them</li>
                     <li><strong>Extracted health data:</strong> Stored in your account until deletion</li>
@@ -225,9 +225,9 @@ const DataProcessing = () => {
                 <h2 className="text-xl font-semibold">8. Contact Information</h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>For questions about data processing or to exercise your rights:</p>
-                  <p><strong>Data Protection Officer:</strong> dpo@marpe.care</p>
-                  <p><strong>Privacy Team:</strong> privacy@marpe.care</p>
-                  <p><strong>General Support:</strong> support@marpe.care</p>
+                  <p><strong>Data Protection Officer:</strong> dpo@onecare.you</p>
+                  <p><strong>Privacy Team:</strong> privacy@onecare.you</p>
+                  <p><strong>General Support:</strong> support@onecare.you</p>
                 </div>
               </CardContent>
             </Card>
