@@ -177,7 +177,7 @@ export function Header() {
 
         {/* Desktop Auth Buttons / User Menu */}
         {/* Auth Buttons - fixed width for symmetry */}
-        <div className="flex-1 hidden md:flex items-center justify-end gap-3">
+        <div className="flex-1 hidden md:flex items-center justify-end gap-2">
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
