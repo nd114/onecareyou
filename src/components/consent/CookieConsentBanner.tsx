@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 
-const COOKIE_CONSENT_KEY = 'marpe_cookie_consent';
+const COOKIE_CONSENT_KEY = 'onecare_cookie_consent';
 
 export interface CookiePreferences {
   necessary: boolean; // Always true, cannot be disabled

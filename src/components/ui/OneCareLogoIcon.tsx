@@ -1,6 +1,6 @@
-import marpeLogoSrc from '@/assets/marpe-logo.png';
+import { Heart } from 'lucide-react';
 
-interface MarpeLogoIconProps {
+interface OneCareLogoIconProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -11,12 +11,10 @@ const sizeMap = {
   lg: 'h-8 w-8',
 };
 
-export function MarpeLogoIcon({ className = '', size = 'md' }: MarpeLogoIconProps) {
+export function OneCareLogoIcon({ className = '', size = 'md' }: OneCareLogoIconProps) {
   return (
-    <img 
-      src={marpeLogoSrc} 
-      alt="Marpe Logo" 
-      className={`${sizeMap[size]} ${className}`}
-    />
+    <div className={`flex items-center justify-center rounded-lg gradient-primary ${sizeMap[size]} ${className}`}>
+      <Heart className="h-3/5 w-3/5 text-primary-foreground" />
+    </div>
   );
 }

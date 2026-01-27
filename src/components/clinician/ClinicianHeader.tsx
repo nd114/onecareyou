@@ -139,7 +139,7 @@ export function ClinicianHeader() {
               <Heart className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
-              <span className="font-display text-xl font-bold">Marpe</span>
+              <span className="font-display text-xl font-bold">OneCare</span>
               <span className="text-[10px] text-muted-foreground -mt-1">for Clinicians</span>
             </div>
           </Link>
@@ -275,7 +275,7 @@ export function ClinicianHeader() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/clinician/why-marpe" className="flex items-center gap-2 cursor-pointer">
+                  <Link to="/clinician/why-onecare" className="flex items-center gap-2 cursor-pointer">
                     <Heart className="h-4 w-4" />
                     Why OneCare?
                   </Link>
@@ -329,7 +329,7 @@ export function ClinicianHeader() {
               Settings
             </Link>
             <Link
-              to="/clinician/why-marpe"
+              to="/clinician/why-onecare"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
             >
