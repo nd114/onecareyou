@@ -28,8 +28,8 @@ export const jobListings: JobListing[] = [
     type: 'paid',
     commitment: 'Part-time / Contract',
     location: 'Remote',
-    description: 'Drive clinic outreach, schedule demos, and help healthcare providers discover how Marpe can transform patient care coordination.',
-    fullDescription: `We're looking for a driven Sales Development Representative to help healthcare providers discover how Marpe can transform their patient care coordination. You'll be the first point of contact for clinics and practices, scheduling demos and building relationships that lead to lasting partnerships.
+    description: 'Drive clinic outreach, schedule demos, and help healthcare providers discover how OneCare can transform patient care coordination.',
+    fullDescription: `We're looking for a driven Sales Development Representative to help healthcare providers discover how OneCare can transform their patient care coordination. You'll be the first point of contact for clinics and practices, scheduling demos and building relationships that lead to lasting partnerships.
 
 This is a fantastic opportunity for someone who wants to make a real impact in healthcare technology while building valuable B2B sales experience.`,
     responsibilities: [
@@ -66,7 +66,7 @@ This is a fantastic opportunity for someone who wants to make a real impact in h
     description: 'Create compelling patient education content, case studies, and thought leadership pieces for healthcare professionals.',
     fullDescription: `We're seeking a talented Healthcare Content Specialist to create compelling content that educates both patients and healthcare professionals about medication management and remote patient monitoring.
 
-You'll help shape how we communicate the value of Marpe through patient education materials, case studies, blog posts, and thought leadership content that builds trust and credibility in the healthcare space.`,
+You'll help shape how we communicate the value of OneCare through patient education materials, case studies, blog posts, and thought leadership content that builds trust and credibility in the healthcare space.`,
     responsibilities: [
       'Write patient education content on medication adherence and health management',
       'Create case studies showcasing successful clinic partnerships',
@@ -101,7 +101,7 @@ You'll help shape how we communicate the value of Marpe through patient educatio
     description: 'Physicians and nurses who want to shape the future of remote patient monitoring. Validate features, provide credibility, and help us build what healthcare really needs.',
     fullDescription: `We're building a Clinical Advisory Board of practicing physicians, nurses, and healthcare professionals who want to shape the future of remote patient monitoring and medication management.
 
-As an advisor, you'll provide invaluable clinical perspective to ensure Marpe solves real problems in healthcare. This is an unpaid advisory role, but we offer equity options for ongoing contributors and the opportunity to influence a platform that will impact thousands of patients.`,
+As an advisor, you'll provide invaluable clinical perspective to ensure OneCare solves real problems in healthcare. This is an unpaid advisory role, but we offer equity options for ongoing contributors and the opportunity to influence a platform that will impact thousands of patients.`,
     responsibilities: [
       'Participate in monthly advisory calls (1-2 hours/month)',
       'Review and validate new features from a clinical perspective',
@@ -128,7 +128,7 @@ As an advisor, you'll provide invaluable clinical perspective to ensure Marpe so
     commitment: 'Flexible',
     location: 'Remote',
     description: 'Clinicians who want early access to new features and the opportunity to influence product direction through regular feedback sessions.',
-    fullDescription: `Join our Product Feedback Panel and get early access to new features before they're released. We're looking for clinicians, practice managers, and healthcare administrators who want to influence how Marpe evolves.
+    fullDescription: `Join our Product Feedback Panel and get early access to new features before they're released. We're looking for clinicians, practice managers, and healthcare administrators who want to influence how OneCare evolves.
 
 As a panel member, you'll participate in user testing sessions, provide feedback on new features, and help us prioritize what to build next. This is an unpaid role, but you'll get priority access to new features and direct input into our product roadmap.`,
     responsibilities: [

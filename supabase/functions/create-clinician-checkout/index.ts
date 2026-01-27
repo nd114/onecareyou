@@ -129,7 +129,7 @@ serve(async (req) => {
       logStep("Using existing customer from profile", { customerId });
     }
 
-    const origin = req.headers.get("origin") || "https://marpe.care";
+    const origin = req.headers.get("origin") || "https://onecare.you";
 
     // Determine patient limit based on tier
     const patientLimits: Record<string, number> = {
