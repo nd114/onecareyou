@@ -918,6 +918,60 @@ export type Database = {
         }
         Relationships: []
       }
+      job_applications: {
+        Row: {
+          cover_letter: string | null
+          created_at: string
+          email: string
+          full_name: string
+          how_heard: string | null
+          id: string
+          job_id: string
+          job_title: string
+          linkedin_url: string | null
+          phone: string | null
+          portfolio_url: string | null
+          resume_path: string | null
+          status: string
+          updated_at: string
+          years_experience: string | null
+        }
+        Insert: {
+          cover_letter?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          how_heard?: string | null
+          id?: string
+          job_id: string
+          job_title: string
+          linkedin_url?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_path?: string | null
+          status?: string
+          updated_at?: string
+          years_experience?: string | null
+        }
+        Update: {
+          cover_letter?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          how_heard?: string | null
+          id?: string
+          job_id?: string
+          job_title?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          portfolio_url?: string | null
+          resume_path?: string | null
+          status?: string
+          updated_at?: string
+          years_experience?: string | null
+        }
+        Relationships: []
+      }
       legal_acceptances: {
         Row: {
           accepted_at: string

@@ -58,6 +58,7 @@ import ClinicianGuidance from "./pages/ClinicianGuidance";
 import ClinicianAlerts from "./pages/ClinicianAlerts";
 import Sitemap from "./pages/Sitemap";
 import Careers from "./pages/Careers";
+import JobDetail from "./pages/JobDetail";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -86,6 +87,7 @@ const App = () => (
             <Route path="/help" element={<HelpCenter />} />
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/careers" element={<Careers />} />
+            <Route path="/careers/:jobId" element={<JobDetail />} />
             {/* Legacy public patient view - redirect to protected patient detail */}
             <Route path="/clinician/patient/:inviteCode" element={<ClinicianPatientDetail />} />
             <Route path="/clinician/dashboard" element={
