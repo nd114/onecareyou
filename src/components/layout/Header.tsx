@@ -161,7 +161,7 @@ export function Header() {
         </div>
 
         {/* Desktop Navigation - truly centered */}
-        <nav className="hidden md:flex items-center justify-center gap-6">
+        <nav className="hidden lg:flex items-center justify-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -177,7 +177,7 @@ export function Header() {
 
         {/* Desktop Auth Buttons / User Menu */}
         {/* Auth Buttons - fixed width for symmetry */}
-        <div className="hidden md:flex items-center justify-end gap-3 shrink-0">
+        <div className="hidden lg:flex items-center justify-end gap-3 shrink-0">
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
@@ -418,7 +418,7 @@ export function Header() {
         </div>
 
         {/* Mobile Menu Button */}
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
@@ -428,7 +428,7 @@ export function Header() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:hidden border-t border-border bg-background"
+          className="lg:hidden border-t border-border bg-background"
         >
           <nav className="container py-4 flex flex-col gap-2">
             {navLinks.map((link) => (
