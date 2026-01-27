@@ -18,6 +18,8 @@ import {
   Eye,
   Clock,
   XCircle,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +35,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { usePatientGuidance } from "@/hooks/usePatientGuidance";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
@@ -43,6 +46,7 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, signOut, loading } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
   const { isClinician, clinicianProfile } = useClinicianProfile();
   const { guidance } = usePatientGuidance();
   const {
@@ -53,6 +57,10 @@ export function Header() {
   } = useClinicianNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
+  };
 
   const isAuthenticated = !!user;
   const userName = profile?.name || user?.email?.split("@")[0] || "User";
@@ -387,6 +395,18 @@ export function Header() {
             </>
           ) : (
             <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+              >
+                {resolvedTheme === 'dark' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
               <Button variant="ghost" asChild>
                 <Link to="/sign-in">Sign In</Link>
               </Button>
@@ -474,13 +494,32 @@ export function Header() {
                 </button>
               </>
             ) : (
-              <div className="flex gap-2 mt-2 px-4">
-                <Button variant="outline" asChild className="flex-1">
-                  <Link to="/sign-in">Sign In</Link>
+              <div className="flex flex-col gap-2 mt-2 px-4">
+                <Button
+                  variant="outline"
+                  onClick={toggleTheme}
+                  className="w-full justify-start"
+                >
+                  {resolvedTheme === 'dark' ? (
+                    <>
+                      <Sun className="h-4 w-4 mr-2" />
+                      Light Mode
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="h-4 w-4 mr-2" />
+                      Dark Mode
+                    </>
+                  )}
                 </Button>
-                <Button asChild className="flex-1 gradient-primary border-0">
-                  <Link to="/sign-up">Get Started</Link>
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" asChild className="flex-1">
+                    <Link to="/sign-in">Sign In</Link>
+                  </Button>
+                  <Button asChild className="flex-1 gradient-primary border-0">
+                    <Link to="/sign-up">Get Started</Link>
+                  </Button>
+                </div>
               </div>
             )}
           </nav>
