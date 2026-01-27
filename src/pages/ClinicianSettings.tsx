@@ -44,7 +44,7 @@ import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitati
 const ClinicianSettings = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { clinicianProfile, isLoading: isLoadingProfile, updateClinicianProfile } = useClinicianProfile();
+  const { clinicianProfile, isLoading: isLoadingProfile, updateClinicianProfile, isClinician } = useClinicianProfile();
   const { patients } = useClinicianPatients();
   const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
   const { 
@@ -180,6 +180,44 @@ const ClinicianSettings = () => {
         <ClinicianHeader />
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
+
+  if (!isClinician) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        {/* Use minimal header for non-clinicians, not ClinicianHeader */}
+        <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-16 items-center justify-center">
+            <Button variant="ghost" onClick={() => navigate('/')}>
+              ← Back to Home
+            </Button>
+          </div>
+        </header>
+        <main className="container py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto text-center"
+          >
+            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <Save className="h-10 w-10 text-primary" />
+            </div>
+            <h1 className="font-display text-3xl font-bold mb-4">
+              Clinician Settings
+            </h1>
+            <p className="text-muted-foreground mb-8">
+              This page is for healthcare providers. Please sign up as a clinician to access these features.
+            </p>
+            <Button 
+              className="gradient-primary border-0"
+              onClick={() => navigate('/clinician/sign-up')}
+            >
+              Register as Healthcare Provider
+            </Button>
+          </motion.div>
         </main>
       </div>
     );
