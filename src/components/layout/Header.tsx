@@ -400,17 +400,18 @@ export function Header() {
                 size="icon"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
+                className="h-8 w-8"
               >
                 {resolvedTheme === 'dark' ? (
-                  <Sun className="h-5 w-5" />
+                  <Sun className="h-4 w-4" />
                 ) : (
-                  <Moon className="h-5 w-5" />
+                  <Moon className="h-4 w-4" />
                 )}
               </Button>
-              <Button variant="ghost" asChild>
+              <Button variant="ghost" size="sm" asChild>
                 <Link to="/sign-in">Sign In</Link>
               </Button>
-              <Button asChild className="gradient-primary border-0">
+              <Button size="sm" asChild className="gradient-primary border-0">
                 <Link to="/sign-up">Get Started</Link>
               </Button>
             </>
