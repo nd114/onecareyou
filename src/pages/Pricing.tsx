@@ -286,6 +286,19 @@ const Pricing = () => {
               </Card>
             </motion.div>
           </div>
+
+          {/* Clinician Link */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-sm text-muted-foreground mt-8"
+          >
+            Are you a healthcare provider?{' '}
+            <Link to="/clinician/pricing" className="text-primary hover:underline font-medium">
+              View clinician plans
+            </Link>
+          </motion.p>
         </div>
       </section>
 
