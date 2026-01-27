@@ -147,9 +147,9 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
+      <div className="container flex h-16 items-center gap-8">
         {/* Logo - fixed width for symmetry */}
-        <div className="flex-1 flex justify-start">
+        <div className="flex-1 flex justify-start shrink-0">
           <Link to="/" className="flex items-center gap-2">
             <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
