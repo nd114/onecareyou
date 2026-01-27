@@ -240,7 +240,7 @@ export function EHRConnectionsSection() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add EHR Connection</DialogTitle>
-            <DialogDescription>Choose an EHR provider to connect with your Marpe account</DialogDescription>
+            <DialogDescription>Choose an EHR provider to connect with your OneCare account</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-4">

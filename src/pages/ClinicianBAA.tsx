@@ -45,10 +45,10 @@ This Business Associate Agreement ("Agreement") is entered into as of the date o
 
 PARTIES:
 - Covered Entity: The healthcare practice/provider identified below
-- Business Associate: Marpe Health Technologies ("Marpe")
+- Business Associate: OneCare Health Technologies ("OneCare")
 
 RECITALS:
-Marpe provides remote patient monitoring and care coordination services that may involve the creation, receipt, maintenance, or transmission of Protected Health Information (PHI) as defined under the Health Insurance Portability and Accountability Act of 1996 (HIPAA).
+OneCare provides remote patient monitoring and care coordination services that may involve the creation, receipt, maintenance, or transmission of Protected Health Information (PHI) as defined under the Health Insurance Portability and Accountability Act of 1996 (HIPAA).
 
 TERMS AND CONDITIONS:
 
@@ -294,7 +294,7 @@ const ClinicianBAA = () => {
     yPos += 6;
     doc.text(`Date: ${signedDate}`, margin, yPos);
 
-    doc.save('Marpe_BAA_Agreement.pdf');
+    doc.save('OneCare_BAA_Agreement.pdf');
     toast.success('PDF downloaded successfully');
   };
 

@@ -41,11 +41,11 @@ const PrivacyPolicy = () => {
             <Card>
               <CardContent className="p-6 space-y-4">
                 <p className="text-muted-foreground leading-relaxed">
-                  At Marpe, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose,
+                  At OneCare, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose,
                   and safeguard your information when you use our health tracking and medication management platform.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  By using Marpe, you consent to the data practices described in this policy. If you do not agree with
+                  By using OneCare, you consent to the data practices described in this policy. If you do not agree with
                   the practices described herein, please do not use our Service.
                 </p>
               </CardContent>
@@ -229,7 +229,7 @@ const PrivacyPolicy = () => {
                       <strong>Legal Requirements:</strong> When required by law, court order, or government request
                     </li>
                     <li>
-                      <strong>Safety:</strong> To protect the safety, rights, or property of Marpe, our users, or the
+                      <strong>Safety:</strong> To protect the safety, rights, or property of OneCare, our users, or the
                       public
                     </li>
                     <li>
@@ -344,7 +344,7 @@ const PrivacyPolicy = () => {
                   <Separator className="my-4" />
                   <p>
                     <strong>Exercising Your Rights:</strong> To exercise these rights, contact us at{" "}
-                    <strong>privacy@marpe.care</strong> or use the data management features in your account settings.
+                    <strong>privacy@onecare.you</strong> or use the data management features in your account settings.
                     We will respond to all requests within the timeframe required by applicable law (typically 30 days).
                   </p>
                   <p>
@@ -469,12 +469,12 @@ const PrivacyPolicy = () => {
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>
-                    Marpe is not intended for children under 13 years of age. We do not knowingly collect personal
+                    OneCare is not intended for children under 13 years of age. We do not knowingly collect personal
                     information from children under 13.
                   </p>
                   <p>
                     If you are a parent or guardian and believe your child has provided us with personal information,
-                    please contact us immediately at privacy@marpe.care.
+                    please contact us immediately at privacy@onecare.you.
                   </p>
                   <p>
                     <strong>Family Member Tracking:</strong> Parents and guardians may track medications and health
@@ -493,7 +493,7 @@ const PrivacyPolicy = () => {
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>
-                    If you access Marpe from outside the United States, please be aware that your data may be
+                    If you access OneCare from outside the United States, please be aware that your data may be
                     transferred to, stored, and processed in the United States.
                   </p>
                   <p>
@@ -518,7 +518,7 @@ const PrivacyPolicy = () => {
                   <div>
                     <p className="font-semibold text-foreground">HIPAA (United States)</p>
                     <p>
-                      Marpe is not a Covered Entity or Business Associate under HIPAA. However, we implement security
+                      OneCare is not a Covered Entity or Business Associate under HIPAA. However, we implement security
                       measures aligned with HIPAA standards as a best practice for protecting health information,
                       including administrative, physical, and technical safeguards.
                     </p>
@@ -553,7 +553,7 @@ const PrivacyPolicy = () => {
                   </div>
                   <Separator />
                   <p className="text-sm">
-                    If you are a healthcare provider using Marpe to view patient data, you are responsible for ensuring
+                    If you are a healthcare provider using OneCare to view patient data, you are responsible for ensuring
                     your use complies with HIPAA and other applicable regulations in your jurisdiction.
                   </p>
                 </div>
@@ -587,19 +587,19 @@ const PrivacyPolicy = () => {
                   <p>For privacy-related inquiries or to exercise your rights:</p>
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                     <p>
-                      <strong>Privacy Team:</strong> privacy@marpe.care
+                      <strong>Privacy Team:</strong> privacy@onecare.you
                     </p>
                     <p>
-                      <strong>Data Protection Officer:</strong> dpo@marpe.care
+                      <strong>Data Protection Officer:</strong> dpo@onecare.you
                     </p>
                     <p>
-                      <strong>General Support:</strong> support@marpe.care
+                      <strong>General Support:</strong> support@onecare.you
                     </p>
                   </div>
                   <p>We will respond to all privacy requests within 30 days.</p>
                   <p>
                     <strong>EU Representative:</strong> For users in the European Union, our EU representative can be
-                    contacted at eu-privacy@marpe.care
+                    contacted at eu-privacy@onecare.you
                   </p>
                 </div>
               </CardContent>

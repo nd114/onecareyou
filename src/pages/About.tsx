@@ -67,7 +67,7 @@ const About = () => {
             </h1>
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Marpe was founded to solve a critical gap in healthcare: the disconnect 
+              OneCare was founded to solve a critical gap in healthcare: the disconnect 
               between patients and providers after leaving the hospital. We believe 
               continuous care coordination saves lives.
             </p>
@@ -93,7 +93,7 @@ const About = () => {
                 preventable complications occur.
               </p>
               <p className="text-lg text-muted-foreground mb-6">
-              Marpe bridges this gap by enabling patients to share their health updates (vitals, 
+              OneCare bridges this gap by enabling patients to share their health updates (vitals, 
               medications, and lab results) directly with their care team. No more waiting for 
               appointments to communicate critical changes.
               </p>
@@ -137,7 +137,7 @@ const About = () => {
               Our Core Values
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              These principles guide everything we do at Marpe.
+              These principles guide everything we do at OneCare.
             </p>
           </motion.div>
 

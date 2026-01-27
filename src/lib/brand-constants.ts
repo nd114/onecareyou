@@ -1,30 +1,34 @@
 /**
- * Marpe Brand Constants - Single Source of Truth (SSOT)
+ * OneCare Brand Constants - Single Source of Truth (SSOT)
  * 
  * All brand-related values should be imported from here.
  * DO NOT hardcode brand names, emails, or URLs elsewhere in the codebase.
  */
 
 export const BRAND = {
-  name: 'Marpe',
+  name: 'OneCare',
   tagline: 'Your Health, Connected',
-  domain: 'marpe.care',
+  domain: 'onecare.you',
   
   emails: {
-    support: 'support@marpe.care',
-    privacy: 'privacy@marpe.care',
-    legal: 'legal@marpe.care',
-    dpo: 'dpo@marpe.care',
+    hello: 'hello@onecare.you',
+    support: 'support@onecare.you',
+    privacy: 'privacy@onecare.you',
+    legal: 'legal@onecare.you',
+    dpo: 'dpo@onecare.you',
+    careers: 'careers@onecare.you',
+    compliance: 'compliance@onecare.you',
+    euPrivacy: 'eu-privacy@onecare.you',
   },
   
   urls: {
-    app: 'https://marpecare.lovable.app',
-    published: 'https://marpecare.lovable.app',
+    app: 'https://onecareyou.lovable.app',
+    published: 'https://onecareyou.lovable.app',
   },
   
   legal: {
-    companyName: 'Marpe',
-    lastUpdated: 'January 17, 2026',
+    companyName: 'OneCare',
+    lastUpdated: 'January 27, 2026',
   },
 } as const;
 

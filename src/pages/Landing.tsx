@@ -159,7 +159,7 @@ const Landing = () => {
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Marpe eliminates information asymmetry. Continue sharing your health updates with doctors 
+              OneCare eliminates information asymmetry. Continue sharing your health updates with doctors 
               after leaving the hospital - no appointments needed. Your care team stays informed.
             </p>
             

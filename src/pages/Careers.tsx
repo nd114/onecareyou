@@ -264,7 +264,7 @@ const Careers = () => {
                 Send us your resume and tell us how you'd like to contribute.
               </p>
               <Button size="lg" variant="secondary" asChild>
-                <a href="mailto:careers@marpe.care">
+                <a href="mailto:careers@onecare.you">
                   <Mail className="mr-2 h-4 w-4" />
                   Get in Touch
                 </a>

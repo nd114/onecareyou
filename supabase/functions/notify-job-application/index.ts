@@ -22,7 +22,7 @@ async function sendEmail(to: string[], subject: string, html: string) {
       Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: "Marpe Careers <noreply@marpe.care>",
+      from: "OneCare Careers <careers@onecare.you>",
       to,
       subject,
       html,
@@ -53,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send notification to careers inbox
     const emailResponse = await sendEmail(
-      ["careers@marpe.care"],
+      ["careers@onecare.you"],
       `New Application: ${jobTitle}`,
       `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -66,13 +66,13 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <p style="color: #64748b; font-size: 14px;">
-            View the full application and resume in the Marpe backend admin panel.
+            View the full application and resume in the OneCare backend admin panel.
           </p>
           
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
           
           <p style="color: #94a3b8; font-size: 12px;">
-            This is an automated notification from Marpe Careers.
+            This is an automated notification from OneCare Careers.
           </p>
         </div>
       `
@@ -89,13 +89,13 @@ const handler = async (req: Request): Promise<Response> => {
           <h1 style="color: #14b8a6; margin-bottom: 24px;">Thanks for applying, ${applicantName}!</h1>
           
           <p style="color: #334155; line-height: 1.6;">
-            We've received your application for the <strong>${jobTitle}</strong> position at Marpe. 
+            We've received your application for the <strong>${jobTitle}</strong> position at OneCare. 
             Our team will review your application and get back to you if there's a good fit.
           </p>
           
           <p style="color: #334155; line-height: 1.6;">
             In the meantime, feel free to learn more about us at 
-            <a href="https://marpe.care" style="color: #14b8a6;">marpe.care</a>.
+            <a href="https://onecare.you" style="color: #14b8a6;">onecare.you</a>.
           </p>
           
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">

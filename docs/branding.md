@@ -1,19 +1,22 @@
-# Marpe - Branding Notes
+# OneCare - Branding Notes
 
 ## Current Brand Name
-**Marpe** (formerly OneCare)
+**OneCare**
 
 ## Name Change History
-- **January 2026**: Renamed from "OneCare" to "Marpe"
-- **Reason**: Domain availability - we currently have the Marpe domain
-- **Note**: This name may change back to "OneCare" in the future if the domain becomes available
+- **January 2026**: Renamed from "Marpe" to "OneCare"
+- **Reason**: Domain availability - we now have the onecare.you domain
+- **Previous Names**: Originally "OneCare" → "Marpe" → back to "OneCare"
+
+## Domain
+- Primary: `onecare.you`
+- App URL: `https://onecareyou.lovable.app`
 
 ## Logo
-The Marpe logo features an "M" stylized to form a heart shape:
-- The letter M's outer strokes curve to create heart halves
+The OneCare logo features an "O" stylized to form a heart shape:
 - Uses the brand's emerald/teal gradient colors
-- Located at: `src/assets/marpe-logo.png`
-- Component: `src/components/ui/MarpeLogoIcon.tsx`
+- Located at: `src/assets/onecare-logo.png` (or uses fallback Heart icon)
+- Component: `src/components/ui/OneCareLogoIcon.tsx`
 
 ## Brand Colors
 Primary palette uses emerald/teal health theme:
@@ -29,3 +32,14 @@ Primary palette uses emerald/teal health theme:
 - Professional but approachable
 - Focuses on patient-provider connection
 - Emphasizes continuous care coordination
+
+## Email Addresses
+All emails use the `@onecare.you` domain:
+- hello@onecare.you - General contact
+- support@onecare.you - Customer support
+- privacy@onecare.you - Privacy inquiries
+- legal@onecare.you - Legal matters
+- dpo@onecare.you - Data Protection Officer
+- careers@onecare.you - Job applications
+- compliance@onecare.you - HIPAA/compliance
+- eu-privacy@onecare.you - EU GDPR representative
