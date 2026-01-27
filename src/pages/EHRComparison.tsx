@@ -79,7 +79,7 @@ const EHRComparison = () => {
     {
       icon: UserCircle,
       title: "Patient-Centric, Not Practice-Centric",
-      description: "Traditional EHRs serve the clinic's workflow. Marpe serves the patient's health journey, with clinicians as invited collaborators.",
+      description: "Traditional EHRs serve the clinic's workflow. OneCare serves the patient's health journey, with clinicians as invited collaborators.",
       color: "bg-primary/10 text-primary"
     },
     {
@@ -139,7 +139,7 @@ const EHRComparison = () => {
                 Internal Document - Not Public
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
-                Why Marpe Beats{" "}
+                Why OneCare Beats{" "}
                 <span className="text-primary">Traditional EHR Systems</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -200,7 +200,7 @@ const EHRComparison = () => {
                 Feature-by-Feature Comparison
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                See how Marpe stacks up against traditional EHR systems across key capabilities.
+                See how OneCare stacks up against traditional EHR systems across key capabilities.
               </p>
             </motion.div>
 
@@ -208,7 +208,7 @@ const EHRComparison = () => {
               {/* Table Header */}
               <div className="grid grid-cols-3 gap-4 mb-4 px-4">
                 <div className="font-semibold text-muted-foreground">Feature</div>
-                <div className="font-semibold text-primary text-center">Marpe</div>
+                <div className="font-semibold text-primary text-center">OneCare</div>
                 <div className="font-semibold text-muted-foreground text-center">Traditional EHR</div>
               </div>
 
@@ -264,7 +264,7 @@ const EHRComparison = () => {
                 Key Differentiators
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                The fundamental shifts that make Marpe a different category of health platform.
+                The fundamental shifts that make OneCare a different category of health platform.
               </p>
             </motion.div>
 
@@ -309,7 +309,7 @@ const EHRComparison = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-muted-foreground">
-                      We're not asking clinicians to abandon their existing EHR systems. Instead, Marpe 
+                      We're not asking clinicians to abandon their existing EHR systems. Instead, OneCare 
                       <strong className="text-foreground"> integrates with</strong> Vericlaim, HealthBridge Clinical, 
                       and other FHIR-compatible systems to become the patient-facing layer.
                     </p>

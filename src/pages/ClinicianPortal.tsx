@@ -558,7 +558,7 @@ const ClinicianPortal = () => {
       <footer className="border-t bg-background mt-12">
         <div className="container py-6">
           <p className="text-center text-sm text-muted-foreground">
-            This data is shared securely through Marpe. Access is logged and monitored.
+            This data is shared securely through OneCare. Access is logged and monitored.
           </p>
         </div>
       </footer>

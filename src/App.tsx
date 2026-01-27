@@ -51,7 +51,7 @@ import ClinicianPricing from "./pages/ClinicianPricing";
 import EnterpriseInquiry from "./pages/EnterpriseInquiry";
 import ClinicianBAA from "./pages/ClinicianBAA";
 import ClinicianSubscriptionSuccess from "./pages/ClinicianSubscriptionSuccess";
-import ClinicianWhyMarpe from "./pages/ClinicianWhyMarpe";
+import ClinicianWhyOneCare from "./pages/ClinicianWhyOneCare";
 import ClinicianPatientDetail from "./pages/ClinicianPatientDetail";
 import ClinicianPatients from "./pages/ClinicianPatients";
 import ClinicianGuidance from "./pages/ClinicianGuidance";
@@ -205,7 +205,7 @@ const App = () => (
             <Route path="/admin/import" element={<AdminImport />} />
             {/* Clinician pricing and subscription pages */}
             <Route path="/clinician/pricing" element={<ClinicianPricing />} />
-            <Route path="/clinician/why-marpe" element={<ClinicianWhyMarpe />} />
+            <Route path="/clinician/why-onecare" element={<ClinicianWhyOneCare />} />
             <Route path="/clinician/patients/:inviteCode" element={
               <ProtectedRoute>
                 <ClinicianPatientDetail />

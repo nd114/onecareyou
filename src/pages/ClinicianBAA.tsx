@@ -35,6 +35,7 @@ import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { BRAND } from '@/lib/brand-constants';
 
 // Current BAA version - increment when agreement terms change
 const CURRENT_BAA_VERSION = '1.0';
@@ -371,7 +372,7 @@ const ClinicianBAA = () => {
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertTitle className="text-amber-800 dark:text-amber-200">Agreement Updated</AlertTitle>
                 <AlertDescription className="text-amber-700 dark:text-amber-300">
-                  This agreement was updated to version {CURRENT_BAA_VERSION}. By continuing to use Marpe, 
+                  This agreement was updated to version {CURRENT_BAA_VERSION}. By continuing to use OneCare, 
                   you accept the updated terms. You can review the current terms below and download the 
                   updated agreement for your records.
                 </AlertDescription>
@@ -388,7 +389,7 @@ const ClinicianBAA = () => {
                         <Shield className="h-6 w-6 text-primary" />
                         <div>
                           <CardTitle>HIPAA Business Associate Agreement</CardTitle>
-                          <CardDescription>Your signed agreement with Marpe</CardDescription>
+                          <CardDescription>Your signed agreement with OneCare</CardDescription>
                         </div>
                       </div>
                       <Badge variant="default" className="bg-green-600 hover:bg-green-700">
@@ -492,10 +493,10 @@ const ClinicianBAA = () => {
                   </CardHeader>
                   <CardContent className="text-sm text-green-700 dark:text-green-300 space-y-3">
                     <p>
-                      Your organization is compliant with HIPAA Business Associate requirements for using Marpe services.
+                      Your organization is compliant with HIPAA Business Associate requirements for using OneCare services.
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400">
-                      This agreement remains in effect for the duration of your service relationship with Marpe.
+                      This agreement remains in effect for the duration of your service relationship with OneCare.
                     </p>
                   </CardContent>
                 </Card>
@@ -510,7 +511,7 @@ const ClinicianBAA = () => {
                       please contact our support team to update your agreement.
                     </p>
                     <Button variant="outline" size="sm" asChild className="w-full">
-                      <a href="mailto:compliance@marpe.care">Contact Support</a>
+                      <a href={`mailto:${BRAND.emails.compliance}`}>Contact Support</a>
                     </Button>
                   </CardContent>
                 </Card>
@@ -771,7 +772,7 @@ const ClinicianBAA = () => {
                     provider handles Protected Health Information (PHI) on behalf of a healthcare provider.
                   </p>
                   <p>
-                    This agreement establishes the legal framework for how Marpe will protect 
+                    This agreement establishes the legal framework for how OneCare will protect 
                     and handle your patients' health information.
                   </p>
                 </CardContent>

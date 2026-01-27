@@ -41,7 +41,7 @@ const MedicalDisclaimer = () => {
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">Medical Disclaimer</h1>
 
             <p className="text-lg text-muted-foreground">
-              Please read this important information carefully before using Marpe.
+              Please read this important information carefully before using OneCare.
             </p>
           </motion.div>
         </div>
@@ -61,7 +61,7 @@ const MedicalDisclaimer = () => {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Not a Substitute for Professional Medical Advice</AlertTitle>
               <AlertDescription>
-                Marpe is designed to assist with medication tracking and provide general information. It is NOT intended
+                OneCare is designed to assist with medication tracking and provide general information. It is NOT intended
                 to replace professional medical advice, diagnosis, or treatment. ALWAYS seek the advice of qualified
                 healthcare professionals.
               </AlertDescription>
@@ -76,7 +76,7 @@ const MedicalDisclaimer = () => {
                     General Information Purpose
                   </h2>
                   <p className="text-muted-foreground leading-relaxed">
-                    Marpe provides tools for tracking medications, vitamins, and supplements, as well as information
+                    OneCare provides tools for tracking medications, vitamins, and supplements, as well as information
                     about potential drug interactions. This information is provided for{" "}
                     <strong>educational and organizational purposes only</strong> and should not be used as a basis for
                     making medical decisions without consulting a qualified healthcare provider.
@@ -120,7 +120,7 @@ const MedicalDisclaimer = () => {
                     AI-Extracted Information
                   </h2>
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    Marpe uses artificial intelligence to extract data from uploaded lab reports and medical documents.
+                    OneCare uses artificial intelligence to extract data from uploaded lab reports and medical documents.
                     While we strive for accuracy, AI-extracted data is subject to errors.
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
@@ -163,14 +163,14 @@ const MedicalDisclaimer = () => {
                     Vital Signs & Health Metrics
                   </h2>
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    Marpe allows you to track vital signs and health metrics. This tracking is for personal organization
+                    OneCare allows you to track vital signs and health metrics. This tracking is for personal organization
                     and does not constitute medical monitoring.
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                     <li>Vital sign ranges and alerts are general guidelines, not personalized medical advice</li>
                     <li>Abnormal readings should be discussed with your healthcare provider</li>
-                    <li>Marpe is not a substitute for medical monitoring devices or professional supervision</li>
-                    <li>Do not rely on Marpe alerts for detecting medical emergencies</li>
+                    <li>OneCare is not a substitute for medical monitoring devices or professional supervision</li>
+                    <li>Do not rely on OneCare alerts for detecting medical emergencies</li>
                   </ul>
                 </div>
 
@@ -182,11 +182,11 @@ const MedicalDisclaimer = () => {
                     Healthcare Provider Features
                   </h2>
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    Marpe allows patients to share data with healthcare providers and receive guidance. Important
+                    OneCare allows patients to share data with healthcare providers and receive guidance. Important
                     limitations:
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                    <li>Provider communications through Marpe do not create a physician-patient relationship</li>
+                    <li>Provider communications through OneCare do not create a physician-patient relationship</li>
                     <li>Guidance received through the platform does not constitute formal medical advice</li>
                     <li>We do not independently verify healthcare provider credentials</li>
                     <li>Always follow up with providers directly for medical concerns</li>
@@ -219,7 +219,7 @@ const MedicalDisclaimer = () => {
                     Emergency Situations
                   </h2>
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    <strong className="text-foreground">Marpe is NOT designed for emergency use.</strong> If you
+                    <strong className="text-foreground">OneCare is NOT designed for emergency use.</strong> If you
                     experience any of the following, seek immediate medical attention:
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
@@ -267,15 +267,15 @@ const MedicalDisclaimer = () => {
                     User Responsibility & Acknowledgment
                   </h2>
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    By using Marpe, you acknowledge and agree that:
+                    By using OneCare, you acknowledge and agree that:
                   </p>
                   <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                     <li>You are responsible for verifying any information with qualified healthcare professionals</li>
-                    <li>You will not use Marpe as the sole basis for medical decisions</li>
+                    <li>You will not use OneCare as the sole basis for medical decisions</li>
                     <li>You understand the limitations of the information and tools provided</li>
                     <li>You will seek professional medical advice for any health concerns</li>
                     <li>You accept full responsibility for your health decisions</li>
-                    <li>You will not hold Marpe liable for outcomes resulting from your use of the Service</li>
+                    <li>You will not hold OneCare liable for outcomes resulting from your use of the Service</li>
                   </ul>
                 </div>
 
@@ -284,7 +284,7 @@ const MedicalDisclaimer = () => {
                 <div>
                   <h2 className="text-xl font-semibold mb-4">Limitation of Liability</h2>
                   <p className="text-muted-foreground leading-relaxed mb-4">
-                    Marpe, its affiliates, employees, and partners are not liable for any damages or adverse outcomes
+                    OneCare, its affiliates, employees, and partners are not liable for any damages or adverse outcomes
                     resulting from the use of information provided by this application. This includes, but is not
                     limited to:
                   </p>
@@ -333,7 +333,7 @@ const MedicalDisclaimer = () => {
                   </div>
                   <h3 className="font-semibold mb-2">Emergency: Call 911</h3>
                   <p className="text-sm text-muted-foreground">
-                    For medical emergencies, call emergency services immediately. Marpe is not for emergencies.
+                    For medical emergencies, call emergency services immediately. OneCare is not for emergencies.
                   </p>
                 </CardContent>
               </Card>

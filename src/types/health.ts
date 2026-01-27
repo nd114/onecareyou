@@ -1,4 +1,4 @@
-// Marpe Type Definitions
+// OneCare Type Definitions
 
 export type MedicationType = "prescription" | "otc" | "vitamin" | "supplement" | "herbal";
 

@@ -340,7 +340,7 @@ supabase/
 
 ## Appendix B: API Design Considerations
 
-For the Marpe API:
+For the OneCare API:
 - RESTful design with OpenAPI 3.0 specification
 - OAuth 2.0 / API key authentication
 - Rate limiting per tier (Free: 100/day, Pro: 10,000/day, Enterprise: unlimited)
@@ -399,4 +399,4 @@ USING (
 
 ---
 
-*Document prepared for Marpe product team. Review with engineering and legal before proceeding with major integrations.*
+*Document prepared for OneCare product team. Review with engineering and legal before proceeding with major integrations.*

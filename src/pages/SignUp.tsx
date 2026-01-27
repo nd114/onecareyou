@@ -95,7 +95,7 @@ const SignUp = () => {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
             <Heart className="h-7 w-7 text-primary-foreground" />
           </div>
-          <span className="font-display text-2xl font-bold">Marpe</span>
+          <span className="font-display text-2xl font-bold">OneCare</span>
         </Link>
 
         <Card className="border-border/50 shadow-xl">

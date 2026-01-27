@@ -37,7 +37,7 @@ const sitemapData: SitemapSection[] = [
     title: "Main Pages",
     icon: <Home className="h-5 w-5" />,
     links: [
-      { title: "Home", path: "/", description: "Welcome to Marpe" },
+      { title: "Home", path: "/", description: "Welcome to OneCare" },
       { title: "Features", path: "/features", description: "Explore all features" },
       { title: "Pricing", path: "/pricing", description: "Plans and pricing" },
       { title: "About", path: "/about", description: "Learn about us" },
@@ -49,7 +49,7 @@ const sitemapData: SitemapSection[] = [
     icon: <Stethoscope className="h-5 w-5" />,
     links: [
       { title: "Clinician Pricing", path: "/clinician/pricing", description: "Healthcare provider plans" },
-      { title: "Why Marpe", path: "/clinician/why-marpe", description: "Benefits for clinicians" },
+      { title: "Why OneCare", path: "/clinician/why-onecare", description: "Benefits for clinicians" },
       { title: "Clinician Sign Up", path: "/clinician/sign-up", description: "Create a clinician account" },
     ],
   },
