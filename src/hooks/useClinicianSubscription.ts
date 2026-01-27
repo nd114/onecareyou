@@ -3,11 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-// Clinician Stripe price IDs
+// Clinician Stripe price IDs (Updated pricing: Solo $79, Pro $149, Enterprise $399)
 export const CLINICIAN_STRIPE_PRICES = {
-  solo_monthly: 'price_1SsbOVDycAbKvlfcXquEUSq6',
-  pro_monthly: 'price_1SsbOmDycAbKvlfcM3mH6ER9',
-  enterprise_monthly: 'price_1SsbQwDycAbKvlfc5P9A9nVn',
+  solo_monthly: 'price_1SuKweDycAbKvlfcGepIUqjl',
+  pro_monthly: 'price_1SuKyqDycAbKvlfcVWUKk03a',
+  enterprise_monthly: 'price_1SuL1ADycAbKvlfcmvKgb99I',
 } as const;
 
 export const CLINICIAN_TIER_INFO = {
