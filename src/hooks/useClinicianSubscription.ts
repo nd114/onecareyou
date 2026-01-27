@@ -25,7 +25,7 @@ export const CLINICIAN_TIER_INFO = {
   },
   solo: {
     name: 'Solo',
-    price: 49,
+    price: 79,
     period: 'month',
     patientLimit: 25,
     features: [
@@ -40,7 +40,7 @@ export const CLINICIAN_TIER_INFO = {
   },
   pro: {
     name: 'Pro',
-    price: 99,
+    price: 149,
     period: 'month',
     patientLimit: 100,
     features: [
@@ -54,7 +54,7 @@ export const CLINICIAN_TIER_INFO = {
   },
   enterprise: {
     name: 'Enterprise',
-    price: 299,
+    price: 399,
     period: 'month',
     patientLimit: 999999,
     features: [

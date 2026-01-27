@@ -82,7 +82,7 @@ export function InvitePatientDialog({ trigger, disabled, disabledReason }: Invit
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="gradient-primary border-0">
+          <Button className="gradient-primary border-0" data-tour="invite-patient">
             <UserPlus className="h-4 w-4 mr-2" />
             Invite Patient
           </Button>
