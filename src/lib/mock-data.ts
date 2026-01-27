@@ -1,4 +1,4 @@
-// Mock data for Marpe demo
+// Mock data for OneCare demo
 import { Medication, ScheduleEntry, Vital, Interaction, ProviderShare, HealthProfile } from "@/types/health";
 
 export const mockMedications: Medication[] = [

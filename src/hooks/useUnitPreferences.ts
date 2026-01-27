@@ -14,7 +14,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-const STORAGE_KEY = 'marpe_unit_preferences';
+const STORAGE_KEY = 'onecare_unit_preferences';
 
 export function useUnitPreferences() {
   const { user, profile } = useAuth();

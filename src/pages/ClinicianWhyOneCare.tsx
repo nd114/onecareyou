@@ -28,69 +28,69 @@ import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { Footer } from "@/components/layout/Footer";
 import { useNavigate } from "react-router-dom";
 
-const ClinicianWhyMarpe = () => {
+const ClinicianWhyOneCare = () => {
   const navigate = useNavigate();
 
   const comparisonData = [
     {
       feature: "Data Ownership Model",
-      marpe: { value: "Patient-owned, clinician-invited", good: true },
+      onecare: { value: "Patient-owned, clinician-invited", good: true },
       veradigm: { value: "Practice-owned, patient requests", good: false },
       epic: { value: "Practice-owned, portal access", good: false },
       healthbridge: { value: "Practice-owned", good: false },
     },
     {
       feature: "Family Management",
-      marpe: { value: "Full family health hub", good: true },
+      onecare: { value: "Full family health hub", good: true },
       veradigm: { value: "Individual records only", good: false },
       epic: { value: "Proxy access (limited)", good: false },
       healthbridge: { value: "Not available", good: false },
     },
     {
       feature: "Multi-Provider View",
-      marpe: { value: "All providers see same data", good: true },
+      onecare: { value: "All providers see same data", good: true },
       veradigm: { value: "Siloed per practice", good: false },
       epic: { value: "Care Everywhere (complex)", good: false },
       healthbridge: { value: "Single practice", good: false },
     },
     {
       feature: "Caregiver Alerts",
-      marpe: { value: "Automated Care Circle", good: true },
+      onecare: { value: "Automated Care Circle", good: true },
       veradigm: { value: "None", good: false },
       epic: { value: "None", good: false },
       healthbridge: { value: "None", good: false },
     },
     {
       feature: "Real-time Communication",
-      marpe: { value: "Bidirectional with status", good: true },
+      onecare: { value: "Bidirectional with status", good: true },
       veradigm: { value: "One-way messaging", good: false },
       epic: { value: "MyChart messages", good: false },
       healthbridge: { value: "Portal messages", good: false },
     },
     {
       feature: "Adherence Analytics",
-      marpe: { value: "Dose-level tracking + export", good: true },
+      onecare: { value: "Dose-level tracking + export", good: true },
       veradigm: { value: "Rx fill data only", good: false },
       epic: { value: "Limited", good: false },
       healthbridge: { value: "Not available", good: false },
     },
     {
       feature: "Mobile Experience",
-      marpe: { value: "PWA with push notifications", good: true },
+      onecare: { value: "PWA with push notifications", good: true },
       veradigm: { value: "Desktop-first", good: false },
       epic: { value: "MyChart app", good: false },
       healthbridge: { value: "Basic portal", good: false },
     },
     {
       feature: "Patient Cost",
-      marpe: { value: "Free forever", good: true },
+      onecare: { value: "Free forever", good: true },
       veradigm: { value: "N/A (practice pays)", good: false },
       epic: { value: "Free portal", good: true },
       healthbridge: { value: "N/A", good: false },
     },
     {
       feature: "International Drugs",
-      marpe: { value: "190+ countries database", good: true },
+      onecare: { value: "190+ countries database", good: true },
       veradigm: { value: "US-only", good: false },
       epic: { value: "US-centric", good: false },
       healthbridge: { value: "Regional", good: false },
@@ -141,7 +141,7 @@ const ClinicianWhyMarpe = () => {
     {
       icon: Link2,
       title: "FHIR Integration Layer",
-      description: "Bidirectional sync with your existing EHR. Marpe becomes the patient-facing layer while you keep your workflow.",
+      description: "Bidirectional sync with your existing EHR. OneCare becomes the patient-facing layer while you keep your workflow.",
       stat: "2-way",
       statLabel: "Data synchronization",
       color: "bg-rose-500/10 text-rose-500"
@@ -151,7 +151,7 @@ const ClinicianWhyMarpe = () => {
   const integrationBenefits = [
     {
       title: "You Keep Your Workflow",
-      description: "Continue documenting in Veradigm, Epic, or HealthBridge. Marpe syncs automatically via FHIR."
+      description: "Continue documenting in Veradigm, Epic, or HealthBridge. OneCare syncs automatically via FHIR."
     },
     {
       title: "Patients Get Modern UX",
@@ -186,7 +186,7 @@ const ClinicianWhyMarpe = () => {
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-foreground">
                 Why Choose{" "}
-                <span className="text-primary">Marpe</span>?
+                <span className="text-primary">OneCare</span>?
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 A patient-centric layer that complements your existing EHR, filling gaps 
@@ -211,7 +211,7 @@ const ClinicianWhyMarpe = () => {
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-2xl font-bold mb-4">Integration, Not Replacement</h2>
               <p className="text-muted-foreground text-lg">
-                We're not asking you to abandon your EHR. Marpe is the <strong className="text-foreground">patient-facing layer</strong> that 
+                We're not asking you to abandon your EHR. OneCare is the <strong className="text-foreground">patient-facing layer</strong> that 
                 integrates with your existing system, giving patients a modern experience while you keep your clinical workflow.
               </p>
             </div>
@@ -279,7 +279,7 @@ const ClinicianWhyMarpe = () => {
                 Feature Comparison
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                See how Marpe stacks up against traditional EHR patient portals.
+                See how OneCare stacks up against traditional EHR patient portals.
               </p>
             </motion.div>
 
@@ -289,7 +289,7 @@ const ClinicianWhyMarpe = () => {
                   <tr className="border-b">
                     <th className="text-left p-4 font-semibold">Feature</th>
                     <th className="p-4 text-center">
-                      <div className="font-bold text-primary">Marpe</div>
+                      <div className="font-bold text-primary">OneCare</div>
                     </th>
                     <th className="p-4 text-center">
                       <div className="font-semibold text-muted-foreground">Veradigm</div>
@@ -315,7 +315,7 @@ const ClinicianWhyMarpe = () => {
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <Check className="h-4 w-4 text-status-success flex-shrink-0" />
-                          <span className="text-sm">{row.marpe.value}</span>
+                          <span className="text-sm">{row.onecare.value}</span>
                         </div>
                       </td>
                       <td className="p-4 text-center">
@@ -370,7 +370,7 @@ const ClinicianWhyMarpe = () => {
                     <Badge variant="outline" className="w-fit mb-2">How It Works</Badge>
                     <CardTitle className="text-2xl">Seamless EHR Integration</CardTitle>
                     <CardDescription>
-                      Marpe connects to your existing system via FHIR, becoming the patient engagement layer
+                      OneCare connects to your existing system via FHIR, becoming the patient engagement layer
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -410,7 +410,7 @@ const ClinicianWhyMarpe = () => {
                     Medication Adherence Analytics
                   </h2>
                   <p className="text-muted-foreground mb-6">
-                    Traditional EHRs only see prescription fill data. Marpe tracks <strong className="text-foreground">actual dose-by-dose compliance</strong>, 
+                    Traditional EHRs only see prescription fill data. OneCare tracks <strong className="text-foreground">actual dose-by-dose compliance</strong>, 
                     giving you insight into what happens between pharmacy visits.
                   </p>
                   <ul className="space-y-3">
@@ -511,4 +511,4 @@ const ClinicianWhyMarpe = () => {
   );
 };
 
-export default ClinicianWhyMarpe;
+export default ClinicianWhyOneCare;
