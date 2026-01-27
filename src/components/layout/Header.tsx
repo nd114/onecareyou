@@ -147,7 +147,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center gap-8">
+      <div className="container flex h-16 items-center gap-4 md:gap-6 lg:gap-8">
         {/* Logo - fixed width for symmetry */}
         <div className="flex-1 flex justify-start shrink-0">
           <Link to="/" className="flex items-center gap-2">
@@ -161,12 +161,12 @@ export function Header() {
         </div>
 
         {/* Desktop Navigation - truly centered */}
-        <nav className="hidden lg:flex items-center justify-center gap-6">
+        <nav className="hidden md:flex items-center justify-center gap-3 lg:gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               to={link.href}
-              className={`text-sm font-medium transition-colors hover:text-foreground ${
+              className={`text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap ${
                 location.pathname === link.href ? "text-primary" : "text-muted-foreground"
               }`}
             >
@@ -177,7 +177,7 @@ export function Header() {
 
         {/* Desktop Auth Buttons / User Menu */}
         {/* Auth Buttons - fixed width for symmetry */}
-        <div className="hidden lg:flex items-center justify-end gap-3 shrink-0">
+        <div className="flex-1 hidden md:flex items-center justify-end gap-3">
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
@@ -318,7 +318,7 @@ export function Header() {
                         {userInitials || <User className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium max-w-[120px] truncate">{userName}</span>
+                    <span className="font-medium max-w-[120px] truncate hidden lg:inline">{userName}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -418,7 +418,7 @@ export function Header() {
         </div>
 
         {/* Mobile Menu Button */}
-        <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
@@ -428,7 +428,7 @@ export function Header() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:hidden border-t border-border bg-background"
+          className="md:hidden border-t border-border bg-background"
         >
           <nav className="container py-4 flex flex-col gap-2">
             {navLinks.map((link) => (
