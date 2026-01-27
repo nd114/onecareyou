@@ -96,8 +96,8 @@ export function InvitePatientDialog({ trigger, disabled, disabledReason }: Invit
               Invite a Patient
             </DialogTitle>
             <DialogDescription>
-              Send an invitation to a patient to connect with you on Marpe. They'll receive access to share their health
-              data with you.
+              Send an invitation to a patient to connect with you on OneCare. They'll receive access to share their
+              health data with you.
             </DialogDescription>
           </DialogHeader>
 

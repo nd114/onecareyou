@@ -1,24 +1,43 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Heart, Menu, X, ChevronDown, Users, Bell, Settings, LayoutDashboard, FileText, LogOut, Moon, Sun, CheckCircle, Eye, Clock, XCircle, Inbox, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import {
+  Heart,
+  Menu,
+  X,
+  ChevronDown,
+  Users,
+  Bell,
+  Settings,
+  LayoutDashboard,
+  FileText,
+  LogOut,
+  Moon,
+  Sun,
+  CheckCircle,
+  Eye,
+  Clock,
+  XCircle,
+  Inbox,
+  AlertTriangle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useClinicianProfile } from '@/hooks/useClinicianProfile';
-import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -32,25 +51,25 @@ export function ClinicianHeader() {
 
   const toggleTheme = () => {
     // Toggle between light and dark, defaulting from resolved if on system
-    setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
+    setTheme(resolvedTheme === "light" ? "dark" : "light");
   };
 
   const handleSignOut = async () => {
     await signOut();
-    toast.success('Signed out successfully');
-    navigate('/');
+    toast.success("Signed out successfully");
+    navigate("/");
   };
 
   // Helper to get icon for notification type
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'completed':
+      case "completed":
         return <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />;
-      case 'acknowledged':
+      case "acknowledged":
         return <Eye className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />;
-      case 'expired':
+      case "expired":
         return <Clock className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />;
-      case 'dismissed':
+      case "dismissed":
         return <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />;
       default:
         return <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />;
@@ -59,15 +78,15 @@ export function ClinicianHeader() {
 
   // Helper to get notification message
   const getNotificationMessage = (type: string, patientName: string | null | undefined) => {
-    const name = patientName || 'Patient';
+    const name = patientName || "Patient";
     switch (type) {
-      case 'completed':
+      case "completed":
         return `${name} completed your guidance`;
-      case 'acknowledged':
+      case "acknowledged":
         return `${name} acknowledged your guidance`;
-      case 'expired':
+      case "expired":
         return `Guidance for ${name} has expired`;
-      case 'dismissed':
+      case "dismissed":
         return `${name} dismissed your guidance`;
       default:
         return `Update from ${name}`;
@@ -77,12 +96,12 @@ export function ClinicianHeader() {
   // Build display name from first_name/last_name or fall back to email
   const getDisplayName = () => {
     if (clinicianProfile?.first_name || clinicianProfile?.last_name) {
-      const firstName = clinicianProfile.first_name || '';
-      const lastName = clinicianProfile.last_name || '';
-      const title = clinicianProfile.title || '';
+      const firstName = clinicianProfile.first_name || "";
+      const lastName = clinicianProfile.last_name || "";
+      const title = clinicianProfile.title || "";
       return `${title} ${firstName} ${lastName}`.trim();
     }
-    return user?.email?.split('@')[0] || 'Clinician';
+    return user?.email?.split("@")[0] || "Clinician";
   };
 
   const displayName = getDisplayName();
@@ -100,14 +119,14 @@ export function ClinicianHeader() {
 
   const initials = getInitials();
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
   // Alert badge uses unreadCount from notifications
   const navLinks = [
-    { to: '/clinician/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/clinician/patients', label: 'Patients', icon: Users },
-    { to: '/clinician/guidance', label: 'Guidance', icon: FileText },
-    { to: '/clinician/alerts', label: 'Alerts', icon: AlertTriangle },
+    { to: "/clinician/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/clinician/patients", label: "Patients", icon: Users },
+    { to: "/clinician/guidance", label: "Guidance", icon: FileText },
+    { to: "/clinician/alerts", label: "Alerts", icon: AlertTriangle },
   ];
 
   return (
@@ -130,12 +149,10 @@ export function ClinicianHeader() {
         <nav className="hidden md:flex items-center justify-center gap-1">
           {navLinks.map((link) => (
             <Link key={link.to} to={link.to}>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className={`relative ${
-                  isActive(link.to) 
-                    ? 'bg-muted text-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
+                  isActive(link.to) ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <link.icon className="h-4 w-4 mr-2" />
@@ -155,26 +172,17 @@ export function ClinicianHeader() {
             className="hidden md:flex"
             aria-label="Toggle theme"
           >
-            {resolvedTheme === 'dark' ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
+            {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
           {/* Notification Bell - Popover with notifications */}
           <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden md:flex relative"
-                aria-label="View notifications"
-              >
+              <Button variant="ghost" size="icon" className="hidden md:flex relative" aria-label="View notifications">
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </Button>
@@ -183,12 +191,7 @@ export function ClinicianHeader() {
               <div className="p-3 border-b flex items-center justify-between">
                 <h4 className="font-medium text-sm">Notifications</h4>
                 {unreadCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs h-7 px-2"
-                    onClick={() => markAllAsRead.mutate()}
-                  >
+                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => markAllAsRead.mutate()}>
                     Mark all read
                   </Button>
                 )}
@@ -204,27 +207,30 @@ export function ClinicianHeader() {
                             markAsRead.mutate(notification.id);
                           }
                           setNotificationsOpen(false);
-                          navigate('/clinician/patients');
+                          navigate("/clinician/patients");
                         }}
                         className={`block p-3 hover:bg-muted/50 transition-colors cursor-pointer ${
-                          !notification.is_read ? 'bg-muted/30' : ''
+                          !notification.is_read ? "bg-muted/30" : ""
                         }`}
                       >
                         <div className="flex items-start gap-2">
                           {getNotificationIcon(notification.notification_type)}
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">
-                              {notification.guidance?.title || 'Guidance Update'}
+                              {notification.guidance?.title || "Guidance Update"}
                             </p>
                             <p className="text-xs text-muted-foreground line-clamp-2">
-                              {getNotificationMessage(notification.notification_type, notification.patient_profile?.name)}
+                              {getNotificationMessage(
+                                notification.notification_type,
+                                notification.patient_profile?.name,
+                              )}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                                 {notification.notification_type}
                               </Badge>
                               <span className="text-[10px] text-muted-foreground">
-                                {format(new Date(notification.created_at), 'MMM d, h:mm a')}
+                                {format(new Date(notification.created_at), "MMM d, h:mm a")}
                               </span>
                             </div>
                           </div>
@@ -250,9 +256,7 @@ export function ClinicianHeader() {
                 <Button variant="ghost" className="flex items-center gap-2 px-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={clinicianProfile?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                      {initials}
-                    </AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">{initials}</AvatarFallback>
                   </Avatar>
                   <span className="hidden lg:inline text-sm font-medium">{displayName}</span>
                   <ChevronDown className="h-3 w-3" />
@@ -273,11 +277,11 @@ export function ClinicianHeader() {
                 <DropdownMenuItem asChild>
                   <Link to="/clinician/why-marpe" className="flex items-center gap-2 cursor-pointer">
                     <Heart className="h-4 w-4" />
-                    Why Marpe?
+                    Why OneCare?
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={handleSignOut}
                   className="flex items-center gap-2 cursor-pointer text-destructive"
                 >
@@ -289,12 +293,7 @@ export function ClinicianHeader() {
           </div>
 
           {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
@@ -311,16 +310,16 @@ export function ClinicianHeader() {
                 to={link.to}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-2 py-2 rounded-md transition-colors ${
-                  isActive(link.to) ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50'
+                  isActive(link.to) ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50"
                 }`}
               >
                 <link.icon className="h-4 w-4" />
                 {link.label}
               </Link>
             ))}
-            
+
             <div className="border-t border-border my-3" />
-            
+
             <Link
               to="/clinician/settings"
               onClick={() => setMobileMenuOpen(false)}
@@ -335,20 +334,15 @@ export function ClinicianHeader() {
               className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
             >
               <Heart className="h-4 w-4" />
-              Why Marpe?
+              Why OneCare?
             </Link>
-            
+
             {/* Mobile Theme Toggle */}
             <div className="border-t border-border my-3" />
             <div className="flex items-center justify-between px-2 py-2">
               <span className="text-sm text-muted-foreground">Theme</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                className="flex items-center gap-2"
-              >
-                {resolvedTheme === 'dark' ? (
+              <Button variant="ghost" size="sm" onClick={toggleTheme} className="flex items-center gap-2">
+                {resolvedTheme === "dark" ? (
                   <>
                     <Sun className="h-4 w-4" />
                     Light
@@ -361,9 +355,9 @@ export function ClinicianHeader() {
                 )}
               </Button>
             </div>
-            
+
             <div className="border-t border-border my-3" />
-            
+
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
