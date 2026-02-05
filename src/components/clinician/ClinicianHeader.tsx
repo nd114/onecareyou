@@ -138,10 +138,11 @@ export function ClinicianHeader() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
               <Heart className="h-5 w-5 text-primary-foreground" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col items-start">
               <span className="font-display text-xl font-bold">OneCare</span>
               <span className="text-[10px] text-muted-foreground -mt-1">for Clinicians</span>
             </div>
+            <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wide">Beta</span>
           </Link>
         </div>
 

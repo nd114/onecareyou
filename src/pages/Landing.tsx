@@ -148,7 +148,8 @@ const Landing = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6"
             >
               <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">Trusted by 10,000+ users</span>
+              <span className="text-sm font-medium">Early Access Beta</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wide">Beta</span>
             </motion.div>
             
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">

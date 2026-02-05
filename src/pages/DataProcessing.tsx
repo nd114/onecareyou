@@ -2,7 +2,8 @@ import { motion } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent } from '@/components/ui/card';
-import { Database, Shield, Brain, Clock, FileCheck, Users, Lock, Smartphone } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Database, Shield, Brain, Clock, FileCheck, Users, Lock, Smartphone, AlertTriangle } from 'lucide-react';
 
 const DataProcessing = () => {
   return (
@@ -23,6 +24,16 @@ const DataProcessing = () => {
               <p className="text-muted-foreground">Last updated: January 17, 2026</p>
             </div>
           </div>
+
+          {/* Beta Disclaimer */}
+          <Alert className="mb-8 border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="text-amber-800 dark:text-amber-300">Beta Platform Notice</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-400">
+              OneCare is currently in beta. While we implement robust data protection measures, some features may still be under development. 
+              We recommend reviewing this agreement periodically as our practices evolve.
+            </AlertDescription>
+          </Alert>
 
           <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
             <Card>
@@ -132,7 +143,7 @@ const DataProcessing = () => {
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Regular code audits of data processing functions</li>
                     <li>Logging of all AI requests (without personal data) for compliance</li>
-                    <li>Third-party security assessments</li>
+                    <li>Third-party security assessments (planned)</li>
                   </ul>
                 </div>
               </CardContent>

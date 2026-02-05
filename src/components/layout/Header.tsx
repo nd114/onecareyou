@@ -151,6 +151,7 @@ export function Header() {
                 <Heart className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="font-display text-xl font-bold text-foreground">OneCare</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wide">Beta</span>
             </motion.div>
           </Link>
         </div>

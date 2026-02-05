@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Shield,
   Lock,
@@ -35,6 +36,16 @@ const PrivacyPolicy = () => {
               <p className="text-muted-foreground">Last updated: January 17, 2026</p>
             </div>
           </div>
+
+          {/* Beta Disclaimer */}
+          <Alert className="mb-8 border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="text-amber-800 dark:text-amber-300">Beta Platform Notice</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-400">
+              OneCare is currently in beta. While we are committed to protecting your privacy, some features and data handling processes may still be under development. 
+              Please review this policy periodically for updates.
+            </AlertDescription>
+          </Alert>
 
           <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
             {/* Introduction */}
