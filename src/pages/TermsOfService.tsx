@@ -2,7 +2,8 @@ import { motion } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Users, AlertCircle, Scale, Ban, RefreshCw, Shield, Globe, Gavel, CreditCard, Server, UserX, Clock, Building2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { FileText, Users, AlertCircle, Scale, Ban, RefreshCw, Shield, Globe, Gavel, CreditCard, Server, UserX, Clock, Building2, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const TermsOfService = () => {
@@ -24,6 +25,16 @@ const TermsOfService = () => {
               <p className="text-muted-foreground">Last updated: January 17, 2026</p>
             </div>
           </div>
+
+          {/* Beta Disclaimer */}
+          <Alert className="mb-8 border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="text-amber-800 dark:text-amber-300">Beta Platform Notice</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-400">
+              OneCare is currently in beta. Features, functionality, and terms may change as we continue development. 
+              By using this beta version, you acknowledge that the service is provided "as is" with potential limitations.
+            </AlertDescription>
+          </Alert>
 
           <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
             {/* Introduction */}
