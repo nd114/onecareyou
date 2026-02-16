@@ -88,8 +88,12 @@ const App = () => (
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/careers/:jobId" element={<JobDetail />} />
-            {/* Legacy public patient view - redirect to protected patient detail */}
-            <Route path="/clinician/patient/:inviteCode" element={<ClinicianPatientDetail />} />
+            {/* Patient detail view - requires auth */}
+            <Route path="/clinician/patient/:inviteCode" element={
+              <ProtectedRoute>
+                <ClinicianPatientDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/clinician/dashboard" element={
               <ProtectedRoute>
                 <ClinicianDashboard />
@@ -202,7 +206,11 @@ const App = () => (
             } />
             {/* Internal/unlisted pages */}
             <Route path="/ehr-comparison" element={<EHRComparison />} />
-            <Route path="/admin/import" element={<AdminImport />} />
+            <Route path="/admin/import" element={
+              <ProtectedRoute>
+                <AdminImport />
+              </ProtectedRoute>
+            } />
             {/* Clinician pricing and subscription pages */}
             <Route path="/clinician/pricing" element={<ClinicianPricing />} />
             <Route path="/clinician/why-onecare" element={<ClinicianWhyOneCare />} />

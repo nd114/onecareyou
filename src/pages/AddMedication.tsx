@@ -23,8 +23,7 @@ import { MedicationSuggestion } from '@/hooks/useMedicationDatabase';
 import { MedicationScanner } from '@/components/medications/MedicationScanner';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
-
-const FREE_MEDICATION_LIMIT = 3;
+import { FREE_MEDICATION_LIMIT } from '@/lib/pricing-constants';
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },

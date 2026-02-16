@@ -28,8 +28,7 @@ import { DrugInteractionChecker } from '@/components/medications/DrugInteraction
 import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
-
-const FREE_MEDICATION_LIMIT = 3;
+import { FREE_MEDICATION_LIMIT } from '@/lib/pricing-constants';
 
 const Medications = () => {
   const [searchQuery, setSearchQuery] = useState('');
