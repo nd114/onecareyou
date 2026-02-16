@@ -76,18 +76,15 @@ const howItWorks = [
   },
 ];
 
+import { LANDING_FREE_FEATURES, LANDING_PREMIUM_FEATURES } from '@/lib/pricing-constants';
+
 const pricingPlans = [
   {
     name: 'Free',
     price: '$0',
     period: 'forever',
     description: 'Perfect for getting started',
-    features: [
-      'Track up to 3 medications',
-      'Basic interaction checking',
-      'Daily schedule view',
-      'Health profile storage',
-    ],
+    features: [...LANDING_FREE_FEATURES],
     cta: 'Start Free',
     popular: false,
   },
@@ -96,14 +93,7 @@ const pricingPlans = [
     price: '$9.99',
     period: '/month',
     description: 'For comprehensive care coordination',
-    features: [
-      'Unlimited medications',
-      'Advanced interaction database',
-      'Vitals & lab tracking',
-      'Provider sharing (Care Circle)',
-      'Export health reports',
-      'Priority support',
-    ],
+    features: [...LANDING_PREMIUM_FEATURES],
     cta: 'Go Premium',
     popular: true,
   },
@@ -383,7 +373,7 @@ const Landing = () => {
               Ready to Connect with Your Care Team?
             </h2>
             <p className="text-lg text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-              Join thousands of patients who stay connected with their healthcare providers 
+              Join early adopters who stay connected with their healthcare providers 
               after leaving the hospital. Start your free account today.
             </p>
             <Button size="lg" variant="secondary" asChild className="text-lg h-12 px-8">

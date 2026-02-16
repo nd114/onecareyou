@@ -9,7 +9,8 @@ import { Footer } from '@/components/layout/Footer';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription, STRIPE_PRICES, PRICE_INFO } from '@/hooks/useSubscription';
+import { useSubscription } from '@/hooks/useSubscription';
+import { STRIPE_PRICES, PRICE_INFO, FREE_FEATURE_DETAIL, PREMIUM_FEATURE_DETAIL } from '@/lib/pricing-constants';
 import {
   Accordion,
   AccordionContent,
@@ -17,35 +18,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
-const freeFeatures = [
-  { text: 'Track up to 3 medications', included: true },
-  { text: 'Drug interaction warnings', included: true },
-  { text: 'Daily medication schedule', included: true },
-  { text: 'Health profile storage', included: true },
-  { text: 'Mobile-friendly access', included: true },
-  { text: 'Unlimited medications', included: false },
-  { text: 'Vitals & lab tracking', included: false },
-  { text: 'Family member profiles', included: false },
-  { text: 'Care Circle - share with providers', included: false },
-  { text: 'AI lab report parsing', included: false },
-  { text: 'Refill reminders', included: false },
-  { text: 'Health reports export', included: false },
-];
-
-const premiumFeatures = [
-  { text: 'Unlimited medications', included: true },
-  { text: 'Drug interaction warnings', included: true },
-  { text: 'Daily medication schedule', included: true },
-  { text: 'Health profile storage', included: true },
-  { text: 'Mobile-friendly access', included: true },
-  { text: 'Vitals & lab tracking', included: true },
-  { text: 'Family member profiles', included: true },
-  { text: 'Care Circle - share with providers', included: true },
-  { text: 'AI lab report parsing', included: true },
-  { text: 'Refill reminders', included: true },
-  { text: 'Health reports export', included: true },
-  { text: 'Priority support', included: true },
-];
+const freeFeatures = FREE_FEATURE_DETAIL;
+const premiumFeatures = PREMIUM_FEATURE_DETAIL;
 
 const faqs = [
   {

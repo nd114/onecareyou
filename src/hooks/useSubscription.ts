@@ -3,25 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-// Stripe price IDs
-export const STRIPE_PRICES = {
-  premium_monthly: 'price_1SqXUWDycAbKvlfcCanJKM3L',
-  premium_annual: 'price_1SqXUlDycAbKvlfcO63bve7U',
-} as const;
-
-export const PRICE_INFO = {
-  premium_monthly: {
-    price: 9.99,
-    period: 'month',
-    label: 'Monthly',
-  },
-  premium_annual: {
-    price: 99.90,
-    period: 'year',
-    label: 'Annual',
-    savings: '2 months free',
-  },
-} as const;
+// Re-export from centralized SSOT
+export { STRIPE_PRICES, PRICE_INFO } from '@/lib/pricing-constants';
 
 export interface SubscriptionStatus {
   subscribed: boolean;
