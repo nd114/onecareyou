@@ -29,8 +29,8 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
       
       return {
         date: format(new Date(v.recorded_at), 'MMM d'),
-        value: converted.value,
-        secondaryValue: secondaryConverted?.value ?? v.secondary_value,
+        value: Math.round(converted.value * 10) / 10,
+        secondaryValue: secondaryConverted ? Math.round(secondaryConverted.value * 10) / 10 : (v.secondary_value ? Math.round(v.secondary_value * 10) / 10 : v.secondary_value),
         fullDate: format(new Date(v.recorded_at), 'MMM d, yyyy h:mm a'),
       };
     });
