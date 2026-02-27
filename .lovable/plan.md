@@ -1,163 +1,219 @@
-# Comprehensive Platform Review & AI Roadmap Plan
+# Launch Plan for OneCare — Africa-First, Global Expansion
 
-## Part 1: Bug Fixes (Critical)
+## Current State
 
-### Bug 1: Clinician sees "Unknown Patient" names
+No launch plan exists in the docs. The existing documentation covers technical roadmaps, pricing, feature gaps, and AI implementation — but nothing on go-to-market strategy, launch timeline, team building, or market entry.
 
-**Root Cause**: The `profiles` table RLS policy only allows clinicians to view patient profiles if `profile` permission is `true` in `provider_shares.permissions`. Most shares default to `profile: false`. When `useClinicianPatients.ts` queries `profiles` at line 73, RLS blocks the result, causing fallback to "Unknown Patient".
+## Document to Create: `docs/launch-plan.md`
 
-**Fix**: Add a new RLS SELECT policy on `profiles` that allows clinicians to view basic patient info (name, email) if they have ANY active provider share with that patient — not just the `profile` permission:
-
-```sql
-CREATE POLICY "Clinicians can view basic patient info from shares"
-ON profiles FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM provider_shares ps
-    WHERE ps.user_id = profiles.user_id
-      AND ps.is_active = true
-      AND (ps.expires_at IS NULL OR ps.expires_at > now())
-      AND (
-        ps.clinician_user_id = auth.uid()
-        OR ps.provider_email = (SELECT email FROM auth.users WHERE id = auth.uid())
-      )
-  )
-);
-```
-
-### Bug 2: Vital values with excessive decimal places (e.g., 143.965666756902)
-
-**Root Cause**: The demo data seeder used `random()` to generate values without rounding, producing values like `26.2935170799518`. The display code in `VitalStatsCard.tsx` line 62 returns `converted.value` without rounding. The `VitalTrendChart.tsx` tooltip also displays raw values.
-
-**Fix** (two-pronged):
-
-1. **Database cleanup**: Run a migration to round all existing vitals values to 1 decimal place
-2. **Display fix**: Add rounding in `VitalStatsCard.tsx` formatValue/formatAverage, and in `VitalTrendChart.tsx` chartData mapping
-
-Files to modify:
-
-- `src/components/vitals/VitalStatsCard.tsx` — round `formatValue()` and `formatAverage()` to 1 decimal
-- `src/components/vitals/VitalTrendChart.tsx` — round chart values to 1 decimal
-- `src/components/vitals/VitalHistoryLog.tsx` — verify rounding on history display
-- Database migration to round existing data
-
-### Bug 3: Clinician guidance/action errors
-
-**Root Cause**: The `CreateGuidanceDialog` passes `share_id: selectedPatient?.id` — this is the `provider_shares.id`. The RLS INSERT policy on `clinician_guidance` requires `clinician_has_patient_access(patient_user_id)` which checks if the clinician has an active share. If the share's `clinician_user_id` is null (unclaimed), or if the clinician is matched by email but hasn't been claimed, this function returns false. The first provider share row (James Thompson, id `32830924...`) has `clinician_user_id: null` and no `provider_email` — this share is orphaned.
-
-**Fix**:
-
-1. Clean up the orphaned provider share (no clinician_user_id AND no provider_email)
-2. Ensure `autoClaimShares` invalidates the correct query key (currently invalidates `clinician-patients` but the query uses `clinician-patients-v2`)
-
-File to fix:
-
-- `src/hooks/useClinicianPatients.ts` — fix query key mismatch at lines 109 and 145 (should be `clinician-patients-v2`)
-
-### Bug 4: Empty analytics for certain metrics
-
-**Root Cause**: The analytics view only shows the top 4 vital cards (blood_pressure, glucose, weight, heart_rate) in quick stats. Lab metrics (potassium, sodium, etc.) only appear in the tabbed "Lab Results Analytics" section. If the default `getVitalHistory` uses 30 days but demo data is older than 30 days, charts show empty. Need to verify the demo data timestamps.
-
-**Fix**: The `getVitalHistory` default is 30 days. Lab data seeded in Dec 2025 is now ~2 months old. The analytics tab uses `getVitalHistory(type, 90)` for labs which should capture it. The overview page uses `getVitalStats(type)` which defaults to 30 days — this explains empty stats for older lab data. Update default days for lab metrics or show a "No recent data" message with the last known reading.
+A comprehensive launch plan covering the following sections:
 
 ---
 
-## Part 2: Query Key Consistency Fix
+### 1. Market Entry Strategy: Nigeria & Africa First
 
-- `autoClaimShares.onSuccess` invalidates `['clinician-patients']` but the main query uses `['clinician-patients-v2']`. This means after claiming shares, the patient list doesn't refresh.
-- Same issue in `updatePatientNotes.onSuccess`.
+**Phase 1 — Nigeria Soft Launch (Weeks 1-4)**
 
----
+- Target cities: Lagos, Abuja, Port Harcourt (highest smartphone penetration + private clinic density)
+- Primary user: Private clinic doctors managing chronic disease patients (diabetes, hypertension — top killers in Nigeria)
+- Secondary user: Health-conscious individuals already tracking medications manually
+- Value prop for Nigeria: "Your patients disappear between visits. OneCare keeps them connected to you — no IT team, no hardware, just a browser."
+- Pricing consideration: Current USD pricing ($49-99/month for clinicians) may need NGN-friendly tiers or regional pricing for Africa
 
-## Part 3: AI Features — Analysis & Roadmap
+**Phase 2 — West Africa Expansion (Months 2-4)**
 
-### For Patients
+- Ghana, Kenya, South Africa (English-speaking, growing digital health markets)
+- South Africa: POPIA compliance already implemented — competitive advantage
+- Kenya: M-Pesa integration consideration for payments (future)
 
-**1. AI Q&A Assistant (ask questions, get guidance/links)**
+**Phase 3 — Global West (Months 4-8)**
 
-- Ease: Medium. Use Lovable AI gateway with a backend function.
-- Implementation: Edge function `patient-ai-chat` that takes user question, uses system prompt restricting to navigation help and general health education (not medical advice), returns answer with links to relevant platform pages.
-- Concern: Must include strong disclaimers that this is NOT medical advice. System prompt must explicitly refuse diagnosis/treatment recommendations.
-- Limitation: Cannot access real patient data for privacy; answers are general only.
-
-**2. Voice input for vitals and personal info**
-
-- Ease: Medium-High. Use Web Speech API (browser-native, no API key needed) or ElevenLabs STT.
-- Implementation: Add a microphone button to AddVitalDialog that captures speech, sends to AI for structured extraction (type + value parsing), pre-fills the form.
-- Concern: Browser speech recognition accuracy varies. Need fallback for unsupported browsers.
-
-### For Clinicians
-
-**3. Meeting transcript/summary**
-
-- Ease: High complexity. Requires audio recording, transcription, summarization.
-- Implementation: Use ElevenLabs STT for real-time transcription + Lovable AI for summarization.
-- **Major concern**: HIPAA compliance. Recording patient conversations requires explicit consent from both parties. Audio storage must be encrypted. This feature has significant legal liability.
-- Recommendation per existing memory: This was explicitly rejected in the AI roadmap due to HIPAA concerns and competitive overlap. Consider a lighter approach: clinician manually pastes notes, AI extracts action items.
-
-**4. Voice-driven vitals entry with patient identification**
-
-- Ease: High complexity. Requires speech-to-text, NLU for entity extraction (patient name, vitals), patient matching, form population.
-- Implementation: Edge function that receives transcribed text, uses AI tool-calling to extract structured data (patient name, DOB, vital type/values), matches against clinician's patient list, returns structured data for confirmation UI.
-- Concern: Patient identification by name alone is unreliable (duplicates). DOB adds safety. Must always require clinician confirmation before saving.
-- Limitation: Accuracy of speech recognition for medical values (e.g., "104 over 65" must be parsed as BP 104/65).
-
-**5. AI as nurse/admin assistant (tracking, transcription, audio storage)**
-
-- Ease: Very high complexity. This is essentially building a clinical documentation system.
-- Concern: Audio storage of patient conversations is a regulatory minefield. HIPAA requires BAA with any audio storage provider, encryption at rest, access controls, retention policies.
-- Recommendation: Phase this into post-launch. Start with text-based note-taking with AI summarization only.
-
-### For All Users
-
-**6. Voice-guided platform navigation**
-
-- Ease: Low-Medium. Use browser Speech API for input, AI to interpret intent, route to correct page.
-- Implementation: Floating "Ask AI" button that opens a chat/voice dialog. AI maps natural language to platform routes and features.
-
-**7. AI consent form**
-
-- Already implemented: `AIConsentDialog` component exists with checkbox acknowledgment. The `useAIConsent` hook manages consent state. `consent_logs` table tracks all changes.
-- Enhancement needed: Extend consent dialog to cover new AI features (voice recording, transcription).
-
-### Recommended Phasing
-
-**Phase 1 (Pre-launch / Now)**:
-
-- Patient AI Q&A chat (text-based, no medical advice)
-- Voice-guided navigation for all users
-- Extend existing AI consent dialog for new features
-
-**Phase 2 (Post-launch)**:
-
-- Voice input for vitals (patient + clinician)
-- AI-assisted note extraction from pasted text
-
-**Phase 3 (Future)**:
-
-- Real-time meeting transcription (with full HIPAA audit)
-- Audio storage with encryption
-- Patient identification from speech
+- UK, US, Canada — use African traction numbers + case studies to build credibility
+- HIPAA, GDPR, PIPEDA compliance already in place — ready for these markets
+- Clinician pricing aligns with Western competitors (Practice Fusion $149/mo, SimplePractice $99/mo — OneCare at $49-99/mo is competitive)
 
 ---
 
-## Part 4: Implementation Steps
+### 2. Community-Driven Adoption Strategy
 
-### Step 1: Database fixes
+**Community Health Champions Program**
 
-- Migration to round existing vitals values to 1 decimal
-- New RLS policy on `profiles` for clinician basic access
-- Clean up orphaned provider share
+- Recruit 10-20 community health workers (CHWs) or pharmacy assistants in target Nigerian cities
+- Give them free Premium accounts + referral codes
+- They help patients sign up, explain the platform, and connect them to participating clinics
+- Compensation: Per-signup commission (e.g., ₦500/patient sign-up, ₦2,000/clinician sign-up)
+- Track via referral codes linked to user profiles
 
-### Step 2: Frontend display fixes
+**Church/Mosque/Community Group Partnerships**
 
-- Round vital values in VitalStatsCard, VitalTrendChart, VitalHistoryLog
-- Fix query key mismatch in useClinicianPatients
-- Extend default time window for lab analytics display
+- Health outreach sessions at community gatherings — common in Nigeria
+- Offer free health tracking demo + sign-up assistance
+- Partner with existing community health programs
 
-### Step 3: AI foundation (not approved - include this as well as notes on "Part 3: AI Features - Analysis & Roadmap" in a .md that will document the AI implementation specifically and in much detail. Also include some areas that you think could be also included as well under a "Other A/B Consids Imp." section)
+**Pharmacy Partnerships**
 
-- Create `patient-ai-chat` edge function with Lovable AI
-- Add chat UI component accessible from patient dashboard
-- Update AI consent dialog to cover new features
-- Add voice input button using Web Speech API to vitals entry
+- Place QR codes at pharmacy counters: "Track your medications free with OneCare"
+- Pharmacists can recommend the app when dispensing chronic disease medications
+
+---
+
+### 3. Online Acquisition Channels
+
+**Social Media (Primary)**
+
+- WhatsApp Business: Create broadcast lists for health tips → link to sign-up (WhatsApp is dominant in Nigeria)
+- Instagram/Twitter(X): Short-form content on medication safety, vitals tracking, health tips
+- TikTok: Quick demos of the platform — "How to track your blood pressure in 10 seconds"
+- Facebook Groups: Join Nigerian health/wellness groups, provide value before promoting
+
+**Content Marketing**
+
+- Blog posts on the Knowledge Base: "Why every Nigerian should track their blood pressure" — SEO for local health queries
+- YouTube: Platform walkthrough videos, clinician testimonials
+
+**Influencer/KOL Strategy**
+
+- Partner with Nigerian health influencers (doctors with social media followings — e.g., "Doctor Penking," health Twitter personalities)
+- Offer free Clinician Pro accounts in exchange for honest reviews
+
+**Email (Warm Outreach Only)**
+
+- Personal network first — the developer's own contacts
+- Clinician pilot framework (already documented in memory) — small-scale tests with real patients
+- No cold email blasts — focus on warm intros and referrals
+
+---
+
+### 4. Team Building Plan (Solo Developer → Launch Team)
+
+**Current team**: 1 developer (founder)
+
+**Immediate Hires/Roles (Pre-Launch, Weeks 1-2)**
+
+
+| Role                                 | Type            | Why                                                                               | Where to Find                                             |
+| ------------------------------------ | --------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Community Growth Lead (Nigeria)      | Part-time, paid | On-the-ground presence in Lagos/Abuja, manages CHW program, pharmacy partnerships | Nigerian university graduates, health management programs |
+| SDR (already listed on Careers page) | Contract, paid  | Clinician outreach — schedule demos, follow up with leads                         | Remote, existing job listing                              |
+
+
+**Launch Phase Hires (Months 1-2)**
+
+
+| Role                                           | Type            | Why                                                         |
+| ---------------------------------------------- | --------------- | ----------------------------------------------------------- |
+| Healthcare Content Specialist (already listed) | Contract, paid  | Social media + blog content for patient/clinician education |
+| Clinical Advisor (already listed)              | Unpaid/equity   | Credibility, feature validation, testimonials               |
+| Customer Success / Support                     | Part-time, paid | Handle user questions, onboarding help, bug reports         |
+
+
+**Post-Traction Hires (Months 3-6)**
+
+
+| Role                          | Type               | Why                                             |
+| ----------------------------- | ------------------ | ----------------------------------------------- |
+| Second Developer              | Full-time/contract | Feature velocity — AI features, EHR integration |
+| Sales Lead                    | Commission-based   | Drive clinician acquisition at scale            |
+| Country Manager (Ghana/Kenya) | Part-time          | Expansion into next markets                     |
+
+
+**Where to Recruit**
+
+- Careers page already exists with 4 listings (SDR, Content Specialist, Clinical Advisory Board, Product Feedback Panel)
+- Add: Community Growth Lead role
+- Nigerian tech communities: Techpoint Africa, Andela alumni, HNG Internship alumni
+- LinkedIn: Target Nigerian healthcare professionals
+- University partnerships: Health informatics, public health, pharmacy programs
+
+---
+
+### 5. Launch Timeline
+
+
+| Week    | Milestone                                                             | Owner                 |
+| ------- | --------------------------------------------------------------------- | --------------------- |
+| Week 1  | Fix remaining bugs (decimal rounding, Unknown Patient — already done) | Developer             |
+| Week 1  | Finalize pricing for Nigerian market (NGN-friendly tiers?)            | Developer             |
+| Week 1  | Post Community Growth Lead job listing                                | Developer             |
+| Week 2  | Recruit first 3-5 Community Health Champions in Lagos                 | Growth Lead           |
+| Week 2  | Personal outreach to 10 clinicians in network                         | Developer             |
+| Week 2  | Set up WhatsApp Business + social media accounts                      | Developer/Content     |
+| Week 3  | First clinician pilot — 1-2 doctors with 5-10 real patients each      | Developer + Clinician |
+| Week 3  | First community health outreach session                               | Growth Lead           |
+| Week 4  | Collect feedback, iterate on UX issues                                | Developer             |
+| Week 4  | First case study / testimonial from pilot clinician                   | Content Specialist    |
+| Month 2 | Scale to 10 clinicians, 50+ patients                                  | Team                  |
+| Month 2 | Begin Ghana/Kenya soft outreach                                       | Growth Lead           |
+| Month 3 | Publish case studies, begin online marketing push                     | Content + SDR         |
+| Month 4 | Evaluate traction metrics, decide on Western market entry timing      | Founder               |
+
+
+---
+
+### 6. Success Metrics for Launch
+
+
+| Metric                   | Month 1 Target | Month 3 Target | Month 6 Target |
+| ------------------------ | -------------- | -------------- | -------------- |
+| Registered patients      | 50             | 300            | 1,000          |
+| Active patients (weekly) | 20             | 100            | 400            |
+| Registered clinicians    | 5              | 25             | 75             |
+| Paying clinicians        | 2              | 10             | 30             |
+| MRR                      | $100           | $700           | $2,500         |
+| Community Champions      | 5              | 15             | 30             |
+| Countries active         | 1 (Nigeria)    | 3              | 5              |
+
+
+---
+
+### 7. Platform Readiness Checklist
+
+Items to verify/complete before launch:
+
+- Beta badge on all pages
+- Legal disclaimers (Privacy, Terms, Data Processing)
+- POPIA compliance (South Africa)
+- Pricing page with free + premium tiers
+- Clinician pricing and subscription flow
+- Bug fixes (decimal rounding, Unknown Patient, query key mismatch)
+- Add Community Growth Lead to Careers page job listings
+- Regional pricing consideration (NGN tiers or USD with purchase parity)
+- WhatsApp share button on Care Circle invite flow
+- Offline/low-bandwidth graceful degradation testing (critical for parts of Nigeria)
+- Mobile UX polish (majority of Nigerian users are mobile-only)
+
+---
+
+### 8. Risk Mitigation
+
+
+| Risk                                         | Likelihood | Mitigation                                                                    |
+| -------------------------------------------- | ---------- | ----------------------------------------------------------------------------- |
+| Low internet reliability in target areas     | High       | PWA already built; test offline behavior; keep pages lightweight              |
+| Payment friction (Stripe limited in Nigeria) | High       | Consider Paystack (Nigerian Stripe equivalent) for local payments             |
+| Low initial clinician adoption               | Medium     | Start with personal network; offer 3-month free trial for first 20 clinicians |
+| Solo developer bottleneck                    | High       | Prioritize ruthlessly; hire second developer within 2 months                  |
+| Data privacy concerns from users             | Medium     | Prominent privacy badges, POPIA compliance, transparent data processing page  |
+
+
+---
+
+### 9. Budget Estimate (Months 1-3)
+
+
+| Item                             | Monthly Cost         | Notes                                            |
+| -------------------------------- | -------------------- | ------------------------------------------------ |
+| Community Growth Lead            | $100-150             | Part-time, Nigeria-based                         |
+| CHW commissions (20 champions)   | $200-400             | Per sign-up commissions                          |
+| Social media ads (test budget)   | $100-200             | Instagram, Facebook, targeted at Nigerian cities |
+| Content Specialist               | $200-500             | Contract, part-time                              |
+| SDR                              | $300-800             | Commission-based with small base                 |
+| Infrastructure (Lovable, domain) | Current plan         | Already covered                                  |
+| **Total**                        | **$900-2,050/month** | Lean launch budget                               |
+
+
+---
+
+## Implementation
+
+Create `docs/launch-plan.md` with the full plan above, and add a "Community Growth Lead" role to `src/lib/job-listings.ts`.
