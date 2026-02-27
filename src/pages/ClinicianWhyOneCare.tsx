@@ -61,7 +61,7 @@ const ClinicianWhyOneCare = () => {
       healthbridge: { value: "None", good: false },
     },
     {
-      feature: "Real-time Communication",
+      feature: "Care Communication",
       onecare: { value: "Bidirectional with status", good: true },
       veradigm: { value: "One-way messaging", good: false },
       epic: { value: "MyChart messages", good: false },
@@ -133,17 +133,17 @@ const ClinicianWhyOneCare = () => {
     {
       icon: Globe,
       title: "International Drug Database",
-      description: "Medication information for 190+ countries via FDA, EMA, and Mendeley IDD. Serve international patients confidently.",
-      stat: "190+",
-      statLabel: "Countries covered",
+      description: "Medication information from international sources via FDA, EMA, and IDD databases. Serve international patients confidently.",
+      stat: "Global",
+      statLabel: "Drug coverage",
       color: "bg-indigo-500/10 text-indigo-500"
     },
     {
       icon: Link2,
-      title: "FHIR Integration Layer",
-      description: "Bidirectional sync with your existing EHR. OneCare becomes the patient-facing layer while you keep your workflow.",
-      stat: "2-way",
-      statLabel: "Data synchronization",
+      title: "FHIR Integration Layer (Coming Soon)",
+      description: "Planned bidirectional sync with your existing EHR. OneCare becomes the patient-facing layer while you keep your workflow.",
+      stat: "Soon",
+      statLabel: "In development",
       color: "bg-rose-500/10 text-rose-500"
     },
   ];
@@ -151,7 +151,7 @@ const ClinicianWhyOneCare = () => {
   const integrationBenefits = [
     {
       title: "You Keep Your Workflow",
-      description: "Continue documenting in Veradigm, Epic, or HealthBridge. OneCare syncs automatically via FHIR."
+      description: "Continue documenting in your existing EHR. OneCare plans to sync via FHIR (coming soon)."
     },
     {
       title: "Patients Get Modern UX",
@@ -163,7 +163,7 @@ const ClinicianWhyOneCare = () => {
     },
     {
       title: "Export Adherence Data",
-      description: "Dose-level compliance analytics that can be ingested back into your clinical workflow."
+      description: "Dose-level compliance analytics exportable as PDF reports for your clinical workflow."
     },
   ];
 
@@ -193,7 +193,7 @@ const ClinicianWhyOneCare = () => {
                 that Veradigm, Epic, and HealthBridge Clinical don't address.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
-                <Button size="lg" onClick={() => navigate('/clinician/signup')} className="gradient-primary border-0">
+                <Button size="lg" onClick={() => navigate('/clinician/sign-up')} className="gradient-primary border-0">
                   Start Free Trial
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -368,9 +368,9 @@ const ClinicianWhyOneCare = () => {
                 <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
                   <CardHeader>
                     <Badge variant="outline" className="w-fit mb-2">How It Works</Badge>
-                    <CardTitle className="text-2xl">Seamless EHR Integration</CardTitle>
+                    <CardTitle className="text-2xl">EHR Integration (Coming Soon)</CardTitle>
                     <CardDescription>
-                      OneCare connects to your existing system via FHIR, becoming the patient engagement layer
+                      OneCare is building FHIR connectivity to become the patient engagement layer for your existing system
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -428,7 +428,7 @@ const ClinicianWhyOneCare = () => {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="h-5 w-5 text-status-success" />
-                      <span>FHIR export for EHR integration</span>
+                      <span>FHIR export for EHR integration (coming soon)</span>
                     </li>
                   </ul>
                 </div>
@@ -490,10 +490,10 @@ const ClinicianWhyOneCare = () => {
               <h2 className="text-3xl font-bold mb-4">Ready to Enhance Your Patient Engagement?</h2>
               <p className="text-muted-foreground mb-8">
                 Start your 14-day free trial. No credit card required. 
-                Connect your existing EHR and see the difference.
+                See how OneCare enhances your patient engagement.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
-                <Button size="lg" onClick={() => navigate('/clinician/signup')} className="gradient-primary border-0 gap-2">
+                <Button size="lg" onClick={() => navigate('/clinician/sign-up')} className="gradient-primary border-0 gap-2">
                   Start Free Trial
                   <ArrowRight className="h-4 w-4" />
                 </Button>

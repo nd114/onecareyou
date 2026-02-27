@@ -40,7 +40,7 @@ export const PREMIUM_FEATURES = [
   'Unlimited medications',
   'Family member profiles',
   'AI lab report parsing',
-  'Refill reminders',
+  'Refill reminders (coming soon)',
   'Health reports export',
   'Priority support',
 ] as const;

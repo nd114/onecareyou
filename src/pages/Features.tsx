@@ -30,7 +30,7 @@ const coreFeatures = [
     details: [
       'Invite providers with secure access codes',
       'Granular permission controls',
-      'Real-time health data sharing',
+      'Shared health data access',
       'No appointments needed for updates'
     ]
   },
@@ -42,7 +42,7 @@ const coreFeatures = [
       '18+ vital types supported',
       'Upload lab reports with AI extraction',
       'Historical charts and trends',
-      'Providers see updates instantly'
+      'Providers see shared updates'
     ]
   },
   {
@@ -53,7 +53,7 @@ const coreFeatures = [
       'Check interactions across all medications',
       'Severity levels from low to high risk',
       'Actionable recommendations',
-      'Updated database with 50,000+ medications'
+      'Comprehensive medication database'
     ]
   },
   {
@@ -64,7 +64,7 @@ const coreFeatures = [
       'AI-powered pill identification',
       'Barcode scanning for instant lookup',
       'Automatic dosage and name extraction',
-      'Works with most common medications'
+      'Supports many common medications'
     ]
   },
   {
@@ -75,7 +75,7 @@ const coreFeatures = [
       'Multiple daily time slots',
       'Flexible frequency options',
       'Adherence tracking for providers',
-      'Calendar integration'
+      'Calendar view of doses'
     ]
   },
 ];
@@ -85,7 +85,7 @@ const additionalFeatures = [
   { icon: Heart, title: 'Health Profile', description: 'Store allergies, conditions, blood type: accessible to your care team' },
   { icon: Bell, title: 'Smart Notifications', description: 'Timely reminders that adapt to your schedule' },
   { icon: FileText, title: 'Health Reports', description: 'Export comprehensive reports for doctor visits' },
-  { icon: Lock, title: 'Privacy First', description: 'End-to-end encryption and data anonymization' },
+  { icon: Lock, title: 'Privacy First', description: 'Encrypted storage and secure data transmission' },
   { icon: Share2, title: 'Provider Integration', description: 'Works seamlessly with your healthcare team' },
 ];
 

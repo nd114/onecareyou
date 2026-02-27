@@ -29,12 +29,12 @@ const features = [
   {
     icon: Users,
     title: 'Provider Access',
-    description: 'Give your healthcare providers real-time access to your vitals and medications without appointments.',
+    description: 'Give your healthcare providers shared access to your vitals and medications without appointments.',
   },
   {
     icon: TrendingUp,
     title: 'Health Tracking',
-    description: 'Track vitals, medications, and lab results. Your care team sees updates as they happen.',
+    description: 'Track vitals, medications, and lab results. Your care team sees updates when shared.',
   },
   {
     icon: Shield,
@@ -72,7 +72,7 @@ const howItWorks = [
   {
     step: 4,
     title: 'Stay Connected Continuously',
-    description: 'Your providers see updates in real-time. Receive guidance and instructions directly in the app.',
+    description: 'Your providers see your shared updates. Receive guidance and instructions directly in the app.',
   },
 ];
 
@@ -196,7 +196,7 @@ const Landing = () => {
                 <div className="h-32 rounded-xl bg-muted/50 flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <Users className="h-8 w-8 mx-auto mb-2 text-primary/60" />
-                    <span className="text-sm">Real-time Care Coordination</span>
+                    <span className="text-sm">Continuous Care Coordination</span>
                   </div>
                 </div>
               </div>
