@@ -146,6 +146,41 @@ As a panel member, you'll participate in user testing sessions, provide feedback
       'Interest in improving healthcare technology'
     ],
     iconName: 'Users'
+  },
+  {
+    id: 'community-growth-lead',
+    title: 'Community Growth Lead (Nigeria)',
+    category: 'Growth',
+    type: 'paid',
+    commitment: 'Part-time',
+    location: 'Lagos / Abuja, Nigeria',
+    description: 'Drive on-the-ground adoption of OneCare in Nigeria by managing community health champions, pharmacy partnerships, and local outreach programs.',
+    fullDescription: `We're looking for a Community Growth Lead based in Nigeria to spearhead our Africa-first launch strategy. You'll be responsible for building and managing our Community Health Champions program, establishing pharmacy partnerships, and running community outreach sessions in Lagos, Abuja, and Port Harcourt.
+
+This is a ground-floor opportunity to shape how healthcare technology is adopted across Africa. You'll work directly with the founder and have significant autonomy in how you execute the growth strategy.`,
+    responsibilities: [
+      'Recruit, train, and manage 10-20 Community Health Champions in target Nigerian cities',
+      'Establish partnerships with pharmacies to place OneCare QR codes and referral materials',
+      'Organize health outreach sessions at community gatherings, churches, mosques, and local events',
+      'Track sign-up metrics and champion performance using referral codes',
+      'Coordinate with clinics and healthcare providers to onboard them onto the platform',
+      'Provide on-the-ground feedback on UX issues, connectivity challenges, and user needs',
+      'Help adapt messaging and materials for the Nigerian market'
+    ],
+    qualifications: [
+      'Based in Lagos or Abuja, Nigeria',
+      'Strong network in local health, pharmacy, or community organizations',
+      'Experience in community outreach, public health campaigns, or grassroots marketing',
+      'Excellent communication skills in English (Pidgin and/or Yoruba/Hausa/Igbo a plus)',
+      'Self-starter who can work independently with minimal supervision',
+      'Smartphone-savvy and comfortable demonstrating mobile/web applications'
+    ],
+    niceToHave: [
+      'Background in public health, health management, or pharmacy',
+      'Previous experience with health tech or digital health platforms',
+      'Connections to community health worker (CHW) networks in Nigeria'
+    ],
+    iconName: 'Users'
   }
 ];
 
