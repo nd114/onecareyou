@@ -106,7 +106,7 @@ export function useClinicianPatients() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
       toast.success('Patient connected successfully');
     },
     onError: (error) => {
@@ -142,7 +142,7 @@ export function useClinicianPatients() {
     },
     onSuccess: (count) => {
       if (count > 0) {
-        queryClient.invalidateQueries({ queryKey: ['clinician-patients'] });
+        queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
         toast.success(`Connected with ${count} new patient${count > 1 ? 's' : ''}`);
       }
     },
@@ -162,7 +162,7 @@ export function useClinicianPatients() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
       toast.success('Patient notes saved');
     },
     onError: (error) => {

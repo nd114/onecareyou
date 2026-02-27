@@ -56,16 +56,16 @@ export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProp
     const formatValue = () => {
       if (!latestVital) return '-';
       if (type === 'blood_pressure' && latestVital.secondary_value) {
-        return `${latestVital.value}/${latestVital.secondary_value}`;
+        return `${Math.round(latestVital.value * 10) / 10}/${Math.round(latestVital.secondary_value * 10) / 10}`;
       }
       const converted = convertVitalValue(type, latestVital.value);
-      return converted.value;
+      return Math.round(converted.value * 10) / 10;
     };
 
     const formatAverage = () => {
       if (!stats) return null;
       const converted = convertVitalValue(type, stats.average);
-      return converted.value;
+      return Math.round(converted.value * 10) / 10;
     };
 
     return (

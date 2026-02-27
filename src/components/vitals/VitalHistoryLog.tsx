@@ -178,10 +178,10 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
   const formatValue = (vital: VitalRecord) => {
     if (!vital || !vital.type) return '-';
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
-      return `${vital.value}/${vital.secondary_value}`;
+      return `${Math.round(vital.value * 10) / 10}/${Math.round(vital.secondary_value * 10) / 10}`;
     }
     const converted = convertVitalValue(vital.type, vital.value);
-    return converted.value;
+    return Math.round(converted.value * 10) / 10;
   };
 
   const getDisplayUnitForVital = (vital: VitalRecord) => {
