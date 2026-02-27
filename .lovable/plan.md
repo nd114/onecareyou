@@ -1,219 +1,153 @@
-# Launch Plan for OneCare — Africa-First, Global Expansion
 
-## Current State
 
-No launch plan exists in the docs. The existing documentation covers technical roadmaps, pricing, feature gaps, and AI implementation — but nothing on go-to-market strategy, launch timeline, team building, or market entry.
+# USP-to-Functionality Gap Audit & Funding Plan
 
-## Document to Create: `docs/launch-plan.md`
+## Part 1: Copywriting Claims vs Actual Functionality
 
-A comprehensive launch plan covering the following sections:
+### CRITICAL GAPS (Claims with NO implementation)
 
----
+| Claim | Where Claimed | Reality |
+|-------|--------------|---------|
+| "End-to-end encryption" | Features.tsx line 88 | FALSE. Data is encrypted at rest (database-level AES-256) and in transit (TLS), but there is NO end-to-end encryption. E2E encryption means even the server can't read data -- that's not the case here. This claim must be corrected to "Encryption at rest and in transit" |
+| "Data anonymization" | Features.tsx line 88 (same line) | PARTIAL. PII stripping exists for AI lab parsing only. No general data anonymization. Misleading |
+| "Calendar integration" | Features.tsx line 78 | NOT IMPLEMENTED. No Google Calendar, iCal, or any calendar export exists |
+| "Refill reminders" | pricing-constants.ts (Premium feature) | NOT IMPLEMENTED. A `refill_date` column exists on `medications` but no reminder logic triggers from it. `useDueDateReminders` only handles clinician guidance items, not medication refills |
+| "FHIR export for EHR integration" | ClinicianWhyOneCare.tsx line 432 | NOT IMPLEMENTED. Database tables for EHR connections exist, but no actual FHIR data exchange happens. The "Export to EHR (FHIR)" button on the Why OneCare page is non-functional |
+| "Bidirectional sync with your existing EHR" | ClinicianWhyOneCare.tsx line 144 | NOT IMPLEMENTED. No actual EHR sync occurs |
+| "Connect your existing EHR and see the difference" | ClinicianWhyOneCare.tsx line 493 | FALSE for launch. EHR edge functions exist but are stubs |
+| "Real-time" data sharing/updates | Landing.tsx, Features.tsx, ClinicianPricing.tsx (10+ instances) | MISLEADING. No Supabase Realtime subscriptions exist (confirmed: zero `ALTER PUBLICATION` statements). Data refreshes only on page load or manual refetch. It's "near-time" at best |
+| "Priority support" / "Dedicated account manager" | pricing-constants.ts, useClinicianSubscription.ts | NOT IMPLEMENTED. There is no support ticketing system, no chat widget, no differentiated support channels between tiers. It's a single contact form for everyone |
+| "10,000+ Active Users" | About.tsx line 33 | COMPLETELY FALSE. This is a pre-launch beta. Must be removed or replaced with honest metrics |
+| "50,000+ Medications Tracked" | About.tsx line 33 | FALSE. Same issue |
+| "4.8★ User Rating" | About.tsx line 33 | FALSE. No app store listing exists |
+| "99.9% Uptime" | About.tsx line 33 | UNVERIFIABLE. No monitoring is in place |
+| "Join thousands of patients" | About.tsx line 182 | FALSE. Same pre-launch issue (Landing.tsx was fixed but About.tsx was missed) |
+| "Updated database with 50,000+ medications" | Features.tsx line 56 | UNVERIFIED. The IDD import + FDA/RxNorm may cover this number, but the specific claim hasn't been validated |
+| "Works with most common medications" (photo ID) | Features.tsx line 67 | MISLEADING. Photo ID relies on the `identify-pill` edge function which calls an external API. Accuracy and coverage are unverified |
 
-### 1. Market Entry Strategy: Nigeria & Africa First
+### MODERATE GAPS (Partially true but overstated)
 
-**Phase 1 — Nigeria Soft Launch (Weeks 1-4)**
+| Claim | Where | Reality |
+|-------|-------|---------|
+| "Automated Care Circle" alerts | ClinicianWhyOneCare.tsx line 122 | Care alerts exist but rely on a cron-triggered edge function (`check-care-alerts`), not real-time automation. Delivery reliability is unverified |
+| "Seamless EHR Integration" | ClinicianWhyOneCare.tsx line 371 | Database schema and edge function stubs exist. Not "seamless" -- it's not functional yet. Should say "Coming soon" |
+| "190+ countries database" | ClinicianWhyOneCare.tsx line 137 | The IDD database was imported but the actual country coverage hasn't been verified against this specific number |
+| "14-day free trial. No credit card required." | ClinicianWhyOneCare.tsx line 492 | Trial mechanism exists (`trial_ends_at`), but the "no credit card" claim should be verified against the actual Stripe checkout flow |
+| Solo plan "25 patients" vs comparison table "Patient Limit 25" | Mismatch between `CLINICIAN_TIER_INFO` (patientLimit: 25) and comparison table showing same | Consistent here, but the tier info line 18 says `patientLimit: 5` for trial. The "Start Free Trial" CTA on WhyOneCare page navigates to `/clinician/signup` which is a 404 (should be `/clinician/sign-up`) |
 
-- Target cities: Lagos, Abuja, Port Harcourt (highest smartphone penetration + private clinic density)
-- Primary user: Private clinic doctors managing chronic disease patients (diabetes, hypertension — top killers in Nigeria)
-- Secondary user: Health-conscious individuals already tracking medications manually
-- Value prop for Nigeria: "Your patients disappear between visits. OneCare keeps them connected to you — no IT team, no hardware, just a browser."
-- Pricing consideration: Current USD pricing ($49-99/month for clinicians) may need NGN-friendly tiers or regional pricing for Africa
+### BROKEN NAVIGATION
 
-**Phase 2 — West Africa Expansion (Months 2-4)**
+| Link | Where | Issue |
+|------|-------|-------|
+| `/clinician/signup` | ClinicianWhyOneCare.tsx lines 196, 496 | 404 -- correct route is `/clinician/sign-up` (with hyphen) |
 
-- Ghana, Kenya, South Africa (English-speaking, growing digital health markets)
-- South Africa: POPIA compliance already implemented — competitive advantage
-- Kenya: M-Pesa integration consideration for payments (future)
+### Pricing FAQ Inconsistency
 
-**Phase 3 — Global West (Months 4-8)**
+Pricing.tsx FAQ line 31 says: "Premium unlocks unlimited medications, **vitals tracking, Care Circle sharing**, AI lab report parsing, and priority support."
 
-- UK, US, Canada — use African traction numbers + case studies to build credibility
-- HIPAA, GDPR, PIPEDA compliance already in place — ready for these markets
-- Clinician pricing aligns with Western competitors (Practice Fusion $149/mo, SimplePractice $99/mo — OneCare at $49-99/mo is competitive)
-
----
-
-### 2. Community-Driven Adoption Strategy
-
-**Community Health Champions Program**
-
-- Recruit 10-20 community health workers (CHWs) or pharmacy assistants in target Nigerian cities
-- Give them free Premium accounts + referral codes
-- They help patients sign up, explain the platform, and connect them to participating clinics
-- Compensation: Per-signup commission (e.g., ₦500/patient sign-up, ₦2,000/clinician sign-up)
-- Track via referral codes linked to user profiles
-
-**Church/Mosque/Community Group Partnerships**
-
-- Health outreach sessions at community gatherings — common in Nigeria
-- Offer free health tracking demo + sign-up assistance
-- Partner with existing community health programs
-
-**Pharmacy Partnerships**
-
-- Place QR codes at pharmacy counters: "Track your medications free with OneCare"
-- Pharmacists can recommend the app when dispensing chronic disease medications
+But vitals tracking and Care Circle are FREE features (confirmed in pricing-constants.ts). The FAQ contradicts the feature lists.
 
 ---
 
-### 3. Online Acquisition Channels
+## Part 2: Implementation Plan for Fixes
 
-**Social Media (Primary)**
+### Step 1: Remove false claims (About.tsx)
+- Replace fake stats ("10,000+ Active Users", "50,000+ Medications Tracked", "4.8★", "99.9% Uptime") with honest beta-appropriate content (e.g., "Growing Community", "Comprehensive Database", "Built for Reliability", "Privacy-First Design")
+- Fix "Join thousands of patients" to "Join early adopters"
 
-- WhatsApp Business: Create broadcast lists for health tips → link to sign-up (WhatsApp is dominant in Nigeria)
-- Instagram/Twitter(X): Short-form content on medication safety, vitals tracking, health tips
-- TikTok: Quick demos of the platform — "How to track your blood pressure in 10 seconds"
-- Facebook Groups: Join Nigerian health/wellness groups, provide value before promoting
+### Step 2: Correct misleading security claims (Features.tsx)
+- Change "End-to-end encryption and data anonymization" to "Encrypted storage and secure data transmission"
 
-**Content Marketing**
+### Step 3: Add "Coming Soon" labels to unbuilt features
+- Calendar integration: remove from feature details or label "(coming soon)"
+- Refill reminders: add "(coming soon)" in pricing-constants.ts
+- FHIR export: already marked on clinician pricing table but NOT on WhyOneCare page -- add labels there
+- Priority support / Dedicated manager: add "(not yet differentiated)" or remove until support tiers exist
 
-- Blog posts on the Knowledge Base: "Why every Nigerian should track their blood pressure" — SEO for local health queries
-- YouTube: Platform walkthrough videos, clinician testimonials
+### Step 4: Fix "real-time" claims
+- Replace "real-time" with "continuous" or "shared" across Landing, Features, ClinicianPricing, Footer
+- Or implement Supabase Realtime for vitals/medications tables (more work but makes the claim true)
 
-**Influencer/KOL Strategy**
+### Step 5: Fix broken navigation
+- Change `/clinician/signup` to `/clinician/sign-up` in ClinicianWhyOneCare.tsx (2 instances)
 
-- Partner with Nigerian health influencers (doctors with social media followings — e.g., "Doctor Penking," health Twitter personalities)
-- Offer free Clinician Pro accounts in exchange for honest reviews
-
-**Email (Warm Outreach Only)**
-
-- Personal network first — the developer's own contacts
-- Clinician pilot framework (already documented in memory) — small-scale tests with real patients
-- No cold email blasts — focus on warm intros and referrals
-
----
-
-### 4. Team Building Plan (Solo Developer → Launch Team)
-
-**Current team**: 1 developer (founder)
-
-**Immediate Hires/Roles (Pre-Launch, Weeks 1-2)**
-
-
-| Role                                 | Type            | Why                                                                               | Where to Find                                             |
-| ------------------------------------ | --------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Community Growth Lead (Nigeria)      | Part-time, paid | On-the-ground presence in Lagos/Abuja, manages CHW program, pharmacy partnerships | Nigerian university graduates, health management programs |
-| SDR (already listed on Careers page) | Contract, paid  | Clinician outreach — schedule demos, follow up with leads                         | Remote, existing job listing                              |
-
-
-**Launch Phase Hires (Months 1-2)**
-
-
-| Role                                           | Type            | Why                                                         |
-| ---------------------------------------------- | --------------- | ----------------------------------------------------------- |
-| Healthcare Content Specialist (already listed) | Contract, paid  | Social media + blog content for patient/clinician education |
-| Clinical Advisor (already listed)              | Unpaid/equity   | Credibility, feature validation, testimonials               |
-| Customer Success / Support                     | Part-time, paid | Handle user questions, onboarding help, bug reports         |
-
-
-**Post-Traction Hires (Months 3-6)**
-
-
-| Role                          | Type               | Why                                             |
-| ----------------------------- | ------------------ | ----------------------------------------------- |
-| Second Developer              | Full-time/contract | Feature velocity — AI features, EHR integration |
-| Sales Lead                    | Commission-based   | Drive clinician acquisition at scale            |
-| Country Manager (Ghana/Kenya) | Part-time          | Expansion into next markets                     |
-
-
-**Where to Recruit**
-
-- Careers page already exists with 4 listings (SDR, Content Specialist, Clinical Advisory Board, Product Feedback Panel)
-- Add: Community Growth Lead role
-- Nigerian tech communities: Techpoint Africa, Andela alumni, HNG Internship alumni
-- LinkedIn: Target Nigerian healthcare professionals
-- University partnerships: Health informatics, public health, pharmacy programs
+### Step 6: Fix Pricing FAQ
+- Remove "vitals tracking, Care Circle sharing" from the Premium description in the FAQ since those are free
 
 ---
 
-### 5. Launch Timeline
+## Part 3: Funding Plan
 
+### Why "Be Careful Who You Take Money From" Is True
 
-| Week    | Milestone                                                             | Owner                 |
-| ------- | --------------------------------------------------------------------- | --------------------- |
-| Week 1  | Fix remaining bugs (decimal rounding, Unknown Patient — already done) | Developer             |
-| Week 1  | Finalize pricing for Nigerian market (NGN-friendly tiers?)            | Developer             |
-| Week 1  | Post Community Growth Lead job listing                                | Developer             |
-| Week 2  | Recruit first 3-5 Community Health Champions in Lagos                 | Growth Lead           |
-| Week 2  | Personal outreach to 10 clinicians in network                         | Developer             |
-| Week 2  | Set up WhatsApp Business + social media accounts                      | Developer/Content     |
-| Week 3  | First clinician pilot — 1-2 doctors with 5-10 real patients each      | Developer + Clinician |
-| Week 3  | First community health outreach session                               | Growth Lead           |
-| Week 4  | Collect feedback, iterate on UX issues                                | Developer             |
-| Week 4  | First case study / testimonial from pilot clinician                   | Content Specialist    |
-| Month 2 | Scale to 10 clinicians, 50+ patients                                  | Team                  |
-| Month 2 | Begin Ghana/Kenya soft outreach                                       | Growth Lead           |
-| Month 3 | Publish case studies, begin online marketing push                     | Content + SDR         |
-| Month 4 | Evaluate traction metrics, decide on Western market entry timing      | Founder               |
+1. **Mission dilution**: Health-tech investors often push for aggressive monetization (selling data, ads, paywalls on critical health features). OneCare's value prop is patient-owned data and free access. The wrong investor will demand you paywall vitals or sell anonymized data to pharma -- destroying the trust proposition.
 
+2. **Premature scaling pressure**: VC money comes with growth expectations (10x in 18 months). For a health platform launching in Nigeria, you need time to build trust with communities, iterate on clinical workflows, and validate product-market fit. Forced scaling leads to cutting safety corners.
 
----
+3. **Geographic misalignment**: Most US/EU health-tech VCs don't understand the African healthcare market. They'll push US-first strategies, ignore offline-first needs, and undervalue community-driven adoption.
 
-### 6. Success Metrics for Launch
+4. **Control loss**: Taking a large seed round typically means giving up 15-25% equity + board seats. At this stage with one developer, that's giving away significant control before proving the model.
 
+5. **Regulatory risk transfer**: Health-tech investors know HIPAA/regulatory liability. Some structure deals to shift compliance burden entirely to the founder. If a breach occurs, the founder absorbs the legal risk while investors are protected.
 
-| Metric                   | Month 1 Target | Month 3 Target | Month 6 Target |
-| ------------------------ | -------------- | -------------- | -------------- |
-| Registered patients      | 50             | 300            | 1,000          |
-| Active patients (weekly) | 20             | 100            | 400            |
-| Registered clinicians    | 5              | 25             | 75             |
-| Paying clinicians        | 2              | 10             | 30             |
-| MRR                      | $100           | $700           | $2,500         |
-| Community Champions      | 5              | 15             | 30             |
-| Countries active         | 1 (Nigeria)    | 3              | 5              |
+### Recommended Funding Strategy
 
+**Phase 0: Bootstrap + Micro-grants (Now - Month 3)**
+- Continue self-funding operational costs (~$1,000-2,000/month per launch plan)
+- Apply to health-tech micro-grants:
+  - **Google for Startups Africa** (up to $100K in credits + cash)
+  - **Techstars Lagos** or **Y Combinator** (if applicable -- $500K standard deal)
+  - **Bill & Melinda Gates Foundation Grand Challenges** (health innovation grants, $100K-$500K)
+  - **USAID Digital Health** grants for African health-tech
+  - **Africa Health Business** grants
+  - **Savannah Fund** (East Africa-focused, $25K-$500K)
+- Estimated obtainable: $25K-$100K in non-dilutive funding
 
----
+**Phase 1: Angel Round (Months 3-6, after 50+ patients, 5+ clinicians)**
+- Target: $50K-$150K
+- Sources:
+  - **Nigerian angel investors** in health-tech (Lagos Angel Network, Ventures Platform)
+  - **Diaspora angels** -- Nigerian professionals in US/UK health systems who understand both markets
+  - **Doctor-investors** -- practicing clinicians who see the problem firsthand (also become advisors)
+- Terms: SAFE notes, no board seats, 10-15% equity cap
+- Use of funds: Hire Community Growth Lead, Content Specialist, 6 months of runway
 
-### 7. Platform Readiness Checklist
+**Phase 2: Pre-Seed (Months 6-12, after 300+ patients, 25+ clinicians, $700+ MRR)**
+- Target: $250K-$500K
+- Sources:
+  - **Future Africa** (pan-African pre-seed, $50K-$250K)
+  - **Ingressive Capital** (West Africa focus)
+  - **Flat6Labs** (MENA/Africa)
+  - **Global Health Innovative Technology Fund (GHIT)** -- specifically for health platforms
+  - **Impact investors** who align with patient-empowerment mission (Omidyar Network, Acumen)
+- Terms: Priced round at $2M-$4M valuation, 15-20% equity
+- Use of funds: Second developer, sales team, Kenya/Ghana expansion
 
-Items to verify/complete before launch:
+**Phase 3: Seed (Months 12-18, after proven unit economics)**
+- Target: $1M-$3M
+- Sources: Health-tech focused VCs (TLcom Capital, Norrsken, Algebra Ventures)
+- Only if growth metrics justify it and strategic alignment is confirmed
 
-- Beta badge on all pages
-- Legal disclaimers (Privacy, Terms, Data Processing)
-- POPIA compliance (South Africa)
-- Pricing page with free + premium tiers
-- Clinician pricing and subscription flow
-- Bug fixes (decimal rounding, Unknown Patient, query key mismatch)
-- Add Community Growth Lead to Careers page job listings
-- Regional pricing consideration (NGN tiers or USD with purchase parity)
-- WhatsApp share button on Care Circle invite flow
-- Offline/low-bandwidth graceful degradation testing (critical for parts of Nigeria)
-- Mobile UX polish (majority of Nigerian users are mobile-only)
+### Realistic Funding Estimates
 
----
+| Stage | Amount | Probability | Timeline |
+|-------|--------|-------------|----------|
+| Grants/competitions | $25K-$100K | Medium-High | Months 1-4 |
+| Angel round | $50K-$150K | Medium | Months 3-6 |
+| Pre-seed | $250K-$500K | Medium (with traction) | Months 6-12 |
+| Seed | $1M-$3M | Lower (needs strong metrics) | Months 12-18 |
+| **Total potential (18 months)** | **$1.3M-$3.75M** | | |
 
-### 8. Risk Mitigation
+### Key Funding Principles
 
+1. **Non-dilutive first**: Exhaust grants and competitions before giving away equity
+2. **Aligned investors only**: Health background, Africa experience, patient-first ethos
+3. **Small checks, many backers**: 10 angels at $10K each is safer than 1 investor at $100K
+4. **Revenue before fundraising**: Even $500/month MRR makes fundraising 10x easier
+5. **Keep control**: Maintain >70% founder equity through pre-seed minimum
 
-| Risk                                         | Likelihood | Mitigation                                                                    |
-| -------------------------------------------- | ---------- | ----------------------------------------------------------------------------- |
-| Low internet reliability in target areas     | High       | PWA already built; test offline behavior; keep pages lightweight              |
-| Payment friction (Stripe limited in Nigeria) | High       | Consider Paystack (Nigerian Stripe equivalent) for local payments             |
-| Low initial clinician adoption               | Medium     | Start with personal network; offer 3-month free trial for first 20 clinicians |
-| Solo developer bottleneck                    | High       | Prioritize ruthlessly; hire second developer within 2 months                  |
-| Data privacy concerns from users             | Medium     | Prominent privacy badges, POPIA compliance, transparent data processing page  |
+### What to Create
 
+- `docs/funding-strategy.md` -- the complete funding plan above
+- Fix all copywriting gaps identified in Part 1 across About.tsx, Features.tsx, ClinicianWhyOneCare.tsx, Pricing.tsx, pricing-constants.ts, and Footer.tsx
 
----
-
-### 9. Budget Estimate (Months 1-3)
-
-
-| Item                             | Monthly Cost         | Notes                                            |
-| -------------------------------- | -------------------- | ------------------------------------------------ |
-| Community Growth Lead            | $100-150             | Part-time, Nigeria-based                         |
-| CHW commissions (20 champions)   | $200-400             | Per sign-up commissions                          |
-| Social media ads (test budget)   | $100-200             | Instagram, Facebook, targeted at Nigerian cities |
-| Content Specialist               | $200-500             | Contract, part-time                              |
-| SDR                              | $300-800             | Commission-based with small base                 |
-| Infrastructure (Lovable, domain) | Current plan         | Already covered                                  |
-| **Total**                        | **$900-2,050/month** | Lean launch budget                               |
-
-
----
-
-## Implementation
-
-Create `docs/launch-plan.md` with the full plan above, and add a "Community Growth Lead" role to `src/lib/job-listings.ts`.
