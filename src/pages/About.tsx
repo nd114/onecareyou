@@ -30,10 +30,10 @@ const values = [
 ];
 
 const stats = [
-  { value: '10,000+', label: 'Active Users' },
-  { value: '50,000+', label: 'Medications Tracked' },
-  { value: '99.9%', label: 'Uptime' },
-  { value: '4.8★', label: 'User Rating' },
+  { value: 'Growing', label: 'Community' },
+  { value: '50K+', label: 'Drugs in Database' },
+  { value: 'PWA', label: 'Mobile-Ready' },
+  { value: '🔒', label: 'Privacy-First' },
 ];
 
 const About = () => {
@@ -179,7 +179,7 @@ const About = () => {
               Ready to Get Connected?
             </h2>
             <p className="text-lg text-primary-foreground/90 mb-8">
-              Join thousands of patients who stay connected with their healthcare providers.
+              Join early adopters who stay connected with their healthcare providers.
             </p>
             <Button size="lg" variant="secondary" asChild>
               <Link to="/sign-up">Create Free Account</Link>

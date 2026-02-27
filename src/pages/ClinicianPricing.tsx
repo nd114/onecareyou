@@ -85,7 +85,7 @@ const ClinicianPricing = () => {
             Clinician Plans
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
-            Empower your practice with real-time patient monitoring, clinical guidance tools, 
+            Empower your practice with continuous patient monitoring, clinical guidance tools, 
             and seamless care coordination—all at a fraction of traditional EHR costs.
           </p>
 
@@ -207,7 +207,7 @@ const ClinicianPricing = () => {
               <tbody>
                 {[
                   { feature: 'Patient Limit', solo: '25', pro: '100', enterprise: 'Unlimited' },
-                  { feature: 'Real-time Vital Alerts', solo: true, pro: true, enterprise: true },
+                  { feature: 'Vital Alerts', solo: true, pro: true, enterprise: true },
                   { feature: 'Custom Alert Thresholds', solo: true, pro: true, enterprise: true },
                   { feature: 'Clinical Guidance Tools', solo: true, pro: true, enterprise: true },
                   { feature: 'Patient Adherence Reports', solo: true, pro: true, enterprise: true },
@@ -254,7 +254,7 @@ const ClinicianPricing = () => {
           {[
             { icon: Clock, title: 'Setup in Minutes', desc: 'No IT department needed' },
             { icon: Shield, title: 'HIPAA Ready', desc: 'Enterprise BAA included' },
-            { icon: Zap, title: 'Real-time Alerts', desc: 'Never miss a critical reading' },
+            { icon: Zap, title: 'Vital Alerts', desc: 'Never miss a critical reading' },
             { icon: Users, title: 'Patient-Friendly', desc: 'Easy onboarding for patients' },
           ].map(({ icon: Icon, title, desc }, i) => (
             <div key={i} className="text-center">

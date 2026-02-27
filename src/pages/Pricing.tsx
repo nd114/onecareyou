@@ -28,7 +28,7 @@ const faqs = [
   },
   {
     question: 'What\'s the difference between Free and Premium?',
-    answer: 'The Free plan lets you track up to 3 medications with basic features. Premium unlocks unlimited medications, vitals tracking, Care Circle sharing, AI lab report parsing, and priority support.',
+    answer: 'The Free plan lets you track up to 3 medications with all core features including vitals tracking and Care Circle sharing. Premium unlocks unlimited medications, family member profiles, AI lab report parsing, health reports export, and more.',
   },
   {
     question: 'What payment methods do you accept?',
