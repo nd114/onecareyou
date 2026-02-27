@@ -1,240 +1,163 @@
-# Comprehensive Platform Audit & Analysis
+# Comprehensive Platform Review & AI Roadmap Plan
 
-## 1. Feature List Accuracy: Free vs Premium Tiers
+## Part 1: Bug Fixes (Critical)
 
-### Current Free Tier Claims
+### Bug 1: Clinician sees "Unknown Patient" names
 
-The Pricing page claims free users get:
+**Root Cause**: The `profiles` table RLS policy only allows clinicians to view patient profiles if `profile` permission is `true` in `provider_shares.permissions`. Most shares default to `profile: false`. When `useClinicianPatients.ts` queries `profiles` at line 73, RLS blocks the result, causing fallback to "Unknown Patient".
 
-- Track up to 3 medications
-- Drug interaction warnings
-- Daily medication schedule
-- Health profile storage
-- Mobile-friendly access
+**Fix**: Add a new RLS SELECT policy on `profiles` that allows clinicians to view basic patient info (name, email) if they have ANY active provider share with that patient — not just the `profile` permission:
 
-### What Free Users ACTUALLY Get (beyond what's listed)
+```sql
+CREATE POLICY "Clinicians can view basic patient info from shares"
+ON profiles FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM provider_shares ps
+    WHERE ps.user_id = profiles.user_id
+      AND ps.is_active = true
+      AND (ps.expires_at IS NULL OR ps.expires_at > now())
+      AND (
+        ps.clinician_user_id = auth.uid()
+        OR ps.provider_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+      )
+  )
+);
+```
 
-After auditing all routes and gating logic, free users currently have access to **far more** than what the pricing page advertises:
+### Bug 2: Vital values with excessive decimal places (e.g., 143.965666756902)
 
+**Root Cause**: The demo data seeder used `random()` to generate values without rounding, producing values like `26.2935170799518`. The display code in `VitalStatsCard.tsx` line 62 returns `converted.value` without rounding. The `VitalTrendChart.tsx` tooltip also displays raw values.
 
-| Feature                                | Actually Available on Free?     | Listed on Pricing?     |
-| -------------------------------------- | ------------------------------- | ---------------------- |
-| 3 medications                          | Yes (enforced)                  | Yes                    |
-| Drug interaction warnings              | Yes                             | Yes                    |
-| Daily schedule with mark-taken/skip    | Yes                             | Yes                    |
-| Health profile (onboarding)            | Yes                             | Yes                    |
-| Mobile-friendly                        | Yes                             | Yes                    |
-| **Vitals & lab tracking**              | **Yes - NO gating**             | Listed as Premium-only |
-| **Care Circle (provider sharing)**     | **Yes - NO gating**             | Listed as Premium-only |
-| **Knowledge Base**                     | **Yes - NO gating**             | Not listed at all      |
-| **Medication info lookup**             | **Yes - NO gating**             | Not listed at all      |
-| **Adherence reports**                  | **Yes - NO gating**             | Not listed at all      |
-| **Patient guidance (from clinicians)** | **Yes - NO gating**             | Not listed at all      |
-| **Push notification reminders**        | **Yes - NO gating**             | Not listed at all      |
-| **Emergency contacts/info**            | **Yes - NO gating**             | Not listed at all      |
-| **Dark mode / theme settings**         | **Yes**                         | Not listed at all      |
-| **AI consent management**              | **Yes**                         | Not listed at all      |
-| **Medication photo gallery**           | **Yes - NO gating**             | Not listed at all      |
-| **Vital trend charts & analytics**     | **Yes - NO gating**             | Not listed at all      |
-| **Health data export (PDF/CSV)**       | **Yes - NO gating**             | Listed as Premium-only |
-| **AI lab report parsing**              | Unclear - depends on AI consent | Listed as Premium-only |
+**Fix** (two-pronged):
 
+1. **Database cleanup**: Run a migration to round all existing vitals values to 1 decimal place
+2. **Display fix**: Add rounding in `VitalStatsCard.tsx` formatValue/formatAverage, and in `VitalTrendChart.tsx` chartData mapping
 
-**Critical Finding**: Vitals tracking, Care Circle, adherence reports, and health data export are listed as Premium-only features on the pricing page but have **zero subscription gating** in the code. Any free user can access `/vitals`, `/care-circle`, `/adherence-report` with full functionality.
+Files to modify:
 
-### Recommendations
+- `src/components/vitals/VitalStatsCard.tsx` — round `formatValue()` and `formatAverage()` to 1 decimal
+- `src/components/vitals/VitalTrendChart.tsx` — round chart values to 1 decimal
+- `src/components/vitals/VitalHistoryLog.tsx` — verify rounding on history display
+- Database migration to round existing data
 
-**Option A**: Gate these features behind Premium (add subscription checks)
-**Option B**: Make them free and update pricing to reflect reality (better for beta -- attract more users)
-**Option C (Recommended for Beta)**: Keep them accessible but update pricing page to honestly reflect what's free vs premium, and add feature limits rather than full lockouts (e.g., "limited vitals tracking" for free, "unlimited" for premium)
+### Bug 3: Clinician guidance/action errors
 
-### Premium Features That ARE Actually Gated
+**Root Cause**: The `CreateGuidanceDialog` passes `share_id: selectedPatient?.id` — this is the `provider_shares.id`. The RLS INSERT policy on `clinician_guidance` requires `clinician_has_patient_access(patient_user_id)` which checks if the clinician has an active share. If the share's `clinician_user_id` is null (unclaimed), or if the clinician is matched by email but hasn't been claimed, this function returns false. The first provider share row (James Thompson, id `32830924...`) has `clinician_user_id: null` and no `provider_email` — this share is orphaned.
 
-- Unlimited medications (enforced, limit of 3 on free)
-- Family Dashboard (gated behind `hasFamilyAccess` check)
+**Fix**:
 
----
+1. Clean up the orphaned provider share (no clinician_user_id AND no provider_email)
+2. Ensure `autoClaimShares` invalidates the correct query key (currently invalidates `clinician-patients` but the query uses `clinician-patients-v2`)
 
-## 2. SSOT (Single Source of Truth) Violations
+File to fix:
 
-### Pricing/Feature Lists - 3 Separate Sources
+- `src/hooks/useClinicianPatients.ts` — fix query key mismatch at lines 109 and 145 (should be `clinician-patients-v2`)
 
-Feature lists are hardcoded in **three different places** with inconsistencies:
+### Bug 4: Empty analytics for certain metrics
 
-1. `**src/pages/Landing.tsx**` (lines 79-110) - `pricingPlans` array
-2. `**src/pages/Pricing.tsx**` (lines 20-48) - `freeFeatures` and `premiumFeatures` arrays
-3. `**src/hooks/useSubscription.ts**` (lines 12-29) - `PRICE_INFO`
+**Root Cause**: The analytics view only shows the top 4 vital cards (blood_pressure, glucose, weight, heart_rate) in quick stats. Lab metrics (potassium, sodium, etc.) only appear in the tabbed "Lab Results Analytics" section. If the default `getVitalHistory` uses 30 days but demo data is older than 30 days, charts show empty. Need to verify the demo data timestamps.
 
-The Landing page says free gets "Basic interaction checking" while Pricing page says "Drug interaction warnings" -- slightly different wording for the same feature. Premium features also differ between the two pages.
-
-### Medication Limit - Duplicated
-
-`FREE_MEDICATION_LIMIT = 3` is defined independently in:
-
-- `src/pages/Medications.tsx` (line 32)
-- `src/pages/AddMedication.tsx` (line 27)
-
-If you ever change this limit, you must update both files. This should be a single constant exported from a shared file.
-
-### Clinician Tier Info - Well Structured
-
-`CLINICIAN_TIER_INFO` is properly centralized in `useClinicianSubscription.ts` and imported wherever needed. This is good SSOT.
-
-### Recommendations
-
-- Create a `src/lib/pricing-constants.ts` file to hold all tier definitions, feature lists, Stripe price IDs, and limits
-- Import from this single source across Landing, Pricing, Dashboard upgrade prompts, etc.
+**Fix**: The `getVitalHistory` default is 30 days. Lab data seeded in Dec 2025 is now ~2 months old. The analytics tab uses `getVitalHistory(type, 90)` for labs which should capture it. The overview page uses `getVitalStats(type)` which defaults to 30 days — this explains empty stats for older lab data. Update default days for lab metrics or show a "No recent data" message with the last known reading.
 
 ---
 
-## 3. End-to-End Flow Analysis
+## Part 2: Query Key Consistency Fix
 
-### Patient Flows
-
-
-| Flow                                       | Status | Issues Found                                          |
-| ------------------------------------------ | ------ | ----------------------------------------------------- |
-| Sign Up -> Onboarding -> Dashboard         | Works  | Profile name flicker during load (cosmetic)           |
-| Add Medication -> Schedule -> Mark Taken   | Works  | None                                                  |
-| Hit 3-med limit -> Upgrade prompt          | Works  | Gating is functional                                  |
-| Vitals -> Add -> View Analytics -> Export  | Works  | **No premium gating despite being listed as premium** |
-| Care Circle -> Create Share -> Copy Link   | Works  | **No premium gating despite being listed as premium** |
-| Family Dashboard -> Premium gate           | Works  | Properly gated                                        |
-| Settings -> Manage Subscription            | Works  | Portal opens in new tab                               |
-| Knowledge Base -> Topic -> Medication Info | Works  | None                                                  |
-
-
-### Clinician Flows
-
-
-| Flow                                 | Status | Issues Found          |
-| ------------------------------------ | ------ | --------------------- |
-| Clinician Sign Up -> Dashboard       | Works  | None                  |
-| Invite Patient -> Patient Accepts    | Works  | None                  |
-| View Patient Vitals -> Send Guidance | Works  | None                  |
-| Alert Rules -> Vital Alert Triggers  | Works  | None                  |
-| Subscription -> Solo/Pro checkout    | Works  | None                  |
-| Patient Limit Enforcement            | Works  | Banner shows at limit |
-
-
-### Edge Cases / Bugs Identified
-
-1. **Profile name flicker**: "demo patient 1" briefly shows before "James Thompson" loads - this is the auth metadata vs profile table load race condition. Cosmetic only.
-2. **Landing page says "Join thousands of patients"** (line 388) - misleading for a beta platform with few users. Should say something like "Join early adopters" or "Be among the first."
-3. `**/clinician/patient/:inviteCode` route is NOT protected** (App.tsx line 92) - This public route could expose patient data if the invite code is guessed or leaked. The edge function `get-shared-patient-data` should validate access, but the route itself has no auth guard.
-4. **Admin import page has no protection** (App.tsx line 205) - `/admin/import` is accessible to anyone who knows the URL.
+- `autoClaimShares.onSuccess` invalidates `['clinician-patients']` but the main query uses `['clinician-patients-v2']`. This means after claiming shares, the patient list doesn't refresh.
+- Same issue in `updatePatientNotes.onSuccess`.
 
 ---
 
-## 4. Security & Data Leak Assessment
+## Part 3: AI Features — Analysis & Roadmap
 
-### Database Security (Linter Results)
+### For Patients
 
-- 1 WARNING: An RLS policy using `USING (true)` or `WITH CHECK (true)` exists. This is an overly permissive policy that should be investigated.
-- No ERROR or FATAL level database issues found in recent logs.
+**1. AI Q&A Assistant (ask questions, get guidance/links)**
 
-### Potential Data Leak Vectors
+- Ease: Medium. Use Lovable AI gateway with a backend function.
+- Implementation: Edge function `patient-ai-chat` that takes user question, uses system prompt restricting to navigation help and general health education (not medical advice), returns answer with links to relevant platform pages.
+- Concern: Must include strong disclaimers that this is NOT medical advice. System prompt must explicitly refuse diagnosis/treatment recommendations.
+- Limitation: Cannot access real patient data for privacy; answers are general only.
 
-1. **Unprotected `/clinician/patient/:inviteCode` route**: Anyone with an invite code can potentially view patient data without authentication. The route is public in App.tsx.
-2. **Unprotected `/admin/import` route**: The admin import page for IDD data has no auth protection.
-3. **Overly permissive RLS policy**: The linter flagged at least one policy with `true` as the condition, which allows unrestricted access.
-4. **No EXIF stripping** on uploaded images (previously identified) - metadata in uploaded photos could contain GPS coordinates or other PII.
+**2. Voice input for vitals and personal info**
 
-### What's Secure
+- Ease: Medium-High. Use Web Speech API (browser-native, no API key needed) or ElevenLabs STT.
+- Implementation: Add a microphone button to AddVitalDialog that captures speech, sends to AI for structured extraction (type + value parsing), pre-fills the form.
+- Concern: Browser speech recognition accuracy varies. Need fallback for unsupported browsers.
 
-- PII stripping in lab report parsing is comprehensive (10+ regex patterns)
-- On-device OCR via Tesseract.js for initial processing
-- Provider share expiration enforcement in RLS
-- Clinician access verification before guidance/alerts
-- Consent logging and audit trails
-- HIPAA audit logging tables exist
+### For Clinicians
 
-### Uptime
+**3. Meeting transcript/summary**
 
-- No database errors in recent logs (zero ERROR/FATAL/PANIC entries)
-- Edge functions are deployed and operational
-- No obvious crash-inducing bugs identified in the codebase
+- Ease: High complexity. Requires audio recording, transcription, summarization.
+- Implementation: Use ElevenLabs STT for real-time transcription + Lovable AI for summarization.
+- **Major concern**: HIPAA compliance. Recording patient conversations requires explicit consent from both parties. Audio storage must be encrypted. This feature has significant legal liability.
+- Recommendation per existing memory: This was explicitly rejected in the AI roadmap due to HIPAA concerns and competitive overlap. Consider a lighter approach: clinician manually pastes notes, AI extracts action items.
 
----
+**4. Voice-driven vitals entry with patient identification**
 
-## 5. Should Pricing Be on the Home Page?
+- Ease: High complexity. Requires speech-to-text, NLU for entity extraction (patient name, vitals), patient matching, form population.
+- Implementation: Edge function that receives transcribed text, uses AI tool-calling to extract structured data (patient name, DOB, vital type/values), matches against clinician's patient list, returns structured data for confirmation UI.
+- Concern: Patient identification by name alone is unreliable (duplicates). DOB adds safety. Must always require clinician confirmation before saving.
+- Limitation: Accuracy of speech recognition for medical values (e.g., "104 over 65" must be parsed as BP 104/65).
 
-### Current State
+**5. AI as nurse/admin assistant (tracking, transcription, audio storage)**
 
-The Landing page already includes a pricing section (lines 264-328) with a simplified 2-tier comparison (Free vs Premium at $9.99/month).
+- Ease: Very high complexity. This is essentially building a clinical documentation system.
+- Concern: Audio storage of patient conversations is a regulatory minefield. HIPAA requires BAA with any audio storage provider, encryption at rest, access controls, retention policies.
+- Recommendation: Phase this into post-launch. Start with text-based note-taking with AI summarization only.
 
-### Analysis
+### For All Users
 
-**Yes, keeping it is the right call for beta**, because:
+**6. Voice-guided platform navigation**
 
-- Reduces friction: users see value proposition + pricing without extra navigation
-- The simplified version on Landing works well (detailed version lives at /pricing)
-- Conversion path is clear: hero CTA -> features -> pricing -> sign up
+- Ease: Low-Medium. Use browser Speech API for input, AI to interpret intent, route to correct page.
+- Implementation: Floating "Ask AI" button that opens a chat/voice dialog. AI maps natural language to platform routes and features.
 
-**However**, during beta, consider:
+**7. AI consent form**
 
-- Emphasizing "Free forever" more prominently since the goal is user acquisition
-- Making the Premium upgrade feel optional, not required
-- The Landing pricing section doesn't mention annual pricing (only shows $9.99/month) while the full Pricing page has annual toggle -- this is a minor SSOT issue
+- Already implemented: `AIConsentDialog` component exists with checkbox acknowledgment. The `useAIConsent` hook manages consent state. `consent_logs` table tracks all changes.
+- Enhancement needed: Extend consent dialog to cover new AI features (voice recording, transcription).
 
----
+### Recommended Phasing
 
-## 6. Value Proposition for Clinicians (Business Case)
+**Phase 1 (Pre-launch / Now)**:
 
-Here's how to frame the platform for business-minded clinicians:
+- Patient AI Q&A chat (text-based, no medical advice)
+- Voice-guided navigation for all users
+- Extend existing AI consent dialog for new features
 
-### Revenue Generation
+**Phase 2 (Post-launch)**:
 
-- **Patient retention**: Continuous remote monitoring keeps patients engaged between visits, reducing churn to competing practices
-- **Upsell premium services**: Offer "connected care" as a value-add service patients pay for (the platform handles the tech)
-- **Larger patient panels**: With real-time alerts, clinicians can safely manage more patients without proportional staff increases
+- Voice input for vitals (patient + clinician)
+- AI-assisted note extraction from pasted text
 
-### Cost Reduction
+**Phase 3 (Future)**:
 
-- **Fewer emergency visits**: Early vital alerts catch deterioration before it becomes a crisis (e.g., rising HbA1c, BP spikes)
-- **Reduced admin overhead**: No manual data entry -- patients self-report vitals digitally
-- **No IT infrastructure cost**: $79-$399/month vs tens of thousands for traditional EHR setup/maintenance
-- **No hardware**: Patients use their own devices
-
-### Loss Prevention
-
-- **Malpractice risk reduction**: Documented guidance delivery, audit trails, and continuous monitoring demonstrate standard of care
-- **Compliance documentation**: HIPAA audit logs, BAA for enterprise, consent tracking -- all built-in
-- **Patient non-adherence visibility**: Clinicians can see medication adherence trends and intervene early, reducing adverse outcomes
-
-### Competitive Advantage
-
-- **Differentiation**: "My practice offers continuous connected care" -- a marketing edge over traditional practices
-- **Patient satisfaction**: Patients feel monitored and cared for even outside appointments
-- **Data-driven care**: Trend charts and analytics give clinicians better insight than periodic snapshots
-
-### Suggested Marketing Angle for Email Outreach
-
-"Stop losing patients between appointments. OneCare gives your practice real-time visibility into patient vitals, medication adherence, and health trends -- for less than your monthly coffee budget. Your patients self-report. You get alerts when something's wrong. No IT team needed."
+- Real-time meeting transcription (with full HIPAA audit)
+- Audio storage with encryption
+- Patient identification from speech
 
 ---
 
-## Implementation Plan
+## Part 4: Implementation Steps
 
-### Priority 1: Fix SSOT Issues
+### Step 1: Database fixes
 
-- Create `src/lib/pricing-constants.ts` with all tier definitions, feature lists, and limits
-- Update Landing.tsx, Pricing.tsx, AddMedication.tsx, and Medications.tsx to import from the single source
-- Remove duplicated `FREE_MEDICATION_LIMIT` declarations
+- Migration to round existing vitals values to 1 decimal
+- New RLS policy on `profiles` for clinician basic access
+- Clean up orphaned provider share
 
-### Priority 2: Update Feature Lists to Match Reality
+### Step 2: Frontend display fixes
 
-- Audit every feature against actual gating and update the pricing page accordingly
-- Decide which features to gate vs. keep free during beta - I will tell you.
-- Update Landing page pricing section to match
+- Round vital values in VitalStatsCard, VitalTrendChart, VitalHistoryLog
+- Fix query key mismatch in useClinicianPatients
+- Extend default time window for lab analytics display
 
-### Priority 3: Security Fixes
+### Step 3: AI foundation (not approved - include this as well as notes on "Part 3: AI Features - Analysis & Roadmap" in a .md that will document the AI implementation specifically and in much detail. Also include some areas that you think could be also included as well under a "Other A/B Consids Imp." section)
 
-- Add `ProtectedRoute` wrapper to `/admin/import`
-- Investigate the overly permissive RLS policy flagged by the linter
-- Review `/clinician/patient/:inviteCode` public route security
-
-### Priority 4: Copy Fixes
-
-- Change "Join thousands of patients" to beta-appropriate language
-- Ensure Landing and Pricing page feature descriptions use identical wording
+- Create `patient-ai-chat` edge function with Lovable AI
+- Add chat UI component accessible from patient dashboard
+- Update AI consent dialog to cover new features
+- Add voice input button using Web Speech API to vitals entry
