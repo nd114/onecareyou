@@ -467,9 +467,9 @@ const ClinicianWhyOneCare = () => {
                     </div>
                   </div>
                   <div className="mt-4 pt-4 border-t text-center">
-                    <Button variant="outline" size="sm" className="gap-2">
+                    <Button variant="outline" size="sm" className="gap-2" disabled>
                       <FileText className="h-4 w-4" />
-                      Export to EHR (FHIR)
+                      Export to EHR (Coming Soon)
                     </Button>
                   </div>
                 </div>

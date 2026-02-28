@@ -15,7 +15,7 @@ export function Footer() {
               <span className="font-display text-xl font-bold">OneCare</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Your intelligent medication tracker. Manage your health safely with real-time interaction warnings.
+              Your intelligent medication tracker. Manage your health safely with automatic interaction warnings.
             </p>
           </div>
 
