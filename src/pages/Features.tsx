@@ -37,7 +37,7 @@ const coreFeatures = [
   {
     icon: TrendingUp,
     title: 'Vitals & Lab Tracking',
-    description: 'Monitor your health metrics and share them with your care team in real-time.',
+    description: 'Monitor your health metrics and share them with your care team continuously.',
     details: [
       '18+ vital types supported',
       'Upload lab reports with AI extraction',

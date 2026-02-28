@@ -81,7 +81,7 @@ const ClinicianSubscriptionSuccess = () => {
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
                     <Zap className="h-6 w-6 text-primary" />
                   </div>
-                  <p className="font-semibold">Real-time</p>
+                  <p className="font-semibold">Threshold</p>
                   <p className="text-sm text-muted-foreground">Vital Alerts</p>
                 </div>
                 <div>

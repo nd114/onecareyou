@@ -31,7 +31,7 @@ const values = [
 
 const stats = [
   { value: 'Growing', label: 'Community' },
-  { value: '50K+', label: 'Drugs in Database' },
+  { value: 'Comprehensive', label: 'Drug Database' },
   { value: 'PWA', label: 'Mobile-Ready' },
   { value: '🔒', label: 'Privacy-First' },
 ];

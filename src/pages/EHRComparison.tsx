@@ -39,7 +39,7 @@ const EHRComparison = () => {
       traditionalDetail: "Separate logins per patient"
     },
     {
-      feature: "Real-time Communication",
+      feature: "Continuous Communication",
       onecare: "Bidirectional guidance system",
       traditional: "One-way push from EHR",
       onecareDetail: "Patients acknowledge, status updates instantly",
@@ -85,7 +85,7 @@ const EHRComparison = () => {
     {
       icon: Share2,
       title: "True Interoperability",
-      description: "No more faxing records. Patients grant access instantly via secure invite codes. All providers see the same real-time data.",
+      description: "No more faxing records. Patients grant access instantly via secure invite codes. All providers see the same shared data.",
       color: "bg-accent/10 text-accent"
     },
     {
@@ -115,10 +115,10 @@ const EHRComparison = () => {
   ];
 
   const metrics = [
-    { icon: Zap, value: "10x", label: "Faster provider onboarding" },
-    { icon: Clock, value: "24/7", label: "Real-time data access" },
+    { icon: Zap, value: "Minutes", label: "Provider onboarding" },
+    { icon: Clock, value: "24/7", label: "Continuous data access" },
     { icon: DollarSign, value: "$0", label: "Cost for patients" },
-    { icon: Globe, value: "50+", label: "Countries supported" }
+    { icon: Globe, value: "Global", label: "Drug coverage" }
   ];
 
   return (

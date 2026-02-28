@@ -42,7 +42,7 @@ export const PREMIUM_FEATURES = [
   'AI lab report parsing',
   'Refill reminders (coming soon)',
   'Health reports export',
-  'Priority support',
+  'Priority support (coming soon)',
 ] as const;
 
 // Combined list for Pricing page detail view
@@ -71,5 +71,5 @@ export const LANDING_PREMIUM_FEATURES = [
   'Family member profiles',
   'AI lab report parsing',
   'Health reports export',
-  'Priority support',
+  'Priority support (coming soon)',
 ] as const;
