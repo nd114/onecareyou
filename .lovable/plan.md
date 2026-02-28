@@ -1,153 +1,207 @@
+# Comprehensive Platform Audit: Claims, Clinician Flows, and Funding Strategy
 
+## What OneCare Is and Why It Matters
 
-# USP-to-Functionality Gap Audit & Funding Plan
+OneCare is a patient-centric health data platform that solves the **information asymmetry** between patients and healthcare providers after hospital discharge. When patients leave a clinical setting, their ongoing health data -- vitals, medication adherence, lab results -- becomes invisible to their care team until the next appointment. This gap leads to preventable complications, medication non-adherence, and fragmented care.
 
-## Part 1: Copywriting Claims vs Actual Functionality
+OneCare flips the traditional EHR model: **patients own and control their data**, sharing it with any number of providers via secure invite codes. Unlike Epic MyChart or Veradigm, which are practice-owned and siloed, OneCare gives a unified view across all providers, includes family health management, and adds caregiver alerting. This is critical in markets like Nigeria and across Africa where:
 
-### CRITICAL GAPS (Claims with NO implementation)
+- Chronic diseases (diabetes, hypertension) are the leading killers
+- Patients often see multiple doctors across unconnected clinics
+- There is no EHR infrastructure in most private practices
+- Family caregivers are deeply involved in patient care
+- Post-discharge follow-up is minimal or non-existent
 
-| Claim | Where Claimed | Reality |
-|-------|--------------|---------|
-| "End-to-end encryption" | Features.tsx line 88 | FALSE. Data is encrypted at rest (database-level AES-256) and in transit (TLS), but there is NO end-to-end encryption. E2E encryption means even the server can't read data -- that's not the case here. This claim must be corrected to "Encryption at rest and in transit" |
-| "Data anonymization" | Features.tsx line 88 (same line) | PARTIAL. PII stripping exists for AI lab parsing only. No general data anonymization. Misleading |
-| "Calendar integration" | Features.tsx line 78 | NOT IMPLEMENTED. No Google Calendar, iCal, or any calendar export exists |
-| "Refill reminders" | pricing-constants.ts (Premium feature) | NOT IMPLEMENTED. A `refill_date` column exists on `medications` but no reminder logic triggers from it. `useDueDateReminders` only handles clinician guidance items, not medication refills |
-| "FHIR export for EHR integration" | ClinicianWhyOneCare.tsx line 432 | NOT IMPLEMENTED. Database tables for EHR connections exist, but no actual FHIR data exchange happens. The "Export to EHR (FHIR)" button on the Why OneCare page is non-functional |
-| "Bidirectional sync with your existing EHR" | ClinicianWhyOneCare.tsx line 144 | NOT IMPLEMENTED. No actual EHR sync occurs |
-| "Connect your existing EHR and see the difference" | ClinicianWhyOneCare.tsx line 493 | FALSE for launch. EHR edge functions exist but are stubs |
-| "Real-time" data sharing/updates | Landing.tsx, Features.tsx, ClinicianPricing.tsx (10+ instances) | MISLEADING. No Supabase Realtime subscriptions exist (confirmed: zero `ALTER PUBLICATION` statements). Data refreshes only on page load or manual refetch. It's "near-time" at best |
-| "Priority support" / "Dedicated account manager" | pricing-constants.ts, useClinicianSubscription.ts | NOT IMPLEMENTED. There is no support ticketing system, no chat widget, no differentiated support channels between tiers. It's a single contact form for everyone |
-| "10,000+ Active Users" | About.tsx line 33 | COMPLETELY FALSE. This is a pre-launch beta. Must be removed or replaced with honest metrics |
-| "50,000+ Medications Tracked" | About.tsx line 33 | FALSE. Same issue |
-| "4.8★ User Rating" | About.tsx line 33 | FALSE. No app store listing exists |
-| "99.9% Uptime" | About.tsx line 33 | UNVERIFIABLE. No monitoring is in place |
-| "Join thousands of patients" | About.tsx line 182 | FALSE. Same pre-launch issue (Landing.tsx was fixed but About.tsx was missed) |
-| "Updated database with 50,000+ medications" | Features.tsx line 56 | UNVERIFIED. The IDD import + FDA/RxNorm may cover this number, but the specific claim hasn't been validated |
-| "Works with most common medications" (photo ID) | Features.tsx line 67 | MISLEADING. Photo ID relies on the `identify-pill` edge function which calls an external API. Accuracy and coverage are unverified |
-
-### MODERATE GAPS (Partially true but overstated)
-
-| Claim | Where | Reality |
-|-------|-------|---------|
-| "Automated Care Circle" alerts | ClinicianWhyOneCare.tsx line 122 | Care alerts exist but rely on a cron-triggered edge function (`check-care-alerts`), not real-time automation. Delivery reliability is unverified |
-| "Seamless EHR Integration" | ClinicianWhyOneCare.tsx line 371 | Database schema and edge function stubs exist. Not "seamless" -- it's not functional yet. Should say "Coming soon" |
-| "190+ countries database" | ClinicianWhyOneCare.tsx line 137 | The IDD database was imported but the actual country coverage hasn't been verified against this specific number |
-| "14-day free trial. No credit card required." | ClinicianWhyOneCare.tsx line 492 | Trial mechanism exists (`trial_ends_at`), but the "no credit card" claim should be verified against the actual Stripe checkout flow |
-| Solo plan "25 patients" vs comparison table "Patient Limit 25" | Mismatch between `CLINICIAN_TIER_INFO` (patientLimit: 25) and comparison table showing same | Consistent here, but the tier info line 18 says `patientLimit: 5` for trial. The "Start Free Trial" CTA on WhyOneCare page navigates to `/clinician/signup` which is a 404 (should be `/clinician/sign-up`) |
-
-### BROKEN NAVIGATION
-
-| Link | Where | Issue |
-|------|-------|-------|
-| `/clinician/signup` | ClinicianWhyOneCare.tsx lines 196, 496 | 404 -- correct route is `/clinician/sign-up` (with hyphen) |
-
-### Pricing FAQ Inconsistency
-
-Pricing.tsx FAQ line 31 says: "Premium unlocks unlimited medications, **vitals tracking, Care Circle sharing**, AI lab report parsing, and priority support."
-
-But vitals tracking and Care Circle are FREE features (confirmed in pricing-constants.ts). The FAQ contradicts the feature lists.
+OneCare is both a patient empowerment tool and a clinician efficiency tool, and its Africa-first launch positions it to address a massive unmet need before expanding globally.
 
 ---
 
-## Part 2: Implementation Plan for Fixes
+## Part 1: Remaining False/Misleading Claims
 
-### Step 1: Remove false claims (About.tsx)
-- Replace fake stats ("10,000+ Active Users", "50,000+ Medications Tracked", "4.8★", "99.9% Uptime") with honest beta-appropriate content (e.g., "Growing Community", "Comprehensive Database", "Built for Reliability", "Privacy-First Design")
-- Fix "Join thousands of patients" to "Join early adopters"
+Several claims were fixed in previous edits, but the following still exist:
 
-### Step 2: Correct misleading security claims (Features.tsx)
-- Change "End-to-end encryption and data anonymization" to "Encrypted storage and secure data transmission"
+### Still Says "Real-time" (NOT Fixed)
 
-### Step 3: Add "Coming Soon" labels to unbuilt features
-- Calendar integration: remove from feature details or label "(coming soon)"
-- Refill reminders: add "(coming soon)" in pricing-constants.ts
-- FHIR export: already marked on clinician pricing table but NOT on WhyOneCare page -- add labels there
-- Priority support / Dedicated manager: add "(not yet differentiated)" or remove until support tiers exist
 
-### Step 4: Fix "real-time" claims
-- Replace "real-time" with "continuous" or "shared" across Landing, Features, ClinicianPricing, Footer
-- Or implement Supabase Realtime for vitals/medications tables (more work but makes the claim true)
+| File                               | Line   | Current Text                                   | Fix                                                                                                                                                                            |
+| ---------------------------------- | ------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Features.tsx`                     | 40     | "share them with your care team in real-time"  | Change to "share them with your care team continuously"                                                                                                                        |
+| `Features.tsx`                     | 51     | "Real-time analysis of potential interactions" | This one is ACTUALLY TRUE -- drug interaction checks happen synchronously when triggered. Keep as-is.                                                                          |
+| `Footer.tsx`                       | 18     | "real-time interaction warnings"               | Change to "automatic interaction warnings"                                                                                                                                     |
+| `EHRComparison.tsx`                | 42     | "Real-time Communication"                      | Change to "Continuous Communication"                                                                                                                                           |
+| `EHRComparison.tsx`                | 88     | "same real-time data"                          | Change to "same shared data"                                                                                                                                                   |
+| `EHRComparison.tsx`                | 119    | "Real-time data access"                        | Change to "Continuous data access"                                                                                                                                             |
+| `useClinicianSubscription.ts`      | 21, 33 | "Real-time vital alerts"                       | This is MISLEADING. Alerts are triggered by `check-vital-alerts` edge function, which must be invoked (cron or manual). Not real-time push. Change to "Vital threshold alerts" |
+| `ClinicianSubscriptionSuccess.tsx` | 84     | "Real-time Vital Alerts"                       | Change to "Vital Alerts"                                                                                                                                                       |
 
-### Step 5: Fix broken navigation
-- Change `/clinician/signup` to `/clinician/sign-up` in ClinicianWhyOneCare.tsx (2 instances)
 
-### Step 6: Fix Pricing FAQ
-- Remove "vitals tracking, Care Circle sharing" from the Premium description in the FAQ since those are free
+### "50K+ Drugs in Database" (About.tsx line 34)
+
+Still says `'50K+'` as the stat value. This claim hasn't been validated. Should change to `'Comprehensive'` or verify the actual count.
+
+### "Export to EHR (FHIR)" Button (ClinicianWhyOneCare.tsx line 472)
+
+The button on line 472 is still clickable but non-functional. It should be disabled with a "(Coming Soon)" label.
+
+### "Priority Support" (pricing-constants.ts line 45, 74)
+
+Listed as a feature in both PREMIUM_FEATURES and LANDING_PREMIUM_FEATURES. No differentiated support exists. Should add "(coming soon)" or remove.
+
+### "Dedicated account manager" (useClinicianSubscription.ts line 66)
+
+Enterprise feature. Not implemented. Should add "(coming soon)".
+
+### "EHR/FHIR integration" (useClinicianSubscription.ts line 64)
+
+Listed as Enterprise feature without "(coming soon)". The comparison table in ClinicianPricing.tsx line 218 shows it as a checkmark for Enterprise. Should add "(coming soon)".
+
+### "10x Faster provider onboarding" (EHRComparison.tsx line 118)
+
+Unverifiable claim. Should change to something factual like "Minutes" or "Instant".
+
+### "50+ Countries supported" (EHRComparison.tsx line 121)
+
+Plausible (emergency_numbers table covers 50+ countries) but unverified against IDD drug coverage. Should verify or soften to "Global coverage".
 
 ---
 
-## Part 3: Funding Plan
+## Part 2: "Coming Soon" Features -- Implementation Effort Estimates
 
-### Why "Be Careful Who You Take Money From" Is True
 
-1. **Mission dilution**: Health-tech investors often push for aggressive monetization (selling data, ads, paywalls on critical health features). OneCare's value prop is patient-owned data and free access. The wrong investor will demand you paywall vitals or sell anonymized data to pharma -- destroying the trust proposition.
+| Feature                       | Current State                                           | Effort to Implement                                                                                                                             | Priority          |
+| ----------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **Refill reminders**          | `refill_date` column exists, no trigger logic           | 2-3 hours. Add a check in `check-care-alerts` or new edge function that queries medications with `refill_date` approaching, sends notification. | Medium            |
+| **Calendar integration**      | Removed from claims (now says "Calendar view of doses") | N/A -- claim was softened. Actual iCal export would be 4-6 hours.                                                                               | Low               |
+| **Guidance templates**        | Database schema planned in future-roadmap.md            | 4-6 hours. Create `guidance_templates` table, add "Save as Template" to CreateGuidanceDialog, template picker UI.                               | Medium            |
+| **Advanced analytics**        | Basic stats exist on dashboard                          | 6-8 hours. Add trend charts, cohort analysis, export to PDF.                                                                                    | Medium            |
+| **Team member access**        | Practice management tables exist with RBAC              | 8-12 hours. UI for practice creation, member invites, shared patient pools. Already has DB infrastructure.                                      | High              |
+| **API access**                | Not started                                             | 16-24 hours. Edge functions for each resource, API key management, rate limiting.                                                               | Low (post-launch) |
+| **EHR/FHIR integration**      | Stubs + DB tables exist                                 | 40+ hours. Requires real FHIR server testing, OAuth flows, data mapping.                                                                        | Low (post-launch) |
+| **Priority support**          | Single contact form                                     | 2-3 hours. Add Intercom/Crisp widget, show only for paid tiers. Or simply add a priority email address.                                         | Easy win          |
+| **Dedicated account manager** | Not implemented                                         | Operational, not technical. Assign once Enterprise customers exist.                                                                             | N/A               |
 
-2. **Premature scaling pressure**: VC money comes with growth expectations (10x in 18 months). For a health platform launching in Nigeria, you need time to build trust with communities, iterate on clinical workflows, and validate product-market fit. Forced scaling leads to cutting safety corners.
 
-3. **Geographic misalignment**: Most US/EU health-tech VCs don't understand the African healthcare market. They'll push US-first strategies, ignore offline-first needs, and undervalue community-driven adoption.
+### Easy Wins to Implement Now
 
-4. **Control loss**: Taking a large seed round typically means giving up 15-25% equity + board seats. At this stage with one developer, that's giving away significant control before proving the model.
+1. **Priority support differentiation** (2 hours): Add a "Priority Support" email badge/link visible only to Premium/Pro+ users in Settings.
+2. **Refill reminders** (3 hours): Extend `check-care-alerts` to also check `medications.refill_date` approaching within 7 days.
+3. **Disable FHIR export button** (5 min): Add `disabled` prop + "(Coming Soon)" tooltip to the Export to EHR button.
 
-5. **Regulatory risk transfer**: Health-tech investors know HIPAA/regulatory liability. Some structure deals to shift compliance burden entirely to the founder. If a breach occurs, the founder absorbs the legal risk while investors are protected.
+---
 
-### Recommended Funding Strategy
+## Part 3: Clinician Perspective Audit -- Use Cases by Clinician Type
 
-**Phase 0: Bootstrap + Micro-grants (Now - Month 3)**
-- Continue self-funding operational costs (~$1,000-2,000/month per launch plan)
-- Apply to health-tech micro-grants:
-  - **Google for Startups Africa** (up to $100K in credits + cash)
-  - **Techstars Lagos** or **Y Combinator** (if applicable -- $500K standard deal)
-  - **Bill & Melinda Gates Foundation Grand Challenges** (health innovation grants, $100K-$500K)
-  - **USAID Digital Health** grants for African health-tech
-  - **Africa Health Business** grants
-  - **Savannah Fund** (East Africa-focused, $25K-$500K)
-- Estimated obtainable: $25K-$100K in non-dilutive funding
+### Private Practice Doctor (GP/Family Medicine)
 
-**Phase 1: Angel Round (Months 3-6, after 50+ patients, 5+ clinicians)**
-- Target: $50K-$150K
-- Sources:
-  - **Nigerian angel investors** in health-tech (Lagos Angel Network, Ventures Platform)
-  - **Diaspora angels** -- Nigerian professionals in US/UK health systems who understand both markets
-  - **Doctor-investors** -- practicing clinicians who see the problem firsthand (also become advisors)
-- Terms: SAFE notes, no board seats, 10-15% equity cap
-- Use of funds: Hire Community Growth Lead, Content Specialist, 6 months of runway
+**Primary use**: Monitor chronic disease patients between visits.
+**Flow**: Sign up -> Invite patients via email -> View patient vitals/adherence dashboard -> Send guidance -> Set vital alerts.
+**OneCare covers**: Patient invitations, vital monitoring, guidance, adherence analytics, alert rules.
+**Gap**: No appointment scheduling, no billing integration, no prescription writing. These are OUT OF SCOPE -- OneCare is a care coordination layer, not an EHR replacement.
 
-**Phase 2: Pre-Seed (Months 6-12, after 300+ patients, 25+ clinicians, $700+ MRR)**
-- Target: $250K-$500K
-- Sources:
-  - **Future Africa** (pan-African pre-seed, $50K-$250K)
-  - **Ingressive Capital** (West Africa focus)
-  - **Flat6Labs** (MENA/Africa)
-  - **Global Health Innovative Technology Fund (GHIT)** -- specifically for health platforms
-  - **Impact investors** who align with patient-empowerment mission (Omidyar Network, Acumen)
-- Terms: Priced round at $2M-$4M valuation, 15-20% equity
-- Use of funds: Second developer, sales team, Kenya/Ghana expansion
+### Specialist (Cardiologist, Endocrinologist, etc.)
 
-**Phase 3: Seed (Months 12-18, after proven unit economics)**
-- Target: $1M-$3M
-- Sources: Health-tech focused VCs (TLcom Capital, Norrsken, Algebra Ventures)
-- Only if growth metrics justify it and strategic alignment is confirmed
+**Primary use**: Monitor referred patients' vitals between specialist visits.
+**Flow**: Patient shares data via invite code -> Specialist views relevant vitals (BP for cardiology, glucose for endocrinology).
+**OneCare covers**: Multi-provider data sharing, vital filtering by type, trend charts.
+**Gap**: No specialty-specific views or protocols. The vital types cover the basics (BP, glucose, heart rate, weight) but lack specialty-specific panels. **Easy win**: Add preset vital dashboards per specialty (e.g., "Cardiology View" = BP + heart rate + weight).
 
-### Realistic Funding Estimates
+### Hospital-Based Doctor
 
-| Stage | Amount | Probability | Timeline |
-|-------|--------|-------------|----------|
-| Grants/competitions | $25K-$100K | Medium-High | Months 1-4 |
-| Angel round | $50K-$150K | Medium | Months 3-6 |
-| Pre-seed | $250K-$500K | Medium (with traction) | Months 6-12 |
-| Seed | $1M-$3M | Lower (needs strong metrics) | Months 12-18 |
-| **Total potential (18 months)** | **$1.3M-$3.75M** | | |
+**Primary use**: Post-discharge monitoring.
+**OneCare covers**: This is OneCare's core value prop. Patient shares data after discharge, doctor sees updates.
+**Gap**: No integration with hospital EHR systems (Epic, Cerner). This is the EHR integration roadmap item. Also no multi-seat institutional licensing -- the practice management infrastructure exists but UI is minimal.
 
-### Key Funding Principles
+### Nurse / Nurse Practitioner
 
-1. **Non-dilutive first**: Exhaust grants and competitions before giving away equity
-2. **Aligned investors only**: Health background, Africa experience, patient-first ethos
-3. **Small checks, many backers**: 10 angels at $10K each is safer than 1 investor at $100K
-4. **Revenue before fundraising**: Even $500/month MRR makes fundraising 10x easier
-5. **Keep control**: Maintain >70% founder equity through pre-seed minimum
+**Primary use**: Patient education, medication management, care coordination.
+**OneCare covers**: Guidance tools, adherence monitoring, vital alerts.
+**Gap**: No care plan templates, no wound care tracking, no nursing-specific assessments. Care plans are listed as "Coming Soon" in the quick actions dropdown. **Moderate effort** to add structured care plan templates.
 
-### What to Create
+### Hospice / Palliative Care
 
-- `docs/funding-strategy.md` -- the complete funding plan above
-- Fix all copywriting gaps identified in Part 1 across About.tsx, Features.tsx, ClinicianWhyOneCare.tsx, Pricing.tsx, pricing-constants.ts, and Footer.tsx
+**Primary use**: Family caregiver coordination, comfort medication tracking.
+**OneCare covers**: Care Circle alerts, family member profiles, medication tracking.
+**Gap**: No end-of-life specific tools, no symptom scoring (e.g., Edmonton Symptom Assessment), no advance directive storage. **Mostly out of scope** for launch but the Care Circle + caregiver alerts are directly relevant.
 
+### Pharmacist
+
+**Primary use**: Medication interaction checking, refill management, patient education.
+**OneCare covers**: Drug interaction checker, medication database (IDD + FDA), medication photo ID.
+**Gap**: No pharmacy dispensing integration, no refill management workflow, no prescription verification. Pharmacists would primarily use OneCare as a patient-facing companion tool. **Partially in scope** -- the interaction checker and medication database are strong fits.
+
+### Radiologist
+
+**Primary use**: Not a strong fit. Radiologists interpret imaging studies, which OneCare doesn't handle.
+**OneCare relevance**: Minimal. Could potentially receive lab report uploads but this is a stretch.
+**Verdict**: **Out of scope.** Do not market to radiologists.
+
+### Community Health Worker (CHW)
+
+**Primary use**: Patient sign-up assistance, basic health monitoring, medication adherence support.
+**OneCare covers**: PWA mobile access, simple vitals entry, medication reminders.
+**Gap**: No offline-first data entry (critical in rural areas), no simplified "CHW mode" with reduced UI complexity. **Important for Africa launch** -- consider a simplified onboarding flow.
+
+### Summary: Clinician Coverage Matrix
+
+```text
+Clinician Type          | Fit   | Key Features Used                    | Key Gaps
+------------------------|-------|--------------------------------------|---------------------------
+Private Practice GP     | HIGH  | Full platform                        | No scheduling/billing
+Specialist              | HIGH  | Vitals, multi-provider sharing       | No specialty presets
+Hospital Doctor         | HIGH  | Post-discharge monitoring            | No EHR integration
+Nurse/NP               | MED   | Guidance, adherence, alerts          | No care plan templates
+Hospice/Palliative     | MED   | Care Circle, family profiles         | No symptom scoring
+Pharmacist             | MED   | Drug interactions, medication DB     | No dispensing workflow
+Radiologist            | LOW   | N/A                                  | Out of scope
+Community Health Worker | MED   | Mobile access, simple tracking       | No offline mode
+```
+
+---
+
+## Part 4: Funding Strategy Update -- Global Outlook
+
+The current `docs/funding-strategy.md` is overly Africa-centric. OneCare is starting in Africa to prove concept, but the funding document should reflect the global ambition. Key updates:
+
+### Changes to Make
+
+1. **Reframe the narrative**: Change from "African health-tech startup" to "Global health platform proving concept in Africa's underserved markets." This is a stronger pitch -- Africa is a harder market to crack, so if it works there, it works everywhere.
+2. **Add global-stage investors** alongside Africa-focused ones:
+  - **Phase 1**: Add global health-tech angels (AngelList Health, HAX Bio)
+  - **Phase 2**: Add global pre-seed firms (Precursor Ventures, Village Global, Techstars Health)
+  - **Phase 3**: Add US/EU health-tech VCs (General Catalyst Health, a]6z Bio, Andreessen Horowitz, Rock Health, Khosla Ventures)
+3. **Add global grant programs**:
+  - **WHO Digital Health** grants
+  - **Wellcome Trust** (global health innovation)
+  - **Rockefeller Foundation** (health equity)
+  - **UNICEF Innovation Fund** (open-source health tools)
+4. **Reframe the "Geographic Misalignment" warning**: Keep it, but add nuance -- the right global investor who understands emerging-market-first strategies (like Stripe starting in Ireland, Flutterwave starting in Nigeria) is actually ideal.
+5. **Add a "Pitch Narrative" section**: "We're building the Stripe of patient health data -- starting where the need is greatest. Africa has 1.4 billion people, minimal EHR infrastructure, and the fastest-growing smartphone adoption in the world. If we can solve care coordination here, we can solve it anywhere."
+6. **Update valuation benchmarks**: Reference comparable global health-tech valuations (Hims & Hers $2B, Ro $7B, Noom $3.7B at Series F) to show the market potential justifies global investor interest.
+
+---
+
+## Part 5: Implementation Steps
+
+### Step 1: Fix remaining "real-time" claims
+
+Files: `Features.tsx`, `Footer.tsx`, `EHRComparison.tsx`, `useClinicianSubscription.ts`, `ClinicianSubscriptionSuccess.tsx`
+
+### Step 2: Fix remaining false/misleading claims
+
+- About.tsx: Confirm `'50K+'` drug database stat and change to `'Comprehensive'` if significantly less or indicate actual number. 
+- ClinicianWhyOneCare.tsx: Disable FHIR export button for now and document for future implementations 
+- useClinicianSubscription.ts: Add "(coming soon)" to EHR/FHIR, dedicated account manager
+- pricing-constants.ts: Add "(coming soon)" to Priority support
+
+### Step 3: Implement easy wins
+
+- Add priority support email differentiation (2 hours)
+- Refill reminder logic in check-care-alerts (3 hours)
+
+### Step 4: Update funding strategy document
+
+Rewrite `docs/funding-strategy.md` to reflect global outlook while maintaining Africa-first launch narrative. Also note various funding sources and amounts and likelihood of obtaining the grant/funding as outlined earlier in this plan. 
+
+### Step 5: Create clinician use-case reference
+
+Add coverage matrix to `docs/clinician-gaps-implementation-plan.md` for internal reference. Also document clinician ICP as mentioned in the plan and those that OneCare is not focused on. Also include clinicians that work on medical trials as a way to track the health of the peoplein the trial - document that as a specific use case that OneCare can support and also include it in future plans docs as something to work on depending on adoption of the platform and what is priority as we progress. 
