@@ -141,7 +141,7 @@ const Vitals = () => {
             >
               {vitalCards.map((card, index) => {
                 const latestVital = getLatestVital(card.type);
-                const stats = getVitalStats(card.type);
+                const stats = getVitalStats(card.type, 90);
                 
                 return (
                   <motion.div
@@ -190,7 +190,7 @@ const Vitals = () => {
                           {category.types.map((type) => {
                             const config = VITAL_CONFIG[type];
                             const vital = getLatestVital(type);
-                            const stats = getVitalStats(type);
+                            const stats = getVitalStats(type, 90);
                             const displayUnit = getDisplayUnit(type);
                             const normalRange = getNormalRange(type);
                             
@@ -268,7 +268,7 @@ const Vitals = () => {
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 md:gap-4">
               {vitalCards.map((card) => {
-                const stats = getVitalStats(card.type);
+                const stats = getVitalStats(card.type, 90);
                 const config = VITAL_CONFIG[card.type];
                 const displayUnit = getDisplayUnit(card.type);
                 
@@ -305,7 +305,7 @@ const Vitals = () => {
                 <VitalTrendChart
                   key={card.type}
                   type={card.type}
-                  data={getVitalHistory(card.type, 30)}
+                  data={getVitalHistory(card.type, 90)}
                 />
               ))}
             </div>
