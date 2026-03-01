@@ -19,7 +19,12 @@ import {
   Activity,
   BarChart3,
   FileText,
-  Link2
+  Link2,
+  Upload,
+  ClipboardList,
+  MessageSquare,
+  AlertTriangle,
+  ShieldCheck
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +100,41 @@ const ClinicianWhyOneCare = () => {
       epic: { value: "US-centric", good: false },
       healthbridge: { value: "Regional", good: false },
     },
+    {
+      feature: "Bulk Patient Import",
+      onecare: { value: "CSV upload with deduplication", good: true },
+      veradigm: { value: "Manual entry", good: false },
+      epic: { value: "HL7 batch (complex)", good: false },
+      healthbridge: { value: "Manual entry", good: false },
+    },
+    {
+      feature: "Clinical Guidance",
+      onecare: { value: "Bidirectional with status tracking", good: true },
+      veradigm: { value: "One-way orders", good: false },
+      epic: { value: "In-basket messages", good: false },
+      healthbridge: { value: "None", good: false },
+    },
+    {
+      feature: "Vital Alert Thresholds",
+      onecare: { value: "Custom per-patient rules", good: true },
+      veradigm: { value: "Basic flags", good: false },
+      epic: { value: "BPA alerts (complex setup)", good: false },
+      healthbridge: { value: "None", good: false },
+    },
+    {
+      feature: "Team/Practice Management",
+      onecare: { value: "Multi-role RBAC with permissions", good: true },
+      veradigm: { value: "Admin-only", good: false },
+      epic: { value: "IT-managed roles", good: false },
+      healthbridge: { value: "Single provider", good: false },
+    },
+    {
+      feature: "HIPAA/BAA Compliance",
+      onecare: { value: "Built-in digital BAA signing", good: true },
+      veradigm: { value: "Separate agreement", good: false },
+      epic: { value: "Enterprise contract", good: false },
+      healthbridge: { value: "Separate agreement", good: false },
+    },
   ];
 
   const uniqueAdvantages = [
@@ -145,6 +185,46 @@ const ClinicianWhyOneCare = () => {
       stat: "Soon",
       statLabel: "In development",
       color: "bg-rose-500/10 text-rose-500"
+    },
+    {
+      icon: Upload,
+      title: "Bulk Patient Import",
+      description: "Onboard your entire patient panel via CSV upload with automatic deduplication and invitation management. No manual data entry.",
+      stat: "1-Click",
+      statLabel: "CSV import",
+      color: "bg-cyan-500/10 text-cyan-500"
+    },
+    {
+      icon: MessageSquare,
+      title: "Patient Guidance System",
+      description: "Send clinical instructions patients can acknowledge, complete, or flag. Track status in real-time with automated reminders.",
+      stat: "2-Way",
+      statLabel: "Status tracking",
+      color: "bg-violet-500/10 text-violet-500"
+    },
+    {
+      icon: AlertTriangle,
+      title: "Vital Alert Thresholds",
+      description: "Set custom per-patient vital ranges. Get notified automatically when readings fall outside your defined thresholds.",
+      stat: "Custom",
+      statLabel: "Per-patient rules",
+      color: "bg-orange-500/10 text-orange-500"
+    },
+    {
+      icon: Building2,
+      title: "Team & Practice Management",
+      description: "Multi-clinician practices with role-based access control. Owners, admins, providers, and staff with granular permissions.",
+      stat: "RBAC",
+      statLabel: "Role-based access",
+      color: "bg-sky-500/10 text-sky-500"
+    },
+    {
+      icon: ShieldCheck,
+      title: "HIPAA/BAA Compliance",
+      description: "Built-in Business Associate Agreement with digital signing, audit trails, and consent management for regulatory compliance.",
+      stat: "Built-in",
+      statLabel: "Digital BAA",
+      color: "bg-teal-500/10 text-teal-500"
     },
   ];
 
