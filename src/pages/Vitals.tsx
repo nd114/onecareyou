@@ -50,6 +50,7 @@ const Vitals = () => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [editingVital, setEditingVital] = useState<VitalRecord | null>(null);
   const [view, setView] = useState<'overview' | 'analytics' | 'history'>('overview');
+  const [daysRange, setDaysRange] = useState<number>(90);
   const { vitals, loading, addVital, updateVital, deleteVital, getLatestVital, getVitalHistory, getVitalStats } = useVitals();
   const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
@@ -94,35 +95,53 @@ const Vitals = () => {
             </div>
           </div>
           
-          {/* View Toggle - Full width on mobile */}
-          <div className="flex rounded-lg border bg-card p-0.5 sm:p-1 mt-4 w-full">
-            <Button
-              variant={view === 'overview' ? 'default' : 'ghost'}
-              size="sm"
-              className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
-              onClick={() => setView('overview')}
-            >
-              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              Overview
-            </Button>
-            <Button
-              variant={view === 'analytics' ? 'default' : 'ghost'}
-              size="sm"
-              className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
-              onClick={() => setView('analytics')}
-            >
-              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              Analytics
-            </Button>
-            <Button
-              variant={view === 'history' ? 'default' : 'ghost'}
-              size="sm"
-              className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
-              onClick={() => setView('history')}
-            >
-              <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              History
-            </Button>
+          {/* View Toggle + Range Selector */}
+          <div className="flex flex-col gap-2 mt-4">
+            <div className="flex rounded-lg border bg-card p-0.5 sm:p-1 w-full">
+              <Button
+                variant={view === 'overview' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
+                onClick={() => setView('overview')}
+              >
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Overview
+              </Button>
+              <Button
+                variant={view === 'analytics' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
+                onClick={() => setView('analytics')}
+              >
+                <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Analytics
+              </Button>
+              <Button
+                variant={view === 'history' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1 h-8 sm:h-9 text-[11px] sm:text-sm px-2 sm:px-3"
+                onClick={() => setView('history')}
+              >
+                <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                History
+              </Button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">Range:</span>
+              <div className="flex rounded-md border bg-card p-0.5 gap-0.5">
+                {[14, 30, 60, 90].map((d) => (
+                  <Button
+                    key={d}
+                    variant={daysRange === d ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-6 sm:h-7 text-[10px] sm:text-xs px-2 sm:px-3 min-w-0"
+                    onClick={() => setDaysRange(d)}
+                  >
+                    {d}d
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         </motion.div>
 
@@ -141,7 +160,7 @@ const Vitals = () => {
             >
               {vitalCards.map((card, index) => {
                 const latestVital = getLatestVital(card.type);
-                const stats = getVitalStats(card.type, 90);
+                const stats = getVitalStats(card.type, daysRange);
                 
                 return (
                   <motion.div
@@ -190,7 +209,7 @@ const Vitals = () => {
                           {category.types.map((type) => {
                             const config = VITAL_CONFIG[type];
                             const vital = getLatestVital(type);
-                            const stats = getVitalStats(type, 90);
+                            const stats = getVitalStats(type, daysRange);
                             const displayUnit = getDisplayUnit(type);
                             const normalRange = getNormalRange(type);
                             
@@ -268,7 +287,7 @@ const Vitals = () => {
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4 md:gap-4">
               {vitalCards.map((card) => {
-                const stats = getVitalStats(card.type, 90);
+                const stats = getVitalStats(card.type, daysRange);
                 const config = VITAL_CONFIG[card.type];
                 const displayUnit = getDisplayUnit(card.type);
                 
@@ -305,7 +324,7 @@ const Vitals = () => {
                 <VitalTrendChart
                   key={card.type}
                   type={card.type}
-                  data={getVitalHistory(card.type, 90)}
+                  data={getVitalHistory(card.type, daysRange)}
                 />
               ))}
             </div>
@@ -332,7 +351,7 @@ const Vitals = () => {
                           <VitalTrendChart
                             key={type}
                             type={type}
-                            data={getVitalHistory(type, 90)}
+                            data={getVitalHistory(type, daysRange)}
                           />
                         ))}
                       </div>
