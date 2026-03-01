@@ -40,6 +40,25 @@ export function EditManagedRecordDialog({ record }: Props) {
   const [conditions, setConditions] = useState<string[]>(record.health_conditions || []);
   const [newCondition, setNewCondition] = useState('');
 
+  // Re-sync state when dialog opens (picks up latest record data)
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      setName(record.patient_name);
+      setEmail(record.patient_email || '');
+      setPhone(record.patient_phone || '');
+      setDob(record.date_of_birth || '');
+      setGender(record.gender || '');
+      setBloodType(record.blood_type || '');
+      setNotes(record.notes || '');
+      setSharingModel(record.data_sharing_model);
+      setAllergies(record.allergies || []);
+      setConditions(record.health_conditions || []);
+      setNewAllergy('');
+      setNewCondition('');
+    }
+    setOpen(newOpen);
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error('Patient name is required');
@@ -88,7 +107,7 @@ export function EditManagedRecordDialog({ record }: Props) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-7">
           <Pencil className="h-3 w-3" />
