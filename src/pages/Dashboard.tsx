@@ -26,6 +26,7 @@ import { useVitals } from '@/hooks/useVitals';
 import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
 import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
+import { PendingClinicianRecordsBanner } from '@/components/consent/PendingClinicianRecordsBanner';
 
 const getQuickLinks = (showAdherence: boolean) => [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
@@ -100,6 +101,9 @@ const Dashboard = () => {
 
         {/* Pending Invitations from Clinicians */}
         <PendingInvitationsCard />
+
+        {/* Pending Clinician-Imported Records Consent */}
+        <PendingClinicianRecordsBanner />
 
         {/* Onboarding Prompt */}
         {profile && !profile.onboarding_completed && (
