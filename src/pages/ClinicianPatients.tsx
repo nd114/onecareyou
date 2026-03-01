@@ -8,6 +8,8 @@ import {
   StickyNote,
   Search,
   Mail,
+  Upload,
+  Database,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,11 +26,14 @@ import { PatientQuickActions } from '@/components/clinician/PatientQuickActions'
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinician/BulkPatientActions';
+import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ClinicianPatients = () => {
   const navigate = useNavigate();
   const { clinicianProfile, isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
   const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
+  const { records: managedRecords, isLoading: isLoadingRecords } = useClinicianPatientRecords();
   const { patientLimit } = useClinicianSubscription();
   
   const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
@@ -54,6 +59,7 @@ const ClinicianPatients = () => {
 
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState('connected');
 
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patients;
@@ -64,8 +70,18 @@ const ClinicianPatients = () => {
         (p.patient_email || '').toLowerCase().includes(searchLower)
     );
   }, [patients, patientSearch]);
+  const filteredManagedRecords = useMemo(() => {
+    if (!patientSearch.trim()) return managedRecords;
+    const searchLower = patientSearch.toLowerCase();
+    return managedRecords.filter(
+      (r) =>
+        r.patient_name.toLowerCase().includes(searchLower) ||
+        (r.patient_email || '').toLowerCase().includes(searchLower) ||
+        (r.tags as string[]).some(t => t.toLowerCase().includes(searchLower))
+    );
+  }, [managedRecords, patientSearch]);
 
-  const isLoading = isLoadingProfile || isLoadingPatients;
+  const isLoading = isLoadingProfile || isLoadingPatients || isLoadingRecords;
 
   useEffect(() => {
     if (isClinician && !isLoading) {
@@ -144,11 +160,30 @@ const ClinicianPatients = () => {
 
         <PatientLimitBanner patientCount={patientCount} />
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <TabsList>
+              <TabsTrigger value="connected" className="gap-1.5">
+                <Users className="h-4 w-4" />
+                Connected ({patients.length})
+              </TabsTrigger>
+              <TabsTrigger value="managed" className="gap-1.5">
+                <Database className="h-4 w-4" />
+                Managed ({managedRecords.length})
+              </TabsTrigger>
+            </TabsList>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/clinician/patients/import')}
+              className="gap-1.5"
+            >
+              <Upload className="h-4 w-4" />
+              Import Patients
+            </Button>
+          </div>
+
+          <TabsContent value="connected">
           <Card>
             <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -332,7 +367,108 @@ const ClinicianPatients = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+          </TabsContent>
+
+          <TabsContent value="managed">
+            <Card>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base sm:text-lg">Clinician-Managed Records</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    {managedRecords.length} patient{managedRecords.length !== 1 ? 's' : ''} imported
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/clinician/patients/import')}
+                  className="gap-1.5"
+                >
+                  <Upload className="h-4 w-4" />
+                  Import More
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {managedRecords.length > 0 && (
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search managed records..."
+                        value={patientSearch}
+                        onChange={(e) => setPatientSearch(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {managedRecords.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-semibold mb-2">No managed records</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Import patient records from CSV to manage patients who aren't on OneCare yet.
+                    </p>
+                    <Button onClick={() => navigate('/clinician/patients/import')}>
+                      <Upload className="h-4 w-4 mr-2" /> Import Patients
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredManagedRecords.map((record) => (
+                      <div key={record.id} className="p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow">
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 flex-shrink-0 rounded-full bg-accent/50 flex items-center justify-center">
+                            <span className="font-semibold text-accent-foreground">
+                              {record.patient_name.charAt(0)}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{record.patient_name}</p>
+                              <Badge variant="outline" className="text-xs">
+                                {record.data_sharing_model.replace('_', ' ')}
+                              </Badge>
+                              <Badge variant={
+                                record.invitation_status === 'accepted' ? 'default' :
+                                record.invitation_status === 'invited' ? 'secondary' :
+                                record.invitation_status === 'declined' ? 'destructive' :
+                                'outline'
+                              } className="text-xs">
+                                {record.invitation_status.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                            {record.patient_email && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Mail className="h-3 w-3" />
+                                {record.patient_email}
+                              </p>
+                            )}
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {(record.tags as string[]).map((tag, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
+                              ))}
+                              {record.health_conditions.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {record.health_conditions.length} condition{record.health_conditions.length !== 1 ? 's' : ''}
+                                </Badge>
+                              )}
+                              {record.medications.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {record.medications.length} med{record.medications.length !== 1 ? 's' : ''}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <PatientNotesDialog
