@@ -1,207 +1,269 @@
-# Comprehensive Platform Audit: Claims, Clinician Flows, and Funding Strategy
+# Bulk Patient Onboarding & Data Ownership Framework
 
-## What OneCare Is and Why It Matters
+## The Core Problem
 
-OneCare is a patient-centric health data platform that solves the **information asymmetry** between patients and healthcare providers after hospital discharge. When patients leave a clinical setting, their ongoing health data -- vitals, medication adherence, lab results -- becomes invisible to their care team until the next appointment. This gap leads to preventable complications, medication non-adherence, and fragmented care.
-
-OneCare flips the traditional EHR model: **patients own and control their data**, sharing it with any number of providers via secure invite codes. Unlike Epic MyChart or Veradigm, which are practice-owned and siloed, OneCare gives a unified view across all providers, includes family health management, and adds caregiver alerting. This is critical in markets like Nigeria and across Africa where:
-
-- Chronic diseases (diabetes, hypertension) are the leading killers
-- Patients often see multiple doctors across unconnected clinics
-- There is no EHR infrastructure in most private practices
-- Family caregivers are deeply involved in patient care
-- Post-discharge follow-up is minimal or non-existent
-
-OneCare is both a patient empowerment tool and a clinician efficiency tool, and its Africa-first launch positions it to address a massive unmet need before expanding globally.
+Currently, OneCare requires each patient to: (1) have an email, (2) create an account, (3) accept a clinician's invitation, and (4) create a provider share. A clinician with 5,000 patients on paper or Excel cannot onboard anyone without each patient individually signing up. This is a complete blocker for clinician-driven mass adoption.
 
 ---
 
-## Part 1: Remaining False/Misleading Claims
+## Part 1: Bulk Patient Import System
 
-Several claims were fixed in previous edits, but the following still exist:
+### New Database Infrastructure
 
-### Still Says "Real-time" (NOT Fixed)
+**Table: `clinician_patient_records**` (clinician-owned patient data)
 
-
-| File                               | Line   | Current Text                                   | Fix                                                                                                                                                                            |
-| ---------------------------------- | ------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Features.tsx`                     | 40     | "share them with your care team in real-time"  | Change to "share them with your care team continuously"                                                                                                                        |
-| `Features.tsx`                     | 51     | "Real-time analysis of potential interactions" | This one is ACTUALLY TRUE -- drug interaction checks happen synchronously when triggered. Keep as-is.                                                                          |
-| `Footer.tsx`                       | 18     | "real-time interaction warnings"               | Change to "automatic interaction warnings"                                                                                                                                     |
-| `EHRComparison.tsx`                | 42     | "Real-time Communication"                      | Change to "Continuous Communication"                                                                                                                                           |
-| `EHRComparison.tsx`                | 88     | "same real-time data"                          | Change to "same shared data"                                                                                                                                                   |
-| `EHRComparison.tsx`                | 119    | "Real-time data access"                        | Change to "Continuous data access"                                                                                                                                             |
-| `useClinicianSubscription.ts`      | 21, 33 | "Real-time vital alerts"                       | This is MISLEADING. Alerts are triggered by `check-vital-alerts` edge function, which must be invoked (cron or manual). Not real-time push. Change to "Vital threshold alerts" |
-| `ClinicianSubscriptionSuccess.tsx` | 84     | "Real-time Vital Alerts"                       | Change to "Vital Alerts"                                                                                                                                                       |
-
-
-### "50K+ Drugs in Database" (About.tsx line 34)
-
-Still says `'50K+'` as the stat value. This claim hasn't been validated. Should change to `'Comprehensive'` or verify the actual count.
-
-### "Export to EHR (FHIR)" Button (ClinicianWhyOneCare.tsx line 472)
-
-The button on line 472 is still clickable but non-functional. It should be disabled with a "(Coming Soon)" label.
-
-### "Priority Support" (pricing-constants.ts line 45, 74)
-
-Listed as a feature in both PREMIUM_FEATURES and LANDING_PREMIUM_FEATURES. No differentiated support exists. Should add "(coming soon)" or remove.
-
-### "Dedicated account manager" (useClinicianSubscription.ts line 66)
-
-Enterprise feature. Not implemented. Should add "(coming soon)".
-
-### "EHR/FHIR integration" (useClinicianSubscription.ts line 64)
-
-Listed as Enterprise feature without "(coming soon)". The comparison table in ClinicianPricing.tsx line 218 shows it as a checkmark for Enterprise. Should add "(coming soon)".
-
-### "10x Faster provider onboarding" (EHRComparison.tsx line 118)
-
-Unverifiable claim. Should change to something factual like "Minutes" or "Instant".
-
-### "50+ Countries supported" (EHRComparison.tsx line 121)
-
-Plausible (emergency_numbers table covers 50+ countries) but unverified against IDD drug coverage. Should verify or soften to "Global coverage".
-
----
-
-## Part 2: "Coming Soon" Features -- Implementation Effort Estimates
-
-
-| Feature                       | Current State                                           | Effort to Implement                                                                                                                             | Priority          |
-| ----------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| **Refill reminders**          | `refill_date` column exists, no trigger logic           | 2-3 hours. Add a check in `check-care-alerts` or new edge function that queries medications with `refill_date` approaching, sends notification. | Medium            |
-| **Calendar integration**      | Removed from claims (now says "Calendar view of doses") | N/A -- claim was softened. Actual iCal export would be 4-6 hours.                                                                               | Low               |
-| **Guidance templates**        | Database schema planned in future-roadmap.md            | 4-6 hours. Create `guidance_templates` table, add "Save as Template" to CreateGuidanceDialog, template picker UI.                               | Medium            |
-| **Advanced analytics**        | Basic stats exist on dashboard                          | 6-8 hours. Add trend charts, cohort analysis, export to PDF.                                                                                    | Medium            |
-| **Team member access**        | Practice management tables exist with RBAC              | 8-12 hours. UI for practice creation, member invites, shared patient pools. Already has DB infrastructure.                                      | High              |
-| **API access**                | Not started                                             | 16-24 hours. Edge functions for each resource, API key management, rate limiting.                                                               | Low (post-launch) |
-| **EHR/FHIR integration**      | Stubs + DB tables exist                                 | 40+ hours. Requires real FHIR server testing, OAuth flows, data mapping.                                                                        | Low (post-launch) |
-| **Priority support**          | Single contact form                                     | 2-3 hours. Add Intercom/Crisp widget, show only for paid tiers. Or simply add a priority email address.                                         | Easy win          |
-| **Dedicated account manager** | Not implemented                                         | Operational, not technical. Assign once Enterprise customers exist.                                                                             | N/A               |
-
-
-### Easy Wins to Implement Now
-
-1. **Priority support differentiation** (2 hours): Add a "Priority Support" email badge/link visible only to Premium/Pro+ users in Settings.
-2. **Refill reminders** (3 hours): Extend `check-care-alerts` to also check `medications.refill_date` approaching within 7 days.
-3. **Disable FHIR export button** (5 min): Add `disabled` prop + "(Coming Soon)" tooltip to the Export to EHR button.
-
----
-
-## Part 3: Clinician Perspective Audit -- Use Cases by Clinician Type
-
-### Private Practice Doctor (GP/Family Medicine)
-
-**Primary use**: Monitor chronic disease patients between visits.
-**Flow**: Sign up -> Invite patients via email -> View patient vitals/adherence dashboard -> Send guidance -> Set vital alerts.
-**OneCare covers**: Patient invitations, vital monitoring, guidance, adherence analytics, alert rules.
-**Gap**: No appointment scheduling, no billing integration, no prescription writing. These are OUT OF SCOPE -- OneCare is a care coordination layer, not an EHR replacement.
-
-### Specialist (Cardiologist, Endocrinologist, etc.)
-
-**Primary use**: Monitor referred patients' vitals between specialist visits.
-**Flow**: Patient shares data via invite code -> Specialist views relevant vitals (BP for cardiology, glucose for endocrinology).
-**OneCare covers**: Multi-provider data sharing, vital filtering by type, trend charts.
-**Gap**: No specialty-specific views or protocols. The vital types cover the basics (BP, glucose, heart rate, weight) but lack specialty-specific panels. **Easy win**: Add preset vital dashboards per specialty (e.g., "Cardiology View" = BP + heart rate + weight).
-
-### Hospital-Based Doctor
-
-**Primary use**: Post-discharge monitoring.
-**OneCare covers**: This is OneCare's core value prop. Patient shares data after discharge, doctor sees updates.
-**Gap**: No integration with hospital EHR systems (Epic, Cerner). This is the EHR integration roadmap item. Also no multi-seat institutional licensing -- the practice management infrastructure exists but UI is minimal.
-
-### Nurse / Nurse Practitioner
-
-**Primary use**: Patient education, medication management, care coordination.
-**OneCare covers**: Guidance tools, adherence monitoring, vital alerts.
-**Gap**: No care plan templates, no wound care tracking, no nursing-specific assessments. Care plans are listed as "Coming Soon" in the quick actions dropdown. **Moderate effort** to add structured care plan templates.
-
-### Hospice / Palliative Care
-
-**Primary use**: Family caregiver coordination, comfort medication tracking.
-**OneCare covers**: Care Circle alerts, family member profiles, medication tracking.
-**Gap**: No end-of-life specific tools, no symptom scoring (e.g., Edmonton Symptom Assessment), no advance directive storage. **Mostly out of scope** for launch but the Care Circle + caregiver alerts are directly relevant.
-
-### Pharmacist
-
-**Primary use**: Medication interaction checking, refill management, patient education.
-**OneCare covers**: Drug interaction checker, medication database (IDD + FDA), medication photo ID.
-**Gap**: No pharmacy dispensing integration, no refill management workflow, no prescription verification. Pharmacists would primarily use OneCare as a patient-facing companion tool. **Partially in scope** -- the interaction checker and medication database are strong fits.
-
-### Radiologist
-
-**Primary use**: Not a strong fit. Radiologists interpret imaging studies, which OneCare doesn't handle.
-**OneCare relevance**: Minimal. Could potentially receive lab report uploads but this is a stretch.
-**Verdict**: **Out of scope.** Do not market to radiologists.
-
-### Community Health Worker (CHW)
-
-**Primary use**: Patient sign-up assistance, basic health monitoring, medication adherence support.
-**OneCare covers**: PWA mobile access, simple vitals entry, medication reminders.
-**Gap**: No offline-first data entry (critical in rural areas), no simplified "CHW mode" with reduced UI complexity. **Important for Africa launch** -- consider a simplified onboarding flow.
-
-### Summary: Clinician Coverage Matrix
-
-```text
-Clinician Type          | Fit   | Key Features Used                    | Key Gaps
-------------------------|-------|--------------------------------------|---------------------------
-Private Practice GP     | HIGH  | Full platform                        | No scheduling/billing
-Specialist              | HIGH  | Vitals, multi-provider sharing       | No specialty presets
-Hospital Doctor         | HIGH  | Post-discharge monitoring            | No EHR integration
-Nurse/NP               | MED   | Guidance, adherence, alerts          | No care plan templates
-Hospice/Palliative     | MED   | Care Circle, family profiles         | No symptom scoring
-Pharmacist             | MED   | Drug interactions, medication DB     | No dispensing workflow
-Radiologist            | LOW   | N/A                                  | Out of scope
-Community Health Worker | MED   | Mobile access, simple tracking       | No offline mode
+```
+id, clinician_user_id, practice_id,
+-- Patient identity (clinician's records)
+patient_name, patient_email, patient_phone, date_of_birth, gender,
+-- Clinical data the clinician brought in
+allergies (JSONB), health_conditions (JSONB), blood_type,
+medications (JSONB), vitals_history (JSONB), notes,
+-- Linking
+linked_user_id (nullable - NULL until patient joins OneCare),
+provider_share_id (nullable),
+invitation_status ('not_invited' | 'invited' | 'accepted' | 'declined'),
+data_sharing_model ('clinician_managed' | 'patient_managed' | 'collaborative' | 'view_only'),
+-- Consent
+clinician_data_consent_given_at, patient_data_consent_given_at,
+import_source ('manual' | 'csv' | 'excel' | 'ehr'),
+created_at, updated_at
 ```
 
+**Table: `data_sharing_agreements**` (formal record of what model applies)
+
+```
+id, clinician_user_id, patient_user_id, clinician_record_id,
+sharing_model ('clinician_managed' | 'patient_managed' | 'collaborative' | 'view_only'),
+agreed_at, agreed_by ('clinician' | 'patient' | 'both'),
+terms_version, is_active, revoked_at, revoked_by,
+permissions (JSONB: {vitals_read, vitals_write, meds_read, meds_write, profile_read, profile_write, notes_read}),
+created_at
+```
+
+### Frontend: Bulk Import UI
+
+New page: `/clinician/patients/import` accessible from ClinicianPatients page.
+
+**Step 1: Upload**
+
+- Accept CSV/Excel file or manual entry form
+- Template download with expected columns: Name, Email (optional), Phone (optional), DOB, Gender, Allergies, Conditions, Current Medications, Recent Vitals
+- Parse and preview data in a table with validation indicators
+
+**Step 2: Review & Clean**
+
+- Show parsed rows with error highlighting (missing required fields, invalid formats)
+- Allow inline editing of individual cells
+- Duplicate detection against existing `clinician_patient_records`
+
+**Step 3: Choose Data Model**
+
+- Select default sharing model for this batch (can be changed per-patient later)
+- Show clear explanation of each model (see Part 2)
+
+**Step 4: Import**
+
+- Edge function `import-patient-records` processes batches of 100
+- Uses service_role to insert into `clinician_patient_records`
+- Returns success/failure counts
+- Auto-sends invitations if email addresses are provided and clinician opts in
+
+**Step 5: Management**
+
+- Clinician can mass manage patient list and perform CRUD functions
+- Clinician can search and filter patients according to background, and other metrics like maybe prescription given
+- Clinician can add tags per patient for organisation and ease of filter - see feasibility of this.
+
+### Edge Function: `import-patient-records`
+
+- Validates data server-side
+- Inserts into `clinician_patient_records` (NOT into `profiles` - patients don't exist yet)
+- Optionally creates `patient_invitations` for rows with email addresses
+- Logs action in `access_audit_logs`
+
 ---
 
-## Part 4: Funding Strategy Update -- Global Outlook
+## Part 2: Four Data Sharing Models
 
-The current `docs/funding-strategy.md` is overly Africa-centric. OneCare is starting in Africa to prove concept, but the funding document should reflect the global ambition. Key updates:
+This is the critical design decision. Four models cover all scenarios:
 
-### Changes to Make
+### Model 1: Clinician-Managed
 
-1. **Reframe the narrative**: Change from "African health-tech startup" to "Global health platform proving concept in Africa's underserved markets." This is a stronger pitch -- Africa is a harder market to crack, so if it works there, it works everywhere.
-2. **Add global-stage investors** alongside Africa-focused ones:
-  - **Phase 1**: Add global health-tech angels (AngelList Health, HAX Bio)
-  - **Phase 2**: Add global pre-seed firms (Precursor Ventures, Village Global, Techstars Health)
-  - **Phase 3**: Add US/EU health-tech VCs (General Catalyst Health, a]6z Bio, Andreessen Horowitz, Rock Health, Khosla Ventures)
-3. **Add global grant programs**:
-  - **WHO Digital Health** grants
-  - **Wellcome Trust** (global health innovation)
-  - **Rockefeller Foundation** (health equity)
-  - **UNICEF Innovation Fund** (open-source health tools)
-4. **Reframe the "Geographic Misalignment" warning**: Keep it, but add nuance -- the right global investor who understands emerging-market-first strategies (like Stripe starting in Ireland, Flutterwave starting in Nigeria) is actually ideal.
-5. **Add a "Pitch Narrative" section**: "We're building the Stripe of patient health data -- starting where the need is greatest. Africa has 1.4 billion people, minimal EHR infrastructure, and the fastest-growing smartphone adoption in the world. If we can solve care coordination here, we can solve it anywhere."
-6. **Update valuation benchmarks**: Reference comparable global health-tech valuations (Hims & Hers $2B, Ro $7B, Noom $3.7B at Series F) to show the market potential justifies global investor interest.
+**When**: Patient has no tech access, never joins OneCare. Clinician manages everything.
+
+- Clinician owns all data in `clinician_patient_records`
+- No `profiles` row exists for the patient
+- Clinician can record vitals, medications, notes on their behalf
+- Data lives entirely in clinician's domain
+- If patient later joins, transitions to Collaborative (Model 3)
+
+**Who benefits**: Clinicians with paper-based patients in rural Nigeria, elderly patients, patients who refuse tech.
+
+### Model 2: Patient-Managed (Current Default)
+
+**When**: Patient signs up independently, shares data with clinician.
+
+- Patient owns all data in `profiles`, `vitals`, `medications`
+- Clinician gets read access via `provider_shares` with permission toggles and may 'copy' the info to their side and retain it once patient agrees. 
+- Patient can revoke at any time, but already 'copied' [we could use a different term for this] will remain for legal reasons, but not any info the patient uploads after revocation.
+- Clinician retains their own notes (hybrid model already documented)
+
+**Who benefits**: Tech-savvy patients, privacy-conscious users, the current user base.
+
+### Model 3: Collaborative
+
+**When**: Clinician imported patient data, patient later joined and accepted.
+
+- Both parties can read and write to shared data sets
+- Patient's `profiles` data is authoritative for personal info
+- Clinician's imported vitals/meds get merged into patient's record with `source: 'clinician_import'`
+- Either party can add new vitals/medications
+- Conflict resolution: patient's self-reported data tagged differently from clinician-entered data; clinician can also retain confirmed reported patient data (for legal reasons  and liability, records are important)
+- Revocation: patient can downgrade to Model 2 (read-only for clinician) or fully revoke but the clinician can retain the information already shared (for legal and liability reasons) especially when a consultation or prescription was based on that information.
+
+**Who benefits**: Active doctor-patient relationships, chronic disease management.
+
+### Model 4: View-Only
+
+**When**: Specialist or pharmacist needs to see data but not modify it.
+
+- Clinician/provider gets read-only access to patient data
+- Cannot add vitals, medications, or guidance
+- Time-limited by default (30 days, renewable)
+- Useful for second opinions, pharmacy verification, insurance review
+
+**Who benefits**: Specialists, pharmacists, insurance reviewers, clinical trial monitors.
+
+### How the Models Connect to Existing Infrastructure
+
+```text
+Current System:                    New System:
+                                   
+provider_shares ─── permissions    clinician_patient_records (Model 1)
+    │                                  │
+    └── {vitals, meds,                 ├── linked_user_id ─── profiles (when patient joins)
+         adherence, profile}           │
+                                       └── data_sharing_agreements
+                                           └── sharing_model + permissions
+```
+
+The existing `provider_shares` table continues to work for Model 2. Models 1, 3, and 4 use `clinician_patient_records` + `data_sharing_agreements` as the new layer.
 
 ---
 
-## Part 5: Implementation Steps
+## Part 3: Patient Activation Flow (Clinician-Imported Patient Joins)
 
-### Step 1: Fix remaining "real-time" claims
+When a clinician has imported a patient (Model 1) and wants them to start using OneCare:
 
-Files: `Features.tsx`, `Footer.tsx`, `EHRComparison.tsx`, `useClinicianSubscription.ts`, `ClinicianSubscriptionSuccess.tsx`
+1. **Clinician clicks "Invite to OneCare"** on the patient record
+2. System sends invitation email/SMS with a unique link
+3. **Patient receives link**, creates account (or logs in)
+4. **Matching logic**: System matches by email OR phone OR name+DOB combination
+5. **Patient sees a consent screen**:
+  - "Dr. [Name] has been managing your health records. They have the following data about you: [summary]"
+  - "Choose how you'd like to proceed:"
+    - **Accept & Collaborate**: Merge clinician's data into your profile, both can update (Model 3)
+    - **Accept & Take Ownership**: Import clinician's data but switch to patient-managed (Model 2)
+    - **View Only**: Let clinician see your data but they can't modify (Model 4)
+    - **Decline**: Don't connect with this clinician (no data shared)
+6. If accepted, `clinician_patient_records.linked_user_id` is set, `data_sharing_agreements` is created, and imported data (vitals, meds) gets copied into the patient's actual tables with `source: 'clinician_import'`
 
-### Step 2: Fix remaining false/misleading claims
+### What Happens If Patient Declines?
 
-- About.tsx: Confirm `'50K+'` drug database stat and change to `'Comprehensive'` if significantly less or indicate actual number. 
-- ClinicianWhyOneCare.tsx: Disable FHIR export button for now and document for future implementations 
-- useClinicianSubscription.ts: Add "(coming soon)" to EHR/FHIR, dedicated account manager
-- pricing-constants.ts: Add "(coming soon)" to Priority support
+- Clinician retains their own records in `clinician_patient_records` (they brought this data in, it's theirs for professional record-keeping)
+- No `provider_share` is created
+- Patient's OneCare account has no connection to that clinician
+- Clinician sees status as "Declined" but keeps their clinical notes
 
-### Step 3: Implement easy wins
+---
 
-- Add priority support email differentiation (2 hours)
-- Refill reminder logic in check-care-alerts (3 hours)
+## Part 4: Multi-Perspective Analysis
 
-### Step 4: Update funding strategy document
+### Patient Perspective
 
-Rewrite `docs/funding-strategy.md` to reflect global outlook while maintaining Africa-first launch narrative. Also note various funding sources and amounts and likelihood of obtaining the grant/funding as outlined earlier in this plan. 
+- **Concern**: "A doctor uploaded my data without my consent"
+- **Mitigation**: Clinician-imported data is clearly labeled. Patient always has final say on whether to connect. Patient can see what data clinician has and choose to accept/reject/modify the relationship. GDPR/POPIA right to be forgotten applies to patient-owned data.
+- **Benefit**: If patient accepts, their history is already there. No manual re-entry.
 
-### Step 5: Create clinician use-case reference
+### Clinician Perspective
 
-Add coverage matrix to `docs/clinician-gaps-implementation-plan.md` for internal reference. Also document clinician ICP as mentioned in the plan and those that OneCare is not focused on. Also include clinicians that work on medical trials as a way to track the health of the peoplein the trial - document that as a specific use case that OneCare can support and also include it in future plans docs as something to work on depending on adoption of the platform and what is priority as we progress. 
+- **Concern**: "I imported 5,000 patients and now one revokes access. Do I lose my notes?"
+- **Mitigation**: Hybrid ownership model. Clinician's notes, guidance, and their original imported data remain in `clinician_patient_records`. Only the live data feed (new vitals/meds from patient) stops.
+- **Benefit**: Instant patient panel. Can manage patients who never use tech. Can transition paper patients to digital gradually.
+
+### Founder/Creator Perspective
+
+- **Concern**: Bulk import creates thousands of "ghost" accounts that inflate metrics
+- **Mitigation**: `clinician_patient_records` are NOT user accounts. They don't count toward "registered patients." Only activated patients count. Clear distinction in analytics.
+- **Benefit**: Each clinician with 5,000 patients is a potential 5,000-user pipeline. Even 10% activation = 500 real users per clinician onboarded.
+
+### Investor (Angel/VC) Perspective
+
+- **Concern**: "Are those real users or inflated numbers?"
+- **Mitigation**: Report two metrics separately: "Clinician-Managed Records" (pipeline) vs "Active Patient Users" (real). Investors appreciate honesty and the conversion funnel story.
+- **Benefit**: The bulk import model shows a scalable acquisition channel. One enterprise deal = thousands of potential users. CAC drops dramatically.
+- **Why "be careful who you take money from" matters here**: An aggressive growth investor might push to count clinician-imported records as "users" to inflate valuation. A mission-aligned investor understands the pipeline distinction.
+
+### Regulator Perspective (GDPR/POPIA/HIPAA)
+
+- **Concern**: Clinician uploading patient data to a third-party platform
+- **Mitigation**: 
+  - Clinician has existing legal basis (legitimate interest / treatment relationship) to maintain patient records
+  - OneCare acts as a data processor for the clinician (covered by Data Processing Agreement already in place)
+  - Patient data in `clinician_patient_records` is not publicly accessible; only the uploading clinician can see it
+  - When patient joins, explicit consent is obtained before any data merging
+  - Audit trail via `data_sharing_agreements` and `access_audit_logs`
+- **HIPAA**: BAA covers this for US clinicians. The clinician is the covered entity; OneCare is the business associate.
+
+### Competitor Perspective
+
+- **Concern**: "OneCare lets doctors bulk-upload patient data"
+- **Reality**: This is standard practice. Epic, Cerner, and every EHR allows data import. The difference is OneCare then gives patients control.
+- **Advantage**: Competitors (MyChart, Veradigm) are institution-owned. OneCare is patient-owned. The bulk import is just an onramp.
+
+### Independent Observer / Ethics Perspective
+
+- **Concern**: Power imbalance. Clinician uploads data, patient feels pressured to accept.
+- **Mitigation**: 
+  - Patient can decline with zero consequences
+  - No features are gated behind accepting a clinician connection
+  - Consent screen clearly states "You are not required to connect"
+  - Patient can revoke at any time after accepting
+  - Data sharing agreement is logged with timestamps for accountability
+
+---
+
+## Part 5: Implementation Plan
+
+### Step 1: Database migration
+
+- Create `clinician_patient_records` table with RLS (clinician can only see their own records)
+- Create `data_sharing_agreements` table with RLS
+- Add appropriate indexes
+
+### Step 2: Edge function `import-patient-records`
+
+- Accepts CSV-parsed array of patient records
+- Validates, deduplicates, inserts into `clinician_patient_records`
+- Optionally triggers invitations
+
+### Step 3: Bulk Import UI
+
+- New page `/clinician/patients/import` with CSV upload, preview table, data model selector
+- Link from ClinicianPatients page header
+
+### Step 4: Patient activation consent screen
+
+- New component shown when a patient signs up/logs in and has pending clinician-imported records matched to their email
+- Shows data summary, model choices, accept/decline
+
+### Step 5: Update clinician patient list
+
+- Show both `provider_shares` patients (current) AND `clinician_patient_records` (imported but not yet on platform)
+- Visual distinction between "Active on OneCare" vs "Clinician-Managed Record"
+
+### Step 6: Update docs
+
+- Add data ownership framework to `docs/comprehensive-platform-review.md`
+- Update `docs/future-roadmap.md` with bulk import as implemented feature
