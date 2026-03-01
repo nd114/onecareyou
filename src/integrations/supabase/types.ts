@@ -457,6 +457,102 @@ export type Database = {
           },
         ]
       }
+      clinician_patient_records: {
+        Row: {
+          allergies: Json | null
+          blood_type: string | null
+          clinician_data_consent_given_at: string | null
+          clinician_user_id: string
+          created_at: string
+          data_sharing_model: string
+          date_of_birth: string | null
+          gender: string | null
+          health_conditions: Json | null
+          id: string
+          import_source: string
+          invitation_status: string
+          linked_user_id: string | null
+          medications: Json | null
+          notes: string | null
+          patient_data_consent_given_at: string | null
+          patient_email: string | null
+          patient_name: string
+          patient_phone: string | null
+          practice_id: string | null
+          provider_share_id: string | null
+          tags: Json | null
+          updated_at: string
+          vitals_history: Json | null
+        }
+        Insert: {
+          allergies?: Json | null
+          blood_type?: string | null
+          clinician_data_consent_given_at?: string | null
+          clinician_user_id: string
+          created_at?: string
+          data_sharing_model?: string
+          date_of_birth?: string | null
+          gender?: string | null
+          health_conditions?: Json | null
+          id?: string
+          import_source?: string
+          invitation_status?: string
+          linked_user_id?: string | null
+          medications?: Json | null
+          notes?: string | null
+          patient_data_consent_given_at?: string | null
+          patient_email?: string | null
+          patient_name: string
+          patient_phone?: string | null
+          practice_id?: string | null
+          provider_share_id?: string | null
+          tags?: Json | null
+          updated_at?: string
+          vitals_history?: Json | null
+        }
+        Update: {
+          allergies?: Json | null
+          blood_type?: string | null
+          clinician_data_consent_given_at?: string | null
+          clinician_user_id?: string
+          created_at?: string
+          data_sharing_model?: string
+          date_of_birth?: string | null
+          gender?: string | null
+          health_conditions?: Json | null
+          id?: string
+          import_source?: string
+          invitation_status?: string
+          linked_user_id?: string | null
+          medications?: Json | null
+          notes?: string | null
+          patient_data_consent_given_at?: string | null
+          patient_email?: string | null
+          patient_name?: string
+          patient_phone?: string | null
+          practice_id?: string | null
+          provider_share_id?: string | null
+          tags?: Json | null
+          updated_at?: string
+          vitals_history?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinician_patient_records_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinician_patient_records_provider_share_id_fkey"
+            columns: ["provider_share_id"]
+            isOneToOne: false
+            referencedRelation: "provider_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinician_profiles: {
         Row: {
           avatar_url: string | null
@@ -594,6 +690,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      data_sharing_agreements: {
+        Row: {
+          agreed_at: string
+          agreed_by: string
+          clinician_record_id: string | null
+          clinician_user_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          patient_user_id: string | null
+          permissions: Json
+          revoked_at: string | null
+          revoked_by: string | null
+          sharing_model: string
+          terms_version: string
+        }
+        Insert: {
+          agreed_at?: string
+          agreed_by?: string
+          clinician_record_id?: string | null
+          clinician_user_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          patient_user_id?: string | null
+          permissions?: Json
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sharing_model?: string
+          terms_version?: string
+        }
+        Update: {
+          agreed_at?: string
+          agreed_by?: string
+          clinician_record_id?: string | null
+          clinician_user_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          patient_user_id?: string | null
+          permissions?: Json
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sharing_model?: string
+          terms_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_sharing_agreements_clinician_record_id_fkey"
+            columns: ["clinician_record_id"]
+            isOneToOne: false
+            referencedRelation: "clinician_patient_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ehr_connections: {
         Row: {

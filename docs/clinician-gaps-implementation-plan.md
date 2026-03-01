@@ -3,8 +3,8 @@
 ## Overview
 This document identifies gaps in OneCare's clinician offering compared to competitors and outlines an implementation plan prioritized by revenue impact.
 
-**Last Updated:** January 2026
-**Analysis Scope:** Clinician-focused features, subscription system, enterprise capabilities
+**Last Updated:** March 2026
+**Analysis Scope:** Clinician-focused features, subscription system, enterprise capabilities, bulk patient onboarding
 
 ---
 
@@ -14,17 +14,42 @@ This document identifies gaps in OneCare's clinician offering compared to compet
 
 | Feature | OneCare (Current) | Practice Fusion | SimplePractice | Kareo |
 |---------|-------------------|-----------------|----------------|-------|
-| Clinician Subscriptions | ❌ None | ✅ $149/mo | ✅ $99/mo | ✅ $110/mo |
-| Patient Limits | ❌ Unlimited (no enforcement) | ✅ Tiered | ✅ Tiered | ✅ Tiered |
-| Multi-Seat/Team | ❌ Not implemented | ✅ Built-in | ✅ Built-in | ✅ Built-in |
+| Clinician Subscriptions | ✅ Tiered (Trial/Pro/Enterprise) | ✅ $149/mo | ✅ $99/mo | ✅ $110/mo |
+| Patient Limits | ✅ Tier-based enforcement | ✅ Tiered | ✅ Tiered | ✅ Tiered |
+| Multi-Seat/Team | ⚠️ DB ready, UI minimal | ✅ Built-in | ✅ Built-in | ✅ Built-in |
+| Bulk Patient Import | ✅ CSV import with data models | ❌ EHR only | ❌ | ✅ Via migration |
 | Practice Branding | ❌ Not implemented | ✅ Full | ✅ Limited | ✅ Full |
-| EHR Integration | ❌ Not implemented | ✅ Native | ✅ Via API | ✅ Built-in |
+| EHR Integration | ⚠️ Stubs + DB tables (coming soon) | ✅ Native | ✅ Via API | ✅ Built-in |
 | Guidance Templates | ❌ Not implemented | ✅ Library | ✅ Templates | ✅ Built-in |
-| HIPAA/BAA | ❌ No documentation | ✅ Full | ✅ Full | ✅ Full |
+| HIPAA/BAA | ✅ Digital BAA signing | ✅ Full | ✅ Full | ✅ Full |
 | API Access | ❌ Not implemented | ✅ Enterprise | ✅ Enterprise | ✅ Yes |
 | SMS Notifications | ❌ Not implemented | ✅ Yes | ✅ Yes | ✅ Yes |
+| Data Ownership Models | ✅ 4 models (unique differentiator) | ❌ | ❌ | ❌ |
 
-**Key Insight:** OneCare is currently offering clinician access for free with no resource limits, missing significant revenue opportunity.
+**Key Insight:** OneCare's bulk patient import with flexible data ownership models is a unique differentiator. No competitor gives patients choice over their data relationship with clinicians.
+
+---
+
+## Bulk Patient Onboarding (Implemented)
+
+### What's Live
+- **`clinician_patient_records` table**: Clinician-owned patient data with full clinical fields
+- **`data_sharing_agreements` table**: Formal record of data model choices
+- **CSV Import UI**: `/clinician/patients/import` with 5-step wizard (Upload → Review → Data Model → Import → Done)
+- **Edge function**: `import-patient-records` with server-side validation, dedup, batch processing
+- **Updated patient list**: Tabs for "Connected" (active OneCare patients) and "Managed" (clinician-imported records)
+
+### Four Data Sharing Models
+1. **Clinician-Managed**: Patient not on OneCare; clinician owns all data
+2. **Patient-Managed**: Patient owns data, clinician gets read access via provider_shares
+3. **Collaborative**: Both parties read/write; merged data with source tagging
+4. **View-Only**: Read-only access, time-limited (30 days default)
+
+### What's Next
+- Patient activation consent screen (when imported patient joins OneCare)
+- Per-patient tag management and advanced filtering
+- "Invite to OneCare" button on managed records
+- Data merging logic for Model 3 (Collaborative)
 
 ---
 

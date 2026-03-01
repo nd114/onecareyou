@@ -56,6 +56,7 @@ import ClinicianPatientDetail from "./pages/ClinicianPatientDetail";
 import ClinicianPatients from "./pages/ClinicianPatients";
 import ClinicianGuidance from "./pages/ClinicianGuidance";
 import ClinicianAlerts from "./pages/ClinicianAlerts";
+import ClinicianPatientImport from "./pages/ClinicianPatientImport";
 import Sitemap from "./pages/Sitemap";
 import Careers from "./pages/Careers";
 import JobDetail from "./pages/JobDetail";
@@ -112,6 +113,11 @@ const App = () => (
             <Route path="/clinician/alerts" element={
               <ProtectedRoute>
                 <ClinicianAlerts />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/patients/import" element={
+              <ProtectedRoute>
+                <ClinicianPatientImport />
               </ProtectedRoute>
             } />
             <Route path="/clinician/settings" element={
