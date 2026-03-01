@@ -37,10 +37,33 @@ This document outlines planned features that are not yet implemented but are par
 
 ---
 
+## ✅ IMPLEMENTED: Bulk Patient Onboarding & Data Ownership
+
+### Bulk Import System ✅
+- [x] `clinician_patient_records` table for clinician-owned patient data
+- [x] `data_sharing_agreements` table for formal consent tracking
+- [x] `import-patient-records` edge function (CSV batch processing, deduplication)
+- [x] Bulk import UI at `/clinician/patients/import`
+- [x] Connected/Managed tabs on clinician patient list
+
+### Patient Activation Flow ✅
+- [x] `usePendingClinicianRecords` email-based matching
+- [x] `ClinicianDataConsentDialog` with 4 sharing models (Collaborate/Ownership/View-Only/Decline)
+- [x] `PendingClinicianRecordsBanner` auto-prompts on patient dashboard
+- [x] Data merging: creates `data_sharing_agreements` + `provider_shares`
+
+### Management Enhancements ✅
+- [x] Invite to OneCare button per managed record
+- [x] Per-patient tag management
+- [x] Inline record editing dialog (full CRUD)
+- [x] Advanced filtering by tags, conditions, invitation status
+
+---
+
 ## Phase 2: Sprint 2 Features (PLANNED)
 
 ### Hybrid Data Ownership Implementation
-- [ ] `clinician_patient_records` table for clinician-owned notes/assessments
+- [x] `clinician_patient_records` table for clinician-owned notes/assessments (done above)
 - [ ] Revocation behavior: clinician retains own notes on access revocation
 - [ ] Historical data snapshots on revocation
 - [ ] Patient read-only access to clinician's guidance history

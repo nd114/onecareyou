@@ -29,6 +29,8 @@ import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinicia
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InviteToOneCareButton, PatientTagManager } from '@/components/clinician/ManagedRecordActions';
+import { EditManagedRecordDialog } from '@/components/clinician/EditManagedRecordDialog';
+import { ManagedRecordFilterBar, applyManagedRecordFilters, type ManagedRecordFilters } from '@/components/clinician/ManagedRecordFilters';
 
 const ClinicianPatients = () => {
   const navigate = useNavigate();
@@ -61,6 +63,7 @@ const ClinicianPatients = () => {
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState('connected');
+  const [managedFilters, setManagedFilters] = useState<ManagedRecordFilters>({ tag: '', condition: '', status: '' });
 
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patients;
@@ -72,15 +75,21 @@ const ClinicianPatients = () => {
     );
   }, [patients, patientSearch]);
   const filteredManagedRecords = useMemo(() => {
-    if (!patientSearch.trim()) return managedRecords;
-    const searchLower = patientSearch.toLowerCase();
-    return managedRecords.filter(
-      (r) =>
-        r.patient_name.toLowerCase().includes(searchLower) ||
-        (r.patient_email || '').toLowerCase().includes(searchLower) ||
-        (r.tags as string[]).some(t => t.toLowerCase().includes(searchLower))
-    );
-  }, [managedRecords, patientSearch]);
+    let filtered = managedRecords;
+    // Apply advanced filters
+    filtered = applyManagedRecordFilters(filtered, managedFilters);
+    // Apply search
+    if (patientSearch.trim()) {
+      const searchLower = patientSearch.toLowerCase();
+      filtered = filtered.filter(
+        (r) =>
+          r.patient_name.toLowerCase().includes(searchLower) ||
+          (r.patient_email || '').toLowerCase().includes(searchLower) ||
+          (r.tags as string[]).some(t => t.toLowerCase().includes(searchLower))
+      );
+    }
+    return filtered;
+  }, [managedRecords, patientSearch, managedFilters]);
 
   const isLoading = isLoadingProfile || isLoadingPatients || isLoadingRecords;
 
@@ -399,7 +408,14 @@ const ClinicianPatients = () => {
                         onChange={(e) => setPatientSearch(e.target.value)}
                         className="pl-10"
                       />
-                    </div>
+                  </div>
+                  {managedRecords.length > 3 && (
+                    <ManagedRecordFilterBar
+                      records={managedRecords}
+                      filters={managedFilters}
+                      onFiltersChange={setManagedFilters}
+                    />
+                  )}
                   </div>
                 )}
 
@@ -463,6 +479,7 @@ const ClinicianPatients = () => {
                             <div className="flex items-center gap-2 mt-2 pt-2 border-t">
                               <InviteToOneCareButton record={record} />
                               <PatientTagManager record={record} />
+                              <EditManagedRecordDialog record={record} />
                             </div>
                           </div>
                         </div>
