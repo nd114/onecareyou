@@ -28,6 +28,7 @@ import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinician/BulkPatientActions';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InviteToOneCareButton, PatientTagManager } from '@/components/clinician/ManagedRecordActions';
 
 const ClinicianPatients = () => {
   const navigate = useNavigate();
@@ -458,6 +459,10 @@ const ClinicianPatients = () => {
                                   {record.medications.length} med{record.medications.length !== 1 ? 's' : ''}
                                 </Badge>
                               )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 pt-2 border-t">
+                              <InviteToOneCareButton record={record} />
+                              <PatientTagManager record={record} />
                             </div>
                           </div>
                         </div>
