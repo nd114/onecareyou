@@ -1893,6 +1893,24 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_basic_info: {
+        Row: {
+          email: string | null
+          name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          email?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          email?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
