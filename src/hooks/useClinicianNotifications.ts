@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 
 export interface ClinicianGuidanceNotification {
   id: string;
@@ -29,7 +30,9 @@ export interface ClinicianNotificationPreferences {
 
 export const useClinicianNotifications = () => {
   const { user } = useAuth();
+  const { clinicianProfile } = useClinicianProfile();
   const queryClient = useQueryClient();
+  const isClinician = !!clinicianProfile;
 
   // Fetch unread notifications for the clinician
   const { data: notifications = [], isLoading } = useQuery({
@@ -81,8 +84,8 @@ export const useClinicianNotifications = () => {
 
       return notificationsWithDetails;
     },
-    enabled: !!user,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    enabled: !!user && isClinician,
+    refetchInterval: isClinician ? 30000 : false,
   });
 
   // Fetch notification preferences
@@ -100,7 +103,7 @@ export const useClinicianNotifications = () => {
       if (error) throw error;
       return data as ClinicianNotificationPreferences | null;
     },
-    enabled: !!user,
+    enabled: !!user && isClinician,
   });
 
   // Mark notification as read

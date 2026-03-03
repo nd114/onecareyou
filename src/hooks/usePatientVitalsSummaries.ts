@@ -24,15 +24,15 @@ export function usePatientVitalsSummaries(patientUserIds: string[]) {
     queryFn: async () => {
       if (!user || patientUserIds.length === 0) return [];
 
-      // Fetch recent vitals for all patients (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Fetch recent vitals for all patients (last 90 days)
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
       const { data: vitalsData, error: vitalsError } = await supabase
         .from('vitals')
         .select('id, user_id, type, value, secondary_value, unit, recorded_at')
         .in('user_id', patientUserIds)
-        .gte('recorded_at', thirtyDaysAgo.toISOString())
+        .gte('recorded_at', ninetyDaysAgo.toISOString())
         .order('recorded_at', { ascending: false });
 
       if (vitalsError) {

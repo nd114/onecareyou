@@ -76,18 +76,17 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser();
     
-    if (claimsError || !claimsData?.claims) {
-      console.error("Auth error:", claimsError);
+    if (authError || !authUser) {
+      console.error("Auth error:", authError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized - invalid authentication token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const clinicianUserId = claimsData.claims.sub;
+    const clinicianUserId = authUser.id;
     console.log('Authenticated clinician:', clinicianUserId);
 
     // Parse and validate input
@@ -206,7 +205,7 @@ Deno.serve(async (req) => {
         .select('*')
         .eq('user_id', userId)
         .order('recorded_at', { ascending: false })
-        .limit(50);
+        .limit(200);
       
       result.vitals = vitals || [];
     }
