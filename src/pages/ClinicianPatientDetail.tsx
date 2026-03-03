@@ -63,7 +63,7 @@ const ClinicianPatientDetail = () => {
         .select('*')
         .eq('user_id', patient.user_id)
         .order('recorded_at', { ascending: false })
-        .limit(100);
+        .limit(500);
       
       if (error) throw error;
       return data;
@@ -94,14 +94,14 @@ const ClinicianPatientDetail = () => {
     queryKey: ['patient-schedule', patient?.user_id],
     queryFn: async () => {
       if (!patient?.user_id) return [];
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
       
       const { data, error } = await supabase
         .from('schedule_entries')
         .select('*, medication:medications(*)')
         .eq('user_id', patient.user_id)
-        .gte('scheduled_time', thirtyDaysAgo.toISOString())
+        .gte('scheduled_time', ninetyDaysAgo.toISOString())
         .order('scheduled_time', { ascending: false });
       
       if (error) throw error;
