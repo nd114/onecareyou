@@ -1,81 +1,81 @@
 
 
-## Comprehensive Platform Audit & Fix Plan
+## Comprehensive Data Visibility & RLS Audit Results
 
-### Critical Bug: RLS "permission denied for table users" (affects ALL logged-in users)
-
-The network logs show **every request from demo-patient-1** to `profiles`, `clinician_profiles`, and `clinician_profiles_public` returns **403 with "permission denied for table users"**. This means:
-
-- **Patient cannot load their own profile** (name shows from JWT metadata only, not DB)
-- **Patient dashboard may show incorrect/missing data**
-- **Clinician notifications, guidance settings, and profile fetch all fail for patients**
-
-**Root cause**: Multiple RLS policies across tables contain direct subqueries like `(SELECT email FROM auth.users WHERE id = auth.uid())`. The `authenticated` role does not have SELECT permission on `auth.users`, so when PostgreSQL evaluates these policy expressions, the entire query fails -- even if a simpler policy (like `auth.uid() = user_id`) would grant access.
-
-A `get_current_user_email()` SECURITY DEFINER function already exists to solve exactly this, but many policies were created later without using it.
-
-**Affected policies (must be rewritten):**
-
-| Table | Policy | Direct `auth.users` reference |
-|---|---|---|
-| `profiles` | "Clinicians can view basic patient info from shares" | `ps.provider_email = (SELECT email FROM auth.users...)` |
-| `profiles` | "Clinicians can view shared patient profiles with permission" | calls `clinician_has_patient_permission` which uses auth.users |
-| `profiles` | "Patients can view clinician names from guidance" | subquery via `clinician_guidance` (indirect, may be safe) |
-| `clinician_profiles` | "Patients can view clinician profiles from pending records" | `(SELECT email FROM auth.users...)` |
-| `clinician_profiles` | "Patients can view clinician profiles from guidance" | subquery in `clinician_guidance` |
-| `clinician_patient_records` | "Patients can view pending records by email" | `(SELECT email FROM auth.users...)` |
-| `clinician_patient_records` | "Patients can accept or decline pending records" | `(SELECT email FROM auth.users...)` |
-| `patient_invitations` | "Patients can view invitations by email" | `(SELECT email FROM auth.users...)` |
-| `patient_invitations` | "Patients can accept or decline invitations" | `(SELECT email FROM auth.users...)` |
-| `practice_invitations` | "Practice members can view invitations" | `(SELECT email FROM auth.users...)` |
-| `practice_invitations` | "Practice managers can update invitations" | `(SELECT email FROM auth.users...)` |
-| `job_applications` | "Applicants can view their own applications" | `(SELECT email FROM auth.users...)` |
-| `clinician_profiles_public` (view) | likely inherits from `clinician_profiles` | same issue |
-
-Also check: `clinician_has_patient_access()` and `clinician_has_patient_permission()` functions already use `auth.users` safely inside SECURITY DEFINER, so those are fine. The issue is only with policies that directly embed the subquery.
-
-**Fix**: A single SQL migration that drops and recreates all affected policies, replacing `(SELECT email FROM auth.users WHERE id = auth.uid())` with `get_current_user_email()`.
+### Overall RLS Status: Solid Foundation
+- All 34 tables have RLS enabled
+- No tables missing policies entirely
+- Only 1 linter warning (expected: public-read tables like `emergency_numbers`, `international_drug_mappings`, and public-insert for `job_applications`)
 
 ---
 
-### Bug 2: ClinicianWhyOneCare page missing key features
+### Issues Found
 
-The "Why OneCare" page for clinicians lists 6 advantages and a 9-row comparison table, but several implemented features are absent:
+#### 1. Stale Demo Data (Most Impactful)
+Demo patient vitals and schedule entries mostly end around **Jan 27, 2026** -- over a month ago. This causes multiple visibility problems:
 
-**Missing from the page:**
-- **Bulk Patient Import** (CSV onboarding with deduplication)
-- **Clinician-Managed Records** (data ownership framework)
-- **Patient Guidance System** (bidirectional clinical instructions with status tracking)
-- **Vital Alert Thresholds** (automated clinician alerting on out-of-range vitals)
-- **Team/Practice Management** (multi-clinician practices with RBAC)
-- **BAA/HIPAA Compliance** (built-in Business Associate Agreement)
+| Patient | Vitals (last 30d) | Vitals (last 90d) | Schedule (last 30d) |
+|---|---|---|---|
+| demo-patient-1 (James) | 5 | 297 | 24 |
+| demo-patient-2 | 0 | 145 | 0 |
+| demo-patient-3 | 0 | 149 | 0 |
+| demo-patient-4 | 0 | 132 | 0 |
+| demo-patient-5 | 0 | 143 | 0 |
 
-**Fix**: Add these features to the `uniqueAdvantages` array and the `comparisonData` comparison table.
+**Impact**: The clinician dashboard's `usePatientVitalsSummaries` hook uses a **30-day window**, so 4 out of 5 demo patients show empty vitals and no adherence data on the dashboard. Only James Thompson shows minimal data.
+
+**Fix**: Update `usePatientVitalsSummaries.ts` to use a 90-day window (matching the patient-side vitals page fix already applied), or re-seed demo data with current dates.
+
+#### 2. Clinician Patient Detail Page - Vitals Limit Too Low
+`ClinicianPatientDetail.tsx` line 66 uses `.limit(100)` for vitals, but demo-patient-1 has **511 vitals**. This truncates the data significantly. The `get-shared-patient-data` edge function has a similar `.limit(50)`.
+
+**Fix**: Increase limit to 500 or remove the limit and rely on date filtering instead.
+
+#### 3. Clinician Detail Page - Schedule Window Too Narrow
+`ClinicianPatientDetail.tsx` line 98 uses a 30-day window for schedule entries. Most demo patients have no data in that window.
+
+**Fix**: Match the 90-day window or make it selectable like the patient vitals page.
+
+#### 4. Network Request Anomaly - Patient Querying Clinician Notifications
+The network logs show `demo-patient-1` (user `08ebec6a`) querying `clinician_guidance_notifications` with a clinician filter for their own user ID. This always returns empty because the patient isn't a clinician. This is a wasted query -- the `useClinicianNotifications` hook likely runs even when logged in as a patient.
+
+**Fix**: Add a guard in `useClinicianNotifications` to skip the query if the user doesn't have a clinician profile.
+
+#### 5. Profiles RLS - Redundant Overlapping SELECT Policies
+The `profiles` table has two overlapping SELECT policies for clinician access:
+- "Clinicians can view basic patient info from shares" (checks provider_shares)  
+- "Clinicians can view shared patient profiles with permission" (checks `clinician_has_patient_permission('profile')`)
+
+Both are PERMISSIVE, so they OR together. This isn't a bug, but the first policy grants SELECT on ALL profile columns to any clinician with an active share, regardless of the `profile` permission flag. This means a clinician without `profile: true` can still see sensitive fields like `date_of_birth`, `allergies`, `health_conditions`.
+
+**Fix**: The broader "basic info" policy should ideally be restricted via a view that only exposes `name` and `email`, or removed in favor of the permission-based policy.
+
+#### 6. `get-shared-patient-data` Edge Function - `getClaims` API
+The edge function uses `supabaseAuth.auth.getClaims(token)` which may not be available in all Supabase JS versions. If this fails silently, clinicians get 401 errors. The standard pattern is `supabaseAuth.auth.getUser()`.
+
+**Fix**: Replace `getClaims` with `getUser()` for reliable auth extraction.
 
 ---
 
-### Implementation Steps
-
-1. **SQL Migration** -- Replace all direct `auth.users` references in RLS policies with `get_current_user_email()`. This is a single migration touching ~12 policies across 6 tables. This fixes the 403 errors for all users.
-
-2. **Update ClinicianWhyOneCare.tsx** -- Add missing clinician features (bulk import, managed records, guidance, alerts, team management, BAA) to both the advantages grid and comparison table.
-
-3. **Verify** -- After the migration, all profile/clinician_profiles queries should return 200 for both patient and clinician demo accounts.
+### What's Working Well
+- Permission keys in `provider_shares` are now correctly using `vitals`, `meds`, `adherence`, `profile`
+- No orphaned shares (all user_ids map to valid profiles)
+- `clinician_has_patient_access()` and `clinician_has_patient_permission()` security-definer functions are properly configured
+- Vitals, medications, and schedule_entries all have correct clinician-access RLS policies
+- `get_current_user_email()` security-definer function prevents auth schema access issues
 
 ---
 
-### Technical Detail: The Migration
+### Recommended Implementation Order
 
-```sql
--- For each affected policy:
--- 1. DROP POLICY "policy name" ON table;
--- 2. CREATE POLICY "policy name" ON table FOR <cmd> TO authenticated
---    USING (...replace (SELECT email FROM auth.users WHERE id = auth.uid())
---           with get_current_user_email()...);
-```
+1. **Widen clinician-side data windows** (issues 1, 2, 3) -- highest impact, fixes empty dashboards
+   - `usePatientVitalsSummaries.ts`: 30d to 90d
+   - `ClinicianPatientDetail.tsx`: vitals limit 100 to 500, schedule 30d to 90d
+   - `get-shared-patient-data` edge function: vitals limit 50 to 200
 
-This is safe because:
-- `get_current_user_email()` is SECURITY DEFINER and does the same thing
-- It already exists and is used by some policies (e.g., `provider_shares`)
-- No data changes, only policy expression rewrites
+2. **Guard clinician-only queries from patient sessions** (issue 4) -- prevents wasted network calls
+
+3. **Tighten profiles RLS policy** (issue 5) -- security hardening, lower urgency since data is health-related not credentials
+
+4. **Fix `getClaims` in edge function** (issue 6) -- preventive fix for auth reliability
 
