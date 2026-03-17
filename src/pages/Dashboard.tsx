@@ -33,6 +33,7 @@ const getQuickLinks = (showAdherence: boolean) => [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
   { label: 'Care Circle', href: '/care-circle', icon: Users },
   { label: 'Medicine Cabinet', href: '/medications', icon: Pill },
+  { label: 'Health Vault', href: '/health-vault', icon: FolderOpen },
   ...(showAdherence ? [{ label: 'Adherence Report', href: '/adherence-report', icon: BarChart3 }] : []),
   { label: 'Knowledge Base', href: '/knowledge-base', icon: BookOpen },
 ];
