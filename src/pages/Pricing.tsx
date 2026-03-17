@@ -263,6 +263,23 @@ const Pricing = () => {
             </motion.div>
           </div>
 
+          {/* Coming Soon Roadmap */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-md mx-auto mt-12 text-center"
+          >
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Coming Soon</h3>
+            <div className="flex flex-wrap justify-center gap-2">
+              {COMING_SOON_FEATURES.map((feature) => (
+                <Badge key={feature} variant="outline" className="text-xs">
+                  {feature}
+                </Badge>
+              ))}
+            </div>
+          </motion.div>
+
           {/* Clinician Link */}
           <motion.p
             initial={{ opacity: 0 }}
