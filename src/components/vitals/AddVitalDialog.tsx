@@ -773,6 +773,18 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                       >
                         Upload Different Report
                       </Button>
+
+                      {/* Save to Health Vault toggle */}
+                      <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">Save to Health Vault</p>
+                            <p className="text-xs text-muted-foreground">Also store this report in your document vault</p>
+                          </div>
+                        </div>
+                        <Switch checked={saveToVault} onCheckedChange={setSaveToVault} />
+                      </div>
                     </div>
                   )}
 
