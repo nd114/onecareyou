@@ -49,21 +49,92 @@ serve(async (req) => {
       });
     }
 
-    // Build prompt based on document metadata
-    const prompt = `You are a health document analyzer. Based on the following document metadata, provide:
-1. A brief 2-3 sentence summary of what this document likely contains
+    // Download the actual file from storage to analyze its content
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from("health-documents")
+      .download(doc.file_path);
+
+    if (downloadError || !fileData) {
+      console.error("Failed to download file:", downloadError);
+      return new Response(JSON.stringify({ error: "Failed to download file for analysis" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Build messages array with file content for multimodal analysis
+    const mimeType = doc.mime_type || "application/octet-stream";
+    const isImage = mimeType.startsWith("image/");
+    const isPdf = mimeType === "application/pdf";
+    const isText = mimeType.startsWith("text/") || mimeType === "application/json";
+
+    const systemPrompt = `You are a health document analyzer. Analyze the provided document and return:
+1. A clear 2-4 sentence summary of what this document contains, including key findings, values, or information
 2. A suggested category (one of: lab_result, prescription, discharge_summary, imaging, insurance, vaccination, referral, visit_note, other)
 3. 3-5 relevant tags for searchability
 
-Document details:
-- File name: ${doc.file_name}
+Additional context from the user:
 - User-assigned category: ${doc.category}
 - User-assigned title: ${doc.title || "Not provided"}
 - User notes: ${doc.notes || "None"}
 - Document date: ${doc.document_date || "Not specified"}
-- File type: ${doc.mime_type || "Unknown"}
+- File name: ${doc.file_name}`;
 
-Respond with a JSON object containing: { "summary": "...", "category": "...", "tags": ["...", "..."] }`;
+    let messages: any[];
+
+    if (isImage || isPdf) {
+      // Convert file to base64 for multimodal models
+      const arrayBuffer = await fileData.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let base64 = "";
+      // Encode in chunks to avoid stack overflow on large files
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        base64 += String.fromCharCode(...chunk);
+      }
+      base64 = btoa(base64);
+
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+
+      messages = [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: { url: dataUrl },
+            },
+            {
+              type: "text",
+              text: "Please analyze this health document thoroughly. Extract key findings, values, diagnoses, medications, or any clinically relevant information and provide a detailed summary.",
+            },
+          ],
+        },
+      ];
+    } else if (isText) {
+      // Read text content directly
+      const textContent = await fileData.text();
+      const truncated = textContent.slice(0, 15000); // Limit to ~15k chars
+
+      messages = [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Please analyze this health document thoroughly. Extract key findings, values, diagnoses, medications, or any clinically relevant information and provide a detailed summary.\n\n--- Document Content ---\n${truncated}`,
+        },
+      ];
+    } else {
+      // Fallback: metadata-only analysis for unsupported file types
+      messages = [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: `Based on the document metadata provided in the system prompt, provide your best analysis. The file type (${mimeType}) cannot be directly read.`,
+        },
+      ];
+    }
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -74,18 +145,18 @@ Respond with a JSON object containing: { "summary": "...", "category": "...", "t
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
-          messages: [{ role: "user", content: prompt }],
+          model: "google/gemini-2.5-flash",
+          messages,
           tools: [
             {
               type: "function",
               function: {
                 name: "classify_document",
-                description: "Classify and summarize a health document",
+                description: "Classify and summarize a health document based on its actual content",
                 parameters: {
                   type: "object",
                   properties: {
-                    summary: { type: "string", description: "2-3 sentence summary" },
+                    summary: { type: "string", description: "2-4 sentence summary with key findings" },
                     category: {
                       type: "string",
                       enum: [
@@ -114,6 +185,20 @@ Respond with a JSON object containing: { "summary": "...", "category": "...", "t
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
       console.error("AI gateway error:", aiResponse.status, errText);
+
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: "AI rate limit exceeded. Please try again in a moment." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       return new Response(JSON.stringify({ error: "AI processing failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -122,7 +207,7 @@ Respond with a JSON object containing: { "summary": "...", "category": "...", "t
 
     const aiData = await aiResponse.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     let result = { summary: "", category: doc.category, tags: [] as string[] };
     if (toolCall?.function?.arguments) {
       try {
