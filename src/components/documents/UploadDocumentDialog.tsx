@@ -191,7 +191,7 @@ export function UploadDocumentDialog() {
                 <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium">AI categorize & summarize</p>
-                  <p className="text-xs text-muted-foreground">Uses AI to auto-tag and generate a summary</p>
+                  <p className="text-xs text-muted-foreground">AI reads your file to auto-tag and generate a summary</p>
                 </div>
               </div>
               <Switch
@@ -203,7 +203,7 @@ export function UploadDocumentDialog() {
             {aiSummarize && (
               <div className="flex items-start gap-2 p-2 rounded-md bg-primary/5 border border-primary/20 text-xs text-muted-foreground">
                 <Info className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
-                <span>Document metadata will be sent to AI for analysis. No file contents are shared — only title, category, and notes.</span>
+                <span>Your file will be securely sent to AI for analysis. It reads the document content to generate an accurate summary, category, and tags.</span>
               </div>
             )}
 
