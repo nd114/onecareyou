@@ -367,6 +367,23 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
         );
       }
 
+      // Save to Health Vault if enabled and we have the file
+      if (saveToVault && uploadedFile) {
+        try {
+          await uploadDocument.mutateAsync({
+            file: uploadedFile,
+            title: `Lab Report - ${format(selectedDate, 'MMM d, yyyy')}`,
+            category: 'lab_result',
+            documentDate: format(selectedDate, 'yyyy-MM-dd'),
+            notes: `Extracted ${selectedVitals.length} health metrics`,
+            sourceContext: 'vitals_upload',
+          });
+        } catch (err) {
+          console.error('Failed to save to vault:', err);
+          // Don't fail the whole save
+        }
+      }
+
       toast.success(`Saved ${selectedVitals.length} health metrics!`);
       resetForm();
       onOpenChange(false);
