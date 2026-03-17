@@ -1,6 +1,7 @@
 // Single Source of Truth for all patient pricing, feature lists, and limits
 
 export const FREE_MEDICATION_LIMIT = 3;
+export const FREE_DOCUMENT_LIMIT = 3;
 
 // Stripe price IDs
 export const STRIPE_PRICES = {
@@ -41,13 +42,14 @@ export const PREMIUM_FEATURES = [
   'Family member profiles',
   'AI lab report parsing',
   'Health reports export',
+  'Health Document Vault',
+  'AI document summaries',
 ] as const;
 
 // Features in active development — shown separately on pricing page
 export const COMING_SOON_FEATURES = [
   'Refill reminders',
   'Priority support',
-  'Health Document Vault',
 ] as const;
 
 // Combined list for Pricing page detail view
@@ -75,5 +77,6 @@ export const LANDING_PREMIUM_FEATURES = [
   'Unlimited medications',
   'Family member profiles',
   'AI lab report parsing',
+  'Health Document Vault',
   'Health reports export',
 ] as const;
