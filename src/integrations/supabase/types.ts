@@ -747,6 +747,51 @@ export type Database = {
           },
         ]
       }
+      document_shares: {
+        Row: {
+          document_id: string
+          id: string
+          is_active: boolean
+          provider_share_id: string
+          revoked_at: string | null
+          shared_at: string
+          user_id: string
+        }
+        Insert: {
+          document_id: string
+          id?: string
+          is_active?: boolean
+          provider_share_id: string
+          revoked_at?: string | null
+          shared_at?: string
+          user_id: string
+        }
+        Update: {
+          document_id?: string
+          id?: string
+          is_active?: boolean
+          provider_share_id?: string
+          revoked_at?: string | null
+          shared_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_shares_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "health_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_shares_provider_share_id_fkey"
+            columns: ["provider_share_id"]
+            isOneToOne: false
+            referencedRelation: "provider_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ehr_connections: {
         Row: {
           clinician_user_id: string
