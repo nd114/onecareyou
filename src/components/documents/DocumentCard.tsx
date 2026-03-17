@@ -188,6 +188,13 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
         onConsent={handleConsentGranted}
         onDecline={() => setShowConsentDialog(false)}
       />
+
+      <ShareDocumentDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        documentId={doc.id}
+        documentTitle={doc.title || doc.file_name}
+      />
     </>
   );
 }
