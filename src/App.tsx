@@ -166,6 +166,11 @@ const App = () => (
                 <CareCircle />
               </ProtectedRoute>
             } />
+            <Route path="/health-vault" element={
+              <ProtectedRoute>
+                <HealthVault />
+              </ProtectedRoute>
+            } />
             <Route path="/family" element={
               <ProtectedRoute>
                 <FamilyDashboard />
