@@ -29,8 +29,11 @@ interface DocumentCardProps {
 export function DocumentCard({ document: doc, isPremium = false }: DocumentCardProps) {
   const { deleteDocument, getDownloadUrl, triggerSummarize } = useHealthDocuments();
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
+  const { allShareCounts } = useDocumentShares();
   const [downloading, setDownloading] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const shareCount = allShareCounts[doc.id] || 0;
 
   const categoryInfo = DOCUMENT_CATEGORIES.find((c) => c.value === doc.category) || DOCUMENT_CATEGORIES[DOCUMENT_CATEGORIES.length - 1];
 
