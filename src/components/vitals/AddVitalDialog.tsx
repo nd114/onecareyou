@@ -50,6 +50,7 @@ const vitalCategories = [
 export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogProps) {
   const { hasConsent, grantConsent, checkConsentRequired } = useAIConsent();
   const { getDisplayUnit, getNormalRange, convertToBaseUnit } = useUnitPreferences();
+  const { uploadDocument } = useHealthDocuments();
   
   const [mode, setMode] = useState<'manual' | 'upload'>('manual');
   const [step, setStep] = useState<'entry' | 'confirm'>('entry');
@@ -66,6 +67,8 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const [extractedVitals, setExtractedVitals] = useState<ExtractedVital[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [saveToVault, setSaveToVault] = useState(true);
   
   // Local OCR progress state
   const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null);
