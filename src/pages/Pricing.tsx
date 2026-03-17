@@ -145,7 +145,7 @@ const Pricing = () => {
                 )}
                 <CardHeader className="text-center pb-2">
                   <CardTitle className="text-2xl">Free</CardTitle>
-                  <CardDescription>Perfect for getting started</CardDescription>
+                  <CardDescription>Everything you need for daily health tracking</CardDescription>
                   <div className="pt-4">
                     <span className="text-4xl font-bold">$0</span>
                     <span className="text-muted-foreground">/forever</span>
