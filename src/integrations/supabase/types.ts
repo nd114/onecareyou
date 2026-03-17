@@ -1034,6 +1034,74 @@ export type Database = {
         }
         Relationships: []
       }
+      health_documents: {
+        Row: {
+          ai_category: string | null
+          ai_summary: string | null
+          ai_tags: Json | null
+          category: string
+          created_at: string
+          document_date: string | null
+          family_member_id: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          notes: string | null
+          tags: Json | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_category?: string | null
+          ai_summary?: string | null
+          ai_tags?: Json | null
+          category?: string
+          created_at?: string
+          document_date?: string | null
+          family_member_id?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          tags?: Json | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_category?: string | null
+          ai_summary?: string | null
+          ai_tags?: Json | null
+          category?: string
+          created_at?: string
+          document_date?: string | null
+          family_member_id?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          tags?: Json | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_documents_family_member_id_fkey"
+            columns: ["family_member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       international_drug_mappings: {
         Row: {
           brand_name: string
