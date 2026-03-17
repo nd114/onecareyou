@@ -142,7 +142,7 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Shield className="h-5 w-5 text-status-success" />
-                  4. Additional Anonymization Measures
+                  5. Additional Security Measures
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>In addition to on-device processing, we implement the following anonymization measures:</p>
