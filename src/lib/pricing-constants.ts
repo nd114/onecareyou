@@ -76,5 +76,4 @@ export const LANDING_PREMIUM_FEATURES = [
   'Family member profiles',
   'AI lab report parsing',
   'Health reports export',
-  'Priority support (coming soon)',
 ] as const;

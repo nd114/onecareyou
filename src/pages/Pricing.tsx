@@ -248,7 +248,7 @@ const Pricing = () => {
                         ) : (
                           <>
                             <Crown className="mr-2 h-4 w-4" />
-                            Go Premium
+                            Unlock Full Access
                           </>
                         )}
                       </Button>

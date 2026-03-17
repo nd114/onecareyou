@@ -353,7 +353,7 @@ const Dashboard = () => {
                   <div className="mt-6 p-4 rounded-xl gradient-primary text-primary-foreground">
                     <p className="font-semibold mb-1">Upgrade to Premium</p>
                     <p className="text-sm opacity-90 mb-3">
-                      Unlock unlimited medications and provider sharing
+                      Unlock unlimited medications, family profiles, and AI health insights
                     </p>
                     <Button size="sm" variant="secondary" asChild>
                       <Link to="/pricing">
