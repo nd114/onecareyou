@@ -1,19 +1,32 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Search, Filter, FolderOpen, Sparkles, Loader2 } from 'lucide-react';
+import { FileText, Search, FolderOpen, Loader2, Crown, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { FREE_DOCUMENT_LIMIT } from '@/lib/pricing-constants';
 
 const HealthVault = () => {
   const { profile } = useAuth();
   const { documents, isLoading } = useHealthDocuments();
+  const { checkSubscription, isPremium } = useSubscription();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory | 'all'>('all');
+  const [checkedSub, setCheckedSub] = useState(false);
+
+  useEffect(() => {
+    checkSubscription().then(() => setCheckedSub(true));
+  }, [checkSubscription]);
+
+  const isOverFreeLimit = !isPremium && documents.length >= FREE_DOCUMENT_LIMIT;
 
   const filteredDocuments = useMemo(() => {
     let filtered = documents;
@@ -61,8 +74,38 @@ const HealthVault = () => {
                 Store and organize all your health documents in one place
               </p>
             </div>
-            <UploadDocumentDialog />
+            {!isOverFreeLimit && <UploadDocumentDialog />}
           </div>
+
+          {/* Premium Upsell Banner for free users at limit */}
+          {isOverFreeLimit && (
+            <Card className="mb-6 border-primary/30 bg-primary/5">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Crown className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">You've reached {FREE_DOCUMENT_LIMIT} documents</p>
+                  <p className="text-xs text-muted-foreground">Upgrade to Premium for unlimited document storage and AI summaries.</p>
+                </div>
+                <Button size="sm" asChild className="flex-shrink-0">
+                  <Link to="/pricing">
+                    <Crown className="h-4 w-4 mr-1" />
+                    Upgrade
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Free tier info for users not at limit */}
+          {!isPremium && !isOverFreeLimit && documents.length > 0 && (
+            <div className="mb-4 text-xs text-muted-foreground flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              {documents.length} of {FREE_DOCUMENT_LIMIT} free documents used.{' '}
+              <Link to="/pricing" className="text-primary hover:underline">Upgrade for unlimited</Link>
+            </div>
+          )}
 
           {/* Search */}
           <div className="relative mb-4">
@@ -123,7 +166,7 @@ const HealthVault = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <DocumentCard document={doc} />
+                  <DocumentCard document={doc} isPremium={isPremium} />
                 </motion.div>
               ))}
             </div>

@@ -8,7 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Upload, FileText, Check, X, Loader2, Shield, Lock } from 'lucide-react';
+import { CalendarIcon, Upload, FileText, Check, X, Loader2, Shield, Lock, FolderOpen } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useHealthDocuments } from '@/hooks/useHealthDocuments';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,6 +50,7 @@ const vitalCategories = [
 export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogProps) {
   const { hasConsent, grantConsent, checkConsentRequired } = useAIConsent();
   const { getDisplayUnit, getNormalRange, convertToBaseUnit } = useUnitPreferences();
+  const { uploadDocument } = useHealthDocuments();
   
   const [mode, setMode] = useState<'manual' | 'upload'>('manual');
   const [step, setStep] = useState<'entry' | 'confirm'>('entry');
@@ -64,6 +67,8 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const [extractedVitals, setExtractedVitals] = useState<ExtractedVital[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [saveToVault, setSaveToVault] = useState(true);
   
   // Local OCR progress state
   const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null);
@@ -87,6 +92,8 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setPendingFile(null);
     setOcrProgress(null);
     setUsedLocalOCR(false);
+    setUploadedFile(null);
+    setSaveToVault(true);
   };
 
   // Combine date and time into a single Date object
@@ -311,6 +318,9 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
       return;
     }
 
+    // Store file reference for vault save
+    setUploadedFile(file);
+
     // Check if consent is required
     if (checkConsentRequired()) {
       setPendingFile(file);
@@ -355,6 +365,23 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
           'Extracted from lab report', 
           selectedDate
         );
+      }
+
+      // Save to Health Vault if enabled and we have the file
+      if (saveToVault && uploadedFile) {
+        try {
+          await uploadDocument.mutateAsync({
+            file: uploadedFile,
+            title: `Lab Report - ${format(selectedDate, 'MMM d, yyyy')}`,
+            category: 'lab_result',
+            documentDate: format(selectedDate, 'yyyy-MM-dd'),
+            notes: `Extracted ${selectedVitals.length} health metrics`,
+            sourceContext: 'vitals_upload',
+          });
+        } catch (err) {
+          console.error('Failed to save to vault:', err);
+          // Don't fail the whole save
+        }
       }
 
       toast.success(`Saved ${selectedVitals.length} health metrics!`);
@@ -746,6 +773,18 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                       >
                         Upload Different Report
                       </Button>
+
+                      {/* Save to Health Vault toggle */}
+                      <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">Save to Health Vault</p>
+                            <p className="text-xs text-muted-foreground">Also store this report in your document vault</p>
+                          </div>
+                        </div>
+                        <Switch checked={saveToVault} onCheckedChange={setSaveToVault} />
+                      </div>
                     </div>
                   )}
 

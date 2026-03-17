@@ -42,12 +42,13 @@ export interface HealthDocument {
   ai_category: string | null;
   ai_tags: string[] | null;
   document_date: string | null;
+  source_context: string;
   created_at: string;
   updated_at: string;
 }
 
 export function useHealthDocuments() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: documents = [], isLoading } = useQuery({
@@ -72,14 +73,22 @@ export function useHealthDocuments() {
       category,
       documentDate,
       notes,
+      aiSummarize = false,
+      sourceContext = 'direct',
     }: {
       file: File;
       title: string;
       category: DocumentCategory;
       documentDate?: string;
       notes?: string;
+      aiSummarize?: boolean;
+      sourceContext?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
+      
+      // Validate session is still active
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) throw new Error('Your session has expired. Please sign in again.');
 
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
@@ -102,15 +111,18 @@ export function useHealthDocuments() {
           document_date: documentDate || null,
           notes: notes || null,
           tags: [],
+          source_context: sourceContext,
         })
         .select()
         .single();
       if (error) throw error;
 
-      // Trigger AI summarization in background
-      supabase.functions.invoke('summarize-health-document', {
-        body: { documentId: data.id },
-      }).catch(console.error);
+      // Only trigger AI summarization if user opted in
+      if (aiSummarize) {
+        supabase.functions.invoke('summarize-health-document', {
+          body: { documentId: data.id },
+        }).catch(console.error);
+      }
 
       return data;
     },
@@ -119,7 +131,29 @@ export function useHealthDocuments() {
       toast.success('Document uploaded successfully');
     },
     onError: (error) => {
-      toast.error('Failed to upload document: ' + error.message);
+      const msg = error.message;
+      if (msg.includes('session') || msg.includes('authenticated')) {
+        toast.error('Session expired. Please sign in again.');
+      } else {
+        toast.error('Failed to upload document: ' + msg);
+      }
+    },
+  });
+
+  const triggerSummarize = useMutation({
+    mutationFn: async (documentId: string) => {
+      const { data, error } = await supabase.functions.invoke('summarize-health-document', {
+        body: { documentId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['health-documents'] });
+      toast.success('AI summary generated');
+    },
+    onError: (error) => {
+      toast.error('Failed to generate summary: ' + error.message);
     },
   });
 
@@ -184,6 +218,7 @@ export function useHealthDocuments() {
     uploadDocument,
     deleteDocument,
     updateDocument,
+    triggerSummarize,
     getDownloadUrl,
   };
 }
