@@ -15,7 +15,8 @@ import {
   Calendar,
   Loader2,
   Mail,
-  BarChart3
+  BarChart3,
+  FileText
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialo
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
+import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
@@ -334,13 +336,17 @@ const ClinicianPatientDetail = () => {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="vitals" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="vitals">Vitals</TabsTrigger>
               <TabsTrigger value="medications">Meds</TabsTrigger>
               <TabsTrigger value="adherence">Adherence</TabsTrigger>
               <TabsTrigger value="analytics" className="flex items-center gap-1">
                 <BarChart3 className="h-3 w-3" />
                 Analytics
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="flex items-center gap-1">
+                <FileText className="h-3 w-3" />
+                Docs
               </TabsTrigger>
               <TabsTrigger value="guidance">Guidance</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -549,6 +555,14 @@ const ClinicianPatientDetail = () => {
                   isLoading={loadingSchedule}
                 />
               )}
+            </TabsContent>
+
+            {/* Documents Tab */}
+            <TabsContent value="documents">
+              <SharedDocumentsTab
+                patientUserId={patient.user_id}
+                shareId={patient.id}
+              />
             </TabsContent>
 
             {/* Guidance Tab */}

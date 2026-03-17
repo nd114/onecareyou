@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2 } from 'lucide-react';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,8 @@ import {
 import { HealthDocument, DOCUMENT_CATEGORIES, useHealthDocuments } from '@/hooks/useHealthDocuments';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
+import { ShareDocumentDialog } from '@/components/documents/ShareDocumentDialog';
+import { useDocumentShares } from '@/hooks/useDocumentShares';
 
 interface DocumentCardProps {
   document: HealthDocument;
@@ -27,8 +29,11 @@ interface DocumentCardProps {
 export function DocumentCard({ document: doc, isPremium = false }: DocumentCardProps) {
   const { deleteDocument, getDownloadUrl, triggerSummarize } = useHealthDocuments();
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
+  const { allShareCounts } = useDocumentShares();
   const [downloading, setDownloading] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const shareCount = allShareCounts[doc.id] || 0;
 
   const categoryInfo = DOCUMENT_CATEGORIES.find((c) => c.value === doc.category) || DOCUMENT_CATEGORIES[DOCUMENT_CATEGORIES.length - 1];
 
@@ -84,9 +89,21 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                         {format(new Date(doc.document_date), 'MMM d, yyyy')}
                       </span>
                     )}
+                    {/* Shared badge */}
+                    {shareCount > 0 && (
+                      <button onClick={() => setShowShareDialog(true)}>
+                        <Badge variant="outline" className="text-[10px] h-5 gap-1 cursor-pointer hover:bg-muted">
+                          <Users className="h-2.5 w-2.5" />
+                          Shared with {shareCount}
+                        </Badge>
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowShareDialog(true)} title="Share">
+                    <Share2 className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownload} disabled={downloading}>
                     <Download className="h-4 w-4" />
                   </Button>
@@ -170,6 +187,13 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
         onOpenChange={setShowConsentDialog}
         onConsent={handleConsentGranted}
         onDecline={() => setShowConsentDialog(false)}
+      />
+
+      <ShareDocumentDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        documentId={doc.id}
+        documentTitle={doc.title || doc.file_name}
       />
     </>
   );

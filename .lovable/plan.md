@@ -1,149 +1,81 @@
 
 
-## Health Vault Document Sharing — Patient-to-Clinician
+## Comprehensive Data Visibility & RLS Audit Results
 
-### Current State
-
-- **Health Vault** stores documents in `health_documents` table + `health-documents` storage bucket, owned by patient
-- **Provider shares** (`provider_shares`) already gate clinician access to vitals, meds, adherence, and profile — but **not documents**
-- The RLS policy on `health_documents` currently lets clinicians view *all* documents if they have the `profile` permission — this is too broad and gives no per-document control
-- The clinician patient detail page (`ClinicianPatientDetail.tsx`) has tabs for Vitals, Meds, Adherence, Analytics, Guidance, Notes — but **no Documents tab**
-
-### Design Principles
-
-- **Patient is in control**: Documents are shared individually, not all-or-nothing. This aligns with OneCare's patient-managed data philosophy.
-- **Granular, revocable**: Patient selects specific documents to share with specific clinicians, and can revoke at any time.
-- **No new permission key**: Rather than adding a blanket `documents: true` to provider_shares permissions (which shares everything), use a dedicated junction table for per-document sharing.
+### Overall RLS Status: Solid Foundation
+- All 34 tables have RLS enabled
+- No tables missing policies entirely
+- Only 1 linter warning (expected: public-read tables like `emergency_numbers`, `international_drug_mappings`, and public-insert for `job_applications`)
 
 ---
 
-### Part A: Patient Side — Sharing Documents
+### Issues Found
 
-#### 1. New `document_shares` table
+#### 1. Stale Demo Data (Most Impactful)
+Demo patient vitals and schedule entries mostly end around **Jan 27, 2026** -- over a month ago. This causes multiple visibility problems:
 
-```text
-document_shares
-├── id (uuid, PK)
-├── document_id (uuid → health_documents.id)
-├── user_id (uuid — document owner, for RLS)
-├── provider_share_id (uuid → provider_shares.id)
-├── shared_at (timestamptz)
-├── revoked_at (timestamptz, nullable)
-├── is_active (boolean, default true)
-```
+| Patient | Vitals (last 30d) | Vitals (last 90d) | Schedule (last 30d) |
+|---|---|---|---|
+| demo-patient-1 (James) | 5 | 297 | 24 |
+| demo-patient-2 | 0 | 145 | 0 |
+| demo-patient-3 | 0 | 149 | 0 |
+| demo-patient-4 | 0 | 132 | 0 |
+| demo-patient-5 | 0 | 143 | 0 |
 
-RLS policies:
-- Patients can INSERT/UPDATE/SELECT/DELETE where `auth.uid() = user_id`
-- Clinicians can SELECT where they own the linked `provider_share` and `is_active = true`
+**Impact**: The clinician dashboard's `usePatientVitalsSummaries` hook uses a **30-day window**, so 4 out of 5 demo patients show empty vitals and no adherence data on the dashboard. Only James Thompson shows minimal data.
 
-#### 2. UI: Share button on DocumentCard
+**Fix**: Update `usePatientVitalsSummaries.ts` to use a 90-day window (matching the patient-side vitals page fix already applied), or re-seed demo data with current dates.
 
-- Add a **Share** icon button (appears on hover alongside Download and Delete)
-- Clicking opens a **ShareDocumentDialog** showing a list of the patient's active provider shares (clinician names)
-- Each row has a checkbox. Already-shared clinicians are pre-checked.
-- Toggle on/off to share or revoke per clinician
-- Confirmation toast: "Document shared with Dr. Smith"
+#### 2. Clinician Patient Detail Page - Vitals Limit Too Low
+`ClinicianPatientDetail.tsx` line 66 uses `.limit(100)` for vitals, but demo-patient-1 has **511 vitals**. This truncates the data significantly. The `get-shared-patient-data` edge function has a similar `.limit(50)`.
 
-#### 3. UI: Shared indicator on DocumentCard
+**Fix**: Increase limit to 500 or remove the limit and rely on date filtering instead.
 
-- If a document has active shares, show a small "Shared with N clinicians" badge
-- Tapping badge opens the same share dialog for management
+#### 3. Clinician Detail Page - Schedule Window Too Narrow
+`ClinicianPatientDetail.tsx` line 98 uses a 30-day window for schedule entries. Most demo patients have no data in that window.
 
-#### 4. Health Vault page — bulk share option
+**Fix**: Match the 90-day window or make it selectable like the patient vitals page.
 
-- Optional: multi-select mode with a "Share selected" batch action
-- Lower priority; individual share covers the core need
+#### 4. Network Request Anomaly - Patient Querying Clinician Notifications
+The network logs show `demo-patient-1` (user `08ebec6a`) querying `clinician_guidance_notifications` with a clinician filter for their own user ID. This always returns empty because the patient isn't a clinician. This is a wasted query -- the `useClinicianNotifications` hook likely runs even when logged in as a patient.
 
----
+**Fix**: Add a guard in `useClinicianNotifications` to skip the query if the user doesn't have a clinician profile.
 
-### Part B: Clinician Side — Receiving and Viewing Documents
+#### 5. Profiles RLS - Redundant Overlapping SELECT Policies
+The `profiles` table has two overlapping SELECT policies for clinician access:
+- "Clinicians can view basic patient info from shares" (checks provider_shares)  
+- "Clinicians can view shared patient profiles with permission" (checks `clinician_has_patient_permission('profile')`)
 
-#### 1. New "Documents" tab on ClinicianPatientDetail
+Both are PERMISSIVE, so they OR together. This isn't a bug, but the first policy grants SELECT on ALL profile columns to any clinician with an active share, regardless of the `profile` permission flag. This means a clinician without `profile: true` can still see sensitive fields like `date_of_birth`, `allergies`, `health_conditions`.
 
-- Add a 7th tab: **Documents** (icon: FileText)
-- Only visible when the patient has shared at least one document with this clinician
-- Shows a list of shared documents with: title, category badge, document date, AI summary preview (if available), and a Download button
+**Fix**: The broader "basic info" policy should ideally be restricted via a view that only exposes `name` and `email`, or removed in favor of the permission-based policy.
 
-#### 2. Data fetching
+#### 6. `get-shared-patient-data` Edge Function - `getClaims` API
+The edge function uses `supabaseAuth.auth.getClaims(token)` which may not be available in all Supabase JS versions. If this fails silently, clinicians get 401 errors. The standard pattern is `supabaseAuth.auth.getUser()`.
 
-- New query joins `document_shares` → `health_documents` where `provider_share_id` matches the current clinician's share and `is_active = true`
-- Clinician gets a signed download URL via an edge function (since the storage bucket is private, the clinician can't access it directly via client-side RLS)
-
-#### 3. New edge function: `get-shared-document-url`
-
-- Accepts `documentShareId`
-- Validates: authenticated clinician, active share, document exists
-- Uses service role to generate a signed URL from the `health-documents` bucket
-- Returns the URL (short-lived, e.g. 5 minutes)
-- Logs the access in `access_audit_logs` for the patient's audit trail
-
-#### 4. Clinician document view
-
-- Inline preview for images and PDFs (using `<iframe>` or `<img>` with the signed URL)
-- Download button for all file types
-- AI summary displayed if available (read-only)
-- Category and date metadata shown
-
-#### 5. Notifications (optional, lower priority)
-
-- When a patient shares a document, a lightweight notification could appear on the clinician dashboard
-- Could reuse the existing `clinician_guidance_notifications` pattern or a simple toast on next page load
+**Fix**: Replace `getClaims` with `getUser()` for reliable auth extraction.
 
 ---
 
-### Process Flows
-
-```text
-PATIENT FLOW:
-Health Vault → Document Card → Share icon → Select clinician(s) → Confirm
-                                           ↕ (toggle to revoke)
-
-CLINICIAN FLOW:
-Patient Detail → Documents tab → View list → Click document → Preview/Download
-                                             → View AI summary
-```
-
-### Update existing RLS
-
-- **Remove** the current blanket "Clinicians can view shared patient documents" policy on `health_documents` (the one using `clinician_has_patient_permission(user_id, 'profile')`)
-- **Replace** with a policy that checks `document_shares` for per-document access:
-  ```sql
-  CREATE POLICY "Clinicians can view individually shared documents"
-  ON health_documents FOR SELECT
-  USING (
-    auth.uid() = user_id
-    OR EXISTS (
-      SELECT 1 FROM document_shares ds
-      JOIN provider_shares ps ON ds.provider_share_id = ps.id
-      WHERE ds.document_id = health_documents.id
-        AND ds.is_active = true
-        AND ps.is_active = true
-        AND (ps.expires_at IS NULL OR ps.expires_at > now())
-        AND (ps.clinician_user_id = auth.uid()
-          OR ps.provider_email = get_current_user_email())
-    )
-  )
-  ```
-
-### What Makes This OneCare-Unique
-
-- **Per-document granularity** — most platforms share everything or nothing. OneCare lets patients choose exactly which lab result or discharge summary their specialist sees.
-- **Revocable in real-time** — toggle off sharing from the same card, no navigation needed.
-- **Audit trail** — every clinician download is logged, visible to the patient in their access history.
-- **AI-enriched context** — clinicians see the AI summary alongside the document, saving them time without requiring them to run their own analysis.
+### What's Working Well
+- Permission keys in `provider_shares` are now correctly using `vitals`, `meds`, `adherence`, `profile`
+- No orphaned shares (all user_ids map to valid profiles)
+- `clinician_has_patient_access()` and `clinician_has_patient_permission()` security-definer functions are properly configured
+- Vitals, medications, and schedule_entries all have correct clinician-access RLS policies
+- `get_current_user_email()` security-definer function prevents auth schema access issues
 
 ---
 
-### Implementation Tasks Summary
+### Recommended Implementation Order
 
-| # | Task | Scope |
-|---|------|-------|
-| 1 | Create `document_shares` table + RLS | Migration |
-| 2 | Replace blanket document RLS with per-document policy | Migration |
-| 3 | Build `ShareDocumentDialog` component | Patient UI |
-| 4 | Add Share button + shared badge to `DocumentCard` | Patient UI |
-| 5 | Create `get-shared-document-url` edge function | Backend |
-| 6 | Add Documents tab to `ClinicianPatientDetail` | Clinician UI |
-| 7 | Add `useSharedDocuments` hook for clinician queries | Hook |
-| 8 | Log document access in `access_audit_logs` | Backend |
+1. **Widen clinician-side data windows** (issues 1, 2, 3) -- highest impact, fixes empty dashboards
+   - `usePatientVitalsSummaries.ts`: 30d to 90d
+   - `ClinicianPatientDetail.tsx`: vitals limit 100 to 500, schedule 30d to 90d
+   - `get-shared-patient-data` edge function: vitals limit 50 to 200
+
+2. **Guard clinician-only queries from patient sessions** (issue 4) -- prevents wasted network calls
+
+3. **Tighten profiles RLS policy** (issue 5) -- security hardening, lower urgency since data is health-related not credentials
+
+4. **Fix `getClaims` in edge function** (issue 6) -- preventive fix for auth reliability
 
