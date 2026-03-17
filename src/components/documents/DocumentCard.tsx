@@ -89,9 +89,21 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                         {format(new Date(doc.document_date), 'MMM d, yyyy')}
                       </span>
                     )}
+                    {/* Shared badge */}
+                    {shareCount > 0 && (
+                      <button onClick={() => setShowShareDialog(true)}>
+                        <Badge variant="outline" className="text-[10px] h-5 gap-1 cursor-pointer hover:bg-muted">
+                          <Users className="h-2.5 w-2.5" />
+                          Shared with {shareCount}
+                        </Badge>
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowShareDialog(true)} title="Share">
+                    <Share2 className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownload} disabled={downloading}>
                     <Download className="h-4 w-4" />
                   </Button>
