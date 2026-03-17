@@ -436,7 +436,7 @@ const Settings = () => {
                   AI & Privacy
                 </CardTitle>
                 <CardDescription>
-                  Control how AI processes your health data
+                  Control how AI processes your health data. You can turn these off at any time.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -445,7 +445,7 @@ const Settings = () => {
                   <div className="space-y-1">
                     <Label className="text-base font-medium">AI Data Processing</Label>
                     <p className="text-sm text-muted-foreground">
-                      Allow AI to analyze your lab reports and extract health metrics
+                      Enable AI-powered features across OneCare
                     </p>
                     {consentUpdatedAt && (
                       <p className="text-xs text-muted-foreground">
@@ -469,6 +469,40 @@ const Settings = () => {
                     />
                   </div>
                 </div>
+
+                {hasConsent && (
+                  <div className="ml-4 pl-4 border-l-2 border-primary/20 space-y-4">
+                    {/* Sub-feature 1: Vitals extraction */}
+                    <div className="rounded-lg bg-status-success/5 border border-status-success/20 p-3 space-y-1">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <Shield className="h-3.5 w-3.5 text-status-success" />
+                        Vitals Extraction (Anonymized)
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Lab report images are scanned on your device. Only PII-stripped text is sent to AI. 
+                        Note: our pattern-based stripping is effective but cannot guarantee complete removal of all 
+                        personal identifiers.
+                      </p>
+                    </div>
+
+                    {/* Sub-feature 2: Vault summarization */}
+                    <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3 space-y-1">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                        Health Vault Summarization (Full Document)
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        When you use "Summarize with AI" in the Health Vault, the actual file (image, PDF, or text) is 
+                        sent to our AI service. The document may contain personal information. No account identifiers are sent.
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground italic">
+                      AI data is not retained or used for training by our AI providers. 
+                      See our <Link to="/data-processing" className="text-primary hover:underline">Data Processing Agreement</Link> for full details.
+                    </p>
+                  </div>
+                )}
 
                 <Separator />
 

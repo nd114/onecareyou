@@ -42,6 +42,24 @@ serve(async (req) => {
       });
     }
 
+    // Verify AI consent before processing
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("ai_processing_consent")
+      .eq("user_id", doc.user_id)
+      .single();
+
+    if (profileError || !profile?.ai_processing_consent) {
+      console.error("AI consent not granted for user:", doc.user_id);
+      return new Response(
+        JSON.stringify({ error: "AI processing consent is required. Please enable it in Settings." }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     if (!lovableApiKey) {
       console.error("LOVABLE_API_KEY not configured, skipping AI summarization");
       return new Response(JSON.stringify({ skipped: true }), {
@@ -72,6 +90,8 @@ serve(async (req) => {
 1. A clear 2-4 sentence summary of what this document contains, including key findings, values, or information
 2. A suggested category (one of: lab_result, prescription, discharge_summary, imaging, insurance, vaccination, referral, visit_note, other)
 3. 3-5 relevant tags for searchability
+
+IMPORTANT: Do NOT include any patient names, dates of birth, ID numbers, or other personal identifiers in your summary or tags. Focus only on medical content, findings, and values.
 
 Additional context from the user:
 - User-assigned category: ${doc.category}
@@ -108,7 +128,7 @@ Additional context from the user:
             },
             {
               type: "text",
-              text: "Please analyze this health document thoroughly. Extract key findings, values, diagnoses, medications, or any clinically relevant information and provide a detailed summary.",
+              text: "Please analyze this health document thoroughly. Extract key findings, values, diagnoses, medications, or any clinically relevant information and provide a detailed summary. Do NOT include any patient names, IDs, or personal identifiers in your response.",
             },
           ],
         },
@@ -122,7 +142,7 @@ Additional context from the user:
         { role: "system", content: systemPrompt },
         {
           role: "user",
-          content: `Please analyze this health document thoroughly. Extract key findings, values, diagnoses, medications, or any clinically relevant information and provide a detailed summary.\n\n--- Document Content ---\n${truncated}`,
+          content: `Please analyze this health document thoroughly. Extract key findings, values, diagnoses, medications, or any clinically relevant information and provide a detailed summary. Do NOT include any patient names, IDs, or personal identifiers in your response.\n\n--- Document Content ---\n${truncated}`,
         },
       ];
     } else {
@@ -156,7 +176,7 @@ Additional context from the user:
                 parameters: {
                   type: "object",
                   properties: {
-                    summary: { type: "string", description: "2-4 sentence summary with key findings" },
+                    summary: { type: "string", description: "2-4 sentence summary with key findings. Must NOT contain patient names, IDs, or personal identifiers." },
                     category: {
                       type: "string",
                       enum: [
@@ -168,7 +188,7 @@ Additional context from the user:
                     tags: {
                       type: "array",
                       items: { type: "string" },
-                      description: "3-5 relevant tags",
+                      description: "3-5 relevant clinical tags. Must NOT contain patient names or personal identifiers.",
                     },
                   },
                   required: ["summary", "category", "tags"],

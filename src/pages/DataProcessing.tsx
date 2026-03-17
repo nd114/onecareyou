@@ -55,32 +55,10 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Brain className="h-5 w-5 text-ocean" />
-                  2. AI Data Processing Details
+                  2. AI Data Processing — Two Modes
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <h3 className="font-semibold text-foreground">2.1 What Data is Processed by AI</h3>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Images of lab reports and medical documents you upload</li>
-                    <li>Text content extracted from these documents</li>
-                    <li>Numerical health values for extraction and categorization</li>
-                  </ul>
-                  
-                  <h3 className="font-semibold text-foreground mt-4">2.2 What Data is NOT Sent to AI</h3>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Your name, email, or any account identifiers</li>
-                    <li>Your user ID or internal identifiers</li>
-                    <li>Your location, IP address, or device information</li>
-                    <li>Your medication history or other stored health records</li>
-                    <li>Any data from Care Circle or shared provider information</li>
-                  </ul>
-                  
-                  <h3 className="font-semibold text-foreground mt-4">2.3 AI Processing Purpose</h3>
-                  <p>AI is used solely to:</p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Extract numerical health values from lab report images</li>
-                    <li>Identify and categorize health metrics (glucose, cholesterol, etc.)</li>
-                    <li>Convert extracted data to a structured format for your records</li>
-                  </ul>
+                  <p>OneCare uses AI in two distinct processing modes. Each handles your data differently:</p>
                 </div>
               </CardContent>
             </Card>
@@ -89,14 +67,14 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Lock className="h-5 w-5 text-primary" />
-                  3. On-Device Processing (Privacy-First Mode)
+                  3. Mode 1: Vitals Extraction (Anonymized Processing)
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <div className="flex items-start gap-3 p-4 bg-background rounded-lg border">
                     <Smartphone className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-foreground">Your images never leave your device</p>
-                      <p className="text-sm mt-1">For image uploads (JPG, PNG, WebP), we use on-device OCR technology. The raw image is processed entirely on your phone or computer using Tesseract.js. Only the extracted text is sent for analysis.</p>
+                      <p className="text-sm mt-1">For lab report image uploads (JPG, PNG, WebP), we use on-device OCR technology (Tesseract.js). The raw image is processed entirely on your phone or computer. Only the extracted text is sent for analysis.</p>
                     </div>
                   </div>
                   
@@ -104,18 +82,58 @@ const DataProcessing = () => {
                   <ol className="list-decimal pl-6 space-y-2">
                     <li><strong>Local OCR:</strong> Your device runs Tesseract.js to read text from the image locally</li>
                     <li><strong>Text-Only Transmission:</strong> Only extracted text (not the image) is sent to our servers</li>
-                    <li><strong>PII Stripping:</strong> Personal identifiers are removed from the text before AI analysis</li>
-                    <li><strong>Vital Extraction:</strong> AI analyzes the anonymized text to extract health metrics</li>
+                    <li><strong>PII Stripping:</strong> 13 regex-based patterns attempt to remove personal identifiers (names, DOB, IDs, phone numbers, addresses, SSNs, insurance info) from the text</li>
+                    <li><strong>Vital Extraction:</strong> AI analyzes the processed text to extract health metrics</li>
                   </ol>
                   
-                  <h3 className="font-semibold text-foreground mt-4">3.2 What This Means For You</h3>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Lab report images with your name, DOB, and other PII never leave your device</li>
-                    <li>Only anonymous numerical health data is processed by AI</li>
-                    <li>Maximum privacy with no compromise on functionality</li>
-                  </ul>
+                  <h3 className="font-semibold text-foreground mt-4">3.2 Limitations of PII Stripping</h3>
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+                    <p className="font-semibold text-foreground flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      Honest Disclosure
+                    </p>
+                    <p className="text-sm">Our PII stripping uses pattern-based matching and is not perfect. It is estimated to be 80-90% effective on well-formatted English-language lab reports. Known limitations include:</p>
+                    <ul className="list-disc pl-6 space-y-1 text-sm">
+                      <li>Unlabeled names (e.g., a name appearing alone without a "Patient:" prefix)</li>
+                      <li>Non-English name formats and international identifiers (e.g., South African ID numbers, UK postcodes)</li>
+                      <li>Freeform notes or handwritten annotations</li>
+                      <li>OCR artifacts that distort recognizable patterns</li>
+                      <li>Contextual identifiers (e.g., room numbers, case references)</li>
+                    </ul>
+                    <p className="text-sm mt-2">We are actively investigating Named Entity Recognition (NER) AI models to improve de-identification accuracy in future releases.</p>
+                  </div>
                   
-                  <p className="text-sm italic mt-4">Note: PDF files still require server-side processing, but undergo strict PII stripping before AI analysis.</p>
+                  <p className="text-sm italic mt-4">Note: PDF files still require server-side processing. Text is extracted and undergoes the same PII stripping process before AI analysis.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardContent className="p-6 space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  4. Mode 2: Health Vault Summarization (Full Document Processing)
+                </h2>
+                <div className="space-y-3 text-muted-foreground">
+                  <p>When you choose to use "Summarize with AI" on a document in the Health Vault, a different processing approach is used:</p>
+                  
+                  <h3 className="font-semibold text-foreground">4.1 What Happens</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><strong>Full File Transmission:</strong> The actual document file (image, PDF, or text) is transmitted to our AI service for analysis</li>
+                    <li><strong>Deep Analysis:</strong> The AI reads the full document to generate a comprehensive summary, category, and searchable tags</li>
+                    <li><strong>PII in Output Prevented:</strong> The AI is specifically instructed not to include patient names, IDs, or personal identifiers in its summary output</li>
+                  </ul>
+
+                  <h3 className="font-semibold text-foreground mt-4">4.2 What This Means For You</h3>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>The AI service <strong>can see</strong> personal information present in your uploaded documents</li>
+                    <li>No account identifiers (user ID, email, OneCare account info) are sent alongside the file</li>
+                    <li>The AI does not retain, store, or learn from your documents</li>
+                    <li>This mode provides significantly better summarization quality than text-only processing</li>
+                  </ul>
+
+                  <h3 className="font-semibold text-foreground mt-4">4.3 Why This Differs From Vitals Extraction</h3>
+                  <p>Vitals extraction only needs numerical health values, so anonymized text is sufficient. Health Vault summarization requires understanding the full document context — layout, headers, visual elements, and relationships between sections — which cannot be achieved from stripped text alone.</p>
                 </div>
               </CardContent>
             </Card>
@@ -124,7 +142,7 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Shield className="h-5 w-5 text-status-success" />
-                  4. Additional Anonymization Measures
+                  5. Additional Security Measures
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p>In addition to on-device processing, we implement the following anonymization measures:</p>
@@ -153,10 +171,10 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Clock className="h-5 w-5 text-amber" />
-                  5. Data Retention
+                  6. Data Retention
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <h3 className="font-semibold text-foreground">4.1 AI Service Retention</h3>
+                  <h3 className="font-semibold text-foreground">6.1 AI Service Retention</h3>
                   <p>Our AI service providers do not retain your processed data. Data is:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Processed in memory only</li>
