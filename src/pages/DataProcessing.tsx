@@ -171,10 +171,10 @@ const DataProcessing = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Clock className="h-5 w-5 text-amber" />
-                  5. Data Retention
+                  6. Data Retention
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <h3 className="font-semibold text-foreground">4.1 AI Service Retention</h3>
+                  <h3 className="font-semibold text-foreground">6.1 AI Service Retention</h3>
                   <p>Our AI service providers do not retain your processed data. Data is:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Processed in memory only</li>
