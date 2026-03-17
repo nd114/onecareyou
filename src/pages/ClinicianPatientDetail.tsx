@@ -557,6 +557,14 @@ const ClinicianPatientDetail = () => {
               )}
             </TabsContent>
 
+            {/* Documents Tab */}
+            <TabsContent value="documents">
+              <SharedDocumentsTab
+                patientUserId={patient.user_id}
+                shareId={patient.id}
+              />
+            </TabsContent>
+
             {/* Guidance Tab */}
             <TabsContent value="guidance">
               <Card>
