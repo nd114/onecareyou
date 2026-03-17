@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { STRIPE_PRICES, PRICE_INFO, FREE_FEATURE_DETAIL, PREMIUM_FEATURE_DETAIL } from '@/lib/pricing-constants';
+import { STRIPE_PRICES, PRICE_INFO, FREE_FEATURE_DETAIL, PREMIUM_FEATURE_DETAIL, COMING_SOON_FEATURES } from '@/lib/pricing-constants';
 import {
   Accordion,
   AccordionContent,
@@ -145,7 +145,7 @@ const Pricing = () => {
                 )}
                 <CardHeader className="text-center pb-2">
                   <CardTitle className="text-2xl">Free</CardTitle>
-                  <CardDescription>Perfect for getting started</CardDescription>
+                  <CardDescription>Everything you need for daily health tracking</CardDescription>
                   <div className="pt-4">
                     <span className="text-4xl font-bold">$0</span>
                     <span className="text-muted-foreground">/forever</span>
@@ -196,7 +196,7 @@ const Pricing = () => {
                 </div>
                 <CardHeader className="text-center pb-2">
                   <CardTitle className="text-2xl">Premium</CardTitle>
-                  <CardDescription>For comprehensive health management</CardDescription>
+                  <CardDescription>Deeper insights for proactive health management</CardDescription>
                   <div className="pt-4">
                     {isAnnual ? (
                       <>
@@ -248,7 +248,7 @@ const Pricing = () => {
                         ) : (
                           <>
                             <Crown className="mr-2 h-4 w-4" />
-                            Go Premium
+                            Unlock Full Access
                           </>
                         )}
                       </Button>
@@ -262,6 +262,23 @@ const Pricing = () => {
               </Card>
             </motion.div>
           </div>
+
+          {/* Coming Soon Roadmap */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-md mx-auto mt-12 text-center"
+          >
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Coming Soon</h3>
+            <div className="flex flex-wrap justify-center gap-2">
+              {COMING_SOON_FEATURES.map((feature) => (
+                <Badge key={feature} variant="outline" className="text-xs">
+                  {feature}
+                </Badge>
+              ))}
+            </div>
+          </motion.div>
 
           {/* Clinician Link */}
           <motion.p

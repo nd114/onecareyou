@@ -40,9 +40,14 @@ export const PREMIUM_FEATURES = [
   'Unlimited medications',
   'Family member profiles',
   'AI lab report parsing',
-  'Refill reminders (coming soon)',
   'Health reports export',
-  'Priority support (coming soon)',
+] as const;
+
+// Features in active development — shown separately on pricing page
+export const COMING_SOON_FEATURES = [
+  'Refill reminders',
+  'Priority support',
+  'Health Document Vault',
 ] as const;
 
 // Combined list for Pricing page detail view
@@ -71,5 +76,4 @@ export const LANDING_PREMIUM_FEATURES = [
   'Family member profiles',
   'AI lab report parsing',
   'Health reports export',
-  'Priority support (coming soon)',
 ] as const;

@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Loader2,
   BarChart3,
-  BookOpen
+  BookOpen,
+  FolderOpen
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ const getQuickLinks = (showAdherence: boolean) => [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
   { label: 'Care Circle', href: '/care-circle', icon: Users },
   { label: 'Medicine Cabinet', href: '/medications', icon: Pill },
+  { label: 'Health Vault', href: '/health-vault', icon: FolderOpen },
   ...(showAdherence ? [{ label: 'Adherence Report', href: '/adherence-report', icon: BarChart3 }] : []),
   { label: 'Knowledge Base', href: '/knowledge-base', icon: BookOpen },
 ];
@@ -353,7 +355,7 @@ const Dashboard = () => {
                   <div className="mt-6 p-4 rounded-xl gradient-primary text-primary-foreground">
                     <p className="font-semibold mb-1">Upgrade to Premium</p>
                     <p className="text-sm opacity-90 mb-3">
-                      Unlock unlimited medications and provider sharing
+                      Unlock unlimited medications, family profiles, and AI health insights
                     </p>
                     <Button size="sm" variant="secondary" asChild>
                       <Link to="/pricing">
