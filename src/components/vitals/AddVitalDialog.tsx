@@ -318,6 +318,9 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
       return;
     }
 
+    // Store file reference for vault save
+    setUploadedFile(file);
+
     // Check if consent is required
     if (checkConsentRequired()) {
       setPendingFile(file);
