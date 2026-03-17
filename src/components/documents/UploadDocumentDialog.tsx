@@ -234,8 +234,8 @@ export function UploadDocumentDialog() {
           <AlertDialogHeader>
             <AlertDialogTitle>Enable AI Summarization?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will send your document's metadata (title, category, notes, and file name) to our AI service 
-              to generate a summary and tags. The actual file contents are <strong>not</strong> uploaded to the AI.
+              This will securely send your document to our AI service, which reads the file content 
+              to generate an accurate summary, category, and tags. Your data is processed securely and not stored by the AI provider.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
