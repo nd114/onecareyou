@@ -60,6 +60,7 @@ import ClinicianPatientImport from "./pages/ClinicianPatientImport";
 import Sitemap from "./pages/Sitemap";
 import Careers from "./pages/Careers";
 import JobDetail from "./pages/JobDetail";
+import HealthVault from "./pages/HealthVault";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
