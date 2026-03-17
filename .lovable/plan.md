@@ -1,81 +1,82 @@
+## Implementation Plan: Health Vault Fixes, Feature Gating & Platform Improvements
 
+### Issues Found in Current Implementation
 
-## Comprehensive Data Visibility & RLS Audit Results
+**1. Upload "Failed to fetch" Bug**
+The storage bucket and RLS policies exist and look correct. The most likely cause is that the `health-documents` bucket has no UPDATE policy on `storage.objects` — the Supabase storage client performs an upsert which requires both INSERT and UPDATE. Additionally, the upload might fail if the user's auth token expired mid-session. Fix: add a storage UPDATE policy and add better error handling with auth-state checks before upload.
 
-### Overall RLS Status: Solid Foundation
-- All 34 tables have RLS enabled
-- No tables missing policies entirely
-- Only 1 linter warning (expected: public-read tables like `emergency_numbers`, `international_drug_mappings`, and public-insert for `job_applications`)
+**2. Health Vault is listed in "Coming Soon" but already built**
+`pricing-constants.ts` line 50 still lists `'Health Document Vault'` in `COMING_SOON_FEATURES`. It should be moved to `PREMIUM_FEATURES` since it's now a real feature.
 
----
+**3. AI Summarization is automatic — not opt-in**
+The upload hook (`useHealthDocuments.ts` line 112) fires `summarize-health-document` immediately after every upload with no user choice. This should be opt-in via a toggle in the upload dialog and a "Summarize" button on existing documents.
 
-### Issues Found
+**4. No connection between Health Vault and Vitals upload**
+The Vitals page has a lab report upload feature (`AddVitalDialog.tsx`) that parses lab images for vital values. Health Vault stores documents. These are separate systems with no cross-reference. Documents uploaded via vitals should optionally also appear in Health Vault. e.g. "Add to health vault" toggle or "Add to health vault?" with an optional tick or something defaulted to 'on' or ticked.
 
-#### 1. Stale Demo Data (Most Impactful)
-Demo patient vitals and schedule entries mostly end around **Jan 27, 2026** -- over a month ago. This causes multiple visibility problems:
-
-| Patient | Vitals (last 30d) | Vitals (last 90d) | Schedule (last 30d) |
-|---|---|---|---|
-| demo-patient-1 (James) | 5 | 297 | 24 |
-| demo-patient-2 | 0 | 145 | 0 |
-| demo-patient-3 | 0 | 149 | 0 |
-| demo-patient-4 | 0 | 132 | 0 |
-| demo-patient-5 | 0 | 143 | 0 |
-
-**Impact**: The clinician dashboard's `usePatientVitalsSummaries` hook uses a **30-day window**, so 4 out of 5 demo patients show empty vitals and no adherence data on the dashboard. Only James Thompson shows minimal data.
-
-**Fix**: Update `usePatientVitalsSummaries.ts` to use a 90-day window (matching the patient-side vitals page fix already applied), or re-seed demo data with current dates.
-
-#### 2. Clinician Patient Detail Page - Vitals Limit Too Low
-`ClinicianPatientDetail.tsx` line 66 uses `.limit(100)` for vitals, but demo-patient-1 has **511 vitals**. This truncates the data significantly. The `get-shared-patient-data` edge function has a similar `.limit(50)`.
-
-**Fix**: Increase limit to 500 or remove the limit and rely on date filtering instead.
-
-#### 3. Clinician Detail Page - Schedule Window Too Narrow
-`ClinicianPatientDetail.tsx` line 98 uses a 30-day window for schedule entries. Most demo patients have no data in that window.
-
-**Fix**: Match the 90-day window or make it selectable like the patient vitals page.
-
-#### 4. Network Request Anomaly - Patient Querying Clinician Notifications
-The network logs show `demo-patient-1` (user `08ebec6a`) querying `clinician_guidance_notifications` with a clinician filter for their own user ID. This always returns empty because the patient isn't a clinician. This is a wasted query -- the `useClinicianNotifications` hook likely runs even when logged in as a patient.
-
-**Fix**: Add a guard in `useClinicianNotifications` to skip the query if the user doesn't have a clinician profile.
-
-#### 5. Profiles RLS - Redundant Overlapping SELECT Policies
-The `profiles` table has two overlapping SELECT policies for clinician access:
-- "Clinicians can view basic patient info from shares" (checks provider_shares)  
-- "Clinicians can view shared patient profiles with permission" (checks `clinician_has_patient_permission('profile')`)
-
-Both are PERMISSIVE, so they OR together. This isn't a bug, but the first policy grants SELECT on ALL profile columns to any clinician with an active share, regardless of the `profile` permission flag. This means a clinician without `profile: true` can still see sensitive fields like `date_of_birth`, `allergies`, `health_conditions`.
-
-**Fix**: The broader "basic info" policy should ideally be restricted via a view that only exposes `name` and `email`, or removed in favor of the permission-based policy.
-
-#### 6. `get-shared-patient-data` Edge Function - `getClaims` API
-The edge function uses `supabaseAuth.auth.getClaims(token)` which may not be available in all Supabase JS versions. If this fails silently, clinicians get 401 errors. The standard pattern is `supabaseAuth.auth.getUser()`.
-
-**Fix**: Replace `getClaims` with `getUser()` for reliable auth extraction.
+**5. No premium gating on Health Vault**
+The Health Vault page has no subscription check — any free-tier user can upload unlimited documents.
 
 ---
 
-### What's Working Well
-- Permission keys in `provider_shares` are now correctly using `vitals`, `meds`, `adherence`, `profile`
-- No orphaned shares (all user_ids map to valid profiles)
-- `clinician_has_patient_access()` and `clinician_has_patient_permission()` security-definer functions are properly configured
-- Vitals, medications, and schedule_entries all have correct clinician-access RLS policies
-- `get_current_user_email()` security-definer function prevents auth schema access issues
+### Implementation Tasks
+
+#### Task 1: Fix Storage Upload Bug
+
+- Add missing UPDATE storage policy for `health-documents` bucket
+- Add auth-state validation before attempting upload (check `user` and `session` are valid)
+- Improve error message to distinguish auth errors from network errors
+
+#### Task 2: Make AI Summarization Opt-In
+
+- Add a "Use AI to categorize & summarize" toggle (default off) in `UploadDocumentDialog`
+- User should be explicitly notified of implications to doing this with AI by a reconfirmation or sth similar
+- Only call `summarize-health-document` edge function when opted in
+- Add a "Summarize with AI" button on `DocumentCard` for existing documents without summaries
+- Check AI consent status (`useAIConsent`) before allowing AI features, showing `AIConsentDialog` if needed
+
+#### Task 3: Premium Gate the Health Vault
+
+- Move "Health Document Vault" from `COMING_SOON_FEATURES` to `PREMIUM_FEATURES` in `pricing-constants.ts`
+- Add subscription check on `HealthVault.tsx` — free users see a teaser/upsell instead of the full vault
+- Free users can view up to 3 documents; uploading more requires Premium
+- AI summarization is Premium-only
+
+#### Task 4: Consolidate Vitals Uploads with Health Vault
+
+- When a user uploads a lab report image in AddVitalDialog, offer to also save it to Health Vault as an `imaging` or `lab_result` category document
+- Add a `source_context` column to `health_documents` (e.g., `'vitals_upload'`, `'direct'`) to track origin
+- User can unselect not to add it to vault from prompt that is preselected as to be added as mentioned above
+- Show a badge on Health Vault documents that came from vitals uploads
+
+#### Task 5: Update Pricing Copy
+
+- Remove "Health Document Vault" from Coming Soon
+- Add "Health Document Vault" and "AI Document Summaries" to Premium features list
+- Update Landing page premium features to include vault
 
 ---
 
-### Recommended Implementation Order
+### Technical Details
 
-1. **Widen clinician-side data windows** (issues 1, 2, 3) -- highest impact, fixes empty dashboards
-   - `usePatientVitalsSummaries.ts`: 30d to 90d
-   - `ClinicianPatientDetail.tsx`: vitals limit 100 to 500, schedule 30d to 90d
-   - `get-shared-patient-data` edge function: vitals limit 50 to 200
+**Database migration** (Task 1 + Task 4):
 
-2. **Guard clinician-only queries from patient sessions** (issue 4) -- prevents wasted network calls
+```sql
+-- Add missing UPDATE storage policy
+CREATE POLICY "Users can update their own health documents"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'health-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
 
-3. **Tighten profiles RLS policy** (issue 5) -- security hardening, lower urgency since data is health-related not credentials
+-- Add source tracking column
+ALTER TABLE health_documents ADD COLUMN source_context text DEFAULT 'direct';
+```
 
-4. **Fix `getClaims` in edge function** (issue 6) -- preventive fix for auth reliability
+**Files to modify**:
 
+- `src/hooks/useHealthDocuments.ts` — add `aiSummarize` param to upload, add `triggerSummarize` method
+- `src/components/documents/UploadDocumentDialog.tsx` — add AI opt-in toggle with consent check
+- `src/components/documents/DocumentCard.tsx` — add "Summarize with AI" button
+- `src/pages/HealthVault.tsx` — add premium gate with upsell banner for free users
+- `src/lib/pricing-constants.ts` — move vault to premium features
+- `src/pages/Pricing.tsx` / `Landing.tsx` — reflect updated feature lists
+- `src/components/vitals/AddVitalDialog.tsx` — add "Save to Health Vault" option after lab report parsing
