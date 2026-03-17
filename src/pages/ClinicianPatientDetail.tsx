@@ -29,6 +29,7 @@ import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialo
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
+import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
