@@ -196,7 +196,7 @@ const Pricing = () => {
                 </div>
                 <CardHeader className="text-center pb-2">
                   <CardTitle className="text-2xl">Premium</CardTitle>
-                  <CardDescription>For comprehensive health management</CardDescription>
+                  <CardDescription>Deeper insights for proactive health management</CardDescription>
                   <div className="pt-4">
                     {isAnnual ? (
                       <>
