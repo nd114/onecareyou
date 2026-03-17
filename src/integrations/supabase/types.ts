@@ -1049,6 +1049,7 @@ export type Database = {
           id: string
           mime_type: string | null
           notes: string | null
+          source_context: string
           tags: Json | null
           title: string | null
           updated_at: string
@@ -1068,6 +1069,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          source_context?: string
           tags?: Json | null
           title?: string | null
           updated_at?: string
@@ -1087,6 +1089,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          source_context?: string
           tags?: Json | null
           title?: string | null
           updated_at?: string
