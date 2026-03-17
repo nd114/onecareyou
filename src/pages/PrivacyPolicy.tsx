@@ -169,41 +169,49 @@ const PrivacyPolicy = () => {
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Lock className="h-5 w-5 text-status-success" />
-                  3. AI Processing & Data Anonymization
+                  3. AI Processing & Data Handling
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p className="font-semibold text-foreground bg-primary/10 p-4 rounded-lg">
                     AI processing of your health data only occurs with your explicit, informed consent, which you can
                     grant or revoke at any time in your account settings.
                   </p>
-                  <p>
-                    <strong>How AI Processing Works:</strong>
-                  </p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>
-                      <strong>Consent Required:</strong> You must explicitly opt-in before any AI processing occurs
-                    </li>
-                    <li>
-                      <strong>Anonymization:</strong> Before data is sent to AI services, all personal identifiers
-                      (name, email, user ID, account information) are stripped
-                    </li>
-                    <li>
-                      <strong>Limited Transmission:</strong> Only the document content/image is processed; no account or
-                      personal information is transmitted
-                    </li>
-                    <li>
-                      <strong>Result Association:</strong> Extracted results are associated with your account only after
-                      processing is complete
-                    </li>
-                  </ul>
+                  
+                  <p><strong>OneCare uses AI in two distinct modes with different data handling:</strong></p>
+
+                  <div className="rounded-lg border border-status-success/30 bg-status-success/5 p-4 space-y-2">
+                    <p className="font-semibold text-foreground">Mode 1: Vitals Extraction (Anonymized Processing)</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>Lab report images are scanned <strong>on your device</strong> using local OCR (Tesseract.js)</li>
+                      <li>The raw image never leaves your device</li>
+                      <li>Extracted text undergoes pattern-based PII stripping (names, DOB, IDs, phone numbers, addresses, SSNs, insurance info)</li>
+                      <li>Only the anonymized text with health values is sent to AI for extraction</li>
+                    </ul>
+                    <p className="text-sm italic">
+                      <strong>Honest disclosure:</strong> Our PII stripping uses regex pattern matching and is approximately 
+                      80-90% effective on well-formatted English lab reports. It may miss: unlabeled names, non-English identifiers, 
+                      unusual address formats, or OCR artifacts. We cannot guarantee complete removal of all personal information.
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+                    <p className="font-semibold text-foreground">Mode 2: Health Vault Summarization (Full Document Processing)</p>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>When you choose "Summarize with AI" in the Health Vault, the <strong>actual file</strong> (image, PDF, or text) is transmitted to our AI service</li>
+                      <li>This is necessary for accurate document summarization and categorization</li>
+                      <li>The file may contain personal information visible in the document</li>
+                      <li>No account identifiers (user ID, email, name) are sent alongside the file</li>
+                      <li>The AI is instructed not to include personal identifiers in its output</li>
+                    </ul>
+                  </div>
+
                   <Separator className="my-4" />
-                  <p>
-                    <strong>AI Service Providers:</strong>
-                  </p>
+                  <p><strong>Common Protections (Both Modes):</strong></p>
                   <ul className="list-disc pl-6 space-y-2">
-                    <li>We use enterprise-grade AI services with strong privacy commitments</li>
-                    <li>AI providers are contractually prohibited from retaining or training on your data</li>
-                    <li>Processing occurs in secure, encrypted environments</li>
+                    <li><strong>Consent Required:</strong> You must explicitly opt-in before any AI processing occurs</li>
+                    <li><strong>No Retention:</strong> AI providers do not store or retain your data after processing</li>
+                    <li><strong>No Training:</strong> Your data is never used to train AI models</li>
+                    <li><strong>Encrypted Transit:</strong> All data transfers use TLS encryption</li>
                   </ul>
                   <Separator className="my-4" />
                   <p>

@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Shield, Brain, Lock, FileText, AlertTriangle } from 'lucide-react';
+import { Shield, Brain, Lock, FileText, AlertTriangle, Eye, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -49,18 +49,49 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 max-h-[400px] pr-4">
+        <ScrollArea className="flex-1 max-h-[320px] pr-4">
           <div className="space-y-6">
-            {/* What we process */}
+            {/* Two-tier processing explanation */}
             <div className="space-y-3">
               <h4 className="font-semibold flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" />
-                What We Process
+                How AI Processes Your Data
               </h4>
-              <ul className="text-sm text-muted-foreground space-y-2 ml-6">
-                <li>• <strong>Lab report images</strong> you upload for vital extraction</li>
-                <li>• <strong>Health metrics</strong> contained in your documents</li>
-                <li>• No personal identifiers (name, email, etc.) are sent to AI</li>
+              <p className="text-sm text-muted-foreground">
+                OneCare uses AI in two different ways, each with a different level of data exposure:
+              </p>
+            </div>
+
+            {/* Mode 1: Vitals — Anonymized */}
+            <div className="rounded-lg border border-status-success/30 bg-status-success/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-status-success" />
+                <h4 className="font-semibold text-sm">Vitals Extraction (Anonymized)</h4>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+                <li>• Lab report images are scanned <strong>on your device</strong> using local OCR</li>
+                <li>• The raw image never leaves your device</li>
+                <li>• Extracted text is passed through PII-stripping filters to remove names, DOB, IDs, etc.</li>
+                <li>• Only anonymized text with health values is sent to AI</li>
+              </ul>
+              <p className="text-xs text-muted-foreground italic ml-6">
+                ⚠️ Our PII-stripping uses pattern matching and may not catch every identifier — 
+                particularly unlabeled names, non-English formats, or OCR artifacts. We cannot guarantee 
+                complete removal of all personal information from extracted text.
+              </p>
+            </div>
+
+            {/* Mode 2: Vault — Full file */}
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <h4 className="font-semibold text-sm">Health Vault Summarization (Full Document)</h4>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+                <li>• When you opt to use AI on a Health Vault document, the <strong>actual file</strong> (image, PDF, or text) is sent to our AI service for analysis</li>
+                <li>• This is required for accurate summarization and categorization</li>
+                <li>• The file may contain personal information visible in the document</li>
+                <li>• No account identifiers (user ID, email) are sent alongside the file</li>
               </ul>
             </div>
 
@@ -71,10 +102,10 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
                 How We Protect Your Data
               </h4>
               <ul className="text-sm text-muted-foreground space-y-2 ml-6">
-                <li>• <strong>Anonymization:</strong> All data is stripped of personal identifiers before AI processing</li>
                 <li>• <strong>No storage by AI:</strong> Processed data is not retained by the AI service</li>
-                <li>• <strong>Encryption:</strong> All data transfers are encrypted end-to-end</li>
+                <li>• <strong>Encryption:</strong> All data transfers are encrypted in transit</li>
                 <li>• <strong>Audit logging:</strong> All consent changes are logged for your records</li>
+                <li>• <strong>No training:</strong> Your data is never used to train AI models</li>
               </ul>
             </div>
 
@@ -82,23 +113,10 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
             <div className="space-y-3">
               <h4 className="font-semibold flex items-center gap-2">
                 <Lock className="h-4 w-4 text-ocean" />
-                Security Measures
-              </h4>
-              <ul className="text-sm text-muted-foreground space-y-2 ml-6">
-                <li>• Data is processed in secure, HIPAA-compliant infrastructure</li>
-                <li>• Your user ID and account details are never shared with AI</li>
-                <li>• You can revoke consent at any time in your settings</li>
-              </ul>
-            </div>
-
-            {/* Your rights */}
-            <div className="space-y-3">
-              <h4 className="font-semibold flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber" />
                 Your Rights
               </h4>
               <ul className="text-sm text-muted-foreground space-y-2 ml-6">
-                <li>• You can withdraw consent at any time via Settings</li>
+                <li>• <strong>Revoke anytime:</strong> You can turn off AI processing at any time in Settings</li>
                 <li>• Request deletion of your data under GDPR, CCPA, POPIA, or PIPEDA</li>
                 <li>• Access your consent history in your profile</li>
               </ul>
@@ -113,39 +131,33 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
                 <Link to="/data-processing" className="text-primary hover:underline">Data Processing Agreement</Link>
               </div>
             </div>
-
-            {/* Consent checkbox - prominent styling */}
-            <div className={cn(
-              "flex items-start gap-3 p-4 rounded-lg border-2 transition-colors",
-              accepted 
-                ? "border-primary bg-primary/5" 
-                : "border-amber-500 bg-amber-50 dark:bg-amber-950/20"
-            )}>
-              <Checkbox
-                id="consent"
-                checked={accepted}
-                onCheckedChange={(checked) => setAccepted(checked as boolean)}
-                className="mt-0.5 h-5 w-5"
-              />
-              <label htmlFor="consent" className="text-sm cursor-pointer select-none">
-                <span className={cn("font-medium", !accepted && "text-amber-700 dark:text-amber-400")}>
-                  {!accepted && "☑️ Check this box to continue: "}
-                </span>
-                I understand and consent to the processing of my health data by AI services 
-                for the purpose of extracting health metrics from my lab reports. I acknowledge 
-                that I can revoke this consent at any time.
-              </label>
-            </div>
-            
-            {!accepted && (
-              <p className="text-sm text-amber-600 dark:text-amber-400 text-center font-medium animate-pulse">
-                ↑ Please check the box above to enable the consent button
-              </p>
-            )}
           </div>
         </ScrollArea>
 
-        <div className="flex gap-3 pt-4 border-t">
+        {/* Consent checkbox — OUTSIDE ScrollArea so always visible */}
+        <div className="space-y-3 pt-4 border-t">
+          <div className={cn(
+            "flex items-start gap-3 p-4 rounded-lg border-2 transition-colors",
+            accepted 
+              ? "border-primary bg-primary/5" 
+              : "border-amber-500 bg-amber-50 dark:bg-amber-950/20"
+          )}>
+            <Checkbox
+              id="consent"
+              checked={accepted}
+              onCheckedChange={(checked) => setAccepted(checked as boolean)}
+              className="mt-0.5 h-5 w-5"
+            />
+            <label htmlFor="consent" className="text-sm cursor-pointer select-none">
+              I understand that AI processing of my health data involves two modes: 
+              anonymized text extraction for vitals and full document analysis for Health Vault 
+              summarization. I consent to both and acknowledge that I can revoke this consent 
+              at any time in Settings.
+            </label>
+          </div>
+        </div>
+
+        <div className="flex gap-3 pt-3">
           <Button variant="outline" className="flex-1" onClick={handleDecline}>
             Decline
           </Button>
