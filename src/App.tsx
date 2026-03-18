@@ -61,6 +61,7 @@ import Sitemap from "./pages/Sitemap";
 import Careers from "./pages/Careers";
 import JobDetail from "./pages/JobDetail";
 import HealthVault from "./pages/HealthVault";
+import { BugReportButton } from "./components/beta/BugReportButton";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -249,6 +250,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsentBanner />
+          <BugReportButton />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

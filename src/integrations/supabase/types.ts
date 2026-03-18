@@ -172,6 +172,39 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_bug_reports: {
+        Row: {
+          browser_info: Json | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          page_url: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          browser_info?: Json | null
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          page_url: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          browser_info?: Json | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          page_url?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       care_alert_logs: {
         Row: {
           id: string
