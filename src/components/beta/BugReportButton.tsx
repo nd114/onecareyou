@@ -42,7 +42,7 @@ export const BugReportButton = () => {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("beta_bug_reports" as any).insert({
+      const { data, error } = await supabase.from("beta_bug_reports" as any).insert({
         page_url: window.location.pathname,
         category,
         description: description.trim(),
