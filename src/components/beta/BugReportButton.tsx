@@ -66,14 +66,6 @@ export const BugReportButton = () => {
           },
         },
       }).catch((err) => console.warn("Notion sync failed (non-critical):", err));
-            page_url: window.location.pathname,
-            category,
-            description: description.trim(),
-            browser_info: getBrowserInfo(),
-            user_id: (await supabase.auth.getUser()).data.user?.email || "Anonymous",
-          },
-        },
-      }).catch((err) => console.warn("Notion sync failed (non-critical):", err));
 
       toast({ title: "Report submitted", description: "Thank you for your feedback!" });
       setDescription("");
