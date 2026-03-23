@@ -47,15 +47,25 @@ export const BugReportButton = () => {
         category,
         description: description.trim(),
         browser_info: getBrowserInfo(),
-      } as any);
+      } as any).select('id').single();
 
       if (error) throw error;
+
+      const reportId = (data as any)?.id || "";
 
       // Sync to Notion in the background (non-blocking)
       supabase.functions.invoke("sync-bug-to-notion", {
         body: {
           bugReport: {
-            id: data?.id,
+            id: reportId,
+            page_url: window.location.pathname,
+            category,
+            description: description.trim(),
+            browser_info: getBrowserInfo(),
+            user_id: (await supabase.auth.getUser()).data.user?.email || "Anonymous",
+          },
+        },
+      }).catch((err) => console.warn("Notion sync failed (non-critical):", err));
             page_url: window.location.pathname,
             category,
             description: description.trim(),
