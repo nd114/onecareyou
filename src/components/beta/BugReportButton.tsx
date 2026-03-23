@@ -42,14 +42,30 @@ export const BugReportButton = () => {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("beta_bug_reports" as any).insert({
+      const { data, error } = await supabase.from("beta_bug_reports" as any).insert({
         page_url: window.location.pathname,
         category,
         description: description.trim(),
         browser_info: getBrowserInfo(),
-      } as any);
+      } as any).select('id').single();
 
       if (error) throw error;
+
+      const reportId = (data as any)?.id || "";
+
+      // Sync to Notion in the background (non-blocking)
+      supabase.functions.invoke("sync-bug-to-notion", {
+        body: {
+          bugReport: {
+            id: reportId,
+            page_url: window.location.pathname,
+            category,
+            description: description.trim(),
+            browser_info: getBrowserInfo(),
+            user_id: (await supabase.auth.getUser()).data.user?.email || "Anonymous",
+          },
+        },
+      }).catch((err) => console.warn("Notion sync failed (non-critical):", err));
 
       toast({ title: "Report submitted", description: "Thank you for your feedback!" });
       setDescription("");
