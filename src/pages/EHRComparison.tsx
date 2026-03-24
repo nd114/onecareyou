@@ -124,6 +124,12 @@ const EHRComparison = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title="EHR Comparison — OneCare vs Traditional EHR Systems"
+        description="See how OneCare compares to traditional EHR systems. Modern patient engagement, affordable pricing, and seamless care coordination."
+        canonical="/ehr-comparison"
+        noIndex
+      />
       <ClinicianHeader />
       
       <main className="flex-1">

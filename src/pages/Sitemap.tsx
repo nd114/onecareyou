@@ -84,6 +84,11 @@ const sitemapData: SitemapSection[] = [
 export default function Sitemap() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title="Sitemap"
+        description="Navigate all pages on OneCare. Find features, pricing, clinician tools, support, and legal information."
+        canonical="/sitemap"
+      />
       <Header />
       
       <main className="flex-1">

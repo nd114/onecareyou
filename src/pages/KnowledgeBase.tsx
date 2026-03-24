@@ -92,6 +92,12 @@ const KnowledgeBase = () => {
   };
 
   return (
+    <>
+      <SEOHead
+        title="Knowledge Base — Medication & Health Information"
+        description="Browse OneCare's health knowledge base. Learn about medications, drug interactions, dosage information, and health topics."
+        canonical="/knowledge"
+      />
     <div className="min-h-screen bg-muted/30">
       <Header />
       

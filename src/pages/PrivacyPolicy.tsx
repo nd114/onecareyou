@@ -24,6 +24,11 @@ import { Separator } from "@/components/ui/separator";
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEOHead
+        title="Privacy Policy"
+        description="OneCare's privacy policy. Learn how we collect, use, and protect your health data. GDPR-compliant, encrypted, and never sold."
+        canonical="/privacy"
+      />
       <Header />
 
       <main className="container py-12 max-w-4xl">
