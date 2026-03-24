@@ -1,81 +1,104 @@
+## SEO Optimization Plan for OneCare
 
+### Current State: What's Wrong
 
-## Comprehensive Data Visibility & RLS Audit Results
+The platform has **critical SEO gaps** that are preventing search engine visibility:
 
-### Overall RLS Status: Solid Foundation
-- All 34 tables have RLS enabled
-- No tables missing policies entirely
-- Only 1 linter warning (expected: public-read tables like `emergency_numbers`, `international_drug_mappings`, and public-insert for `job_applications`)
-
----
-
-### Issues Found
-
-#### 1. Stale Demo Data (Most Impactful)
-Demo patient vitals and schedule entries mostly end around **Jan 27, 2026** -- over a month ago. This causes multiple visibility problems:
-
-| Patient | Vitals (last 30d) | Vitals (last 90d) | Schedule (last 30d) |
-|---|---|---|---|
-| demo-patient-1 (James) | 5 | 297 | 24 |
-| demo-patient-2 | 0 | 145 | 0 |
-| demo-patient-3 | 0 | 149 | 0 |
-| demo-patient-4 | 0 | 132 | 0 |
-| demo-patient-5 | 0 | 143 | 0 |
-
-**Impact**: The clinician dashboard's `usePatientVitalsSummaries` hook uses a **30-day window**, so 4 out of 5 demo patients show empty vitals and no adherence data on the dashboard. Only James Thompson shows minimal data.
-
-**Fix**: Update `usePatientVitalsSummaries.ts` to use a 90-day window (matching the patient-side vitals page fix already applied), or re-seed demo data with current dates.
-
-#### 2. Clinician Patient Detail Page - Vitals Limit Too Low
-`ClinicianPatientDetail.tsx` line 66 uses `.limit(100)` for vitals, but demo-patient-1 has **511 vitals**. This truncates the data significantly. The `get-shared-patient-data` edge function has a similar `.limit(50)`.
-
-**Fix**: Increase limit to 500 or remove the limit and rely on date filtering instead.
-
-#### 3. Clinician Detail Page - Schedule Window Too Narrow
-`ClinicianPatientDetail.tsx` line 98 uses a 30-day window for schedule entries. Most demo patients have no data in that window.
-
-**Fix**: Match the 90-day window or make it selectable like the patient vitals page.
-
-#### 4. Network Request Anomaly - Patient Querying Clinician Notifications
-The network logs show `demo-patient-1` (user `08ebec6a`) querying `clinician_guidance_notifications` with a clinician filter for their own user ID. This always returns empty because the patient isn't a clinician. This is a wasted query -- the `useClinicianNotifications` hook likely runs even when logged in as a patient.
-
-**Fix**: Add a guard in `useClinicianNotifications` to skip the query if the user doesn't have a clinician profile.
-
-#### 5. Profiles RLS - Redundant Overlapping SELECT Policies
-The `profiles` table has two overlapping SELECT policies for clinician access:
-- "Clinicians can view basic patient info from shares" (checks provider_shares)  
-- "Clinicians can view shared patient profiles with permission" (checks `clinician_has_patient_permission('profile')`)
-
-Both are PERMISSIVE, so they OR together. This isn't a bug, but the first policy grants SELECT on ALL profile columns to any clinician with an active share, regardless of the `profile` permission flag. This means a clinician without `profile: true` can still see sensitive fields like `date_of_birth`, `allergies`, `health_conditions`.
-
-**Fix**: The broader "basic info" policy should ideally be restricted via a view that only exposes `name` and `email`, or removed in favor of the permission-based policy.
-
-#### 6. `get-shared-patient-data` Edge Function - `getClaims` API
-The edge function uses `supabaseAuth.auth.getClaims(token)` which may not be available in all Supabase JS versions. If this fails silently, clinicians get 401 errors. The standard pattern is `supabaseAuth.auth.getUser()`.
-
-**Fix**: Replace `getClaims` with `getUser()` for reliable auth extraction.
+1. **No per-page meta tags** -- There is zero usage of `react-helmet` or any dynamic `<title>`/`<meta>` management. Every single page serves the same `<title>` ("OneCare - Your Health, Connected") and `<meta description>` from `index.html`. Google sees the same title for `/features`, `/pricing`, `/about`, `/contact`, etc. This is a major ranking penalty.
+2. **No canonical URLs** -- No `<link rel="canonical">` on any page. Search engines may index duplicate or preview URLs.
+3. **No structured data (JSON-LD)** -- Zero Schema.org markup. Google can't generate rich snippets (FAQ, Organization, Product, BreadcrumbList, etc.).
+4. **SPA rendering problem** -- The app is a client-side React SPA. Googlebot can render JavaScript, but it's slower and less reliable. There's no pre-rendering or SSR fallback.
+5. **Generic OG/Twitter images** -- The `og:image` points to a generic Lovable placeholder (`lovable.dev/opengraph-image-p98pqg.png`), not OneCare branding.
+6. **Sitemap is static and incomplete** -- `public/sitemap.xml` is hand-maintained, missing pages like `/careers`, `/sitemap`, `/ehr-comparison`, and has no `<lastmod>` dates.
+7. **No semantic HTML landmarks** -- Pages use generic `<div>` and `<section>` without `<main>`, `<article>`, or heading hierarchy best practices consistently.
+8. **Missing image alt text in key places** -- The landing page mock dashboard has no `alt` attributes on visual elements.
 
 ---
 
-### What's Working Well
-- Permission keys in `provider_shares` are now correctly using `vitals`, `meds`, `adherence`, `profile`
-- No orphaned shares (all user_ids map to valid profiles)
-- `clinician_has_patient_access()` and `clinician_has_patient_permission()` security-definer functions are properly configured
-- Vitals, medications, and schedule_entries all have correct clinician-access RLS policies
-- `get_current_user_email()` security-definer function prevents auth schema access issues
+### Implementation Plan
+
+#### Step 1: Add Dynamic Per-Page Meta Tags
+
+Install `react-helmet-async` and create a reusable `<SEO>` component.
+
+- **New file**: `src/components/seo/SEOHead.tsx`
+  - Props: `title`, `description`, `canonical`, `ogImage`, `ogType`, `noIndex`
+  - Renders `<Helmet>` with unique `<title>`, `<meta name="description">`, `<link rel="canonical">`, Open Graph tags, Twitter card tags
+  - Default fallback values from `brand-constants.ts`
+- **Wrap App** with `<HelmetProvider>` in `main.tsx`
+- **Add `<SEOHead>` to every public page** with unique, keyword-rich titles and descriptions:
+
+
+| Page                 | Title                                                           | Description (truncated)                                                                                                |
+| -------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `/`                  | OneCare -- Bridge the Gap Between Patient & Provider            | Eliminate information asymmetry. Share health updates with your doctors after leaving the hospital...                  |
+| `/features`          | Features -- Care Coordination, Vitals Tracking & More | OneCare | Explore OneCare's health tracking features: health vault, medication management, vitals monitoring, care circle...     |
+| `/pricing`           | Pricing -- Free & Premium Health Tracking Plans | OneCare       | Compare OneCare plans. Start free with medication tracking and vitals. Upgrade for health vault, advanced analytics... |
+| `/about`             | About OneCare -- Our Mission to Connect Patients & Providers    | Learn how OneCare eliminates information asymmetry between patients and providers...                                   |
+| `/contact`           | Contact Us | OneCare                                            | Get in touch with the OneCare team for support, partnerships, or feedback...                                           |
+| `/help`              | Help Center | OneCare                                           | Find answers to common questions about medication tracking, vitals, care sharing...                                    |
+| `/clinician/pricing` | Clinician Plans & Pricing | OneCare for Healthcare Providers    | HIPAA-ready clinician portal. Monitor patient vitals, manage care teams...                                             |
+| `/careers`           | Careers at OneCare -- Join Our Healthcare Team                  | Explore open positions at OneCare. Help us bridge the gap between patients and providers...                            |
+
+
+*(Similar unique titles/descriptions for all remaining public pages)*
+
+#### Step 2: Add Structured Data (JSON-LD)
+
+- **New file**: `src/components/seo/StructuredData.tsx` -- renders `<script type="application/ld+json">`
+- **Landing page**: `Organization` + `WebApplication` + `FAQPage` schema
+- **Pricing page**: `Product` with `Offer` schema (Free tier, Premium tier)
+- **About page**: `Organization` with `foundingDate`, `description`
+- **Careers page**: `JobPosting` schema for each open role
+- **All pages**: `BreadcrumbList` schema based on current route
+
+#### Step 3: Fix Open Graph & Social Sharing
+
+- Update `index.html` default `og:image` to a proper OneCare branded image (or generate one)
+- Add per-page OG images where possible via `<SEOHead>`
+- Fix `og:url` to use the canonical URL per page
+- Add `og:site_name: "OneCare"`
+
+#### Step 4: Improve Sitemap
+
+- Add missing pages: `/careers`, `/sitemap`, `/clinician/why-onecare`
+- Add `<lastmod>` dates to all entries
+- Remove any protected/authenticated routes that shouldn't be indexed
+- Keep the static XML approach (sufficient for this site size)
+
+#### Step 5: Add robots meta for protected pages
+
+- Add `<meta name="robots" content="noindex">` to all authenticated routes (dashboard, settings, medications, etc.) via the `<SEOHead>` component with `noIndex={true}`
+
+#### Step 6: Semantic HTML & Accessibility Improvements
+
+- Add `<main>` landmark to each page's primary content area
+- Ensure heading hierarchy: one `<h1>` per page, proper `<h2>`/`<h3>` nesting
+- Add `aria-label` to navigation sections
+
+#### Step 7: Performance & Core Web Vitals
+
+- Add `loading="lazy"` to below-fold images
+- Add `fetchpriority="high"` to hero section critical elements
+- Ensure fonts are preloaded in `index.html` (if custom fonts are used)
 
 ---
 
-### Recommended Implementation Order
+### Technical Details
 
-1. **Widen clinician-side data windows** (issues 1, 2, 3) -- highest impact, fixes empty dashboards
-   - `usePatientVitalsSummaries.ts`: 30d to 90d
-   - `ClinicianPatientDetail.tsx`: vitals limit 100 to 500, schedule 30d to 90d
-   - `get-shared-patient-data` edge function: vitals limit 50 to 200
+**Package to install**: `react-helmet-async`
 
-2. **Guard clinician-only queries from patient sessions** (issue 4) -- prevents wasted network calls
+**Files created**:
 
-3. **Tighten profiles RLS policy** (issue 5) -- security hardening, lower urgency since data is health-related not credentials
+- `src/components/seo/SEOHead.tsx`
+- `src/components/seo/StructuredData.tsx`
 
-4. **Fix `getClaims` in edge function** (issue 6) -- preventive fix for auth reliability
+**Files modified**:
 
+- `src/main.tsx` -- wrap with `HelmetProvider`
+- `index.html` -- update default OG tags, add font preload
+- `public/sitemap.xml` -- add missing pages, add lastmod
+- All ~15 public page components -- add `<SEOHead>` with unique metadata
+- `public/robots.txt` -- minor improvements
+
+**Estimated scope**: Medium -- mostly additive changes (new component + import in each page). No breaking changes.
