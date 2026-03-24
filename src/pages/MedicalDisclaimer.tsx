@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,

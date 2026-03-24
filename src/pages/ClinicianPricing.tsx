@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { 

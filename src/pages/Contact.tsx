@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { useState } from 'react';
 import { Send, MessageSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

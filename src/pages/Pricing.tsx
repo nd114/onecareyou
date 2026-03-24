@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { breadcrumbSchema, productSchema } from '@/components/seo/structuredData';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Check, X, Sparkles, HelpCircle, Crown, Loader2 } from 'lucide-react';

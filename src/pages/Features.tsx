@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { breadcrumbSchema } from '@/components/seo/structuredData';
 import { Link } from 'react-router-dom';
 import { 
   Shield, 
