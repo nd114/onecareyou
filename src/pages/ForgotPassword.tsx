@@ -126,7 +126,7 @@ const ForgotPassword = () => {
                 >
                   {isLoading ? (
     <>
-      <SEOHead title="Forgot Password" description="Reset your OneCare account password. Enter your email to receive a password reset link." canonical="/forgot-password" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Sending...
                     </>
