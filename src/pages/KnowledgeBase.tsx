@@ -284,6 +284,7 @@ const KnowledgeBase = () => {
         </motion.div>
       </main>
     </div>
+    </>
   );
 };
 
