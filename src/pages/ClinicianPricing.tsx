@@ -69,6 +69,11 @@ const ClinicianPricing = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Clinician Plans & Pricing — For Healthcare Providers"
+        description="HIPAA-ready clinician portal with continuous patient monitoring, clinical guidance tools, and care coordination. Start free or choose a plan that fits your practice."
+        canonical="/clinician/pricing"
+      />
       {isClinician ? <ClinicianHeader /> : <Header />}
       
       <main className="container py-12 px-4">

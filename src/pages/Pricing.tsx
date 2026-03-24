@@ -74,6 +74,15 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Pricing — Free & Premium Health Tracking Plans"
+        description="Compare OneCare plans. Start free with medication tracking and vitals monitoring. Upgrade to Premium for unlimited medications, health vault, AI lab parsing, and family profiles."
+        canonical="/pricing"
+        jsonLd={[
+          breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Pricing', path: '/pricing' }]),
+          productSchema('OneCare Premium', 'Premium health tracking with unlimited medications, family profiles, and AI-powered features', '9.99'),
+        ]}
+      />
       <Header />
       
       {/* Hero Section */}

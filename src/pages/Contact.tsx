@@ -60,6 +60,11 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Contact Us"
+        description="Get in touch with the OneCare team for support, partnerships, billing questions, or feedback. We'd love to hear from you."
+        canonical="/contact"
+      />
       <Header />
       
       {/* Hero Section */}

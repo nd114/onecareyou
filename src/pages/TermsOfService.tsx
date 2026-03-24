@@ -10,6 +10,11 @@ import { Separator } from '@/components/ui/separator';
 const TermsOfService = () => {
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEOHead
+        title="Terms of Service"
+        description="OneCare terms of service. Read our usage terms, conditions, and policies for using the OneCare health tracking platform."
+        canonical="/terms"
+      />
       <Header />
       
       <main className="container py-12 max-w-4xl">

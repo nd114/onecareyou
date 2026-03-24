@@ -250,6 +250,11 @@ const ClinicianWhyOneCare = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title="Why OneCare for Clinicians — Modern Patient Monitoring"
+        description="Discover why healthcare providers choose OneCare: real-time patient vitals, clinical guidance tools, care coordination, HIPAA compliance, and affordable pricing."
+        canonical="/clinician/why-onecare"
+      />
       <ClinicianHeader />
       
       <main className="flex-1">

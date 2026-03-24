@@ -86,6 +86,11 @@ const SignUp = () => {
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+      <SEOHead
+        title="Sign Up — Create Your Free Account"
+        description="Create your free OneCare account. Track medications, monitor vitals, and share health updates with your care team."
+        canonical="/sign-up"
+      />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

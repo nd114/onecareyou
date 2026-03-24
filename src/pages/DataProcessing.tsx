@@ -9,6 +9,11 @@ import { Database, Shield, Brain, Clock, FileCheck, Users, Lock, Smartphone, Ale
 const DataProcessing = () => {
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEOHead
+        title="Data Processing Agreement"
+        description="OneCare data processing agreement. Learn about GDPR compliance, data handling practices, and how we process your health information."
+        canonical="/data-processing"
+      />
       <Header />
       
       <main className="container py-12 max-w-4xl">
