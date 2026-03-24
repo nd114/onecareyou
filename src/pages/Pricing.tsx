@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { breadcrumbSchema, productSchema } from '@/components/seo/structuredData';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Check, X, Sparkles, HelpCircle, Crown, Loader2 } from 'lucide-react';
@@ -72,6 +74,15 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Pricing — Free & Premium Health Tracking Plans"
+        description="Compare OneCare plans. Start free with medication tracking and vitals monitoring. Upgrade to Premium for unlimited medications, health vault, AI lab parsing, and family profiles."
+        canonical="/pricing"
+        jsonLd={[
+          breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Pricing', path: '/pricing' }]),
+          productSchema('OneCare Premium', 'Premium health tracking with unlimited medications, family profiles, and AI-powered features', '9.99'),
+        ]}
+      />
       <Header />
       
       {/* Hero Section */}

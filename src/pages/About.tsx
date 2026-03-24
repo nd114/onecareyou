@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { organizationSchema, breadcrumbSchema } from '@/components/seo/structuredData';
 import { Link } from 'react-router-dom';
 import { Heart, Shield, Users, Target, Award, Sparkles, ArrowRight, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +41,12 @@ const stats = [
 const About = () => {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="About OneCare — Our Mission to Connect Patients & Providers"
+        description="Learn how OneCare eliminates information asymmetry between patients and providers. Our mission is to ensure continuous care coordination saves lives."
+        canonical="/about"
+        jsonLd={[organizationSchema(), breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }])]}
+      />
       <Header />
       
       {/* Hero Section */}

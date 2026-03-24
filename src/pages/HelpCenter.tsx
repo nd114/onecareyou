@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { SEOHead } from '@/components/seo/SEOHead';
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -111,6 +112,11 @@ const HelpCenter = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Help Center"
+        description="Find answers to common questions about OneCare: medication tracking, vitals monitoring, care sharing, scheduling, subscriptions, and privacy."
+        canonical="/help"
+      />
       <Header />
 
       {/* Hero Section */}

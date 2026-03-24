@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, Loader2, Heart, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +49,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+      <SEOHead title="Forgot Password" description="Reset your OneCare account password. Enter your email to receive a password reset link." canonical="/forgot-password" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -124,7 +126,8 @@ const ForgotPassword = () => {
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <>
+    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Sending...
                     </>

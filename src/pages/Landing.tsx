@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { organizationSchema, webApplicationSchema } from '@/components/seo/structuredData';
 import { Link } from 'react-router-dom';
 import { 
   Shield, 
@@ -119,6 +121,12 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Bridge the Gap Between Patient & Provider"
+        description="OneCare eliminates information asymmetry between patients and providers. Track vitals, manage medications, and share health updates with your care team after leaving the hospital."
+        canonical="/"
+        jsonLd={[organizationSchema(), webApplicationSchema()]}
+      />
       {isClinician ? <ClinicianHeader /> : <Header />}
       
       {/* Hero Section */}

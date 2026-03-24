@@ -13,4 +13,20 @@ Allow: /
 User-agent: *
 Allow: /
 
+# Protected routes
+Disallow: /dashboard
+Disallow: /medications
+Disallow: /schedule
+Disallow: /vitals
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /care-circle
+Disallow: /health-vault
+Disallow: /family
+Disallow: /clinician/dashboard
+Disallow: /clinician/patients
+Disallow: /clinician/settings
+Disallow: /clinician/alerts
+Disallow: /clinician/guidance
+
 Sitemap: https://onecareyou.lovable.app/sitemap.xml

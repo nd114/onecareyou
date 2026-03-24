@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
@@ -23,6 +24,11 @@ import { Separator } from "@/components/ui/separator";
 const MedicalDisclaimer = () => {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Medical Disclaimer"
+        description="Important medical disclaimer for OneCare. Our platform is for informational purposes only and is not a substitute for professional medical advice."
+        canonical="/disclaimer"
+      />
       <Header />
 
       {/* Hero Section */}

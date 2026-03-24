@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,6 +84,11 @@ const sitemapData: SitemapSection[] = [
 export default function Sitemap() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead
+        title="Sitemap"
+        description="Navigate all pages on OneCare. Find features, pricing, clinician tools, support, and legal information."
+        canonical="/sitemap"
+      />
       <Header />
       
       <main className="flex-1">

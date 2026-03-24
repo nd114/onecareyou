@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { breadcrumbSchema } from '@/components/seo/structuredData';
 import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Heart, 
@@ -49,6 +51,12 @@ const Careers = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Careers at OneCare — Join Our Healthcare Team"
+        description="Explore open positions at OneCare. Help us bridge the gap between patients and providers. Remote-first, patient-first culture."
+        canonical="/careers"
+        jsonLd={breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Careers', path: '/careers' }])}
+      />
       <Header />
       
       <main className="flex-1">

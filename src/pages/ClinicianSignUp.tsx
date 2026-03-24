@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -160,6 +161,11 @@ const ClinicianSignUp = () => {
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+      <SEOHead
+        title="Clinician Sign Up — Create Your Provider Account"
+        description="Create your OneCare clinician account. Access patient monitoring, clinical guidance tools, and care coordination for your practice."
+        canonical="/clinician/sign-up"
+      />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

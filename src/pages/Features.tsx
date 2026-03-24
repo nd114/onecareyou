@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { breadcrumbSchema } from '@/components/seo/structuredData';
 import { Link } from 'react-router-dom';
 import { 
   Shield, 
@@ -92,6 +94,12 @@ const additionalFeatures = [
 const Features = () => {
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title="Features — Care Coordination, Vitals Tracking & More"
+        description="Explore OneCare's health tracking features: medication management, vitals monitoring, care circle sharing, health vault, smart notifications, and provider integration."
+        canonical="/features"
+        jsonLd={breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Features', path: '/features' }])}
+      />
       <Header />
       
       {/* Hero Section */}

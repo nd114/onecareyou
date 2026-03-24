@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +24,11 @@ import { Separator } from "@/components/ui/separator";
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEOHead
+        title="Privacy Policy"
+        description="OneCare's privacy policy. Learn how we collect, use, and protect your health data. GDPR-compliant, encrypted, and never sold."
+        canonical="/privacy"
+      />
       <Header />
 
       <main className="container py-12 max-w-4xl">
