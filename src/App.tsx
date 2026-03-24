@@ -218,7 +218,11 @@ const App = () => (
               </ProtectedRoute>
             } />
             {/* Internal/unlisted pages */}
-            <Route path="/ehr-comparison" element={<EHRComparison />} />
+            <Route path="/ehr-comparison" element={
+              <ProtectedRoute>
+                <EHRComparison />
+              </ProtectedRoute>
+            } />
             <Route path="/admin/import" element={
               <ProtectedRoute>
                 <AdminImport />
