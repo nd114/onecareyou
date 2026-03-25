@@ -76,6 +76,7 @@ export function UploadDocumentDialog() {
       documentDate: documentDate || undefined,
       notes: notes || undefined,
       aiSummarize,
+      familyMemberId,
     });
     setOpen(false);
     resetForm();
