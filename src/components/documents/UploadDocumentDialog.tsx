@@ -89,6 +89,7 @@ export function UploadDocumentDialog() {
     setDocumentDate('');
     setNotes('');
     setAiSummarize(false);
+    setFamilyMemberId(null);
   };
 
   return (
