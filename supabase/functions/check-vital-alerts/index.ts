@@ -295,7 +295,7 @@ const handler = async (req: Request): Promise<Response> => {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                from: "Marpe Alerts <onboarding@resend.dev>",
+                from: "OneCare Alerts <alerts@onecare.you>",
                 to: [clinicianEmail],
                 subject: `⚠️ Vital Alert: ${patientName}`,
                 html: htmlContent,
