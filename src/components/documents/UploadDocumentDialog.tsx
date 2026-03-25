@@ -166,6 +166,13 @@ export function UploadDocumentDialog() {
               </Select>
             </div>
 
+            {/* Family Member Selector */}
+            <FamilyMemberSelector
+              value={familyMemberId}
+              onChange={setFamilyMemberId}
+              label="Document for"
+            />
+
             {/* Document Date */}
             <div>
               <Label htmlFor="doc-date">Document Date</Label>
