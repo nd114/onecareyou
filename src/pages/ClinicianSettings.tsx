@@ -630,6 +630,9 @@ const ClinicianSettings = () => {
 
           {/* EHR Connections */}
           <EHRConnectionsSection />
+
+          {/* Practice Branding */}
+          <PracticeBrandingCard />
         </motion.div>
       </main>
     </div>
