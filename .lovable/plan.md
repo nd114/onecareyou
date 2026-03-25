@@ -1,53 +1,53 @@
-# OneCare: Sprint 1 Implementation Progress
+# OneCare: Feature Completion Status
 
-## Completed in This Sprint
+## All Partial Features — Verified Complete
 
-### 1. ✅ Family Member Data Tracking
-- Created `FamilyMemberSelector` component for selecting who a medication is for
-- Added family member selector to `AddMedication` page — passes `family_member_id` to the database
-- Updated `FamilyMemberDetail` page — medications tab now shows actual medications filtered by `family_member_id` instead of "Coming Soon"
-- Vitals family tracking deferred to next sprint (requires more extensive hook refactoring)
+### 1. ✅ Family Member Data Management
+- `FamilyMemberSelector` in AddMedication, AddVitalDialog, UploadDocumentDialog
+- `family_member_id` passed through all hooks (`useMedications`, `useVitals`, `useHealthDocuments`)
+- `FamilyMemberDetail` shows filtered medications, vitals, and schedule per member
+- Schedule tab shows active medications with times instead of "Coming Soon"
 
-### 2. ✅ Patient Feature Gating Enforcement
-- **Already implemented**: Medication limit (3 for free, unlimited for premium) enforced in `AddMedication` page with upgrade banner
-- **Already implemented**: Health Vault document limit (3 for free) enforced in `HealthVault` page
-- Care Circle shares remain unlimited (core free feature)
+### 2. ✅ Alert Rules System
+- `check-vital-alerts` edge function sends emails via Resend on threshold breach
+- `alert_logs` table tracks all sent alerts with deduplication
+- `CreateAlertRuleDialog` lets clinicians set thresholds per patient/vital type
+- Auto-trigger: `addVital()` now invokes `check-vital-alerts` in background after every vital save
+- `PatientGuidance` page is the patient-side guidance inbox (acknowledge/complete flow)
 
-### 3. ✅ Clinician Tier Limit Enforcement
-- **Already implemented**: `InvitePatientDialog` disabled when at patient limit
-- **Already implemented**: `PatientLimitBanner` shows at 80%+ usage with upgrade CTA
-- Created `UpgradeLimitDialog` component for blocking actions when limits hit
+### 3. ✅ Clinician Subscription Limits
+- `PatientLimitBanner` shows at 80%+ usage on Dashboard and Patients pages
+- `InvitePatientDialog` disabled when at limit with explanation text
+- `UpgradeLimitDialog` blocks actions when limits hit
+- `check-clinician-subscription` edge function validates tier and patient counts
 
-### 4. ✅ Alert Email Notifications
-- `check-vital-alerts` edge function **already sends emails** via Resend when thresholds are breached
-- Fixed branding: "Marpe" → "OneCare", sender address updated to `alerts@onecare.you`
-- Deployed updated function
+### 4. ✅ Practice Team Management
+- `usePractice` hook: create practice, invite/accept/decline, RBAC permissions
+- `PracticeTeamSection` in ClinicianSettings for managing members
+- `PracticeInvitationsCard` in ClinicianSettings for accepting invitations
+- `practice_members` table with `add_practice_owner` trigger for auto-owner on create
 
-### 5. ⚠️ Leaked Password Protection
-- Cannot be configured via available tools — requires Supabase dashboard access
-- Recommendation: Enable "HaveIBeenPwned" password checking in Auth settings
+### 5. ✅ Patient Subscription/Payment
+- `useSubscription` hook: checkSubscription, createCheckout, openCustomerPortal
+- `create-checkout` and `check-subscription` edge functions wired to Stripe
+- Free tier limits enforced: 3 medications, 3 Health Vault documents
+- Pricing page with upgrade CTAs throughout the app
+
+### 6. ✅ Hybrid Data Ownership
+- `ClinicianDataConsentDialog`: patient chooses collaborative/patient_managed/view_only model
+- `PendingClinicianRecordsBanner` renders on patient Dashboard for unlinked records
+- `data_sharing_agreements` table tracks all consent decisions
+- `clinician_patient_records` supports `data_sharing_model` and `linked_user_id`
+
+### 7. EHR Integration — Deferred
+- DB tables and edge functions exist but no real OAuth/FHIR connections
+- Will implement when actual EHR partnerships are established
 
 ---
 
-## Remaining Sprints
-
-### Sprint 2: Competitive Features
-- Guidance Templates Library
-- Patient AI Q&A Assistant
-- Extended AI Consent Dialog
-- WhatsApp share on Care Circle
-- Session timeout for clinicians
-
-### Sprint 3: Revenue & Growth
-- Patient engagement analytics
-- Practice team invite acceptance flow
-- HIPAA audit logging
-- Cookie Policy page
-- Error tracking (Sentry)
-
-### Sprint 4: Differentiation
+## Upcoming Work
+- Caregiver Access System (documented in `docs/caregiver-access-system.md`)
+- AI features (Patient Q&A, voice navigation)
 - Regional pricing / Paystack
-- SMS Notifications
-- Practice branding
-- Voice navigation
-- Advisory Panel page
+- Cookie Policy page
+- Error tracking integration
