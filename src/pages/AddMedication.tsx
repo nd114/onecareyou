@@ -155,6 +155,12 @@ const AddMedication = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Family Member Selector */}
+                <FamilyMemberSelector 
+                  value={familyMemberId} 
+                  onChange={setFamilyMemberId}
+                />
+
                 {/* Quick Add Options - Photo ID and Barcode Scanner */}
                 <Card className="border-dashed border-primary/30 bg-primary/5">
                   <CardContent className="p-4">
