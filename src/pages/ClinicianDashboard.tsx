@@ -44,6 +44,9 @@ import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog'
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 import { ClinicianOnboardingCard } from '@/components/clinician/ClinicianOnboardingCard';
 import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinician/BulkPatientActions';
+import { PatientEngagementWidgets } from '@/components/clinician/PatientEngagementWidgets';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useHipaaAuditLog } from '@/hooks/useHipaaAuditLog';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
