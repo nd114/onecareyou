@@ -468,7 +468,14 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                   onChange={(e) => setSelectedTime(e.target.value)}
                   className="w-full"
                 />
-              </div>
+            </div>
+
+            {/* Family Member Selector */}
+            <FamilyMemberSelector
+              value={familyMemberId}
+              onChange={setFamilyMemberId}
+              label="Recording for"
+            />
             </div>
 
             {mode === 'manual' ? (
