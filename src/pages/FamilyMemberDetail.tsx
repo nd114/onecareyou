@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { useFamilyMembers } from '@/hooks/useFamilyMembers';
 import { useMedications } from '@/hooks/useMedications';
+import { useVitals } from '@/hooks/useVitals';
 import { Loader2 } from 'lucide-react';
 import { differenceInYears, format } from 'date-fns';
 import {
