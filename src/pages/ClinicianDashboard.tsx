@@ -206,6 +206,12 @@ const ClinicianDashboard = () => {
         {/* Patient Limit Banner - shows when near/at limit */}
         <PatientLimitBanner patientCount={patientCount} />
 
+        {/* Patient Engagement Analytics */}
+        <PatientEngagementWidgets
+          patients={patients.map(p => ({ user_id: p.user_id, patient_name: p.patient_name }))}
+          vitalsSummaries={vitalsSummaries}
+        />
+
         {/* Quick Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
