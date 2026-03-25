@@ -33,6 +33,7 @@ import {
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
+import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 
 export function UploadDocumentDialog() {
   const [open, setOpen] = useState(false);
