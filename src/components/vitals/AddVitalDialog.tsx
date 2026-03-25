@@ -27,7 +27,7 @@ import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 interface AddVitalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (type: VitalType, value: number, secondaryValue?: number, notes?: string, date?: Date) => Promise<any>;
+  onSave: (type: VitalType, value: number, secondaryValue?: number, notes?: string, date?: Date, familyMemberId?: string | null) => Promise<any>;
 }
 
 interface ExtractedVital {
