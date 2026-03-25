@@ -1183,6 +1183,45 @@ export type Database = {
           },
         ]
       }
+      hipaa_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          patient_user_id: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          patient_user_id?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          patient_user_id?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       international_drug_mappings: {
         Row: {
           brand_name: string
@@ -1659,6 +1698,8 @@ export type Database = {
       practices: {
         Row: {
           address: string | null
+          brand_accent_color: string | null
+          brand_logo_url: string | null
           city: string | null
           country: string | null
           created_at: string
@@ -1685,6 +1726,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          brand_accent_color?: string | null
+          brand_logo_url?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -1711,6 +1754,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          brand_accent_color?: string | null
+          brand_logo_url?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
