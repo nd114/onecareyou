@@ -96,6 +96,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setUsedLocalOCR(false);
     setUploadedFile(null);
     setSaveToVault(true);
+    setFamilyMemberId(null);
   };
 
   // Combine date and time into a single Date object
