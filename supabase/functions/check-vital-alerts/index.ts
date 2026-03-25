@@ -279,7 +279,7 @@ const handler = async (req: Request): Promise<Response> => {
                     <p>Please review this patient's vitals at your earliest convenience.</p>
                     
                     <div class="footer">
-                      <p>This is an automated alert from Marpe based on alert rules you configured.</p>
+                      <p>This is an automated alert from OneCare based on alert rules you configured.</p>
                       <p>You can manage your alert settings in the Clinician Portal.</p>
                     </div>
                   </div>
@@ -295,7 +295,7 @@ const handler = async (req: Request): Promise<Response> => {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                from: "Marpe Alerts <onboarding@resend.dev>",
+                from: "OneCare Alerts <alerts@onecare.you>",
                 to: [clinicianEmail],
                 subject: `⚠️ Vital Alert: ${patientName}`,
                 html: htmlContent,

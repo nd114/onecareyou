@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -13,6 +13,7 @@ import {
   Droplets,
   Ruler,
   AlertCircle,
+  Plus,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { useFamilyMembers } from '@/hooks/useFamilyMembers';
+import { useMedications } from '@/hooks/useMedications';
 import { Loader2 } from 'lucide-react';
 import { differenceInYears, format } from 'date-fns';
 import {
@@ -39,6 +41,7 @@ const FamilyMemberDetail = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
   const { familyMembers, isLoading, deleteMember } = useFamilyMembers();
+  const { medications } = useMedications();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const member = familyMembers.find(m => m.id === memberId);
@@ -311,17 +314,51 @@ const FamilyMemberDetail = () => {
             <TabsContent value="medications">
               <Card>
                 <CardHeader>
-                  <CardTitle>Medications</CardTitle>
-                  <CardDescription>
-                    Manage medications for {member.name}
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Medications</CardTitle>
+                      <CardDescription>
+                        Manage medications for {member.name}
+                      </CardDescription>
+                    </div>
+                    <Button size="sm" className="gradient-primary border-0" asChild>
+                      <Link to="/medications/add">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add
+                      </Link>
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent className="text-center py-8">
-                  <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Coming Soon</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Family member medication management will be available soon.
-                  </p>
+                <CardContent>
+                  {(() => {
+                    const memberMeds = medications.filter(m => m.family_member_id === memberId);
+                    if (memberMeds.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="font-semibold mb-2">No Medications</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Add a medication and select {member.name} as the person.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-3">
+                        {memberMeds.map(med => (
+                          <div key={med.id} className="flex items-center justify-between p-3 rounded-lg border">
+                            <div>
+                              <p className="font-medium">{med.name}</p>
+                              <p className="text-sm text-muted-foreground">{med.dosage} • {med.frequency.replace(/_/g, ' ')}</p>
+                            </div>
+                            <Badge variant={med.is_active ? 'default' : 'secondary'}>
+                              {med.is_active ? 'Active' : 'Discontinued'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -338,7 +375,7 @@ const FamilyMemberDetail = () => {
                   <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">Coming Soon</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Family member vitals tracking will be available soon.
+                    Family member vitals tracking is coming in a future update.
                   </p>
                 </CardContent>
               </Card>
@@ -356,7 +393,7 @@ const FamilyMemberDetail = () => {
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">Coming Soon</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Family member schedule management will be available soon.
+                    Family member schedule management is coming in a future update.
                   </p>
                 </CardContent>
               </Card>

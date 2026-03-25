@@ -24,6 +24,7 @@ import { MedicationScanner } from '@/components/medications/MedicationScanner';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 import { FREE_MEDICATION_LIMIT } from '@/lib/pricing-constants';
+import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 
 const medicationTypes: { value: MedicationType; label: string }[] = [
   { value: 'prescription', label: 'Prescription' },
@@ -37,6 +38,7 @@ const AddMedication = () => {
   const navigate = useNavigate();
   const { addMedication, medications } = useMedications();
   const { isPremium, checkSubscription, checkingStatus } = useSubscription();
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     type: '' as MedicationType | '',
@@ -92,6 +94,7 @@ const AddMedication = () => {
       instructions: formData.instructions || null,
       prescriber: formData.prescriber || null,
       pharmacy: formData.pharmacy || null,
+      family_member_id: familyMemberId,
     });
 
     navigate('/medications');
@@ -152,6 +155,12 @@ const AddMedication = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Family Member Selector */}
+                <FamilyMemberSelector 
+                  value={familyMemberId} 
+                  onChange={setFamilyMemberId}
+                />
+
                 {/* Quick Add Options - Photo ID and Barcode Scanner */}
                 <Card className="border-dashed border-primary/30 bg-primary/5">
                   <CardContent className="p-4">
