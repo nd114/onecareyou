@@ -44,6 +44,9 @@ import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog'
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 import { ClinicianOnboardingCard } from '@/components/clinician/ClinicianOnboardingCard';
 import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinician/BulkPatientActions';
+import { PatientEngagementWidgets } from '@/components/clinician/PatientEngagementWidgets';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useHipaaAuditLog } from '@/hooks/useHipaaAuditLog';
 
 const ClinicianDashboard = () => {
   const navigate = useNavigate();
@@ -53,6 +56,10 @@ const ClinicianDashboard = () => {
   const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule } = useAlertRules();
   const { patientLimit, tier, isTrial } = useClinicianSubscription();
   const { startTour } = useClinicianTour();
+  
+  // Session timeout for HIPAA compliance
+  useSessionTimeout();
+  const { logAccess } = useHipaaAuditLog();
   
   // Get patient user IDs for vitals summaries
   const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
@@ -97,6 +104,7 @@ const ClinicianDashboard = () => {
   useEffect(() => {
     if (isClinician && !isLoading) {
       autoClaimShares.mutate();
+      logAccess({ action: 'view_dashboard', resource_type: 'clinician_dashboard' });
     }
   }, [isClinician, isLoading]);
 
@@ -197,6 +205,12 @@ const ClinicianDashboard = () => {
 
         {/* Patient Limit Banner - shows when near/at limit */}
         <PatientLimitBanner patientCount={patientCount} />
+
+        {/* Patient Engagement Analytics */}
+        <PatientEngagementWidgets
+          patients={patients.map(p => ({ user_id: p.user_id, patient_name: p.patient_name }))}
+          vitalsSummaries={vitalsSummaries}
+        />
 
         {/* Quick Stats */}
         <motion.div

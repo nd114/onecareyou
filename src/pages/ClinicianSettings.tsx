@@ -40,6 +40,8 @@ import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSect
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection';
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
+import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
@@ -58,6 +60,8 @@ const ClinicianSettings = () => {
   
   // Initialize service worker for push notifications
   useServiceWorker();
+  // Session timeout for HIPAA compliance
+  useSessionTimeout();
 
   const [profileForm, setProfileForm] = useState({
     first_name: clinicianProfile?.first_name || '',
@@ -626,6 +630,9 @@ const ClinicianSettings = () => {
 
           {/* EHR Connections */}
           <EHRConnectionsSection />
+
+          {/* Practice Branding */}
+          <PracticeBrandingCard />
         </motion.div>
       </main>
     </div>
