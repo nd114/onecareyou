@@ -43,6 +43,7 @@ export function UploadDocumentDialog() {
   const [documentDate, setDocumentDate] = useState('');
   const [notes, setNotes] = useState('');
   const [aiSummarize, setAiSummarize] = useState(false);
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [showAiConfirm, setShowAiConfirm] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const { uploadDocument } = useHealthDocuments();
