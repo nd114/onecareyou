@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { performLocalOCR, isOCRSupported, requiresServerProcessing, type OCRProgress } from '@/lib/ocr';
+import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 import { Progress } from '@/components/ui/progress';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 
