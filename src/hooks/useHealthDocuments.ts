@@ -114,6 +114,7 @@ export function useHealthDocuments() {
           notes: notes || null,
           tags: [],
           source_context: sourceContext,
+          family_member_id: familyMemberId || null,
         })
         .select()
         .single();
