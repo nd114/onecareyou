@@ -60,7 +60,8 @@ export function useVitals() {
     value: number,
     secondaryValue?: number,
     notes?: string,
-    recordedAt?: Date
+    recordedAt?: Date,
+    familyMemberId?: string | null
   ) => {
     if (!user) {
       toast.error('Please sign in to record vitals');
