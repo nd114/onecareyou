@@ -38,6 +38,7 @@ const AddMedication = () => {
   const navigate = useNavigate();
   const { addMedication, medications } = useMedications();
   const { isPremium, checkSubscription, checkingStatus } = useSubscription();
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     type: '' as MedicationType | '',
