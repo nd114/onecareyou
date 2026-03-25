@@ -60,6 +60,8 @@ const ClinicianSettings = () => {
   
   // Initialize service worker for push notifications
   useServiceWorker();
+  // Session timeout for HIPAA compliance
+  useSessionTimeout();
 
   const [profileForm, setProfileForm] = useState({
     first_name: clinicianProfile?.first_name || '',
