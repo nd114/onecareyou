@@ -78,6 +78,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   // Consent dialog state
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
 
   const resetForm = () => {
     setValues({});
