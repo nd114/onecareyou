@@ -289,6 +289,19 @@ const CareCircle = () => {
                             <Copy className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
                             <span className="hidden sm:inline">Copy Link</span>
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
+                            onClick={() => {
+                              const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
+                              const text = `Hi ${share.provider_name}, I've shared my health data with you on OneCare. View it here: ${link}`;
+                              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                            }}
+                          >
+                            <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">WhatsApp</span>
+                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
