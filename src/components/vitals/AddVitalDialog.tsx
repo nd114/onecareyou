@@ -20,13 +20,14 @@ import { Badge } from '@/components/ui/badge';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { performLocalOCR, isOCRSupported, requiresServerProcessing, type OCRProgress } from '@/lib/ocr';
+import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 import { Progress } from '@/components/ui/progress';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 
 interface AddVitalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (type: VitalType, value: number, secondaryValue?: number, notes?: string, date?: Date) => Promise<any>;
+  onSave: (type: VitalType, value: number, secondaryValue?: number, notes?: string, date?: Date, familyMemberId?: string | null) => Promise<any>;
 }
 
 interface ExtractedVital {
@@ -77,6 +78,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   // Consent dialog state
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
 
   const resetForm = () => {
     setValues({});
@@ -94,6 +96,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
     setUsedLocalOCR(false);
     setUploadedFile(null);
     setSaveToVault(true);
+    setFamilyMemberId(null);
   };
 
   // Combine date and time into a single Date object
@@ -141,7 +144,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
           ? convertToBaseUnit(entry.type, entry.secondaryValue) 
           : undefined;
         
-        await onSave(entry.type, baseValue, baseSecondaryValue, notes || undefined, recordedDateTime);
+        await onSave(entry.type, baseValue, baseSecondaryValue, notes || undefined, recordedDateTime, familyMemberId);
       }
 
       resetForm();
@@ -363,7 +366,8 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
           vital.value, 
           vital.secondary_value || undefined, 
           'Extracted from lab report', 
-          selectedDate
+          selectedDate,
+          familyMemberId
         );
       }
 
@@ -464,7 +468,14 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                   onChange={(e) => setSelectedTime(e.target.value)}
                   className="w-full"
                 />
-              </div>
+            </div>
+
+            {/* Family Member Selector */}
+            <FamilyMemberSelector
+              value={familyMemberId}
+              onChange={setFamilyMemberId}
+              label="Recording for"
+            />
             </div>
 
             {mode === 'manual' ? (

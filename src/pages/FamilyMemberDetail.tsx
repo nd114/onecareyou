@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { useFamilyMembers } from '@/hooks/useFamilyMembers';
 import { useMedications } from '@/hooks/useMedications';
+import { useVitals } from '@/hooks/useVitals';
 import { Loader2 } from 'lucide-react';
 import { differenceInYears, format } from 'date-fns';
 import {
@@ -42,6 +43,7 @@ const FamilyMemberDetail = () => {
   const navigate = useNavigate();
   const { familyMembers, isLoading, deleteMember } = useFamilyMembers();
   const { medications } = useMedications();
+  const { vitals } = useVitals();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const member = familyMembers.find(m => m.id === memberId);
@@ -366,17 +368,60 @@ const FamilyMemberDetail = () => {
             <TabsContent value="vitals">
               <Card>
                 <CardHeader>
-                  <CardTitle>Vitals</CardTitle>
-                  <CardDescription>
-                    Track vital signs for {member.name}
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Vitals</CardTitle>
+                      <CardDescription>
+                        Track vital signs for {member.name}
+                      </CardDescription>
+                    </div>
+                    <Button size="sm" className="gradient-primary border-0" asChild>
+                      <Link to="/vitals">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Record
+                      </Link>
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent className="text-center py-8">
-                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Coming Soon</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Family member vitals tracking is coming in a future update.
-                  </p>
+                <CardContent>
+                  {(() => {
+                    const memberVitals = vitals.filter(v => v.family_member_id === memberId);
+                    if (memberVitals.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="font-semibold mb-2">No Vitals Recorded</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Record vitals and select {member.name} as the person on the Vitals page.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-3">
+                        {memberVitals.slice(0, 10).map(vital => (
+                          <div key={vital.id} className="flex items-center justify-between p-3 rounded-lg border">
+                            <div>
+                              <p className="font-medium capitalize">{vital.type.replace(/_/g, ' ')}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {vital.type === 'blood_pressure' && vital.secondary_value
+                                  ? `${vital.value}/${vital.secondary_value}`
+                                  : vital.value} {vital.unit}
+                              </p>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(vital.recorded_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                        {memberVitals.length > 10 && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            Showing latest 10 of {memberVitals.length} records
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>

@@ -19,6 +19,7 @@ export interface VitalRecord {
   source: VitalSource;
   external_id: string | null;
   ehr_connection_id: string | null;
+  family_member_id: string | null;
 }
 
 // Check if a vital can be edited (only manual entries can be modified)
@@ -60,7 +61,8 @@ export function useVitals() {
     value: number,
     secondaryValue?: number,
     notes?: string,
-    recordedAt?: Date
+    recordedAt?: Date,
+    familyMemberId?: string | null
   ) => {
     if (!user) {
       toast.error('Please sign in to record vitals');
@@ -81,6 +83,7 @@ export function useVitals() {
           recorded_at: recordedAt?.toISOString() || new Date().toISOString(),
           notes: notes || null,
           source: 'manual', // Patient-entered vitals are always manual
+          family_member_id: familyMemberId || null,
         })
         .select()
         .single();

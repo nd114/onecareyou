@@ -33,6 +33,7 @@ import {
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
+import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 
 export function UploadDocumentDialog() {
   const [open, setOpen] = useState(false);
@@ -42,6 +43,7 @@ export function UploadDocumentDialog() {
   const [documentDate, setDocumentDate] = useState('');
   const [notes, setNotes] = useState('');
   const [aiSummarize, setAiSummarize] = useState(false);
+  const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [showAiConfirm, setShowAiConfirm] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const { uploadDocument } = useHealthDocuments();
@@ -74,6 +76,7 @@ export function UploadDocumentDialog() {
       documentDate: documentDate || undefined,
       notes: notes || undefined,
       aiSummarize,
+      familyMemberId,
     });
     setOpen(false);
     resetForm();
@@ -86,6 +89,7 @@ export function UploadDocumentDialog() {
     setDocumentDate('');
     setNotes('');
     setAiSummarize(false);
+    setFamilyMemberId(null);
   };
 
   return (
@@ -161,6 +165,13 @@ export function UploadDocumentDialog() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Family Member Selector */}
+            <FamilyMemberSelector
+              value={familyMemberId}
+              onChange={setFamilyMemberId}
+              label="Document for"
+            />
 
             {/* Document Date */}
             <div>

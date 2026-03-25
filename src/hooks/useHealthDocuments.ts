@@ -75,6 +75,7 @@ export function useHealthDocuments() {
       notes,
       aiSummarize = false,
       sourceContext = 'direct',
+      familyMemberId,
     }: {
       file: File;
       title: string;
@@ -83,6 +84,7 @@ export function useHealthDocuments() {
       notes?: string;
       aiSummarize?: boolean;
       sourceContext?: string;
+      familyMemberId?: string | null;
     }) => {
       if (!user) throw new Error('Not authenticated');
       
@@ -112,6 +114,7 @@ export function useHealthDocuments() {
           notes: notes || null,
           tags: [],
           source_context: sourceContext,
+          family_member_id: familyMemberId || null,
         })
         .select()
         .single();
