@@ -92,6 +92,12 @@ export function useVitals() {
       
       setVitals(prev => [data as VitalRecord, ...prev]);
       toast.success(`${config.label} recorded successfully!`);
+      
+      // Trigger vital alert check in background (non-blocking)
+      supabase.functions.invoke('check-vital-alerts').catch(err => 
+        console.log('Alert check skipped:', err)
+      );
+      
       return data;
     } catch (error) {
       console.error('Error adding vital:', error);

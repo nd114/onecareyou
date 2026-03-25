@@ -14,6 +14,7 @@ import {
   Ruler,
   AlertCircle,
   Plus,
+  Clock,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -434,12 +435,47 @@ const FamilyMemberDetail = () => {
                     View medication schedule for {member.name}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Coming Soon</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Family member schedule management is coming in a future update.
-                  </p>
+                <CardContent>
+                  {(() => {
+                    const memberMeds = medications.filter(m => m.family_member_id === memberId && m.is_active);
+                    if (memberMeds.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="font-semibold mb-2">No Active Medications</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Add medications for {member.name} to see their schedule here.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-3">
+                        {memberMeds.map(med => {
+                          const times = Array.isArray(med.times_of_day) ? med.times_of_day as string[] : [];
+                          return (
+                            <div key={med.id} className="p-3 rounded-lg border">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="font-medium">{med.name}</p>
+                                <Badge variant="outline">{med.frequency.replace(/_/g, ' ')}</Badge>
+                              </div>
+                              {times.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {times.map((time, i) => (
+                                    <Badge key={i} variant="secondary" className="text-xs">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {time}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-2">{med.dosage}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
