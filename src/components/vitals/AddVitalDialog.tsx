@@ -366,7 +366,8 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
           vital.value, 
           vital.secondary_value || undefined, 
           'Extracted from lab report', 
-          selectedDate
+          selectedDate,
+          familyMemberId
         );
       }
 
