@@ -19,6 +19,7 @@ export interface VitalRecord {
   source: VitalSource;
   external_id: string | null;
   ehr_connection_id: string | null;
+  family_member_id: string | null;
 }
 
 // Check if a vital can be edited (only manual entries can be modified)
