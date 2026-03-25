@@ -40,6 +40,8 @@ import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSect
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection';
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
+import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
