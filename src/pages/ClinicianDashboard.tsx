@@ -104,6 +104,7 @@ const ClinicianDashboard = () => {
   useEffect(() => {
     if (isClinician && !isLoading) {
       autoClaimShares.mutate();
+      logAccess({ action: 'view_dashboard', resource_type: 'clinician_dashboard' });
     }
   }, [isClinician, isLoading]);
 
