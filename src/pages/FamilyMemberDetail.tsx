@@ -41,6 +41,7 @@ const FamilyMemberDetail = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
   const { familyMembers, isLoading, deleteMember } = useFamilyMembers();
+  const { medications } = useMedications();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const member = familyMembers.find(m => m.id === memberId);
