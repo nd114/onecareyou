@@ -94,6 +94,7 @@ const AddMedication = () => {
       instructions: formData.instructions || null,
       prescriber: formData.prescriber || null,
       pharmacy: formData.pharmacy || null,
+      family_member_id: familyMemberId,
     });
 
     navigate('/medications');
