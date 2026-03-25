@@ -314,17 +314,51 @@ const FamilyMemberDetail = () => {
             <TabsContent value="medications">
               <Card>
                 <CardHeader>
-                  <CardTitle>Medications</CardTitle>
-                  <CardDescription>
-                    Manage medications for {member.name}
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Medications</CardTitle>
+                      <CardDescription>
+                        Manage medications for {member.name}
+                      </CardDescription>
+                    </div>
+                    <Button size="sm" className="gradient-primary border-0" asChild>
+                      <Link to="/medications/add">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add
+                      </Link>
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent className="text-center py-8">
-                  <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Coming Soon</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Family member medication management will be available soon.
-                  </p>
+                <CardContent>
+                  {(() => {
+                    const memberMeds = medications.filter(m => m.family_member_id === memberId);
+                    if (memberMeds.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="font-semibold mb-2">No Medications</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Add a medication and select {member.name} as the person.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-3">
+                        {memberMeds.map(med => (
+                          <div key={med.id} className="flex items-center justify-between p-3 rounded-lg border">
+                            <div>
+                              <p className="font-medium">{med.name}</p>
+                              <p className="text-sm text-muted-foreground">{med.dosage} • {med.frequency.replace(/_/g, ' ')}</p>
+                            </div>
+                            <Badge variant={med.is_active ? 'default' : 'secondary'}>
+                              {med.is_active ? 'Active' : 'Discontinued'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -341,7 +375,7 @@ const FamilyMemberDetail = () => {
                   <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">Coming Soon</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Family member vitals tracking will be available soon.
+                    Family member vitals tracking is coming in a future update.
                   </p>
                 </CardContent>
               </Card>
@@ -359,7 +393,7 @@ const FamilyMemberDetail = () => {
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">Coming Soon</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Family member schedule management will be available soon.
+                    Family member schedule management is coming in a future update.
                   </p>
                 </CardContent>
               </Card>
