@@ -57,6 +57,10 @@ const ClinicianDashboard = () => {
   const { patientLimit, tier, isTrial } = useClinicianSubscription();
   const { startTour } = useClinicianTour();
   
+  // Session timeout for HIPAA compliance
+  useSessionTimeout();
+  const { logAccess } = useHipaaAuditLog();
+  
   // Get patient user IDs for vitals summaries
   const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
   const { data: vitalsSummaries = [] } = usePatientVitalsSummaries(patientUserIds);
