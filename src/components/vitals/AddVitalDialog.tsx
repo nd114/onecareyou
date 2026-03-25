@@ -144,7 +144,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
           ? convertToBaseUnit(entry.type, entry.secondaryValue) 
           : undefined;
         
-        await onSave(entry.type, baseValue, baseSecondaryValue, notes || undefined, recordedDateTime);
+        await onSave(entry.type, baseValue, baseSecondaryValue, notes || undefined, recordedDateTime, familyMemberId);
       }
 
       resetForm();
