@@ -33,7 +33,7 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
 import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
-import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
+import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { useClinicianTour } from '@/hooks/useClinicianTour';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
