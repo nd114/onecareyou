@@ -618,10 +618,12 @@ const ClinicianSettings = () => {
             <PracticeInvitationsCard />
           </div>
 
-          {/* Practice/Team Management */}
-          <div className="mt-6">
-            <PracticeTeamSection />
-          </div>
+          {/* Practice/Team Management - Pro+ only */}
+          {hasFeatureAccess(tier, 'team_management') && (
+            <div className="mt-6">
+              <PracticeTeamSection />
+            </div>
+          )}
 
           {/* Subscription Management */}
           <div className="mt-6">
@@ -631,8 +633,10 @@ const ClinicianSettings = () => {
           {/* EHR Connections */}
           <EHRConnectionsSection />
 
-          {/* Practice Branding */}
-          <PracticeBrandingCard />
+          {/* Practice Branding - Enterprise only */}
+          {hasFeatureAccess(tier, 'practice_branding') && (
+            <PracticeBrandingCard />
+          )}
         </motion.div>
       </main>
     </div>

@@ -46,10 +46,10 @@ export const CLINICIAN_TIER_INFO = {
     features: [
       'Up to 100 patients',
       'Everything in Solo, plus:',
+      'Patient engagement analytics',
+      'Team member access (2 seats)',
       'Guidance templates (coming soon)',
-      'Advanced analytics (coming soon)',
       'Priority support',
-      'Team member access (coming soon)',
     ],
   },
   enterprise: {
@@ -60,14 +60,36 @@ export const CLINICIAN_TIER_INFO = {
     features: [
       'Unlimited patients',
       'Everything in Pro, plus:',
+      'Practice branding (logo & colors)',
+      'Unlimited team seats',
       'HIPAA BAA included',
       'EHR/FHIR integration (coming soon)',
       'API access (coming soon)',
-      'Dedicated account manager (coming soon)',
+      'Dedicated account manager',
       'Custom onboarding',
     ],
   },
 } as const;
+
+// Feature access by minimum tier required
+export const CLINICIAN_FEATURE_TIERS = {
+  engagement_analytics: ['pro', 'enterprise'] as string[],
+  practice_branding: ['enterprise'] as string[],
+  team_management: ['pro', 'enterprise'] as string[],
+  hipaa_baa: ['enterprise'] as string[],
+  ehr_integration: ['enterprise'] as string[],
+} as const;
+
+export const TEAM_SEAT_LIMITS: Record<string, number> = {
+  trial: 1,
+  solo: 1,
+  pro: 3, // owner + 2 seats
+  enterprise: 999999,
+};
+
+export function hasFeatureAccess(tier: string, feature: keyof typeof CLINICIAN_FEATURE_TIERS): boolean {
+  return CLINICIAN_FEATURE_TIERS[feature].includes(tier);
+}
 
 export type ClinicianTier = 'trial' | 'solo' | 'pro' | 'enterprise' | 'expired';
 
