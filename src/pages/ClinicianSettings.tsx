@@ -42,6 +42,7 @@ import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection'
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ const ClinicianSettings = () => {
   useServiceWorker();
   // Session timeout for HIPAA compliance
   useSessionTimeout();
+  const { tier } = useClinicianSubscription();
 
   const [profileForm, setProfileForm] = useState({
     first_name: clinicianProfile?.first_name || '',
@@ -618,10 +620,12 @@ const ClinicianSettings = () => {
             <PracticeInvitationsCard />
           </div>
 
-          {/* Practice/Team Management */}
-          <div className="mt-6">
-            <PracticeTeamSection />
-          </div>
+          {/* Practice/Team Management - Pro+ only */}
+          {hasFeatureAccess(tier, 'team_management') && (
+            <div className="mt-6">
+              <PracticeTeamSection />
+            </div>
+          )}
 
           {/* Subscription Management */}
           <div className="mt-6">
@@ -631,8 +635,10 @@ const ClinicianSettings = () => {
           {/* EHR Connections */}
           <EHRConnectionsSection />
 
-          {/* Practice Branding */}
-          <PracticeBrandingCard />
+          {/* Practice Branding - Enterprise only */}
+          {hasFeatureAccess(tier, 'practice_branding') && (
+            <PracticeBrandingCard />
+          )}
         </motion.div>
       </main>
     </div>

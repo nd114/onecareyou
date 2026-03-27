@@ -33,7 +33,7 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
 import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
-import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
+import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { useClinicianTour } from '@/hooks/useClinicianTour';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
@@ -206,11 +206,13 @@ const ClinicianDashboard = () => {
         {/* Patient Limit Banner - shows when near/at limit */}
         <PatientLimitBanner patientCount={patientCount} />
 
-        {/* Patient Engagement Analytics */}
-        <PatientEngagementWidgets
-          patients={patients.map(p => ({ user_id: p.user_id, patient_name: p.patient_name }))}
-          vitalsSummaries={vitalsSummaries}
-        />
+        {/* Patient Engagement Analytics - Pro+ only */}
+        {hasFeatureAccess(tier, 'engagement_analytics') && (
+          <PatientEngagementWidgets
+            patients={patients.map(p => ({ user_id: p.user_id, patient_name: p.patient_name }))}
+            vitalsSummaries={vitalsSummaries}
+          />
+        )}
 
         {/* Quick Stats */}
         <motion.div
