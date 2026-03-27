@@ -63,6 +63,7 @@ const ClinicianSettings = () => {
   useServiceWorker();
   // Session timeout for HIPAA compliance
   useSessionTimeout();
+  const { tier } = useClinicianSubscription();
 
   const [profileForm, setProfileForm] = useState({
     first_name: clinicianProfile?.first_name || '',
