@@ -17,6 +17,10 @@ const PRICE_TIER_MAP: Record<string, string> = {
   "price_1SsbOVDycAbKvlfcXquEUSq6": "solo",
   "price_1SsbOmDycAbKvlfcM3mH6ER9": "pro",
   "price_1SsbQwDycAbKvlfc5P9A9nVn": "enterprise",
+  // Updated price IDs
+  "price_1SuKweDycAbKvlfcGepIUqjl": "solo",
+  "price_1SuKyqDycAbKvlfcVWUKk03a": "pro",
+  "price_1SuL1ADycAbKvlfcmvKgb99I": "enterprise",
 };
 
 // Patient limits per tier
