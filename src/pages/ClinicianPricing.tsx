@@ -141,6 +141,9 @@ const ClinicianPricing = () => {
                     </CardDescription>
                     
                     <div className="pt-4">
+                      {key === 'enterprise' && (
+                        <span className="text-sm text-muted-foreground">From </span>
+                      )}
                       <span className="text-4xl font-bold">${price}</span>
                       <span className="text-muted-foreground">/{period}</span>
                     </div>
