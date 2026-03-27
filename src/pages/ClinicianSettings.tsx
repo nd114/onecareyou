@@ -42,6 +42,7 @@ import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection'
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
