@@ -267,9 +267,54 @@ The existing pricing structure has several issues:
 
 ---
 
+## Regional Pricing Strategy (Planned)
+
+**Status:** Deferred — launch with single global pricing, implement regional pricing post-launch.
+
+**Problem:** The Solo tier at $79/mo is prohibitive for many African practitioners (e.g. Nigerian clinicians), while $399/mo Enterprise is already 50-80% cheaper than Western EHR competitors.
+
+**Planned Approach:**
+1. **Dual pricing tiers** — separate price points for emerging markets (Africa, SE Asia, Latin America) vs. Western markets (US, EU, UK, Canada, Australia).
+2. **Auto-detection by country** — use Stripe billing address (not IP/geolocation) to assign the correct regional price. This prevents VPN exploitation since payment method country is verified by the card issuer.
+3. **Anti-abuse safeguards:**
+   - Stripe billing address verification (card country must match regional tier)
+   - Flag accounts where billing country changes frequently
+   - Terms of Service clause prohibiting regional pricing abuse
+4. **Marketing angle:** Position as "OneCare for Africa" or localized landing pages, not as a "discount" — frame it as accessibility and market-appropriate pricing.
+
+**Why not now:**
+- Need sufficient user data to set correct regional price points
+- Stripe multi-currency setup requires additional configuration
+- Want to validate core pricing before adding complexity
+
+---
+
+## Clinician Feature Gating (Current)
+
+| Feature                       | Solo ($79) | Pro ($149) | Enterprise ($399+) |
+| ----------------------------- | ---------- | ---------- | ------------------- |
+| Vital threshold alerts        | ✅          | ✅          | ✅                   |
+| Custom alert thresholds       | ✅          | ✅          | ✅                   |
+| Clinical guidance tools       | ✅          | ✅          | ✅                   |
+| Patient adherence reports     | ✅          | ✅          | ✅                   |
+| Email & push notifications    | ✅          | ✅          | ✅                   |
+| Patient limit                 | 25         | 100        | Unlimited           |
+| Patient engagement analytics  | ❌          | ✅          | ✅                   |
+| Team member access            | 1 seat     | 3 seats    | Unlimited           |
+| Practice branding             | ❌          | ❌          | ✅                   |
+| HIPAA BAA                     | ❌          | ❌          | ✅                   |
+| EHR/FHIR integration          | ❌          | ❌          | ✅ (coming soon)     |
+| API access                    | ❌          | ❌          | ✅ (coming soon)     |
+| Dedicated account manager     | ❌          | ❌          | ✅                   |
+
+**Design rationale:** Pro needs meaningful differentiation beyond patient limits — analytics and team seats provide that. Enterprise gates high-touch features (branding, BAA, dedicated support) that justify the price jump.
+
+---
+
 ## Notes
 
 - Annual pricing gives ~2 months free (incentive)
 - Provider tier creates B2B revenue stream
 - Family tier has highest ARPU potential
 - Free tier serves as funnel, not destination
+- Enterprise displayed as "From $399/month" to signal custom pricing availability
