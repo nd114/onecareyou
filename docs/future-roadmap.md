@@ -173,7 +173,18 @@ Allow clinicians to email documents to a patient-specific address for automatic 
 
 ## Phase 8: Advanced Features (FUTURE)
 
-### AI-Powered
+### AI-Powered — Phase 1 ✅ IMPLEMENTED
+- [x] Patient AI Q&A Assistant (text-based, floating FAB on dashboard)
+- [x] Voice-Guided Platform Navigation (Web Speech API → AI intent routing)
+- [x] Extended AI Consent Dialog (covers Q&A, voice, vitals extraction, vault summarization)
+- [x] `patient-ai-chat` edge function with system prompt, consent enforcement, rate limiting
+- [x] `useAIChat` hook with message history management
+- [x] AIChatDrawer + AIChatFAB components
+
+### AI-Powered — Phase 2+ (PLANNED)
+- [ ] Voice input for vitals entry (pre-fill forms via speech)
+- [ ] AI-assisted clinical note extraction (clinician text → structured actions)
+- [ ] Clinician voice-driven vitals entry with patient matching
 - [ ] Enhanced medication interaction checker
 - [ ] Health trend analysis and insights
 - [ ] Personalized health recommendations
