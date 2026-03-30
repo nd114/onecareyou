@@ -173,10 +173,10 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
               className="mt-0.5 h-5 w-5"
             />
             <label htmlFor="consent" className="text-sm cursor-pointer select-none">
-              I understand that AI processing of my health data involves two modes: 
-              anonymized text extraction for vitals and full document analysis for Health Vault 
-              summarization. I consent to both and acknowledge that I can revoke this consent 
-              at any time in Settings.
+              I understand that AI features include the Q&A assistant, voice navigation, 
+              vitals extraction, and document summarization. I consent to all AI features 
+              described above and acknowledge that I can revoke this consent at any time 
+              in Settings.
             </label>
           </div>
         </div>
