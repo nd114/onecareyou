@@ -28,6 +28,7 @@ import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
 import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
 import { PendingClinicianRecordsBanner } from '@/components/consent/PendingClinicianRecordsBanner';
+import { AIChatFAB } from '@/components/ai/AIChatFAB';
 
 const getQuickLinks = (showAdherence: boolean) => [
   { label: 'Health Metrics', href: '/vitals', icon: Activity },
