@@ -370,6 +370,8 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </main>
+
+      <AIChatFAB />
     </div>
   );
 };
