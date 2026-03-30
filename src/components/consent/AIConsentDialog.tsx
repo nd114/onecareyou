@@ -51,18 +51,45 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
 
         <ScrollArea className="flex-1 max-h-[320px] pr-4">
           <div className="space-y-6">
-            {/* Two-tier processing explanation */}
+            {/* AI Features overview */}
             <div className="space-y-3">
               <h4 className="font-semibold flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" />
-                How AI Processes Your Data
+                AI Features on OneCare
               </h4>
               <p className="text-sm text-muted-foreground">
-                OneCare uses AI in two different ways, each with a different level of data exposure:
+                OneCare uses AI in several ways. By consenting below, you enable all current and future AI features:
               </p>
             </div>
 
-            {/* Mode 1: Vitals — Anonymized */}
+            {/* Feature 1: AI Q&A Assistant */}
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Brain className="h-4 w-4 text-primary" />
+                <h4 className="font-semibold text-sm">AI Q&A Assistant</h4>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+                <li>• Ask general health education questions (e.g., "What is HbA1c?")</li>
+                <li>• Get help navigating the platform</li>
+                <li>• <strong>No personal health data</strong> is sent — only your question text</li>
+                <li>• Never provides diagnosis or treatment advice</li>
+              </ul>
+            </div>
+
+            {/* Feature 2: Voice Input */}
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-primary" />
+                <h4 className="font-semibold text-sm">Voice Input & Navigation</h4>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+                <li>• Speak questions instead of typing</li>
+                <li>• Voice is processed <strong>locally in your browser</strong> (Web Speech API)</li>
+                <li>• Only the transcribed text is sent to AI — no audio is stored</li>
+              </ul>
+            </div>
+
+            {/* Feature 3: Vitals Extraction — Anonymized */}
             <div className="rounded-lg border border-status-success/30 bg-status-success/5 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <Smartphone className="h-4 w-4 text-status-success" />
@@ -71,26 +98,23 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
               <ul className="text-sm text-muted-foreground space-y-1 ml-6">
                 <li>• Lab report images are scanned <strong>on your device</strong> using local OCR</li>
                 <li>• The raw image never leaves your device</li>
-                <li>• Extracted text is passed through PII-stripping filters to remove names, DOB, IDs, etc.</li>
+                <li>• Extracted text is passed through PII-stripping filters</li>
                 <li>• Only anonymized text with health values is sent to AI</li>
               </ul>
               <p className="text-xs text-muted-foreground italic ml-6">
-                ⚠️ Our PII-stripping uses pattern matching and may not catch every identifier — 
-                particularly unlabeled names, non-English formats, or OCR artifacts. We cannot guarantee 
-                complete removal of all personal information from extracted text.
+                ⚠️ PII-stripping uses pattern matching and may not catch every identifier.
               </p>
             </div>
 
-            {/* Mode 2: Vault — Full file */}
+            {/* Feature 4: Vault — Full file */}
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 <h4 className="font-semibold text-sm">Health Vault Summarization (Full Document)</h4>
               </div>
               <ul className="text-sm text-muted-foreground space-y-1 ml-6">
-                <li>• When you opt to use AI on a Health Vault document, the <strong>actual file</strong> (image, PDF, or text) is sent to our AI service for analysis</li>
-                <li>• This is required for accurate summarization and categorization</li>
-                <li>• The file may contain personal information visible in the document</li>
+                <li>• When you opt to use AI on a Health Vault document, the <strong>actual file</strong> is sent for analysis</li>
+                <li>• Required for accurate summarization and categorization</li>
                 <li>• No account identifiers (user ID, email) are sent alongside the file</li>
               </ul>
             </div>
@@ -109,7 +133,7 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
               </ul>
             </div>
 
-            {/* Security measures */}
+            {/* Your Rights */}
             <div className="space-y-3">
               <h4 className="font-semibold flex items-center gap-2">
                 <Lock className="h-4 w-4 text-ocean" />
@@ -149,10 +173,10 @@ export function AIConsentDialog({ open, onOpenChange, onConsent, onDecline }: AI
               className="mt-0.5 h-5 w-5"
             />
             <label htmlFor="consent" className="text-sm cursor-pointer select-none">
-              I understand that AI processing of my health data involves two modes: 
-              anonymized text extraction for vitals and full document analysis for Health Vault 
-              summarization. I consent to both and acknowledge that I can revoke this consent 
-              at any time in Settings.
+              I understand that AI features include the Q&A assistant, voice navigation, 
+              vitals extraction, and document summarization. I consent to all AI features 
+              described above and acknowledge that I can revoke this consent at any time 
+              in Settings.
             </label>
           </div>
         </div>
