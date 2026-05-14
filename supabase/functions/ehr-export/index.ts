@@ -148,6 +148,28 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Require either service-role bearer (cron) or an authenticated user JWT
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const isServiceCall = authHeader === `Bearer ${serviceKey}`;
+  if (!isServiceCall) {
+    const token = authHeader.replace("Bearer ", "");
+    const auth = createClient(supabaseUrl, anonKey);
+    const { data: u, error: e } = await auth.auth.getUser(token);
+    if (e || !u?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
   try {
     logStep("Function started");
 
