@@ -52,10 +52,10 @@ const Dashboard = () => {
   const quickLinks = getQuickLinks(showAdherenceReport);
 
   const statCards = [
-    { 
-      label: 'Adherence Rate', 
-      value: stats.adherenceRate, 
-      suffix: '%', 
+    {
+      label: 'Adherence Rate',
+      value: stats.adherenceRate === null ? '—' : stats.adherenceRate,
+      suffix: stats.adherenceRate === null ? '' : '%',
       icon: TrendingUp,
       gradient: 'stat-card-1'
     },
