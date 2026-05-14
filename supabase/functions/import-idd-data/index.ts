@@ -37,6 +37,36 @@ serve(async (req) => {
   }
 
   try {
+    // Require authenticated admin user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+    const { data: userData, error: userErr } = await authClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const adminAllowlist = (Deno.env.get('ADMIN_EMAIL_ALLOWLIST') ?? '')
+      .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const userEmail = (userData.user.email ?? '').toLowerCase();
+    if (adminAllowlist.length > 0 && !adminAllowlist.includes(userEmail)) {
+      return new Response(JSON.stringify({ error: 'Forbidden: admin only' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (adminAllowlist.length === 0) {
+      // Fail closed if no allowlist configured
+      return new Response(JSON.stringify({ error: 'Admin allowlist not configured' }), {
+        status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json();
     const { action, fileUrl, csvContent, mappings } = body;
 
