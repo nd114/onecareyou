@@ -44,12 +44,41 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { jobTitle, applicantName, applicantEmail }: JobApplicationNotification = await req.json();
-
-    // Validate required fields
-    if (!jobTitle || !applicantName || !applicantEmail) {
-      throw new Error("Missing required fields");
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
+    const { jobTitle, applicantName, applicantEmail } = body as JobApplicationNotification;
+
+    // Strict input validation to prevent abuse / email injection
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isStr = (v: unknown, max: number) =>
+      typeof v === "string" && v.trim().length > 0 && v.length <= max;
+
+    if (
+      !isStr(jobTitle, 200) ||
+      !isStr(applicantName, 200) ||
+      !isStr(applicantEmail, 320) ||
+      !emailRegex.test(applicantEmail) ||
+      /[\r\n]/.test(jobTitle) ||
+      /[\r\n]/.test(applicantName) ||
+      /[\r\n]/.test(applicantEmail)
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid input" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Basic HTML escaping to prevent injection in outbound emails
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const safeJobTitle = esc(jobTitle);
+    const safeApplicantName = esc(applicantName);
+    const safeApplicantEmail = esc(applicantEmail);
 
     // Send notification to careers inbox
     const emailResponse = await sendEmail(
