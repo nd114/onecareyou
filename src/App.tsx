@@ -3,6 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+const routerFutureFlags = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+} as const;
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -70,7 +75,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
-        <BrowserRouter>
+        <BrowserRouter future={routerFutureFlags}>
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Landing />} />
