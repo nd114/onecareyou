@@ -44,12 +44,41 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { jobTitle, applicantName, applicantEmail }: JobApplicationNotification = await req.json();
-
-    // Validate required fields
-    if (!jobTitle || !applicantName || !applicantEmail) {
-      throw new Error("Missing required fields");
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
+    const { jobTitle, applicantName, applicantEmail } = body as JobApplicationNotification;
+
+    // Strict input validation to prevent abuse / email injection
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isStr = (v: unknown, max: number) =>
+      typeof v === "string" && v.trim().length > 0 && v.length <= max;
+
+    if (
+      !isStr(jobTitle, 200) ||
+      !isStr(applicantName, 200) ||
+      !isStr(applicantEmail, 320) ||
+      !emailRegex.test(applicantEmail) ||
+      /[\r\n]/.test(jobTitle) ||
+      /[\r\n]/.test(applicantName) ||
+      /[\r\n]/.test(applicantEmail)
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid input" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Basic HTML escaping to prevent injection in outbound emails
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const safeJobTitle = esc(jobTitle);
+    const safeApplicantName = esc(applicantName);
+    const safeApplicantEmail = esc(applicantEmail);
 
     // Send notification to careers inbox
     const emailResponse = await sendEmail(
@@ -60,9 +89,9 @@ const handler = async (req: Request): Promise<Response> => {
           <h1 style="color: #14b8a6; margin-bottom: 24px;">New Job Application</h1>
           
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-            <h2 style="margin-top: 0; color: #334155;">Position: ${jobTitle}</h2>
-            <p style="margin-bottom: 8px;"><strong>Applicant:</strong> ${applicantName}</p>
-            <p style="margin-bottom: 0;"><strong>Email:</strong> <a href="mailto:${applicantEmail}">${applicantEmail}</a></p>
+            <h2 style="margin-top: 0; color: #334155;">Position: ${safeJobTitle}</h2>
+            <p style="margin-bottom: 8px;"><strong>Applicant:</strong> ${safeApplicantName}</p>
+            <p style="margin-bottom: 0;"><strong>Email:</strong> <a href="mailto:${safeApplicantEmail}">${safeApplicantEmail}</a></p>
           </div>
           
           <p style="color: #64748b; font-size: 14px;">
@@ -86,10 +115,10 @@ const handler = async (req: Request): Promise<Response> => {
       `Application Received: ${jobTitle}`,
       `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #14b8a6; margin-bottom: 24px;">Thanks for applying, ${applicantName}!</h1>
+          <h1 style="color: #14b8a6; margin-bottom: 24px;">Thanks for applying, ${safeApplicantName}!</h1>
           
           <p style="color: #334155; line-height: 1.6;">
-            We've received your application for the <strong>${jobTitle}</strong> position at OneCare. 
+            We've received your application for the <strong>${safeJobTitle}</strong> position at OneCare. 
             Our team will review your application and get back to you if there's a good fit.
           </p>
           
