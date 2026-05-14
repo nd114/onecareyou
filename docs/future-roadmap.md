@@ -3,6 +3,8 @@
 ## Overview
 This document outlines planned features that are not yet implemented but are part of the product vision.
 
+> **Last verified:** May 14, 2026 — most "Phase 3 → Phase 7" items below have shipped at least partially. Status flags below have been re-checked against the live codebase.
+
 ---
 
 ## ✅ IMPLEMENTED: Sprint 1 & Sprint 3 (Partial)
