@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send notification to careers inbox
     const emailResponse = await sendEmail(
       ["careers@onecare.you"],
-      `New Application: ${safeJobTitle}`,
+      `New Application: ${jobTitle}`,
       `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #14b8a6; margin-bottom: 24px;">New Job Application</h1>
@@ -112,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Also send a confirmation to the applicant
     await sendEmail(
       [applicantEmail],
-      `Application Received: ${safeJobTitle}`,
+      `Application Received: ${jobTitle}`,
       `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #14b8a6; margin-bottom: 24px;">Thanks for applying, ${safeApplicantName}!</h1>
