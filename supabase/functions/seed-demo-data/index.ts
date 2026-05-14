@@ -478,6 +478,13 @@ serve(async (req) => {
         });
       }
 
+      // Clean existing demo data so re-runs don't create duplicates.
+      // Schedule entries reference medications via FK; delete them first.
+      await supabaseAdmin.from("schedule_entries").delete().eq("user_id", userId);
+      await supabaseAdmin.from("medications").delete().eq("user_id", userId);
+      await supabaseAdmin.from("vitals").delete().eq("user_id", userId);
+      await supabaseAdmin.from("health_documents").delete().eq("user_id", userId);
+
       // 3. Create medications for this patient
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 90);

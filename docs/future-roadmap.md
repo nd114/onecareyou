@@ -3,6 +3,8 @@
 ## Overview
 This document outlines planned features that are not yet implemented but are part of the product vision.
 
+> **Last verified:** May 14, 2026 — most "Phase 3 → Phase 7" items below have shipped at least partially. Status flags below have been re-checked against the live codebase.
+
 ---
 
 ## ✅ IMPLEMENTED: Sprint 1 & Sprint 3 (Partial)
@@ -108,36 +110,39 @@ This document outlines planned features that are not yet implemented but are par
 ## Phase 4: Provider Dashboard & EHR Integration (PLANNED)
 
 ### Provider Features
-- [ ] Multi-patient overview dashboard
-- [ ] Bulk guidance sending
-- [ ] Patient health trends visualization
+- [x] Multi-patient overview dashboard (`/clinician/dashboard`, `/clinician/patients`)
+- [x] Bulk guidance sending (per-patient + practice-wide guidance dialogs)
+- [x] Patient health trends visualization (Patient Engagement Widgets — Pro+)
 - [ ] Appointment scheduling integration
 - [ ] **API Connections**: Allow clinicians to connect external platforms via APIs
 
 ### EHR Integration - Full Implementation
-- [ ] OAuth callback edge functions (ehr-oauth-callback, ehr-refresh-token)
-- [ ] Patient sync edge functions (ehr-sync-patients, ehr-sync-vitals, ehr-sync-medications)
-- [ ] FHIR ↔ local schema transformation utilities
-- [ ] LOINC code mapping for vitals
-- [ ] RxNorm mapping for medications
-- [ ] Conflict resolution with clinician review flags
+- [x] Connection management UI + `ehr_connections` / `ehr_sync_logs` tables
+- [x] Scheduled sync edge function (`scheduled-ehr-sync`)
+- [x] EHR export edge function (`ehr-export`)
+- [x] Source-tracking on vitals (manual vs imported)
+- [ ] OAuth callback edge functions (per-vendor)
+- [ ] Real bidirectional FHIR sync (Veradigm, HealthBridge connectors)
+- [ ] LOINC + RxNorm mapping utilities
+- [ ] Conflict resolution UI
 
 ### Compliance
-- [ ] HIPAA compliance documentation
-- [ ] `hipaa_audit_logs` table for sensitive data access
-- [ ] Clinician verification system (license validation)
-- [ ] OAuth tokens encrypted at rest
+- [x] HIPAA compliance documentation (`docs/`, BAA flow at `/clinician/baa`)
+- [x] `hipaa_audit_logs` table + `useHipaaAuditLog` hook
+- [x] Clinician session timeout (`useSessionTimeout`)
+- [ ] Clinician license validation against external boards
+- [ ] OAuth tokens encrypted at rest (vault wrap)
 
 ---
 
-## Phase 5: Family Member Data Management (PLANNED)
+## Phase 5: Family Member Data Management ✅ PARTIAL
 
 ### Features
-- [ ] Record medications for family members
-- [ ] Track vitals for family members
-- [ ] View schedule for family members
-- [ ] Context switching in existing pages
-- [ ] Caregiver access sharing between family accounts
+- [x] Record medications for family members
+- [x] Track vitals for family members
+- [x] View schedule for family members (`/family`, `/family/:memberId`)
+- [ ] Context switching directly inside core pages (Vitals/Meds/Schedule)
+- [ ] Caregiver access sharing between family accounts (delegated caregiver intent only)
 
 ---
 
@@ -145,29 +150,30 @@ This document outlines planned features that are not yet implemented but are par
 
 ### Overview
 Allow clinicians to email documents to a patient-specific address for automatic platform ingestion.
+Health Vault upload + per-document sharing already exists; the inbound-email path is what is still missing.
 
 ### Technical Requirements
+- [x] Health Vault storage (`health-documents` bucket, `health_documents` table)
+- [x] Per-document sharing (`document_shares`, 5-min signed URLs)
 - [ ] Email receiving service (Resend Inbound Webhooks or SendGrid)
-- [ ] `patient_documents` table
 - [ ] `patient_inbound_emails` table
 - [ ] `process-inbound-email` edge function
-- [ ] `patient-documents` storage bucket
-- [ ] DocumentsPage, DocumentViewer, DocumentSettings components
 
 ---
 
-## Phase 7: Subscription & Payments (PLANNED)
+## Phase 7: Subscription & Payments ✅ MOSTLY SHIPPED
 
 ### Stripe Integration
-- [ ] Payment processing for subscription tiers
-- [ ] Family tier ($9.99/month) - up to 6 family members
-- [ ] Premium tier ($19.99/month) - advanced features
-- [ ] Enterprise/Clinician pricing for practices
-- [ ] Subscription management portal
+- [x] Stripe customer + subscription flow for clinicians (`check-clinician-subscription`)
+- [x] Clinician tiers: Solo / Pro / Enterprise (single source of truth in `pricing-constants.ts`)
+- [x] Subscription success page + Stripe webhook
+- [ ] Patient-side Family / Premium tier checkout UI surfaced consistently
+- [ ] Subscription management portal (Stripe billing portal entry point)
 
 ### Tier Enforcement
-- [ ] Feature gating based on subscription
-- [ ] Care Alerts tier limits (free: 1 contact, premium: unlimited)
+- [x] Feature gating (Patient Engagement Analytics, Practice Branding, BAA gated to Enterprise)
+- [x] Patient-limit enforcement on Solo/Pro
+- [ ] Care Alerts tier limits on patient side (free: 1 contact, premium: unlimited)
 
 ---
 

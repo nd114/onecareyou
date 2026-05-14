@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { startOfDay, endOfDay, subDays, format } from 'date-fns';
 
 export interface DashboardStats {
-  adherenceRate: number;
+  adherenceRate: number | null;
   dailyDoses: number;
   healthMarkers: number;
   activeProviders: number;
@@ -52,6 +52,19 @@ export const useDashboardStats = () => {
 
       if (vitalsError) throw vitalsError;
 
+      // Fetch active provider shares (matches Care Circle)
+      const nowIso = new Date().toISOString();
+      const { data: shares, error: sharesError } = await supabase
+        .from('provider_shares')
+        .select('id, expires_at')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      if (sharesError) throw sharesError;
+      const activeProviders = (shares ?? []).filter(
+        (s) => !s.expires_at || s.expires_at > nowIso,
+      ).length;
+
       // Calculate stats
       const dailyDoses = todayEntries?.length || 0;
       const takenToday = todayEntries?.filter(e => e.status === 'taken').length || 0;
@@ -74,12 +87,13 @@ export const useDashboardStats = () => {
         weeklyAdherence.push(dayTotal > 0 ? Math.round((dayTaken / dayTotal) * 100) : 100);
       }
 
-      // Calculate overall adherence rate (last 7 days)
+      // Calculate overall adherence rate (last 7 days). Null when no scheduled
+      // entries exist in the window so the UI can show "—" instead of 0%.
       const totalWeekEntries = weekEntries?.length || 0;
       const totalWeekTaken = weekEntries?.filter(e => e.status === 'taken').length || 0;
-      const adherenceRate = totalWeekEntries > 0 
-        ? Math.round((totalWeekTaken / totalWeekEntries) * 100) 
-        : 100;
+      const adherenceRate = totalWeekEntries > 0
+        ? Math.round((totalWeekTaken / totalWeekEntries) * 100)
+        : null;
 
       // Unique vital types
       const uniqueVitalTypes = new Set(vitals?.map(v => v.type) || []);
@@ -88,7 +102,7 @@ export const useDashboardStats = () => {
         adherenceRate,
         dailyDoses,
         healthMarkers: uniqueVitalTypes.size,
-        activeProviders: 0, // Will be populated when Care Circle is implemented
+        activeProviders,
         weeklyAdherence,
       };
     },
@@ -98,7 +112,7 @@ export const useDashboardStats = () => {
 
   return {
     stats: statsQuery.data || {
-      adherenceRate: 0,
+      adherenceRate: null,
       dailyDoses: 0,
       healthMarkers: 0,
       activeProviders: 0,
