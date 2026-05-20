@@ -15,6 +15,23 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-05-20',
+    version: '0.9.7',
+    title: 'Beta readiness pass: PWA, offline-first patient writes, unified pricing, /for-clinicians',
+    tags: ['platform', 'patient', 'clinician', 'infrastructure'],
+    bullets: [
+      'B1 — Family-member switcher now mounts in both desktop and mobile patient header so vitals/meds/schedule data follows the active member everywhere.',
+      'B2 — Cookie banner uses lazy initial state from localStorage + storage-event sync so it never re-appears after Accept and stays in sync across tabs.',
+      'B4 — Manifest-only installable PWA (no aggressive SW caching). Legacy meditracker-v1 service worker replaced with a kill-switch SW that unregisters itself. New /install page with platform-detected instructions for iOS Safari + Android Chrome.',
+      'B5 — New reset-demo-accounts edge function for daily re-seeding of demo patient/clinician via existing seed-demo-data; keeps tester data recent.',
+      'B6 — Beta tester pack: testing window, support address, and feedback flow filled in.',
+      'Offline support: IndexedDB-backed write queue (idb) for vitals, medications, schedule check-offs, with retries + idempotency keys. OfflineBanner shows in patient header when offline or syncing.',
+      'GTM: /pricing now hosts both Patient and Clinician tiers under a single audience toggle; /clinician/pricing 301-redirects to /pricing?audience=clinicians. New public /for-clinicians marketing landing page.',
+      'WhatsApp scaffold: provider-agnostic interface (src/lib/whatsapp), inbound webhook stub with verify_jwt=false, and messages table gains transport + external_message_id columns. No transport wired yet — Twilio vs 360dialog tradeoff documented in docs/whatsapp-integration-plan.md.',
+      'Profiles table gains onboarding_last_step + onboarding_skipped for future resume tracking (onboarding page already supports Skip and Save & Continue Later).',
+    ],
+  },
+  {
+    date: '2026-05-20',
     version: '0.9.6',
     title: 'Brand copy alignment: from "medication tracker" to connected health platform',
     tags: ['platform'],

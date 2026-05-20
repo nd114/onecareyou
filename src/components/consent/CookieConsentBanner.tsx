@@ -29,26 +29,39 @@ const defaultPreferences: CookiePreferences = {
   functional: true,
 };
 
-export function CookieConsentBanner() {
-  const [showBanner, setShowBanner] = useState(false);
-  const [showPreferences, setShowPreferences] = useState(false);
-  const [preferences, setPreferences] = useState<CookiePreferences>(defaultPreferences);
+function readConsent(): CookiePreferences | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(COOKIE_CONSENT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CookiePreferences;
+  } catch {
+    return null;
+  }
+}
 
+export function CookieConsentBanner() {
+  // Lazy initial state from localStorage so the banner never re-appears after Accept,
+  // and never flashes for users who already chose.
+  const [preferences, setPreferences] = useState<CookiePreferences>(
+    () => readConsent() ?? defaultPreferences
+  );
+  const [showBanner, setShowBanner] = useState<boolean>(() => readConsent() === null);
+  const [showPreferences, setShowPreferences] = useState(false);
+
+  // Keep multiple tabs in sync — if user accepts in one tab, hide everywhere.
   useEffect(() => {
-    // Check if user has already made a choice
-    const savedConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!savedConsent) {
-      // Small delay to prevent banner from flashing on page load
-      const timer = setTimeout(() => setShowBanner(true), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      try {
-        const parsed = JSON.parse(savedConsent);
-        setPreferences(parsed);
-      } catch {
-        setShowBanner(true);
+    if (typeof window === 'undefined') return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== COOKIE_CONSENT_KEY) return;
+      const next = readConsent();
+      if (next) {
+        setPreferences(next);
+        setShowBanner(false);
       }
-    }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   const savePreferences = (prefs: CookiePreferences) => {

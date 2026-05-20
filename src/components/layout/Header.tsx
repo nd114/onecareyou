@@ -42,6 +42,7 @@ import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 
 export function Header() {
   const location = useLocation();
@@ -145,6 +146,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {isAuthenticated && !isClinician && <OfflineBanner />}
       <div className="container flex h-16 items-center gap-4 md:gap-6 lg:gap-8">
         {/* Logo - fixed width for symmetry */}
         <div className="flex-1 flex justify-start shrink-0">
@@ -417,10 +419,13 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        {/* Mobile: family switcher + menu button */}
+        <div className="md:hidden flex items-center gap-1.5 flex-1 justify-end">
+          {isAuthenticated && !isClinician && <HeaderFamilySwitcher compact />}
+          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile Menu */}

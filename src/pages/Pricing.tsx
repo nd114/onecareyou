@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import ClinicianPricing from './ClinicianPricing';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { breadcrumbSchema, productSchema } from '@/components/seo/structuredData';
 import { motion } from 'framer-motion';
@@ -51,9 +54,40 @@ const faqs = [
 ];
 
 const Pricing = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialAudience = searchParams.get('audience') === 'clinicians' ? 'clinicians' : 'patients';
+  const [audience, setAudience] = useState<'patients' | 'clinicians'>(initialAudience);
   const [isAnnual, setIsAnnual] = useState(true);
   const { user, profile } = useAuth();
   const { createCheckout, loading, isPremium } = useSubscription();
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (audience === 'clinicians') next.set('audience', 'clinicians');
+    else next.delete('audience');
+    setSearchParams(next, { replace: true });
+  }, [audience]);
+
+  if (audience === 'clinicians') {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <SEOHead
+          title="Clinician Pricing — Plans for Healthcare Providers"
+          description="OneCare clinician plans: Solo, Pro, and Enterprise. HIPAA-ready, BAA on Enterprise, per-clinician pricing."
+          canonical="/pricing?audience=clinicians"
+        />
+        <div className="container px-4 pt-6">
+          <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="patients">For Patients</TabsTrigger>
+              <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        <ClinicianPricing />
+      </div>
+    );
+  }
 
   const monthlyPrice = PRICE_INFO.premium_monthly.price;
   const annualPrice = PRICE_INFO.premium_annual.price;
@@ -109,6 +143,13 @@ const Pricing = () => {
                 Fits Your Needs
               </span>
             </h1>
+
+            <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto mb-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="patients">For Patients</TabsTrigger>
+                <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
+              </TabsList>
+            </Tabs>
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
               Start free and upgrade when you're ready. No hidden fees, cancel anytime.
@@ -299,7 +340,7 @@ const Pricing = () => {
             className="text-center text-sm text-muted-foreground mt-8"
           >
             Are you a healthcare provider?{' '}
-            <Link to="/clinician/pricing" className="text-primary hover:underline font-medium">
+            <Link to="/pricing?audience=clinicians" className="text-primary hover:underline font-medium" onClick={(e) => { e.preventDefault(); setAudience('clinicians'); }}>
               View clinician plans
             </Link>
           </motion.p>

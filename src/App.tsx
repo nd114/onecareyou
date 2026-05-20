@@ -70,6 +70,9 @@ import JobDetail from "./pages/JobDetail";
 import HealthVault from "./pages/HealthVault";
 import Messages from "./pages/Messages";
 import ClinicianMessages from "./pages/ClinicianMessages";
+import Install from "./pages/Install";
+import ForClinicians from "./pages/ForClinicians";
+import { Navigate } from "react-router-dom";
 import { BugReportButton } from "./components/beta/BugReportButton";
 import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
 
@@ -254,8 +257,11 @@ const App = () => (
                 <AdminChangelog />
               </ProtectedRoute>
             } />
-            {/* Clinician pricing and subscription pages */}
-            <Route path="/clinician/pricing" element={<ClinicianPricing />} />
+            {/* Public marketing + install routes */}
+            <Route path="/for-clinicians" element={<ForClinicians />} />
+            <Route path="/install" element={<Install />} />
+            {/* Clinician pricing now lives at /pricing?audience=clinicians */}
+            <Route path="/clinician/pricing" element={<Navigate to="/pricing?audience=clinicians" replace />} />
             <Route path="/clinician/why-onecare" element={<ClinicianWhyOneCare />} />
             <Route path="/clinician/patients/:inviteCode" element={
               <ProtectedRoute>
