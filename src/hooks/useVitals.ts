@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { toast } from 'sonner';
+import { enqueueWrite, cacheRead, getCachedRead } from '@/lib/offline';
 
 export type VitalSource = 'manual' | 'ehr_import' | 'device';
 
