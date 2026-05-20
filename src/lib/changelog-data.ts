@@ -15,6 +15,19 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-05-20',
+    version: '0.9.6',
+    title: 'Brand copy alignment: from "medication tracker" to connected health platform',
+    tags: ['platform'],
+    bullets: [
+      'BRAND constants gain shortDescription + metaDescription so all surface copy pulls from one source of truth.',
+      'Footer slogan revised from "Your intelligent medication tracker…" to the broader scope (vitals, medications, records, care-team sharing) — consistent with the master "Your Health, Connected" tagline.',
+      'Privacy Policy intro broadened to name the full scope (vitals, medications, Health Vault, care-team sharing) instead of "health tracking and medication management".',
+      'Careers hero rewritten around connected post-discharge care, not just medication management + remote monitoring.',
+      'Features page SEO title + meta description rewritten to reflect the full connected health platform.',
+    ],
+  },
+  {
+    date: '2026-05-20',
     version: '0.9.5',
     title: 'Clinician gap-closing pass: nav expansion, Triage Inbox, invitation bell',
     tags: ['clinician', 'platform'],
