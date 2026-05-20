@@ -35,6 +35,8 @@ export function useVitals() {
   const [vitals, setVitals] = useState<VitalRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const cacheKey = () => `vitals:${user?.id}:${activeMemberId ?? 'self'}`;
+
   const fetchVitals = async () => {
     if (!user) return;
     setLoading(true);
@@ -53,10 +55,18 @@ export function useVitals() {
       const { data, error } = await query.order('recorded_at', { ascending: false });
 
       if (error) throw error;
-      setVitals((data as VitalRecord[]) || []);
+      const rows = (data as VitalRecord[]) || [];
+      setVitals(rows);
+      void cacheRead(cacheKey(), rows);
     } catch (error) {
       console.error('Error fetching vitals:', error);
-      toast.error('Failed to load vitals');
+      // Try offline cache before erroring
+      const cached = await getCachedRead<VitalRecord[]>(cacheKey());
+      if (cached?.payload) {
+        setVitals(cached.payload);
+      } else {
+        toast.error('Failed to load vitals');
+      }
     } finally {
       setLoading(false);
     }
