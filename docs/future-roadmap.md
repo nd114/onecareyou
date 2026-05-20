@@ -3,9 +3,23 @@
 ## Overview
 This document outlines planned features that are not yet implemented but are part of the product vision.
 
-> **Last verified:** May 14, 2026 — most "Phase 3 → Phase 7" items below have shipped at least partially. Status flags below have been re-checked against the live codebase.
+> **Last verified:** May 20, 2026 — most "Phase 3 → Phase 7" items below have shipped at least partially. Status flags below have been re-checked against the live codebase.
 
----
+> **Companion docs (read these first for current strategic direction):**
+> - [`docs/comprehensive-platform-review.md`](./comprehensive-platform-review.md) — May 2026 audit (logic breaks, gaps, quick fixes applied)
+> - [`docs/tech-and-process-opportunities.md`](./tech-and-process-opportunities.md) — 2025–2026 new tech & GTM opportunities
+> - [`docs/ui-redesign-plan.md`](./ui-redesign-plan.md) — Deferred full redesign (Phase A–D)
+
+## Confirmed P3 sequence (May 2026)
+
+1. **Family member context-switching** (Vitals/Meds/Schedule/Vault/Adherence) — biggest patient-side credibility bug.
+2. **In-app secure messaging** (HIPAA chat) — #1 competitor gap; reinforces "one continuous record" wedge.
+3. **Clinician shell improvements** — Templates library + Triage Inbox + expose buried features (Practice/Team/EHR/Analytics/BAA) in nav. UI shell rebuild deferred to redesign plan.
+4. **Patient subscription/payment polish** — consistent Stripe checkout surfacing + tier-gated UI prompts.
+5. **EHR integration via QHIN** (Particle Health / Health Gorilla) — pivot from per-EHR FHIR to one QHIN integration.
+6. **Ambient scribe + voice entry** — defensible AI differentiator.
+
+
 
 ## ✅ IMPLEMENTED: Sprint 1 & Sprint 3 (Partial)
 
