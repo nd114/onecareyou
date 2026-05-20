@@ -177,7 +177,11 @@ Additional context from the user:
                 parameters: {
                   type: "object",
                   properties: {
-                    summary: { type: "string", description: "2-4 sentence summary with key findings. Must NOT contain patient names, IDs, or personal identifiers." },
+                    summary: { type: "string", description: "2-4 sentence clinical summary with key findings. Must NOT contain patient names, IDs, or personal identifiers." },
+                    patient_friendly_explanation: {
+                      type: "string",
+                      description: "3-5 sentence plain-language explanation aimed at the patient. No diagnoses, no dose advice. Suggest questions to ask their clinician where useful. Must NOT contain patient names or IDs.",
+                    },
                     category: {
                       type: "string",
                       enum: [
@@ -192,7 +196,7 @@ Additional context from the user:
                       description: "3-5 relevant clinical tags. Must NOT contain patient names or personal identifiers.",
                     },
                   },
-                  required: ["summary", "category", "tags"],
+                  required: ["summary", "patient_friendly_explanation", "category", "tags"],
                   additionalProperties: false,
                 },
               },
