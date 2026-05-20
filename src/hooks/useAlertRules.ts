@@ -192,6 +192,25 @@ export const useAlertRules = (patientUserId?: string) => {
     },
   });
 
+  const acknowledgeAlertLog = useMutation({
+    mutationFn: async (logId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('alert_logs')
+        .update({ acknowledged_at: new Date().toISOString() })
+        .eq('id', logId)
+        .eq('clinician_user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alert-logs'] });
+      toast.success('Alert acknowledged');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to acknowledge alert');
+    },
+  });
+
   return {
     alertRules,
     alertLogs,
@@ -200,5 +219,6 @@ export const useAlertRules = (patientUserId?: string) => {
     updateAlertRule,
     deleteAlertRule,
     toggleAlertRule,
+    acknowledgeAlertLog,
   };
 };
