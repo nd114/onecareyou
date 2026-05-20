@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users } from 'lucide-react';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -140,6 +140,22 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
                     {doc.ai_summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Patient-friendly plain-language explanation */}
+              {(doc as any).patient_friendly_explanation && (
+                <div className="mt-2 p-2 rounded-md bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-1 mb-1">
+                    <HeartHandshake className="h-3 w-3 text-primary" />
+                    <span className="text-xs font-medium text-primary">What this means for you</span>
+                  </div>
+                  <p className="text-xs text-foreground/80 leading-relaxed">
+                    {(doc as any).patient_friendly_explanation}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1.5 italic">
+                    General information only — not medical advice. Talk to your clinician about next steps.
                   </p>
                 </div>
               )}

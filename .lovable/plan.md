@@ -224,6 +224,8 @@ Status snapshot — May 2026:
 - ✅ Internal changelog at `/admin/changelog` for team + investor updates (private route).
 - ✅ Patient AI Chat FAB on all patient routes + medication-aware system prompt (P8 + NB).
 - ✅ Implementation logic tracked in [`docs/implementation-tracking.md`](../docs/implementation-tracking.md).
+- ✅ QHIN provenance scaffolding (`qhin_imports`, `qhin_record_provenance`, profiles.qhin_consent_at) — ingestion workers deferred until BAA.
+- ✅ Health Vault: patient-friendly "What this means for you" explainer on every AI-summarized document (Phase 2 AI item from §3.1).
 
 QHIN integration scoped in [`docs/qhin-integration-plan.md`](../docs/qhin-integration-plan.md).
 

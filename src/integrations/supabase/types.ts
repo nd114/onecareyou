@@ -1127,6 +1127,7 @@ export type Database = {
           id: string
           mime_type: string | null
           notes: string | null
+          patient_friendly_explanation: string | null
           source_context: string
           tags: Json | null
           title: string | null
@@ -1147,6 +1148,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          patient_friendly_explanation?: string | null
           source_context?: string
           tags?: Json | null
           title?: string | null
@@ -1167,6 +1169,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          patient_friendly_explanation?: string | null
           source_context?: string
           tags?: Json | null
           title?: string | null

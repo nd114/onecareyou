@@ -87,11 +87,12 @@ serve(async (req) => {
     const isText = mimeType.startsWith("text/") || mimeType === "application/json";
 
     const systemPrompt = `You are a health document analyzer. Analyze the provided document and return:
-1. A clear 2-4 sentence summary of what this document contains, including key findings, values, or information
-2. A suggested category (one of: lab_result, prescription, discharge_summary, imaging, insurance, vaccination, referral, visit_note, other)
-3. 3-5 relevant tags for searchability
+1. A clear 2-4 sentence clinical summary of what this document contains, including key findings, values, or information
+2. A patient-friendly plain-language explanation (3-5 sentences) of what this means for the patient — avoid jargon, define any necessary terms, and frame next-step questions to ask their clinician. Do NOT diagnose, do NOT recommend treatments, do NOT give dose advice.
+3. A suggested category (one of: lab_result, prescription, discharge_summary, imaging, insurance, vaccination, referral, visit_note, other)
+4. 3-5 relevant tags for searchability
 
-IMPORTANT: Do NOT include any patient names, dates of birth, ID numbers, or other personal identifiers in your summary or tags. Focus only on medical content, findings, and values.
+IMPORTANT: Do NOT include any patient names, dates of birth, ID numbers, or other personal identifiers in any field. Focus only on medical content, findings, and values.
 
 Additional context from the user:
 - User-assigned category: ${doc.category}
@@ -176,7 +177,11 @@ Additional context from the user:
                 parameters: {
                   type: "object",
                   properties: {
-                    summary: { type: "string", description: "2-4 sentence summary with key findings. Must NOT contain patient names, IDs, or personal identifiers." },
+                    summary: { type: "string", description: "2-4 sentence clinical summary with key findings. Must NOT contain patient names, IDs, or personal identifiers." },
+                    patient_friendly_explanation: {
+                      type: "string",
+                      description: "3-5 sentence plain-language explanation aimed at the patient. No diagnoses, no dose advice. Suggest questions to ask their clinician where useful. Must NOT contain patient names or IDs.",
+                    },
                     category: {
                       type: "string",
                       enum: [
@@ -191,7 +196,7 @@ Additional context from the user:
                       description: "3-5 relevant clinical tags. Must NOT contain patient names or personal identifiers.",
                     },
                   },
-                  required: ["summary", "category", "tags"],
+                  required: ["summary", "patient_friendly_explanation", "category", "tags"],
                   additionalProperties: false,
                 },
               },
@@ -228,10 +233,10 @@ Additional context from the user:
     const aiData = await aiResponse.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
 
-    let result = { summary: "", category: doc.category, tags: [] as string[] };
+    let result = { summary: "", patient_friendly_explanation: "", category: doc.category, tags: [] as string[] };
     if (toolCall?.function?.arguments) {
       try {
-        result = JSON.parse(toolCall.function.arguments);
+        result = { ...result, ...JSON.parse(toolCall.function.arguments) };
       } catch {
         console.error("Failed to parse AI response");
       }
@@ -244,6 +249,7 @@ Additional context from the user:
         ai_summary: result.summary,
         ai_category: result.category,
         ai_tags: result.tags,
+        patient_friendly_explanation: result.patient_friendly_explanation || null,
       })
       .eq("id", documentId);
 
