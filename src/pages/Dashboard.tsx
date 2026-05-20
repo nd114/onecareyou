@@ -108,7 +108,7 @@ const Dashboard = () => {
         {/* Pending Clinician-Imported Records Consent */}
         <PendingClinicianRecordsBanner />
 
-        {/* Onboarding Prompt */}
+        {/* Onboarding Prompt (resume-aware) */}
         {profile && !profile.onboarding_completed && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -123,14 +123,22 @@ const Dashboard = () => {
                     <Activity className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm sm:text-base">Complete Your Health Profile</p>
+                    <p className="font-semibold text-sm sm:text-base">
+                      {(profile as any).onboarding_last_step
+                        ? 'Pick up where you left off'
+                        : 'Complete Your Health Profile'}
+                    </p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      Add your health details for personalized care
+                      {(profile as any).onboarding_last_step
+                        ? 'You skipped onboarding earlier — finish anytime for personalized care.'
+                        : 'Add your health details for personalized care'}
                     </p>
                   </div>
                 </div>
                 <Button asChild className="gradient-primary border-0 w-full sm:w-auto" size="sm">
-                  <Link to="/onboarding">Complete Profile</Link>
+                  <Link to="/onboarding">
+                    {(profile as any).onboarding_last_step ? 'Resume onboarding' : 'Complete Profile'}
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
