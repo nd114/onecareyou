@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users } from 'lucide-react';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
