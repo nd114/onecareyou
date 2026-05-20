@@ -93,7 +93,7 @@ export function useVitals() {
           recorded_at: recordedAt?.toISOString() || new Date().toISOString(),
           notes: notes || null,
           source: 'manual', // Patient-entered vitals are always manual
-          family_member_id: familyMemberId || null,
+          family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
         })
         .select()
         .single();
