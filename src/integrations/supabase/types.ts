@@ -1842,6 +1842,8 @@ export type Database = {
           phone_number: string | null
           push_notifications_enabled: boolean | null
           push_subscription: Json | null
+          qhin_consent_at: string | null
+          qhin_disclosure_version: string | null
           subscription_tier: string | null
           timezone: string | null
           unit_preferences: Json | null
@@ -1875,6 +1877,8 @@ export type Database = {
           phone_number?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
+          qhin_consent_at?: string | null
+          qhin_disclosure_version?: string | null
           subscription_tier?: string | null
           timezone?: string | null
           unit_preferences?: Json | null
@@ -1908,6 +1912,8 @@ export type Database = {
           phone_number?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
+          qhin_consent_at?: string | null
+          qhin_disclosure_version?: string | null
           subscription_tier?: string | null
           timezone?: string | null
           unit_preferences?: Json | null
@@ -1961,6 +1967,110 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      qhin_imports: {
+        Row: {
+          completed_at: string | null
+          consent_reference: string | null
+          created_at: string
+          disclosure_version: string | null
+          error: string | null
+          id: string
+          match_count: number | null
+          particle_query_id: string | null
+          record_count: number | null
+          requested_by: string
+          scope: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          consent_reference?: string | null
+          created_at?: string
+          disclosure_version?: string | null
+          error?: string | null
+          id?: string
+          match_count?: number | null
+          particle_query_id?: string | null
+          record_count?: number | null
+          requested_by: string
+          scope?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          consent_reference?: string | null
+          created_at?: string
+          disclosure_version?: string | null
+          error?: string | null
+          id?: string
+          match_count?: number | null
+          particle_query_id?: string | null
+          record_count?: number | null
+          requested_by?: string
+          scope?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      qhin_record_provenance: {
+        Row: {
+          confidence: number | null
+          fhir_resource_type: string | null
+          id: string
+          import_id: string
+          ingested_at: string
+          last_updated_at_source: string | null
+          raw_fhir: Json | null
+          source_organization: string | null
+          source_resource_id: string | null
+          source_system_oid: string | null
+          target_id: string
+          target_table: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          fhir_resource_type?: string | null
+          id?: string
+          import_id: string
+          ingested_at?: string
+          last_updated_at_source?: string | null
+          raw_fhir?: Json | null
+          source_organization?: string | null
+          source_resource_id?: string | null
+          source_system_oid?: string | null
+          target_id: string
+          target_table: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          fhir_resource_type?: string | null
+          id?: string
+          import_id?: string
+          ingested_at?: string
+          last_updated_at_source?: string | null
+          raw_fhir?: Json | null
+          source_organization?: string | null
+          source_resource_id?: string | null
+          source_system_oid?: string | null
+          target_id?: string
+          target_table?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qhin_record_provenance_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "qhin_imports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedule_entries: {
         Row: {
