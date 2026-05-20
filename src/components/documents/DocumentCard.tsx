@@ -144,6 +144,22 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                 </div>
               )}
 
+              {/* Patient-friendly plain-language explanation */}
+              {(doc as any).patient_friendly_explanation && (
+                <div className="mt-2 p-2 rounded-md bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-1 mb-1">
+                    <HeartHandshake className="h-3 w-3 text-primary" />
+                    <span className="text-xs font-medium text-primary">What this means for you</span>
+                  </div>
+                  <p className="text-xs text-foreground/80 leading-relaxed">
+                    {(doc as any).patient_friendly_explanation}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1.5 italic">
+                    General information only — not medical advice. Talk to your clinician about next steps.
+                  </p>
+                </div>
+              )}
+
               {/* Summarize with AI button for docs without summary */}
               {!doc.ai_summary && isPremium && (
                 <Button
