@@ -16,7 +16,8 @@ import {
   Loader2,
   Mail,
   BarChart3,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDia
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
 import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
+import { MessageThread } from '@/components/messaging/MessageThread';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
