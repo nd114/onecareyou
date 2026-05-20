@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { toast } from 'sonner';
 
@@ -29,18 +30,26 @@ export function isVitalEditable(vital: VitalRecord): boolean {
 
 export function useVitals() {
   const { user } = useAuth();
+  const { activeMemberId } = useActiveFamilyMember();
   const [vitals, setVitals] = useState<VitalRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchVitals = async () => {
     if (!user) return;
-    
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('vitals')
         .select('*')
-        .eq('user_id', user.id)
-        .order('recorded_at', { ascending: false });
+        .eq('user_id', user.id);
+
+      if (activeMemberId) {
+        query = query.eq('family_member_id', activeMemberId);
+      } else {
+        query = query.is('family_member_id', null);
+      }
+
+      const { data, error } = await query.order('recorded_at', { ascending: false });
 
       if (error) throw error;
       setVitals((data as VitalRecord[]) || []);
@@ -54,7 +63,8 @@ export function useVitals() {
 
   useEffect(() => {
     fetchVitals();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, activeMemberId]);
 
   const addVital = async (
     type: VitalType,
