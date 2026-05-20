@@ -227,9 +227,9 @@ export function ClinicianHeader() {
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="hidden md:flex relative" aria-label="View notifications">
                 <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
+                {totalBadgeCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {totalBadgeCount > 9 ? "9+" : totalBadgeCount}
                   </span>
                 )}
               </Button>
