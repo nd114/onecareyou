@@ -83,22 +83,20 @@ export function PatientNotesDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="gradient-primary border-0">
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Notes
-              </>
-            )}
-          </Button>
+            <Button onClick={handleSave} disabled={isSaving || !isDirty} className="gradient-primary border-0">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Notes
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
