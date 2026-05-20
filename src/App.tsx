@@ -247,6 +247,11 @@ const App = () => (
                 <AdminImport />
               </ProtectedRoute>
             } />
+            <Route path="/admin/changelog" element={
+              <ProtectedRoute>
+                <AdminChangelog />
+              </ProtectedRoute>
+            } />
             {/* Clinician pricing and subscription pages */}
             <Route path="/clinician/pricing" element={<ClinicianPricing />} />
             <Route path="/clinician/why-onecare" element={<ClinicianWhyOneCare />} />
