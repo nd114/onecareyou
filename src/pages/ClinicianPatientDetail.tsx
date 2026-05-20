@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -48,6 +48,7 @@ const ClinicianPatientDetail = () => {
 
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Find the patient by invite code
   const patient = useMemo(() => 
@@ -146,12 +147,12 @@ const ClinicianPatientDetail = () => {
     return grouped;
   }, [vitals]);
 
-  // Initialize notes
-  useState(() => {
+  // Initialize notes whenever the patient changes (was buggy useState init)
+  useEffect(() => {
     if (patient?.clinician_notes) {
       setNotes(patient.clinician_notes);
     }
-  });
+  }, [patient?.id, patient?.clinician_notes]);
 
   const handleSaveNotes = async () => {
     if (!patient) return;
@@ -161,6 +162,7 @@ const ClinicianPatientDetail = () => {
         shareId: patient.id, 
         notes 
       });
+      setLastSavedAt(new Date());
       toast.success('Notes saved');
     } catch (error) {
       toast.error('Failed to save notes');
@@ -639,7 +641,14 @@ const ClinicianPatientDetail = () => {
                     onChange={(e) => setNotes(e.target.value)}
                     rows={8}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs text-muted-foreground">
+                      {savingNotes
+                        ? 'Saving…'
+                        : lastSavedAt
+                          ? `Last saved ${formatDistanceToNow(lastSavedAt, { addSuffix: true })}`
+                          : 'Not saved yet — your edits are local until you click Save.'}
+                    </p>
                     <Button 
                       onClick={handleSaveNotes}
                       disabled={savingNotes}

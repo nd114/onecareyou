@@ -313,8 +313,8 @@ const Dashboard = () => {
                         {pending.length} dose{pending.length !== 1 ? 's' : ''} remaining today
                       </span>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-8 text-xs sm:text-sm w-full sm:w-auto">
-                      Enable Reminders
+                    <Button variant="ghost" size="sm" className="h-8 text-xs sm:text-sm w-full sm:w-auto" asChild>
+                      <Link to="/settings?section=notifications">Enable Reminders</Link>
                     </Button>
                   </div>
                 )}

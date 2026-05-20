@@ -100,23 +100,23 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Resources */}
+          {/* For Clinicians */}
           <div>
-            <h4 className="font-semibold mb-4">Resources</h4>
+            <h4 className="font-semibold mb-4">For Clinicians</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/help" className="hover:text-foreground transition-colors">
-                  Getting Started
+                <Link to="/clinician/sign-up" className="hover:text-foreground transition-colors">
+                  Register Your Practice
                 </Link>
               </li>
               <li>
-                <Link to="/features" className="hover:text-foreground transition-colors">
-                  How It Works
+                <Link to="/clinician/why-onecare" className="hover:text-foreground transition-colors">
+                  Why OneCare
                 </Link>
               </li>
               <li>
-                <Link to="/pricing" className="hover:text-foreground transition-colors">
-                  Compare Plans
+                <Link to="/clinician/pricing" className="hover:text-foreground transition-colors">
+                  Clinician Pricing
                 </Link>
               </li>
               <li>
@@ -126,6 +126,26 @@ export function Footer() {
               </li>
             </ul>
           </div>
+        </div>
+
+        {/* Trust strip */}
+        <div className="mt-8 pt-8 border-t border-border flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            HIPAA-aligned
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            AES-256 encryption at rest
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            TLS in transit
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Row-level access control
+          </span>
         </div>
 
         <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
