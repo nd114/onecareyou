@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -10,18 +11,26 @@ export type MedicationUpdate = TablesUpdate<'medications'>;
 
 export const useMedications = () => {
   const { user } = useAuth();
+  const { activeMemberId } = useActiveFamilyMember();
   const queryClient = useQueryClient();
 
   const medicationsQuery = useQuery({
-    queryKey: ['medications', user?.id],
+    queryKey: ['medications', user?.id, activeMemberId],
     queryFn: async () => {
       if (!user?.id) throw new Error('Not authenticated');
-      
-      const { data, error } = await supabase
+
+      let query = supabase
         .from('medications')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id);
+
+      if (activeMemberId) {
+        query = query.eq('family_member_id', activeMemberId);
+      } else {
+        query = query.is('family_member_id', null);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as Medication[];
