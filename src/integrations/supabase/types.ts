@@ -1492,6 +1492,39 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          attachment_path: string | null
+          body: string
+          clinician_user_id: string
+          created_at: string
+          id: string
+          patient_user_id: string
+          read_at: string | null
+          sender_user_id: string
+        }
+        Insert: {
+          attachment_path?: string | null
+          body: string
+          clinician_user_id: string
+          created_at?: string
+          id?: string
+          patient_user_id: string
+          read_at?: string | null
+          sender_user_id: string
+        }
+        Update: {
+          attachment_path?: string | null
+          body?: string
+          clinician_user_id?: string
+          created_at?: string
+          id?: string
+          patient_user_id?: string
+          read_at?: string | null
+          sender_user_id?: string
+        }
+        Relationships: []
+      }
       patient_invitations: {
         Row: {
           accepted_at: string | null
