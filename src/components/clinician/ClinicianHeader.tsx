@@ -243,6 +243,43 @@ export function ClinicianHeader() {
                   </Button>
                 )}
               </div>
+              {pendingInviteCount > 0 && (
+                <div className="border-b bg-primary/5">
+                  <div className="px-3 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-primary flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    Practice Invitations
+                  </div>
+                  <div className="divide-y">
+                    {myInvitations.map((inv) => (
+                      <div key={inv.id} className="p-3">
+                        <p className="text-sm font-medium">You've been invited to join a practice</p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Role: <span className="capitalize">{inv.role}</span>
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => acceptInvitation.mutate(inv.id)}
+                            disabled={acceptInvitation.isPending}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => declineInvitation.mutate(inv.id)}
+                            disabled={declineInvitation.isPending}
+                          >
+                            Decline
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {notifications && notifications.length > 0 ? (
                 <ScrollArea className="max-h-80">
                   <div className="divide-y">
