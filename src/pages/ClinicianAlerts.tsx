@@ -35,7 +35,8 @@ const formatAlertType = (type: string): string => {
 const ClinicianAlerts = () => {
   const navigate = useNavigate();
   const { isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
-  const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule } = useAlertRules();
+  const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule, acknowledgeAlertLog } = useAlertRules();
+  const [triageTab, setTriageTab] = useState<'unread' | 'acknowledged'>('unread');
   const { patients } = useClinicianPatients();
   
   const [searchQuery, setSearchQuery] = useState('');
