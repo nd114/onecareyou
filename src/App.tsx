@@ -67,6 +67,7 @@ import Sitemap from "./pages/Sitemap";
 import Careers from "./pages/Careers";
 import JobDetail from "./pages/JobDetail";
 import HealthVault from "./pages/HealthVault";
+import Messages from "./pages/Messages";
 import { BugReportButton } from "./components/beta/BugReportButton";
 
 const App = () => (
@@ -177,6 +178,11 @@ const App = () => (
             <Route path="/health-vault" element={
               <ProtectedRoute>
                 <HealthVault />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <Messages />
               </ProtectedRoute>
             } />
             <Route path="/family" element={
