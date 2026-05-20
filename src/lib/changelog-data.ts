@@ -15,6 +15,18 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-05-20',
+    version: '0.9.5',
+    title: 'Clinician gap-closing pass: nav expansion, Triage Inbox, invitation bell',
+    tags: ['clinician', 'platform'],
+    bullets: [
+      'C1 — Clinician header gains a "More" dropdown surfacing Practice & Team, EHR Integrations, BAA, and All Settings (previously buried inside Settings).',
+      'C1 — ClinicianSettings now hash-scrolls to #practice-team and #ehr-connections sections, so More-menu deep links land in the right place.',
+      'C4 — ClinicianAlerts redesigned as a Triage Inbox with Unread / Acknowledged tabs, an Acknowledge action that writes acknowledged_at on alert_logs, and a live unread badge.',
+      'C8 — Practice invitations surface inside the clinician notification bell with inline Accept/Decline; total badge count now combines guidance updates + pending invitations.',
+    ],
+  },
+  {
+    date: '2026-05-20',
     version: '0.9.4',
     title: 'Patient gap-closing pass + i18n scaffold',
     tags: ['patient', 'platform', 'security'],
