@@ -105,7 +105,7 @@ export function CookieConsentBanner() {
                       <p className="text-sm text-muted-foreground max-w-xl">
                         We use cookies to enhance your experience, analyze site traffic, and personalize content. 
                         You can customize your preferences or accept all cookies.{' '}
-                        <Link to="/privacy-policy" className="text-primary hover:underline">
+                        <Link to="/privacy" className="text-primary hover:underline">
                           Privacy Policy
                         </Link>
                       </p>

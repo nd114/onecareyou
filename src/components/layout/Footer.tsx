@@ -6,6 +6,7 @@ export function Footer() {
     <footer className="border-t border-border bg-muted/30">
       <div className="container py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+          {/* Security/Trust strip */}
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
@@ -100,23 +101,23 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Resources */}
+          {/* For Clinicians */}
           <div>
-            <h4 className="font-semibold mb-4">Resources</h4>
+            <h4 className="font-semibold mb-4">For Clinicians</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/help" className="hover:text-foreground transition-colors">
-                  Getting Started
+                <Link to="/clinician/sign-up" className="hover:text-foreground transition-colors">
+                  Register Your Practice
                 </Link>
               </li>
               <li>
-                <Link to="/features" className="hover:text-foreground transition-colors">
-                  How It Works
+                <Link to="/clinician/why-onecare" className="hover:text-foreground transition-colors">
+                  Why OneCare
                 </Link>
               </li>
               <li>
-                <Link to="/pricing" className="hover:text-foreground transition-colors">
-                  Compare Plans
+                <Link to="/clinician/pricing" className="hover:text-foreground transition-colors">
+                  Clinician Pricing
                 </Link>
               </li>
               <li>
