@@ -95,8 +95,25 @@ const EnterpriseInquiry = () => {
 
       if (error) throw error;
 
+      // Fire-and-forget confirmation email (don't block UX on email delivery)
+      supabase.functions
+        .invoke('notify-enterprise-inquiry', {
+          body: {
+            contact_name: formData.contact_name,
+            contact_email: formData.contact_email,
+            contact_phone: formData.contact_phone || null,
+            practice_name: formData.practice_name,
+            practice_size: formData.practice_size || null,
+            specialty: formData.specialty || null,
+            country: formData.country || null,
+            ehr_system: formData.ehr_system || null,
+            requirements: formData.requirements || null,
+          },
+        })
+        .catch((err) => console.warn('Enterprise confirmation email failed:', err));
+
       setSubmitted(true);
-      toast.success('Inquiry submitted! We\'ll be in touch within 24 hours.');
+      toast.success('Inquiry submitted! Check your inbox for a confirmation.');
     } catch (error: any) {
       console.error('Error submitting inquiry:', error);
       toast.error('Failed to submit inquiry. Please try again.');
