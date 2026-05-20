@@ -1,16 +1,23 @@
-import { useEffect, useState } from 'react';
-import { WifiOff, RefreshCw } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { WifiOff, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { flushQueue, getPendingCount } from '@/lib/offline';
+import { toast } from 'sonner';
 
 /**
  * Thin banner shown when the device reports it's offline, or when there are
  * pending writes queued for sync. Mounted in the patient Header.
+ *
+ * Also surfaces a one-shot success toast when the pending count drops to zero
+ * after having been non-zero, so users know their queued offline entries
+ * actually synced (helps avoid double-entry).
  */
 export function OfflineBanner() {
   const [online, setOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const [pending, setPending] = useState(0);
+  const prevPendingRef = useRef(0);
+  const announcedRef = useRef(false);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -26,7 +33,20 @@ export function OfflineBanner() {
     let active = true;
     const refresh = async () => {
       const c = await getPendingCount();
-      if (active) setPending(c);
+      if (!active) return;
+      const prev = prevPendingRef.current;
+      // Successful drain: pending went from >0 to 0 while we're online.
+      if (prev > 0 && c === 0 && navigator.onLine && !announcedRef.current) {
+        announcedRef.current = true;
+        toast.success('Offline changes synced', {
+          description: `${prev} pending change${prev === 1 ? '' : 's'} sent to OneCare.`,
+          icon: <CheckCircle2 className="h-4 w-4" />,
+        });
+        // Reset the latch shortly so future drains also announce.
+        setTimeout(() => { announcedRef.current = false; }, 5000);
+      }
+      prevPendingRef.current = c;
+      setPending(c);
     };
     refresh();
     const t = setInterval(refresh, 5000);
@@ -62,7 +82,7 @@ export function OfflineBanner() {
       ) : (
         <>
           <WifiOff className="h-3.5 w-3.5" />
-          <span>You're offline. New entries will sync automatically when you reconnect.</span>
+          <span>You're offline. Vitals, doses, and notes will sync automatically when you reconnect.</span>
         </>
       )}
     </div>
