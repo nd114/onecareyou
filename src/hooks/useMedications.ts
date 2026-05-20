@@ -45,6 +45,7 @@ export const useMedications = () => {
       const { data, error } = await supabase
         .from('medications')
         .insert({
+          family_member_id: activeMemberId,
           ...medication,
           user_id: user.id,
         })
