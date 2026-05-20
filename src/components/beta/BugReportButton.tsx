@@ -83,7 +83,7 @@ export const BugReportButton = () => {
       <Button
         onClick={() => setOpen(true)}
         size="icon"
-        className="fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full shadow-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+        className="fixed bottom-24 right-6 z-50 h-12 w-12 rounded-full shadow-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground"
         aria-label="Report a bug"
       >
         <Bug className="h-5 w-5" />
