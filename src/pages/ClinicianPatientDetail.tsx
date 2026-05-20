@@ -338,7 +338,7 @@ const ClinicianPatientDetail = () => {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="vitals" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="vitals">Vitals</TabsTrigger>
               <TabsTrigger value="medications">Meds</TabsTrigger>
               <TabsTrigger value="adherence">Adherence</TabsTrigger>
@@ -351,8 +351,35 @@ const ClinicianPatientDetail = () => {
                 Docs
               </TabsTrigger>
               <TabsTrigger value="guidance">Guidance</TabsTrigger>
+              <TabsTrigger value="messages" className="flex items-center gap-1">
+                <MessageSquare className="h-3 w-3" />
+                Messages
+              </TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
+
+            {/* Messages Tab */}
+            <TabsContent value="messages">
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Secure Messages
+                  </CardTitle>
+                  <CardDescription>
+                    Direct, encrypted conversation with {patient.patient_name || 'this patient'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <MessageThread
+                    otherPartyUserId={patient.user_id}
+                    otherPartyName={patient.patient_name || 'Patient'}
+                    role="clinician"
+                    className="h-[520px]"
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* Vitals Tab */}
             <TabsContent value="vitals">
