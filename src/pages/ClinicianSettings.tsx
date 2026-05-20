@@ -622,7 +622,7 @@ const ClinicianSettings = () => {
 
           {/* Practice/Team Management - Pro+ only */}
           {hasFeatureAccess(tier, 'team_management') && (
-            <div className="mt-6">
+            <div id="practice-team" className="mt-6 scroll-mt-20">
               <PracticeTeamSection />
             </div>
           )}
@@ -633,7 +633,9 @@ const ClinicianSettings = () => {
           </div>
 
           {/* EHR Connections */}
-          <EHRConnectionsSection />
+          <div id="ehr-connections" className="scroll-mt-20">
+            <EHRConnectionsSection />
+          </div>
 
           {/* Practice Branding - Enterprise only */}
           {hasFeatureAccess(tier, 'practice_branding') && (
