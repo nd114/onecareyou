@@ -129,11 +129,25 @@ export const useScheduleEntries = (date?: Date) => {
     mutationFn: async (entryId: string) => {
       if (!user?.id) throw new Error('Not authenticated');
 
+      const takenAt = new Date().toISOString();
+
+      // Offline: queue update + optimistically reflect in cache
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await enqueueWrite({
+          table: 'schedule_entries',
+          op: 'update',
+          payload: { status: 'taken', taken_at: takenAt },
+          match: { id: entryId, user_id: user.id },
+          user_id: user.id,
+        });
+        return { id: entryId, status: 'taken', taken_at: takenAt };
+      }
+
       const { data, error } = await supabase
         .from('schedule_entries')
         .update({
           status: 'taken',
-          taken_at: new Date().toISOString(),
+          taken_at: takenAt,
         })
         .eq('id', entryId)
         .eq('user_id', user.id)
@@ -145,7 +159,11 @@ export const useScheduleEntries = (date?: Date) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule_entries', user?.id] });
-      toast.success('Marked as taken!');
+      toast.success(
+        typeof navigator !== 'undefined' && !navigator.onLine
+          ? 'Marked as taken — will sync when online'
+          : 'Marked as taken!'
+      );
     },
     onError: (error) => {
       console.error('Error marking as taken:', error);
@@ -156,6 +174,17 @@ export const useScheduleEntries = (date?: Date) => {
   const markAsSkipped = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason?: string }) => {
       if (!user?.id) throw new Error('Not authenticated');
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await enqueueWrite({
+          table: 'schedule_entries',
+          op: 'update',
+          payload: { status: 'skipped', skipped_reason: reason || null },
+          match: { id: entryId, user_id: user.id },
+          user_id: user.id,
+        });
+        return { id: entryId, status: 'skipped' };
+      }
 
       const { data, error } = await supabase
         .from('schedule_entries')
@@ -173,7 +202,11 @@ export const useScheduleEntries = (date?: Date) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule_entries', user?.id] });
-      toast.success('Marked as skipped');
+      toast.success(
+        typeof navigator !== 'undefined' && !navigator.onLine
+          ? 'Marked as skipped — will sync when online'
+          : 'Marked as skipped'
+      );
     },
     onError: (error) => {
       console.error('Error marking as skipped:', error);
