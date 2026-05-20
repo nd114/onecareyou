@@ -125,6 +125,7 @@ export function Header() {
         { href: "/medications", label: "Medications" },
         { href: "/vitals", label: "Vitals" },
         { href: "/schedule", label: "Schedule" },
+        { href: "/messages", label: "Messages" },
         { href: "/care-circle", label: "Care Circle" },
         { href: "/health-vault", label: "Health Vault" },
       ]
