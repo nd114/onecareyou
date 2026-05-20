@@ -131,6 +131,15 @@ const Onboarding = () => {
     setIsLoading(false);
   };
 
+  const handleSaveDraft = async () => {
+    const success = await saveProfile(false);
+    if (success) {
+      toast.success("Progress saved. You can come back to finish anytime.");
+      navigate("/dashboard");
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
