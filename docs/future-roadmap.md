@@ -19,6 +19,16 @@ This document outlines planned features that are not yet implemented but are par
 5. **EHR integration via QHIN** (Particle Health / Health Gorilla) — pivot from per-EHR FHIR to one QHIN integration.
 6. **Ambient scribe + voice entry** — defensible AI differentiator.
 
+## NB items captured from May 2026 audit
+
+These were inline annotations on the audit plan; logged here so they don't get lost.
+
+- **AI Assistant — medication knowledge base (from audit P8 NB).** Extend the patient AI Assistant so it can answer medication-specific questions (interactions, side effects, missed doses, food/alcohol cautions) grounded in the existing medication knowledge sources (RxNav, FDA label data, the `medication_info` cache). Hard constraints: no dosage changes, no diagnostic claims, always recommend contacting the prescriber for changes, never override safety alerts. Surface the FAB on `/medications` and `/add-medication` too, not only the Dashboard.
+- **Health news & medical updates feed (from audit §1.2 NB).** Curated, opt-in feed surfacing items relevant to the patient's own medication list and conditions: discontinued/recalled medications (FDA enforcement reports), formulation changes, generic availability, and notable new treatments/guidelines. Dashboard widget plus a `/news` page, filtered against the patient's actual meds/conditions. Future: clinicians can pin items to a patient.
+- **Additional tech opportunities (from audit §3 NB).** Logged in [`docs/tech-and-process-opportunities.md`](./tech-and-process-opportunities.md) — see "Additional opportunities (May 2026 follow-up)".
+
+
+
 
 
 ## ✅ IMPLEMENTED: Sprint 1 & Sprint 3 (Partial)
