@@ -53,6 +53,7 @@ import MedicationInfo from "./pages/MedicationInfo";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import EHRComparison from "./pages/EHRComparison";
 import AdminImport from "./pages/AdminImport";
+import AdminChangelog from "./pages/AdminChangelog";
 import ClinicianPricing from "./pages/ClinicianPricing";
 import EnterpriseInquiry from "./pages/EnterpriseInquiry";
 import ClinicianBAA from "./pages/ClinicianBAA";
