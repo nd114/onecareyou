@@ -68,6 +68,7 @@ import Careers from "./pages/Careers";
 import JobDetail from "./pages/JobDetail";
 import HealthVault from "./pages/HealthVault";
 import Messages from "./pages/Messages";
+import ClinicianMessages from "./pages/ClinicianMessages";
 import { BugReportButton } from "./components/beta/BugReportButton";
 
 const App = () => (
