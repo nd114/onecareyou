@@ -100,6 +100,28 @@ serve(async (req) => {
     // Only send last 10 messages for context window management
     const recentMessages = messages.slice(-10);
 
+    // Build per-user medication context (consent already verified above).
+    // Cap to 20 active meds; only fields needed for general guidance.
+    let medContext = "";
+    try {
+      const { data: meds } = await supabase
+        .from("medications")
+        .select("name, dosage, frequency")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .limit(20);
+      if (meds && meds.length > 0) {
+        const list = meds
+          .map((m: any) => `- ${m.name}${m.dosage ? ` ${m.dosage}` : ""}${m.frequency ? ` (${m.frequency})` : ""}`)
+          .join("\n");
+        medContext = `\n\nUSER'S CURRENT ACTIVE MEDICATIONS (for context only — never advise dose changes):\n${list}`;
+      }
+    } catch (e) {
+      console.warn("med context fetch failed", e);
+    }
+
+    const systemPrompt = BASE_SYSTEM_PROMPT + medContext;
+
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
@@ -111,7 +133,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: systemPrompt },
             ...recentMessages,
           ],
           max_tokens: 1024,
