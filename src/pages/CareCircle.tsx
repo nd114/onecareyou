@@ -292,6 +292,21 @@ const CareCircle = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                            onClick={() => {
+                              const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
+                              const subject = `Secure access to my OneCare health record`;
+                              const body = `Hi ${share.provider_name},\n\nI'm sharing my health record with you on OneCare. Use the secure link below to view it:\n\n${link}\n\nThanks.`;
+                              const to = share.provider_email ? encodeURIComponent(share.provider_email) : '';
+                              window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                            }}
+                          >
+                            <Mail className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Email</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="h-8 px-2 sm:px-3 text-xs sm:text-sm text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
                             onClick={() => {
                               const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
