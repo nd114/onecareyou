@@ -46,6 +46,17 @@ import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinician
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      // Wait a tick for sections to render
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
+  }, [location.hash]);
   const { user, profile } = useAuth();
   const { clinicianProfile, isLoading: isLoadingProfile, updateClinicianProfile, isClinician } = useClinicianProfile();
   const { patients } = useClinicianPatients();
