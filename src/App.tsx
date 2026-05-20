@@ -126,6 +126,11 @@ const App = () => (
                 <ClinicianAlerts />
               </ProtectedRoute>
             } />
+            <Route path="/clinician/messages" element={
+              <ProtectedRoute>
+                <ClinicianMessages />
+              </ProtectedRoute>
+            } />
             <Route path="/clinician/patients/import" element={
               <ProtectedRoute>
                 <ClinicianPatientImport />
