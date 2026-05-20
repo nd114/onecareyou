@@ -31,14 +31,17 @@ export function PatientNotesDialog({
   isSaving = false,
 }: PatientNotesDialogProps) {
   const [notes, setNotes] = useState(initialNotes);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const isDirty = notes !== initialNotes;
 
   useEffect(() => {
     setNotes(initialNotes);
+    setLastSavedAt(null);
   }, [initialNotes, open]);
 
   const handleSave = async () => {
     await onSave(notes);
-    onOpenChange(false);
+    setLastSavedAt(new Date());
   };
 
   return (
