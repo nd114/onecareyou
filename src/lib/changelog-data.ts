@@ -15,6 +15,18 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-05-20',
+    version: '0.9.2',
+    title: 'QHIN provenance scaffolding (TEFCA-ready)',
+    tags: ['infrastructure', 'platform', 'security'],
+    bullets: [
+      'New qhin_imports and qhin_record_provenance tables: every future network-fetched vital/med/document will carry source org, source system OID, original FHIR resource id, and a raw FHIR snapshot.',
+      'profiles.qhin_consent_at + qhin_disclosure_version columns capture explicit TEFCA disclosure acceptance, separate from AI/Vault consent.',
+      'RLS: patients see only their own imports/provenance; clinicians see provenance only for patients they already have shared access to via provider_shares.',
+      'No live Particle/Health Gorilla wiring yet — schema-first so ingestion workers, dedupe, and UI badges can be built incrementally without backfill churn.',
+    ],
+  },
+  {
+    date: '2026-05-20',
     version: '0.9.1',
     title: 'Patient AI assistant: global FAB + medication awareness',
     tags: ['patient', 'ai'],
