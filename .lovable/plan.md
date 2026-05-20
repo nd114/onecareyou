@@ -222,6 +222,8 @@ Status snapshot — May 2026:
 - ✅ Discontinued-medication auto-deactivation trigger (P6).
 - ✅ Enterprise inquiry confirmation email (Resend, applicant + sales notification).
 - ✅ Internal changelog at `/admin/changelog` for team + investor updates (private route).
+- ✅ Patient AI Chat FAB on all patient routes + medication-aware system prompt (P8 + NB).
+- ✅ Implementation logic tracked in [`docs/implementation-tracking.md`](../docs/implementation-tracking.md).
 
 QHIN integration scoped in [`docs/qhin-integration-plan.md`](../docs/qhin-integration-plan.md).
 
