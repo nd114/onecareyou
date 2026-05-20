@@ -33,23 +33,50 @@ const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
-export function getDB() {
+function open(): Promise<IDBPDatabase> {
+  return openDB(DB_NAME, DB_VERSION, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains('pending_writes')) {
+        const store = db.createObjectStore('pending_writes', { keyPath: 'id' });
+        store.createIndex('by_user', 'user_id');
+        store.createIndex('by_created', 'created_at');
+      }
+      if (!db.objectStoreNames.contains('cached_reads')) {
+        db.createObjectStore('cached_reads', { keyPath: 'key' });
+      }
+    },
+    blocked() {
+      // Another tab is holding an older version open.
+    },
+    blocking() {
+      // A newer version wants to upgrade; release our handle.
+      dbPromise = null;
+    },
+    terminated() {
+      // Connection was abnormally closed (HMR, browser eviction, etc.).
+      dbPromise = null;
+    },
+  }).then((db) => {
+    // If the connection later closes (e.g. HMR reload), drop our cached promise
+    // so the next caller re-opens instead of reusing a dead handle.
+    db.addEventListener('close', () => {
+      dbPromise = null;
+    });
+    return db;
+  });
+}
+
+export async function getDB(): Promise<IDBPDatabase> {
   if (typeof indexedDB === 'undefined') {
-    return Promise.reject(new Error('IndexedDB not available'));
+    throw new Error('IndexedDB not available');
   }
   if (!dbPromise) {
-    dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains('pending_writes')) {
-          const store = db.createObjectStore('pending_writes', { keyPath: 'id' });
-          store.createIndex('by_user', 'user_id');
-          store.createIndex('by_created', 'created_at');
-        }
-        if (!db.objectStoreNames.contains('cached_reads')) {
-          db.createObjectStore('cached_reads', { keyPath: 'key' });
-        }
-      },
-    });
+    dbPromise = open();
   }
-  return dbPromise;
+  try {
+    return await dbPromise;
+  } catch (err) {
+    dbPromise = null;
+    throw err;
+  }
 }
