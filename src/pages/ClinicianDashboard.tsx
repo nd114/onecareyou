@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
-  Send,
   Bell,
   BellRing,
   Clock,
