@@ -56,22 +56,29 @@
     <priority>0.3</priority>
   </url>
 
+  <url>
+    <loc>https://onecareyou.lovable.app/install</loc>
+    <lastmod>2026-05-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- Clinician Pages -->
   <url>
-    <loc>https://onecareyou.lovable.app/clinician/pricing</loc>
-    <lastmod>2026-03-24</lastmod>
+    <loc>https://onecareyou.lovable.app/for-clinicians</loc>
+    <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://onecareyou.lovable.app/clinician/sign-up</loc>
-    <lastmod>2026-03-24</lastmod>
+    <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://onecareyou.lovable.app/clinician/why-onecare</loc>
-    <lastmod>2026-03-24</lastmod>
+    <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

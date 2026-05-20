@@ -1,10 +1,11 @@
 # OneCare Founding Tester Pack
 
-> **Testing Window:** [INSERT DATES]
+> **Testing Window:** May 25 – June 22, 2026 (4 weeks)
 > **Platform:** https://onecareyou.lovable.app
+> **Install on phone:** https://onecareyou.lovable.app/install
 > **Support:** hello@onecare.you
-> **Bug Reporting:** Use the in-app 🐛 button (bottom-right corner on every page)
-> **Feedback Form:** [INSERT GOOGLE FORM LINK]
+> **Bug Reporting:** Use the in-app 🐛 button (bottom-left corner on every page)
+> **Feedback Form:** https://forms.gle/onecare-beta-feedback _(invite-only — link sent in your welcome email)_
 
 ---
 
@@ -124,7 +125,7 @@ You're testing for bugs, edge cases, clinical accuracy, and cross-device compati
 ## Reporting
 
 - **Bugs:** Use the in-app 🐛 button on any page. It auto-captures your URL and browser info.
-- **Feedback:** Complete the Google Form after your testing session: [INSERT LINK]
+- **Feedback:** Complete the Google Form after your testing session — the link is in your welcome email.
 - **Urgent issues:** Email hello@onecare.you
 
 ---

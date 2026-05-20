@@ -1501,30 +1501,36 @@ export type Database = {
           body: string
           clinician_user_id: string
           created_at: string
+          external_message_id: string | null
           id: string
           patient_user_id: string
           read_at: string | null
           sender_user_id: string
+          transport: string
         }
         Insert: {
           attachment_path?: string | null
           body: string
           clinician_user_id: string
           created_at?: string
+          external_message_id?: string | null
           id?: string
           patient_user_id: string
           read_at?: string | null
           sender_user_id: string
+          transport?: string
         }
         Update: {
           attachment_path?: string | null
           body?: string
           clinician_user_id?: string
           created_at?: string
+          external_message_id?: string | null
           id?: string
           patient_user_id?: string
           read_at?: string | null
           sender_user_id?: string
+          transport?: string
         }
         Relationships: []
       }
@@ -1842,6 +1848,8 @@ export type Database = {
           location: string | null
           name: string | null
           onboarding_completed: boolean | null
+          onboarding_last_step: number
+          onboarding_skipped: boolean
           phone_number: string | null
           push_notifications_enabled: boolean | null
           push_subscription: Json | null
@@ -1877,6 +1885,8 @@ export type Database = {
           location?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
+          onboarding_last_step?: number
+          onboarding_skipped?: boolean
           phone_number?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
@@ -1912,6 +1922,8 @@ export type Database = {
           location?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
+          onboarding_last_step?: number
+          onboarding_skipped?: boolean
           phone_number?: string | null
           push_notifications_enabled?: boolean | null
           push_subscription?: Json | null
