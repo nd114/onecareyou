@@ -292,49 +292,99 @@ const ClinicianAlerts = () => {
           >
             <Card>
               <CardHeader>
-                <CardTitle className="text-base sm:text-lg">Recent Alerts</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Triage Inbox</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
-                  Alert history from your monitoring rules
+                  Review and acknowledge incoming patient alerts
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {alertLogs.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="font-semibold mb-2">No alerts yet</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Alerts will appear here when patient vitals trigger your rules
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {alertLogs.slice(0, 20).map((log) => (
-                      <div
-                        key={log.id}
-                        className="p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/20"
-                      >
-                        <div className="flex items-start gap-3">
+                {(() => {
+                  const unread = alertLogs.filter((l) => !l.acknowledged_at);
+                  const acknowledged = alertLogs.filter((l) => l.acknowledged_at);
+                  const list: AlertLog[] = triageTab === 'unread' ? unread : acknowledged;
+
+                  const renderLog = (log: AlertLog) => (
+                    <div
+                      key={log.id}
+                      className={`p-3 rounded-lg border ${
+                        log.acknowledged_at
+                          ? 'border-border bg-muted/30'
+                          : 'border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/20'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {log.acknowledged_at ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
+                        ) : (
                           <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <Badge variant="destructive" className="text-xs">
-                                {formatAlertType(log.alert_type)}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(log.sent_at), 'MMM d, h:mm a')}
-                              </span>
-                            </div>
-                            {log.message && (
-                              <p className="text-sm text-muted-foreground">
-                                {log.message}
-                              </p>
-                            )}
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <Badge variant={log.acknowledged_at ? 'secondary' : 'destructive'} className="text-xs">
+                              {formatAlertType(log.alert_type)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(log.sent_at), 'MMM d, h:mm a')}
+                            </span>
                           </div>
+                          {log.message && (
+                            <p className="text-sm text-muted-foreground">{log.message}</p>
+                          )}
+                          {log.acknowledged_at && (
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Acknowledged {format(new Date(log.acknowledged_at), 'MMM d, h:mm a')}
+                            </p>
+                          )}
                         </div>
+                        {!log.acknowledged_at && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => acknowledgeAlertLog.mutate(log.id)}
+                            disabled={acknowledgeAlertLog.isPending}
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                            Acknowledge
+                          </Button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  );
+
+                  return (
+                    <Tabs value={triageTab} onValueChange={(v) => setTriageTab(v as 'unread' | 'acknowledged')}>
+                      <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsTrigger value="unread">
+                          Unread {unread.length > 0 && (
+                            <Badge variant="destructive" className="ml-2 h-4 px-1.5 text-[10px]">{unread.length}</Badge>
+                          )}
+                        </TabsTrigger>
+                        <TabsTrigger value="acknowledged">
+                          Acknowledged
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value={triageTab} className="m-0">
+                        {list.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="font-semibold mb-2">
+                              {triageTab === 'unread' ? 'All caught up' : 'Nothing acknowledged yet'}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {triageTab === 'unread'
+                                ? 'No alerts waiting for review'
+                                : 'Acknowledged alerts will appear here'}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {list.slice(0, 30).map(renderLog)}
+                          </div>
+                        )}
+                      </TabsContent>
+                    </Tabs>
+                  );
+                })()}
               </CardContent>
             </Card>
           </motion.div>
