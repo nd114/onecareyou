@@ -21,6 +21,7 @@ import {
   Sun,
   Moon,
   Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
