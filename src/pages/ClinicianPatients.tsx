@@ -503,7 +503,6 @@ const ClinicianPatients = () => {
             shareId: notesDialog.patientId,
             notes,
           });
-          setNotesDialog({ ...notesDialog, open: false });
         }}
         isSaving={updatePatientNotes.isPending}
       />
