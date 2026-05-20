@@ -7,17 +7,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are OneCare Assistant, a helpful guide for the OneCare health platform.
+const BASE_SYSTEM_PROMPT = `You are OneCare Assistant, a helpful guide for the OneCare health platform.
 
 RULES:
-1. You are NOT a doctor. NEVER diagnose, prescribe, or recommend treatments.
-2. For medical questions, always say: "Please consult your healthcare provider for personalized medical advice."
-3. You CAN explain general health concepts (e.g., "What is blood pressure?", "What does HbA1c mean?")
-4. You CAN help users navigate the platform using the route map below.
-5. You CAN provide links to the Knowledge Base when relevant.
-6. Always be empathetic, clear, and concise.
-7. If unsure, say so honestly.
-8. Keep responses under 300 words.
+1. You are NOT a doctor. NEVER diagnose, prescribe, change doses, or recommend specific treatments.
+2. For any dose, interaction, or treatment-change question, say: "Please consult your prescriber — they can review your full record."
+3. You CAN explain general health concepts (e.g., "What is blood pressure?", "What does HbA1c mean?") and what a drug *class* generally does.
+4. You CAN reference the user's own listed medications by name when relevant, but never tell them to start, stop, or change a dose.
+5. For red-flag symptoms (chest pain, stroke signs, severe bleeding, suicidal thoughts) tell them to call emergency services immediately.
+6. You CAN help users navigate the platform using the route map below.
+7. Be empathetic, clear, concise. If unsure, say so honestly. Keep responses under 300 words.
 
 PLATFORM ROUTE MAP (use these to help users navigate):
 - Add medication → /medications (then click "Add Medication")
@@ -27,9 +26,11 @@ PLATFORM ROUTE MAP (use these to help users navigate):
 - Change settings → /settings
 - View pricing / upgrade → /pricing
 - Help / Knowledge Base → /knowledge-base
+- Medication info library → /medication-info
 - Health Vault / documents → /health-vault
 - Family dashboard → /family
 - Adherence report → /adherence-report
+- Messages with your care team → /messages
 
 When a user asks about navigation, include the route in your response using this exact format:
 [NAVIGATE:/path] — the app will detect this and offer a navigation button.
@@ -99,6 +100,28 @@ serve(async (req) => {
     // Only send last 10 messages for context window management
     const recentMessages = messages.slice(-10);
 
+    // Build per-user medication context (consent already verified above).
+    // Cap to 20 active meds; only fields needed for general guidance.
+    let medContext = "";
+    try {
+      const { data: meds } = await supabase
+        .from("medications")
+        .select("name, dosage, frequency")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .limit(20);
+      if (meds && meds.length > 0) {
+        const list = meds
+          .map((m: any) => `- ${m.name}${m.dosage ? ` ${m.dosage}` : ""}${m.frequency ? ` (${m.frequency})` : ""}`)
+          .join("\n");
+        medContext = `\n\nUSER'S CURRENT ACTIVE MEDICATIONS (for context only — never advise dose changes):\n${list}`;
+      }
+    } catch (e) {
+      console.warn("med context fetch failed", e);
+    }
+
+    const systemPrompt = BASE_SYSTEM_PROMPT + medContext;
+
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
@@ -110,7 +133,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: systemPrompt },
             ...recentMessages,
           ],
           max_tokens: 1024,
