@@ -75,6 +75,8 @@ import ForClinicians from "./pages/ForClinicians";
 import { Navigate } from "react-router-dom";
 import { BugReportButton } from "./components/beta/BugReportButton";
 import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
+import { FabStack } from "./components/beta/FabStack";
+import Assist from "./pages/Assist";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -283,11 +285,18 @@ const App = () => (
                 <ClinicianSubscriptionSuccess />
               </ProtectedRoute>
             } />
+            <Route path="/assist" element={
+              <ProtectedRoute>
+                <Assist />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsentBanner />
-          <BugReportButton />
-          <PatientAIChatMount />
+          <FabStack>
+            <PatientAIChatMount />
+            <BugReportButton />
+          </FabStack>
         </BrowserRouter>
         </FamilyProvider>
       </AuthProvider>
