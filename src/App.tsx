@@ -71,6 +71,7 @@ import HealthVault from "./pages/HealthVault";
 import Messages from "./pages/Messages";
 import ClinicianMessages from "./pages/ClinicianMessages";
 import { BugReportButton } from "./components/beta/BugReportButton";
+import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
