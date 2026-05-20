@@ -20,6 +20,10 @@ import {
   Inbox,
   AlertTriangle,
   MessageSquare,
+  MoreHorizontal,
+  Building2,
+  Database,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
