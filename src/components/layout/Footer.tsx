@@ -6,7 +6,6 @@ export function Footer() {
     <footer className="border-t border-border bg-muted/30">
       <div className="container py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {/* Security/Trust strip */}
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
@@ -127,6 +126,26 @@ export function Footer() {
               </li>
             </ul>
           </div>
+        </div>
+
+        {/* Trust strip */}
+        <div className="mt-8 pt-8 border-t border-border flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            HIPAA-aligned
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            AES-256 encryption at rest
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            TLS in transit
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Row-level access control
+          </span>
         </div>
 
         <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
