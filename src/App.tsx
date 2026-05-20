@@ -281,6 +281,7 @@ const App = () => (
           </Routes>
           <CookieConsentBanner />
           <BugReportButton />
+          <PatientAIChatMount />
         </BrowserRouter>
         </FamilyProvider>
       </AuthProvider>
