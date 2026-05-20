@@ -68,3 +68,45 @@ prioritizing roadmap work and for clinician/investor narratives.
 - Whenever a clinician asks "what's coming next," pull from sections 1 and 3.
 - Whenever an investor asks "what's defensible," pull from section 4.
 - Update this doc when a row ships or when a new tech wave makes a row obsolete.
+
+---
+
+## 6. Additional opportunities (May 2026 follow-up)
+
+Captured per audit §3 NB ("I think there are a few more we can bring in"). These extend the original catalogue without replacing it.
+
+### 6.1 AI / model layer (additions)
+
+| Opportunity | Why now | OneCare fit |
+| --- | --- | --- |
+| **Agentic patient triage** (multi-step tool-using agent) | Tool-calling models can now plan a 5–10 step workflow reliably with safety rails. | Patient says "I missed my BP meds twice this week" → agent checks adherence, drafts a note to the clinician, schedules a catch-up reminder, and proposes a Care Circle alert — all behind one confirmation. |
+| **On-device speech (Whisper-3 / Apple Speech)** | iOS and Android both ship usable on-device ASR; Capacitor can bridge it. | Voice entry for elderly / low-vision patients without sending audio to any cloud. PHI never leaves the device. |
+| **Multimodal lab report parsing** | Vision models now read scanned PDFs + photos of paper labs reliably. | Extends existing Health Vault summarization to paper labs and handwritten discharge sheets, not just clean PDFs. |
+| **Personalized clinical decision support (CDS Hooks 2.0)** | The CDS Hooks standard is mature and now supported by Epic, Cerner, Athena. | Clinician-side: when opening a patient, fire CDS hooks for guideline-based suggestions (e.g. statin eligible, overdue A1c) sourced from the patient's own data. |
+| **AI-generated patient education micro-content** | Cheap, fast, and explicitly allowed under HIPAA when generated from the patient's own record. | Turn each new med into a 30-second "what to expect this week" card; turn each lab into a "what changed since last time" card. |
+
+### 6.2 Interop & infrastructure (additions)
+
+| Opportunity | Why now |
+| --- | --- |
+| **FHIR Bulk Data ($export)** | All major EHRs now support population-level FHIR export. Enables practice-wide analytics without per-patient pulls. |
+| **Verifiable credentials / SMART Health Cards** | Standardized way to issue tamper-evident records (vaccinations, lab results) the patient owns. Fits the patient-owned-data wedge. |
+| **Passkeys / WebAuthn for clinicians** | Eliminates the 30-min-session-timeout pain point and the password-reset support load. |
+| **Edge functions on a regional fly.io/Deno Deploy** | Lower latency for non-US patients without leaving the Supabase ecosystem; helps with global English-speaking expansion. |
+| **Postgres pgvector for clinical search** | Already available in Supabase. Enables semantic search across a patient's documents and notes without standing up a separate vector DB. |
+
+### 6.3 Process / GTM (additions)
+
+| Opportunity | Description |
+| --- | --- |
+| **"Bring your own clinic" referral loop** | Every clinician who signs up gets a one-click invite link for their patient panel. Tracks attribution; pays out account credit on patient activation. Compounds the wedge story. |
+| **Public quarterly "AI report card"** | Publish counts of AI calls, data retention, model versions, and any incidents. Differentiator vs every closed AI in healthcare. Pairs with the §3 "AI safety/transparency page" item. |
+| **Specialty pilot program** | Recruit 5 cardiology or endocrinology clinics for a 90-day paid pilot. Hard outcome metric (e.g. days between visits → adherence delta). The case study unlocks the rest of the specialty. |
+| **Embedded compliance pack** | Ship a downloadable HIPAA/SOC2-lite evidence pack for small-practice IT review. Removes the single biggest sales blocker for clinics with no IT department. |
+| **Patient advocacy partnerships** | Partner with chronic-disease patient associations (ADA, AHA, etc.). They get a co-branded Care Circle; we get distribution to motivated patients. |
+| **Open API for caregivers** | Documented read-only API that family members / hired caregivers can use with scoped tokens. Locks in the "delegated caregiver access" feature we already have. |
+
+### 6.4 Captured NBs from the audit (cross-reference)
+
+- AI Assistant medication knowledge base — see `docs/future-roadmap.md` → "NB items captured from May 2026 audit".
+- Health news & medical updates feed — see same section.

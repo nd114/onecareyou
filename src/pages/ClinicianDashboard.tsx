@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
-  Send,
   Bell,
   BellRing,
   Clock,
@@ -36,7 +35,7 @@ import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { useClinicianTour } from '@/hooks/useClinicianTour';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
-import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
+
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
@@ -282,14 +281,10 @@ const ClinicianDashboard = () => {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="patients" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="patients" className="text-xs sm:text-sm" data-tour="patients-tab">
                 <Users className="h-4 w-4 mr-0 sm:mr-2" />
                 <span className="hidden sm:inline">Patients</span>
-              </TabsTrigger>
-              <TabsTrigger value="guidance" className="text-xs sm:text-sm" data-tour="guidance-tab">
-                <Send className="h-4 w-4 mr-0 sm:mr-2" />
-                <span className="hidden sm:inline">Guidance</span>
               </TabsTrigger>
               <TabsTrigger value="alerts" className="text-xs sm:text-sm" data-tour="alerts-tab">
                 <Bell className="h-4 w-4 mr-0 sm:mr-2" />
@@ -488,78 +483,9 @@ const ClinicianDashboard = () => {
               </Card>
             </TabsContent>
 
-            {/* Guidance Tab */}
-            <TabsContent value="guidance">
-              <Card>
-                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-base sm:text-lg">Patient Guidance</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                      Send instructions and guidance to your patients
-                    </CardDescription>
-                  </div>
-                  <CreateGuidanceDialog
-                    trigger={
-                      <Button className="gradient-primary border-0 h-8 sm:h-9 px-3 text-xs sm:text-sm w-full sm:w-auto" disabled={patients.length === 0}>
-                        <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-                        New Guidance
-                      </Button>
-                    }
-                    patients={patients.map(p => ({ id: p.id, user_id: p.user_id, patient_name: p.patient_name, patient_email: p.patient_email }))}
-                  />
-                </CardHeader>
-                <CardContent>
-                  {clinicianGuidance.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="font-semibold mb-2">No guidance sent yet</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Send instructions to patients for them to follow
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {clinicianGuidance.map((guidance) => (
-                        <div key={guidance.id} className="p-3 sm:p-4 rounded-lg border">
-                          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm sm:text-base truncate">{guidance.title}</p>
-                              <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
-                                {guidance.instruction}
-                              </p>
-                              <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
-                                <Badge variant={
-                                  guidance.status === 'completed' ? 'default' :
-                                  guidance.status === 'acknowledged' ? 'secondary' :
-                                  'outline'
-                                } className="text-xs">
-                                  {guidance.status}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">{guidance.priority}</Badge>
-                                <Badge variant="outline" className="text-xs">{guidance.category}</Badge>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 self-end sm:self-start flex-shrink-0">
-                              {guidance.status === 'completed' && (
-                                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                              )}
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => deleteGuidance.mutate(guidance.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+            {/* Guidance lives at /clinician/guidance — no duplicate tab here */}
+
+
 
             {/* Alerts Tab */}
             <TabsContent value="alerts">

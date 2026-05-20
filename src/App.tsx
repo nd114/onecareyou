@@ -68,6 +68,7 @@ import Careers from "./pages/Careers";
 import JobDetail from "./pages/JobDetail";
 import HealthVault from "./pages/HealthVault";
 import Messages from "./pages/Messages";
+import ClinicianMessages from "./pages/ClinicianMessages";
 import { BugReportButton } from "./components/beta/BugReportButton";
 
 const App = () => (
@@ -123,6 +124,11 @@ const App = () => (
             <Route path="/clinician/alerts" element={
               <ProtectedRoute>
                 <ClinicianAlerts />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/messages" element={
+              <ProtectedRoute>
+                <ClinicianMessages />
               </ProtectedRoute>
             } />
             <Route path="/clinician/patients/import" element={

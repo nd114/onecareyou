@@ -19,6 +19,7 @@ import {
   XCircle,
   Inbox,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -125,9 +126,11 @@ export function ClinicianHeader() {
   const navLinks = [
     { to: "/clinician/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/clinician/patients", label: "Patients", icon: Users },
+    { to: "/clinician/messages", label: "Messages", icon: MessageSquare },
     { to: "/clinician/guidance", label: "Guidance", icon: FileText },
     { to: "/clinician/alerts", label: "Alerts", icon: AlertTriangle },
   ];
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
