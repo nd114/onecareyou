@@ -220,6 +220,8 @@ Status snapshot — May 2026:
 - ✅ Guidance templates picker (built-in starter library; DB-backed library remains roadmap).
 - ✅ Patient subscription auto-refresh + Premium polish.
 - ✅ Discontinued-medication auto-deactivation trigger (P6).
+- ✅ Enterprise inquiry confirmation email (Resend, applicant + sales notification).
+- ✅ Internal changelog at `/admin/changelog` for team + investor updates (private route).
 
 QHIN integration scoped in [`docs/qhin-integration-plan.md`](../docs/qhin-integration-plan.md).
 
