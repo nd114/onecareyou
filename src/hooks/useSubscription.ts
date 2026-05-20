@@ -125,6 +125,14 @@ export function useSubscription() {
     }
   }, [session]);
 
+  // Auto-check subscription when session changes and refresh every 60s
+  useEffect(() => {
+    if (!session) return;
+    checkSubscription();
+    const id = setInterval(checkSubscription, 60_000);
+    return () => clearInterval(id);
+  }, [session, checkSubscription]);
+
   return {
     subscription,
     loading,
