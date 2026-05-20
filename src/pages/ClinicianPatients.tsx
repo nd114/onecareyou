@@ -249,14 +249,25 @@ const ClinicianPatients = () => {
               )}
 
               {patients.length === 0 ? (
-                <div className="text-center py-8">
+                <div className="text-center py-10 px-4">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">No patients yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    When patients share their health data with your email address, they'll appear here automatically.
+                  <h3 className="font-semibold mb-2">No connected patients yet</h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                    Connected patients are people who have shared their OneCare record with your email.
+                    You can also bulk-import patients from a CSV and send them invitations.
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Tip: Ask patients to add your email in their Care Circle settings
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <InvitePatientDialog
+                      disabled={patientCount >= patientLimit}
+                      disabledReason={`You've reached your limit of ${patientLimit} patients.`}
+                    />
+                    <Button variant="outline" size="sm" onClick={() => navigate('/clinician/patients/import')}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Bulk import CSV
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Tip: ask patients to add your email in their Care Circle settings, or use the Managed tab to track patients before they activate.
                   </p>
                 </div>
               ) : filteredPatients.length === 0 ? (
