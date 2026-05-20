@@ -77,8 +77,8 @@ const Careers = () => {
                 <span className="text-primary block mt-2">Patient Care</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                We're building the bridge between patients and their care teams. 
-                Join us in making medication management and remote monitoring accessible to everyone.
+                We're building the bridge between patients and their care teams.
+                Help us make connected, post-discharge care — vitals, medications, records, and continuous updates — accessible to everyone.
               </p>
               <Button size="lg" asChild>
                 <a href="#positions">
