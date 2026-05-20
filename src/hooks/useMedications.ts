@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { cacheRead, getCachedRead } from '@/lib/offline';
 
 export type Medication = Tables<'medications'>;
 export type MedicationInsert = TablesInsert<'medications'>;
@@ -18,6 +19,7 @@ export const useMedications = () => {
     queryKey: ['medications', user?.id, activeMemberId],
     queryFn: async () => {
       if (!user?.id) throw new Error('Not authenticated');
+      const cacheKey = `medications:${user.id}:${activeMemberId ?? 'self'}`;
 
       let query = supabase
         .from('medications')
@@ -30,10 +32,17 @@ export const useMedications = () => {
         query = query.is('family_member_id', null);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Medication[];
+      try {
+        const { data, error } = await query.order('created_at', { ascending: false });
+        if (error) throw error;
+        const rows = (data as Medication[]) || [];
+        void cacheRead(cacheKey, rows);
+        return rows;
+      } catch (err) {
+        const cached = await getCachedRead<Medication[]>(cacheKey);
+        if (cached?.payload) return cached.payload;
+        throw err;
+      }
     },
     enabled: !!user?.id,
   });

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { toast } from 'sonner';
+import { enqueueWrite, cacheRead, getCachedRead } from '@/lib/offline';
 
 export type VitalSource = 'manual' | 'ehr_import' | 'device';
 
@@ -34,6 +35,8 @@ export function useVitals() {
   const [vitals, setVitals] = useState<VitalRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const cacheKey = () => `vitals:${user?.id}:${activeMemberId ?? 'self'}`;
+
   const fetchVitals = async () => {
     if (!user) return;
     setLoading(true);
@@ -52,10 +55,18 @@ export function useVitals() {
       const { data, error } = await query.order('recorded_at', { ascending: false });
 
       if (error) throw error;
-      setVitals((data as VitalRecord[]) || []);
+      const rows = (data as VitalRecord[]) || [];
+      setVitals(rows);
+      void cacheRead(cacheKey(), rows);
     } catch (error) {
       console.error('Error fetching vitals:', error);
-      toast.error('Failed to load vitals');
+      // Try offline cache before erroring
+      const cached = await getCachedRead<VitalRecord[]>(cacheKey());
+      if (cached?.payload) {
+        setVitals(cached.payload);
+      } else {
+        toast.error('Failed to load vitals');
+      }
     } finally {
       setLoading(false);
     }
@@ -80,34 +91,57 @@ export function useVitals() {
     }
 
     const config = VITAL_CONFIG[type];
-    
+    const payload = {
+      user_id: user.id,
+      type,
+      value,
+      secondary_value: secondaryValue || null,
+      unit: config.unit,
+      recorded_at: recordedAt?.toISOString() || new Date().toISOString(),
+      notes: notes || null,
+      source: 'manual' as VitalSource,
+      family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
+    };
+
+    // Offline path: optimistically add locally + queue for later sync.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const tempId = globalThis.crypto?.randomUUID?.() ?? `tmp_${Date.now()}`;
+      await enqueueWrite({
+        id: tempId,
+        table: 'vitals',
+        op: 'insert',
+        payload,
+        user_id: user.id,
+      });
+      const optimistic = {
+        id: tempId,
+        ...payload,
+        external_id: null,
+        ehr_connection_id: null,
+        created_at: new Date().toISOString(),
+      } as VitalRecord;
+      setVitals(prev => [optimistic, ...prev]);
+      toast.success(`${config.label} saved — will sync when online`);
+      return optimistic;
+    }
+
     try {
       const { data, error } = await supabase
         .from('vitals')
-        .insert({
-          user_id: user.id,
-          type,
-          value,
-          secondary_value: secondaryValue || null,
-          unit: config.unit,
-          recorded_at: recordedAt?.toISOString() || new Date().toISOString(),
-          notes: notes || null,
-          source: 'manual', // Patient-entered vitals are always manual
-          family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
-        })
+        .insert(payload)
         .select()
         .single();
 
       if (error) throw error;
-      
+
       setVitals(prev => [data as VitalRecord, ...prev]);
       toast.success(`${config.label} recorded successfully!`);
-      
+
       // Trigger vital alert check in background (non-blocking)
-      supabase.functions.invoke('check-vital-alerts').catch(err => 
+      supabase.functions.invoke('check-vital-alerts').catch(err =>
         console.log('Alert check skipped:', err)
       );
-      
+
       return data;
     } catch (error) {
       console.error('Error adding vital:', error);
