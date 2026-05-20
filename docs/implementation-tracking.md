@@ -120,9 +120,37 @@ DB-backed `guidance_templates` (per-practice library, sharing, versioning) is st
 
 ---
 
-## 10. QHIN integration (planned, not built)
+## 10. QHIN provenance scaffolding (scaffolded, ingestion not built)
 
-See `docs/qhin-integration-plan.md`. Provenance tables (`qhin_imports`, `qhin_record_provenance`) are step 1 — every other piece (ingestion worker, dedupe, UI badges, TEFCA revoke flow) hangs off them.
+See `docs/qhin-integration-plan.md` for the full plan. As of 2026-05-20 the **provenance layer is live**; the live Particle/Health Gorilla wiring is intentionally deferred until the BAA is signed.
+
+### Tables (this turn)
+
+- **`public.qhin_imports`** — one row per network-fetch attempt.
+  - `user_id` (patient), `requested_by` (patient or clinician who initiated), `particle_query_id`, `status` (`pending|matched|fetching|complete|failed`), `scope`, `consent_reference`, `disclosure_version`, `match_count`, `record_count`, `error`, `created_at`, `completed_at`.
+- **`public.qhin_record_provenance`** — one row per OneCare row that originated from a network source.
+  - `import_id` (FK → `qhin_imports`, ON DELETE CASCADE), `user_id`, `target_table` (`'vitals' | 'medications' | 'health_documents' | ...`), `target_id`, `source_organization` (e.g. "Mount Sinai"), `source_system_oid`, `source_resource_id`, `fhir_resource_type`, `last_updated_at_source`, `confidence` (numeric), `raw_fhir` (jsonb snapshot for replay/debug).
+- **`profiles.qhin_consent_at` + `profiles.qhin_disclosure_version`** — TEFCA disclosure acceptance, separate column-pair from `ai_processing_consent` / Vault consent so the legal trail is independent.
+
+### RLS
+
+- `qhin_imports`: patient SELECT/INSERT on own rows; clinician SELECT/INSERT via `clinician_has_patient_access(user_id)` so importing-on-behalf-of works for delegated clinicians, but only for already-shared patients.
+- `qhin_record_provenance`: patient SELECT own; clinician SELECT via same access function. **No INSERT policy** — provenance is service-role-only. Ingestion edge functions will use the service role key; client code can never fabricate provenance.
+- Indexes: `(user_id)`, `(target_table, target_id)`, `(import_id)`, `(status)` — sized for the UI lookups we know we'll need (badge resolver, history list, retry queue).
+
+### Why this is step 1
+
+- **TEFCA + HIPAA require knowing who asserted each fact and when.** Without provenance, an imported BP reading is indistinguishable from a manual one — clinicians can't trust the timeline, and we can't honor "forget this source" requests.
+- **De-duplication needs source_resource_id.** Re-fetching the same encounter must update, not duplicate, the original row.
+- **Break-glass reverse.** If a source org retracts a record, we can null/flag every downstream row by joining on `import_id` or `(source_organization, source_resource_id)`.
+- **Schema-first migration is cheap; backfilling is not.** Building the tables now (even before ingestion) means the first ingestion run writes provenance from day one — no painful backfill later.
+
+### Future hooks (deferred)
+
+- Edge functions: `qhin-search-patient`, `qhin-fetch-records`, `qhin-normalize` (plan doc has the shapes).
+- UI: source badge on every vital/med/document card → drawer with org, fetched date, original FHIR id, "Re-fetch" and "Hide from my record" actions; Settings → *Connected networks* page with revoke/forget controls.
+- Secrets: `PARTICLE_CLIENT_ID`, `PARTICLE_CLIENT_SECRET`, `PARTICLE_BASE_URL` — only added after BAA signature.
+- TEFCA consent dialog: a separate `QhinConsentDialog` component, gated by `profiles.qhin_consent_at IS NULL`.
 
 ---
 
