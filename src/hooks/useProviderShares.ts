@@ -116,6 +116,14 @@ export function useProviderShares() {
     mutationFn: async (shareId: string) => {
       if (!user) throw new Error('Not authenticated');
 
+      // Capture share details first so we can log who lost access
+      const { data: existing } = await supabase
+        .from('provider_shares')
+        .select('provider_name, provider_email')
+        .eq('id', shareId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
       const { error } = await supabase
         .from('provider_shares')
         .delete()
@@ -123,10 +131,33 @@ export function useProviderShares() {
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      // Best-effort HIPAA audit log entry for the revoke event
+      try {
+        await (supabase.from('hipaa_audit_logs' as any).insert({
+          user_id: user.id,
+          action: 'provider_share_revoked',
+          resource_type: 'provider_share',
+          resource_id: shareId,
+          patient_user_id: user.id,
+          details: {
+            provider_name: existing?.provider_name ?? null,
+            provider_email: existing?.provider_email ?? null,
+          },
+          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+        }) as any);
+      } catch (err) {
+        console.error('Audit log failed for share revoke:', err);
+      }
+
+      return existing;
     },
-    onSuccess: () => {
+    onSuccess: (existing) => {
       queryClient.invalidateQueries({ queryKey: ['provider-shares'] });
-      toast.success('Access revoked successfully');
+      const name = existing?.provider_name ? `${existing.provider_name}'s` : 'Provider';
+      toast.success(`${name} access revoked`, {
+        description: 'They can no longer view your data. We recorded this in your audit log.',
+      });
     },
     onError: (error) => {
       console.error('Error revoking share:', error);

@@ -729,6 +729,40 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Language</p>
+                      <p className="text-sm text-muted-foreground">
+                        English is supported today. More languages coming soon.
+                      </p>
+                    </div>
+                  </div>
+                  <Select
+                    value={(typeof window !== 'undefined' && localStorage.getItem('onecare-lang')) || 'en'}
+                    onValueChange={(value) => {
+                      localStorage.setItem('onecare-lang', value);
+                      // Reload so i18n picks up the new language consistently
+                      if (value !== 'en') {
+                        toast.info('That language is coming soon — staying on English for now.');
+                        localStorage.setItem('onecare-lang', 'en');
+                        return;
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Español (soon)</SelectItem>
+                      <SelectItem value="fr">Français (soon)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
           </motion.div>

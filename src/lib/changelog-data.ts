@@ -15,6 +15,18 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-05-20',
+    version: '0.9.4',
+    title: 'Patient gap-closing pass + i18n scaffold',
+    tags: ['patient', 'platform', 'security'],
+    bullets: [
+      'Care Circle: added one-click "Email" invite (mailto pre-fills provider email, subject, and secure link) — no more copy-paste only.',
+      'Onboarding: new "Save & Continue Later" button persists draft progress without marking onboarding complete, so patients can resume.',
+      'Provider share revoke: now writes a hipaa_audit_logs entry (provider_share_revoked) and shows a richer confirmation toast naming the provider.',
+      'i18n scaffold: i18next + react-i18next + browser language-detector wired through src/lib/i18n.ts; Settings now has a Language selector (English live, ES/FR marked coming soon).',
+    ],
+  },
+  {
+    date: '2026-05-20',
     version: '0.9.3',
     title: 'Health Vault: "What this means for you" plain-language explainers',
     tags: ['patient', 'ai'],

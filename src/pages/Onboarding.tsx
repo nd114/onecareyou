@@ -131,6 +131,15 @@ const Onboarding = () => {
     setIsLoading(false);
   };
 
+  const handleSaveDraft = async () => {
+    const success = await saveProfile(false);
+    if (success) {
+      toast.success("Progress saved. You can come back to finish anytime.");
+      navigate("/dashboard");
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
@@ -334,12 +343,17 @@ const Onboarding = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   {!profile?.onboarding_completed && (
-                    <Button type="button" variant="ghost" onClick={handleSkip} disabled={isLoading} className="flex-1">
-                      <SkipForward className="h-4 w-4 mr-2" />
-                      Skip for Now
-                    </Button>
+                    <>
+                      <Button type="button" variant="ghost" onClick={handleSkip} disabled={isLoading} className="flex-1">
+                        <SkipForward className="h-4 w-4 mr-2" />
+                        Skip for Now
+                      </Button>
+                      <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={isLoading} className="flex-1">
+                        Save & Continue Later
+                      </Button>
+                    </>
                   )}
                   <Button
                     type="submit"
