@@ -15,6 +15,18 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-05-20',
+    version: '0.9.1',
+    title: 'Patient AI assistant: global FAB + medication awareness',
+    tags: ['patient', 'ai'],
+    bullets: [
+      'AI Chat FAB now mounted globally across patient routes (Vitals, Meds, Schedule, Vault, Family, Messages, etc.) — single mount, no per-page duplicates.',
+      'Assistant system prompt now includes the user\'s active medication list (consent-gated, capped at 20) so it can answer in context without giving dose advice.',
+      'Hardened safety rules: explicit red-flag escalation, no dose/interaction changes, prescriber-deferral phrasing.',
+      'New /admin/implementation-tracking source-of-truth doc for how features work internally.',
+    ],
+  },
+  {
+    date: '2026-05-20',
     version: '0.9.0',
     title: 'P3 polish, messaging, and enterprise pipeline',
     tags: ['platform', 'clinician', 'patient', 'infrastructure'],
