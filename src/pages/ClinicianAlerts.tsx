@@ -10,15 +10,17 @@ import {
   Search,
   Activity,
   Clock,
+  CheckCircle2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
-import { useAlertRules } from '@/hooks/useAlertRules';
+import { useAlertRules, type AlertLog } from '@/hooks/useAlertRules';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { format } from 'date-fns';
