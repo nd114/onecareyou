@@ -89,6 +89,7 @@ export const useScheduleEntries = (date?: Date) => {
 
       const dayStart = startOfDay(targetDate).toISOString();
       const dayEnd = endOfDay(targetDate).toISOString();
+      const cacheKey = `schedule:${user.id}:${targetDateStr}:${activeMemberId ?? 'self'}`;
 
       let query = supabase
         .from('schedule_entries')
@@ -103,10 +104,17 @@ export const useScheduleEntries = (date?: Date) => {
         query = query.is('family_member_id', null);
       }
 
-      const { data, error } = await query.order('scheduled_time', { ascending: true });
-
-      if (error) throw error;
-      return data as ScheduleEntry[];
+      try {
+        const { data, error } = await query.order('scheduled_time', { ascending: true });
+        if (error) throw error;
+        const rows = (data as ScheduleEntry[]) || [];
+        void cacheRead(cacheKey, rows);
+        return rows;
+      } catch (err) {
+        const cached = await getCachedRead<ScheduleEntry[]>(cacheKey);
+        if (cached?.payload) return cached.payload;
+        throw err;
+      }
     },
     enabled: !!user?.id,
   });
