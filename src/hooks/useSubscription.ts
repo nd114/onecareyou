@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -124,6 +124,14 @@ export function useSubscription() {
       setLoading(false);
     }
   }, [session]);
+
+  // Auto-check subscription when session changes and refresh every 60s
+  useEffect(() => {
+    if (!session) return;
+    checkSubscription();
+    const id = setInterval(checkSubscription, 60_000);
+    return () => clearInterval(id);
+  }, [session, checkSubscription]);
 
   return {
     subscription,

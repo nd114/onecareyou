@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, CheckCircle2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface PatientNotesDialogProps {
   open: boolean;
@@ -30,14 +31,17 @@ export function PatientNotesDialog({
   isSaving = false,
 }: PatientNotesDialogProps) {
   const [notes, setNotes] = useState(initialNotes);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const isDirty = notes !== initialNotes;
 
   useEffect(() => {
     setNotes(initialNotes);
+    setLastSavedAt(null);
   }, [initialNotes, open]);
 
   const handleSave = async () => {
     await onSave(notes);
-    onOpenChange(false);
+    setLastSavedAt(new Date());
   };
 
   return (
@@ -65,23 +69,34 @@ export function PatientNotesDialog({
             </p>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="gradient-primary border-0">
+        <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5 min-h-[20px]">
             {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Notes
-              </>
-            )}
-          </Button>
+              <><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>
+            ) : lastSavedAt ? (
+              <><CheckCircle2 className="h-3 w-3 text-primary" /> Saved {formatDistanceToNow(lastSavedAt, { addSuffix: true })}</>
+            ) : isDirty ? (
+              <span className="text-amber-600 dark:text-amber-400">Unsaved changes</span>
+            ) : null}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving || !isDirty} className="gradient-primary border-0">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Notes
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
