@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { cacheRead, getCachedRead } from '@/lib/offline';
 
 export type Medication = Tables<'medications'>;
 export type MedicationInsert = TablesInsert<'medications'>;
