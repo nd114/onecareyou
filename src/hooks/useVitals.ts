@@ -91,34 +91,57 @@ export function useVitals() {
     }
 
     const config = VITAL_CONFIG[type];
-    
+    const payload = {
+      user_id: user.id,
+      type,
+      value,
+      secondary_value: secondaryValue || null,
+      unit: config.unit,
+      recorded_at: recordedAt?.toISOString() || new Date().toISOString(),
+      notes: notes || null,
+      source: 'manual' as VitalSource,
+      family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
+    };
+
+    // Offline path: optimistically add locally + queue for later sync.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const tempId = globalThis.crypto?.randomUUID?.() ?? `tmp_${Date.now()}`;
+      await enqueueWrite({
+        id: tempId,
+        table: 'vitals',
+        op: 'insert',
+        payload,
+        user_id: user.id,
+      });
+      const optimistic = {
+        id: tempId,
+        ...payload,
+        external_id: null,
+        ehr_connection_id: null,
+        created_at: new Date().toISOString(),
+      } as VitalRecord;
+      setVitals(prev => [optimistic, ...prev]);
+      toast.success(`${config.label} saved — will sync when online`);
+      return optimistic;
+    }
+
     try {
       const { data, error } = await supabase
         .from('vitals')
-        .insert({
-          user_id: user.id,
-          type,
-          value,
-          secondary_value: secondaryValue || null,
-          unit: config.unit,
-          recorded_at: recordedAt?.toISOString() || new Date().toISOString(),
-          notes: notes || null,
-          source: 'manual', // Patient-entered vitals are always manual
-          family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
-        })
+        .insert(payload)
         .select()
         .single();
 
       if (error) throw error;
-      
+
       setVitals(prev => [data as VitalRecord, ...prev]);
       toast.success(`${config.label} recorded successfully!`);
-      
+
       // Trigger vital alert check in background (non-blocking)
-      supabase.functions.invoke('check-vital-alerts').catch(err => 
+      supabase.functions.invoke('check-vital-alerts').catch(err =>
         console.log('Alert check skipped:', err)
       );
-      
+
       return data;
     } catch (error) {
       console.error('Error adding vital:', error);
