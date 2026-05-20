@@ -263,6 +263,7 @@ const App = () => (
           <CookieConsentBanner />
           <BugReportButton />
         </BrowserRouter>
+        </FamilyProvider>
       </AuthProvider>
     </TooltipProvider>
   </ThemeProvider>
