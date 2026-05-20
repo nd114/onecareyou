@@ -172,6 +172,41 @@ export function ClinicianHeader() {
               </Button>
             </Link>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                More
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-56 bg-background border">
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/settings#practice-team" className="flex items-center gap-2 cursor-pointer">
+                  <Building2 className="h-4 w-4" />
+                  Practice & Team
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/settings#ehr-connections" className="flex items-center gap-2 cursor-pointer">
+                  <Database className="h-4 w-4" />
+                  EHR Integrations
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/baa" className="flex items-center gap-2 cursor-pointer">
+                  <ShieldCheck className="h-4 w-4" />
+                  BAA
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">
+                  <Settings className="h-4 w-4" />
+                  All Settings
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
