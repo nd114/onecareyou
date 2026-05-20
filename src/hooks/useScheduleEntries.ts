@@ -7,6 +7,7 @@ import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/type
 import { useMedications, Medication } from './useMedications';
 import { startOfDay, endOfDay, format, parseISO, isToday } from 'date-fns';
 import { useEffect } from 'react';
+import { enqueueWrite, cacheRead, getCachedRead } from '@/lib/offline';
 
 export type ScheduleEntry = Tables<'schedule_entries'>;
 export type ScheduleEntryInsert = TablesInsert<'schedule_entries'>;
