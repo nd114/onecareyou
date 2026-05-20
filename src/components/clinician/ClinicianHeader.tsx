@@ -20,6 +20,10 @@ import {
   Inbox,
   AlertTriangle,
   MessageSquare,
+  MoreHorizontal,
+  Building2,
+  Database,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +40,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
+import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -45,6 +50,9 @@ export function ClinicianHeader() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { clinicianProfile } = useClinicianProfile();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
+  const { myInvitations, acceptInvitation, declineInvitation } = usePractice();
+  const pendingInviteCount = myInvitations?.length || 0;
+  const totalBadgeCount = unreadCount + pendingInviteCount;
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -164,6 +172,41 @@ export function ClinicianHeader() {
               </Button>
             </Link>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                More
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-56 bg-background border">
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/settings#practice-team" className="flex items-center gap-2 cursor-pointer">
+                  <Building2 className="h-4 w-4" />
+                  Practice & Team
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/settings#ehr-connections" className="flex items-center gap-2 cursor-pointer">
+                  <Database className="h-4 w-4" />
+                  EHR Integrations
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/baa" className="flex items-center gap-2 cursor-pointer">
+                  <ShieldCheck className="h-4 w-4" />
+                  BAA
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">
+                  <Settings className="h-4 w-4" />
+                  All Settings
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
@@ -184,9 +227,9 @@ export function ClinicianHeader() {
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="hidden md:flex relative" aria-label="View notifications">
                 <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
+                {totalBadgeCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {totalBadgeCount > 9 ? "9+" : totalBadgeCount}
                   </span>
                 )}
               </Button>
@@ -200,6 +243,43 @@ export function ClinicianHeader() {
                   </Button>
                 )}
               </div>
+              {pendingInviteCount > 0 && (
+                <div className="border-b bg-primary/5">
+                  <div className="px-3 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-primary flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    Practice Invitations
+                  </div>
+                  <div className="divide-y">
+                    {myInvitations.map((inv) => (
+                      <div key={inv.id} className="p-3">
+                        <p className="text-sm font-medium">You've been invited to join a practice</p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Role: <span className="capitalize">{inv.role}</span>
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => acceptInvitation.mutate(inv.id)}
+                            disabled={acceptInvitation.isPending}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => declineInvitation.mutate(inv.id)}
+                            disabled={declineInvitation.isPending}
+                          >
+                            Decline
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {notifications && notifications.length > 0 ? (
                 <ScrollArea className="max-h-80">
                   <div className="divide-y">

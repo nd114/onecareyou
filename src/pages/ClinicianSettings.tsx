@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft,
   Bell,
@@ -46,6 +46,17 @@ import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinician
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      // Wait a tick for sections to render
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 200);
+    }
+  }, [location.hash]);
   const { user, profile } = useAuth();
   const { clinicianProfile, isLoading: isLoadingProfile, updateClinicianProfile, isClinician } = useClinicianProfile();
   const { patients } = useClinicianPatients();
@@ -622,7 +633,7 @@ const ClinicianSettings = () => {
 
           {/* Practice/Team Management - Pro+ only */}
           {hasFeatureAccess(tier, 'team_management') && (
-            <div className="mt-6">
+            <div id="practice-team" className="mt-6 scroll-mt-20">
               <PracticeTeamSection />
             </div>
           )}
@@ -633,7 +644,9 @@ const ClinicianSettings = () => {
           </div>
 
           {/* EHR Connections */}
-          <EHRConnectionsSection />
+          <div id="ehr-connections" className="scroll-mt-20">
+            <EHRConnectionsSection />
+          </div>
 
           {/* Practice Branding - Enterprise only */}
           {hasFeatureAccess(tier, 'practice_branding') && (
