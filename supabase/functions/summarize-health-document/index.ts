@@ -233,10 +233,10 @@ Additional context from the user:
     const aiData = await aiResponse.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
 
-    let result = { summary: "", category: doc.category, tags: [] as string[] };
+    let result = { summary: "", patient_friendly_explanation: "", category: doc.category, tags: [] as string[] };
     if (toolCall?.function?.arguments) {
       try {
-        result = JSON.parse(toolCall.function.arguments);
+        result = { ...result, ...JSON.parse(toolCall.function.arguments) };
       } catch {
         console.error("Failed to parse AI response");
       }
@@ -249,6 +249,7 @@ Additional context from the user:
         ai_summary: result.summary,
         ai_category: result.category,
         ai_tags: result.tags,
+        patient_friendly_explanation: result.patient_friendly_explanation || null,
       })
       .eq("id", documentId);
 
