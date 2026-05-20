@@ -35,7 +35,7 @@ import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { useClinicianTour } from '@/hooks/useClinicianTour';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
-import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
+
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
