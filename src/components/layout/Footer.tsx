@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
+import { BRAND } from "@/lib/brand-constants";
 
 export function Footer() {
   return (
