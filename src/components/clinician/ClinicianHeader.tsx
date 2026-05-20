@@ -50,6 +50,9 @@ export function ClinicianHeader() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { clinicianProfile } = useClinicianProfile();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
+  const { myInvitations, acceptInvitation, declineInvitation, loadingInvitations } = usePractice();
+  const pendingInviteCount = myInvitations?.length || 0;
+  const totalBadgeCount = unreadCount + pendingInviteCount;
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
