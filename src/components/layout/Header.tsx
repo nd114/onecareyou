@@ -41,6 +41,7 @@ import { usePatientGuidance } from "@/hooks/usePatientGuidance";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
 
 export function Header() {
   const location = useLocation();
