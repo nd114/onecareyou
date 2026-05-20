@@ -136,6 +136,34 @@ export function CreateGuidanceDialog({ trigger, patients, selectedPatientId }: C
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Quick templates */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3" />
+              Quick templates
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {TEMPLATES.map((tpl) => (
+                <Badge
+                  key={tpl.label}
+                  variant="outline"
+                  className="cursor-pointer hover:bg-primary/10 hover:border-primary text-xs"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      title: tpl.title,
+                      instruction: tpl.instruction,
+                      category: tpl.category,
+                      priority: tpl.priority,
+                    })
+                  }
+                >
+                  {tpl.label}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
           {/* Patient Selection */}
           {!selectedPatientId && (
             <div className="space-y-2">
