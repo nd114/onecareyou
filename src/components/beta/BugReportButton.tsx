@@ -19,13 +19,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
+/**
+ * Floating bug report button — beta-only. Hidden for unauthenticated visitors
+ * so anonymous prospects on public marketing pages don't see the tester UI.
+ *
+ * Renders as a relative-positioned button; the parent <FabStack> handles
+ * fixed positioning so this button never overlaps the AI assistant FAB.
+ */
 export const BugReportButton = () => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState("bug");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+
+  if (!user) return null;
 
   const getBrowserInfo = () => ({
     userAgent: navigator.userAgent,
@@ -53,7 +64,6 @@ export const BugReportButton = () => {
 
       const reportId = (data as any)?.id || "";
 
-      // Sync to Notion in the background (non-blocking)
       supabase.functions.invoke("sync-bug-to-notion", {
         body: {
           bugReport: {
@@ -83,8 +93,9 @@ export const BugReportButton = () => {
       <Button
         onClick={() => setOpen(true)}
         size="icon"
-        className="fixed bottom-24 right-6 z-50 h-12 w-12 rounded-full shadow-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+        className="pointer-events-auto h-11 w-11 rounded-full shadow-lg bg-destructive hover:bg-destructive/90 text-destructive-foreground"
         aria-label="Report a bug"
+        title="Report a bug"
       >
         <Bug className="h-5 w-5" />
       </Button>
