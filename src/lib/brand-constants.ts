@@ -8,6 +8,10 @@
 export const BRAND = {
   name: 'OneCare',
   tagline: 'Your Health, Connected',
+  shortDescription:
+    'OneCare keeps your vitals, medications, and health records connected with the people who care for you — from hospital to home.',
+  metaDescription:
+    'OneCare is a connected health platform for patients and clinicians. Track vitals, manage medications, store records, and share continuous updates with your care team after discharge.',
   domain: 'onecare.you',
   
   emails: {
