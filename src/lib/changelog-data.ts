@@ -15,6 +15,17 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-05-20',
+    version: '0.9.3',
+    title: 'Health Vault: "What this means for you" plain-language explainers',
+    tags: ['patient', 'ai'],
+    bullets: [
+      'Document summarization now produces both a clinical summary and a patient-friendly explanation in plain language (3–5 sentences, no jargon, no dose/diagnosis advice).',
+      'New patient_friendly_explanation column on health_documents; shown as a dedicated "What this means for you" card on each document, with an explicit "not medical advice" footer.',
+      'Tool-call schema hardened: PII guard kept in place; new field is required output so it lands on every re-summarize.',
+    ],
+  },
+  {
+    date: '2026-05-20',
     version: '0.9.2',
     title: 'QHIN provenance scaffolding (TEFCA-ready)',
     tags: ['infrastructure', 'platform', 'security'],
