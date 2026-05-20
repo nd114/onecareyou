@@ -40,6 +40,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
+import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
