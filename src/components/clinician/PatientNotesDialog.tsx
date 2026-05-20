@@ -69,7 +69,20 @@ export function PatientNotesDialog({
             </p>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="sm:justify-between gap-2 flex-col-reverse sm:flex-row">
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5 min-h-[20px]">
+            {isSaving ? (
+              <><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>
+            ) : lastSavedAt ? (
+              <><CheckCircle2 className="h-3 w-3 text-primary" /> Saved {formatDistanceToNow(lastSavedAt, { addSuffix: true })}</>
+            ) : isDirty ? (
+              <span className="text-amber-600 dark:text-amber-400">Unsaved changes</span>
+            ) : null}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
