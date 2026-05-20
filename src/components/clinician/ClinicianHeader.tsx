@@ -19,6 +19,7 @@ import {
   XCircle,
   Inbox,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
