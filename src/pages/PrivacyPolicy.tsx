@@ -59,7 +59,8 @@ const PrivacyPolicy = () => {
               <CardContent className="p-6 space-y-4">
                 <p className="text-muted-foreground leading-relaxed">
                   At OneCare, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose,
-                  and safeguard your information when you use our health tracking and medication management platform.
+                  and safeguard your information when you use our connected health platform — including vitals tracking,
+                  medication management, the Health Vault, and care-team sharing.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
                   By using OneCare, you consent to the data practices described in this policy. If you do not agree with
