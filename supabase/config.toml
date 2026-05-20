@@ -1,43 +1,22 @@
 project_id = "cwngpcxxwvspcpkbxeax"
 
-[functions.create-checkout]
+[functions.whatsapp-webhook]
 verify_jwt = false
 
-[functions.check-subscription]
-verify_jwt = false
-
-[functions.customer-portal]
-verify_jwt = false
-
-[functions.parse-lab-report]
-verify_jwt = false
-
-[functions.get-shared-patient-data]
-verify_jwt = false
-
-[functions.send-vitals-report]
-verify_jwt = false
-
-[functions.check-vital-alerts]
-verify_jwt = false
-
-[functions.identify-pill]
-verify_jwt = false
-
-[functions.check-care-alerts]
-verify_jwt = false
-
-[functions.drug-lookup]
-verify_jwt = false
-
-[functions.import-patient-records]
+[functions.reset-demo-accounts]
 verify_jwt = false
 
 [functions.ehr-webhook]
 verify_jwt = false
 
-[functions.summarize-health-document]
+[functions.check-care-alerts]
 verify_jwt = false
 
-[functions.get-shared-document-url]
+[functions.check-vital-alerts]
+verify_jwt = false
+
+[functions.scheduled-ehr-sync]
+verify_jwt = false
+
+[functions.sync-bug-to-notion]
 verify_jwt = false
