@@ -282,14 +282,10 @@ const ClinicianDashboard = () => {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="patients" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="patients" className="text-xs sm:text-sm" data-tour="patients-tab">
                 <Users className="h-4 w-4 mr-0 sm:mr-2" />
                 <span className="hidden sm:inline">Patients</span>
-              </TabsTrigger>
-              <TabsTrigger value="guidance" className="text-xs sm:text-sm" data-tour="guidance-tab">
-                <Send className="h-4 w-4 mr-0 sm:mr-2" />
-                <span className="hidden sm:inline">Guidance</span>
               </TabsTrigger>
               <TabsTrigger value="alerts" className="text-xs sm:text-sm" data-tour="alerts-tab">
                 <Bell className="h-4 w-4 mr-0 sm:mr-2" />
