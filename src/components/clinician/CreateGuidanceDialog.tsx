@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Send } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Send, Sparkles } from 'lucide-react';
 import { useClinicianGuidance, CreateGuidanceData } from '@/hooks/useClinicianGuidance';
 
 interface Patient {
@@ -42,6 +43,38 @@ const PRIORITIES = [
   { value: 'normal', label: 'Normal' },
   { value: 'high', label: 'High' },
   { value: 'urgent', label: 'Urgent' },
+];
+
+// Built-in starter templates. A full DB-backed template library is planned (see roadmap).
+const TEMPLATES = [
+  {
+    label: 'BP monitoring',
+    category: 'monitoring',
+    priority: 'normal',
+    title: 'Daily blood pressure check',
+    instruction: 'Please measure your blood pressure each morning before taking medications. Sit quietly for 5 minutes first, feet flat on the floor. Log both readings in OneCare. Contact us if systolic > 160 or diastolic > 100.',
+  },
+  {
+    label: 'New medication start',
+    category: 'medication',
+    priority: 'high',
+    title: 'Starting a new medication',
+    instruction: 'Begin taking your new medication as prescribed. Watch for side effects in the first 7 days: dizziness, nausea, rash. Log any side effects in OneCare. Do not stop the medication without contacting us first.',
+  },
+  {
+    label: 'Pre-appointment prep',
+    category: 'appointment',
+    priority: 'normal',
+    title: 'Prepare for your upcoming visit',
+    instruction: 'Bring an updated medication list, recent home BP/glucose logs, and a list of any questions or symptoms you want to discuss. Fast for 8 hours if labs are scheduled.',
+  },
+  {
+    label: 'Lifestyle — low sodium',
+    category: 'lifestyle',
+    priority: 'normal',
+    title: 'Low-sodium diet guidance',
+    instruction: 'Aim for less than 2,000 mg sodium per day. Avoid processed foods, canned soups, deli meats, and added table salt. Read labels carefully. Use herbs and spices for flavor.',
+  },
 ];
 
 export function CreateGuidanceDialog({ trigger, patients, selectedPatientId }: CreateGuidanceDialogProps) {
@@ -103,6 +136,34 @@ export function CreateGuidanceDialog({ trigger, patients, selectedPatientId }: C
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Quick templates */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3" />
+              Quick templates
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {TEMPLATES.map((tpl) => (
+                <Badge
+                  key={tpl.label}
+                  variant="outline"
+                  className="cursor-pointer hover:bg-primary/10 hover:border-primary text-xs"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      title: tpl.title,
+                      instruction: tpl.instruction,
+                      category: tpl.category,
+                      priority: tpl.priority,
+                    })
+                  }
+                >
+                  {tpl.label}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
           {/* Patient Selection */}
           {!selectedPatientId && (
             <div className="space-y-2">

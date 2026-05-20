@@ -206,16 +206,22 @@ Given the gaps above, here's the recommended order — re-prioritized from the o
 
 ## 6. Immediate Quick Fixes (no design work needed)
 
-If we want a 1-day cleanup pass before the larger redesign starts, these are free wins:
+Status snapshot — May 2026:
 
-- Wire Dashboard "Enable Reminders" button.
-- Fix cookie banner persistence.
-- De-duplicate Footer link groups.
-- Add "Last saved" indicator to clinician notes.
-- Add session-timeout warning toast at 29 min.
-- Add empty-state copy for permission-denied clinician tabs.
-- Replace hardcoded numbers in landing hero with a real screenshot.
-- Add "Send activation link" button to managed-patient row.
+- ✅ Wire Dashboard "Enable Reminders" button.
+- ✅ Fix cookie banner persistence.
+- ✅ De-duplicate Footer link groups.
+- ✅ Add "Last saved" indicator to clinician notes.
+- ✅ Session-timeout warning toast at 28 min (2-min warning).
+- ✅ Empty-state copy for permission-denied clinician tabs.
+- ⏳ Replace hardcoded numbers in landing hero (deferred — design pass).
+- ✅ "Send activation link" button on managed-patient row (`InviteToOneCareButton`).
+- ✅ Empty patient-list state with Invite/Bulk-import CTAs.
+- ✅ Guidance templates picker (built-in starter library; DB-backed library remains roadmap).
+- ✅ Patient subscription auto-refresh + Premium polish.
+- ✅ Discontinued-medication auto-deactivation trigger (P6).
+
+QHIN integration scoped in [`docs/qhin-integration-plan.md`](../docs/qhin-integration-plan.md).
 
 ---
 
