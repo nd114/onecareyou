@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useMedications, Medication } from './useMedications';
@@ -17,6 +18,7 @@ export interface ScheduleEntryWithMedication extends ScheduleEntry {
 
 export const useScheduleEntries = (date?: Date) => {
   const { user } = useAuth();
+  const { activeMemberId } = useActiveFamilyMember();
   const queryClient = useQueryClient();
   const { medications } = useMedications();
 
@@ -60,6 +62,7 @@ export const useScheduleEntries = (date?: Date) => {
             newEntries.push({
               user_id: user.id,
               medication_id: med.id,
+              family_member_id: activeMemberId,
               scheduled_time: `${targetDateStr}T${time}:00`,
               status: 'pending',
             });
@@ -79,20 +82,27 @@ export const useScheduleEntries = (date?: Date) => {
   }, [user?.id, medications, targetDateStr, queryClient]);
 
   const scheduleQuery = useQuery({
-    queryKey: ['schedule_entries', user?.id, targetDateStr],
+    queryKey: ['schedule_entries', user?.id, targetDateStr, activeMemberId],
     queryFn: async () => {
       if (!user?.id) throw new Error('Not authenticated');
-      
+
       const dayStart = startOfDay(targetDate).toISOString();
       const dayEnd = endOfDay(targetDate).toISOString();
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('schedule_entries')
         .select('*')
         .eq('user_id', user.id)
         .gte('scheduled_time', dayStart)
-        .lte('scheduled_time', dayEnd)
-        .order('scheduled_time', { ascending: true });
+        .lte('scheduled_time', dayEnd);
+
+      if (activeMemberId) {
+        query = query.eq('family_member_id', activeMemberId);
+      } else {
+        query = query.is('family_member_id', null);
+      }
+
+      const { data, error } = await query.order('scheduled_time', { ascending: true });
 
       if (error) throw error;
       return data as ScheduleEntry[];

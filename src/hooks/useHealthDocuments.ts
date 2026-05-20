@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 
 export type DocumentCategory = 
@@ -49,17 +50,25 @@ export interface HealthDocument {
 
 export function useHealthDocuments() {
   const { user, session } = useAuth();
+  const { activeMemberId } = useActiveFamilyMember();
   const queryClient = useQueryClient();
 
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ['health-documents', user?.id],
+    queryKey: ['health-documents', user?.id, activeMemberId],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('health_documents')
         .select('*')
-        .eq('user_id', user.id)
-        .order('document_date', { ascending: false, nullsFirst: false });
+        .eq('user_id', user.id);
+
+      if (activeMemberId) {
+        query = query.eq('family_member_id', activeMemberId);
+      } else {
+        query = query.is('family_member_id', null);
+      }
+
+      const { data, error } = await query.order('document_date', { ascending: false, nullsFirst: false });
       if (error) throw error;
       return (data || []) as unknown as HealthDocument[];
     },
@@ -114,7 +123,7 @@ export function useHealthDocuments() {
           notes: notes || null,
           tags: [],
           source_context: sourceContext,
-          family_member_id: familyMemberId || null,
+          family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
         })
         .select()
         .single();

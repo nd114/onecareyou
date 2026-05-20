@@ -10,6 +10,7 @@ const routerFutureFlags = {
 } as const;
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
@@ -75,6 +76,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
+        <FamilyProvider>
         <BrowserRouter future={routerFutureFlags}>
           <ScrollToTop />
           <Routes>
@@ -261,6 +263,7 @@ const App = () => (
           <CookieConsentBanner />
           <BugReportButton />
         </BrowserRouter>
+        </FamilyProvider>
       </AuthProvider>
     </TooltipProvider>
   </ThemeProvider>
