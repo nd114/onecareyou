@@ -119,14 +119,20 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     }
   }, [messages, isLoading]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!hasConsent) {
       setShowConsent(true);
       return;
     }
     if (!input.trim()) return;
-    sendMessage(input);
+    const text = input;
     setInput('');
+    const err = await sendMessage(text);
+    if (err?.kind === 'consent_required') {
+      // Consent was revoked elsewhere — re-prompt instead of just toasting.
+      setShowConsent(true);
+      setInput(text); // restore so user can retry after consent
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

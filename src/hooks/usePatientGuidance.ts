@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 
 interface GuidanceItem {
@@ -23,16 +24,22 @@ interface GuidanceItem {
 
 export function usePatientGuidance() {
   const { user } = useAuth();
+  const { activeMemberId } = useActiveFamilyMember();
   const queryClient = useQueryClient();
+
+  // Clinician guidance is delivered to the signed-in account today, not to
+  // individual family members. When a family member is active, return empty
+  // so the UI doesn't misleadingly show the primary user's guidance.
+  const familyScopeBlocks = activeMemberId !== null;
 
   const {
     data: guidance = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['patient-guidance', user?.id],
+    queryKey: ['patient-guidance', user?.id, activeMemberId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id || familyScopeBlocks) return [];
 
       // Fetch guidance for this patient
       const { data, error } = await supabase
@@ -135,6 +142,7 @@ export function usePatientGuidance() {
     guidance,
     isLoading,
     error,
+    familyScopeBlocks,
     acknowledgeGuidance,
     completeGuidance,
   };

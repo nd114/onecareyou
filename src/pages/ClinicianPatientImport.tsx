@@ -295,10 +295,34 @@ const ClinicianPatientImport = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Review & Clean Data</CardTitle>
-                <CardDescription>
-                  {parsedRows.length} records parsed. 
-                  <Badge variant="default" className="ml-2">{validRows.length} valid</Badge>
-                  {errorRows.length > 0 && <Badge variant="destructive" className="ml-1">{errorRows.length} errors</Badge>}
+                <CardDescription className="flex items-center gap-2 flex-wrap">
+                  <span>{parsedRows.length} records parsed.</span>
+                  <Badge variant="default">{validRows.length} valid</Badge>
+                  {errorRows.length > 0 && <Badge variant="destructive">{errorRows.length} errors</Badge>}
+                  {errorRows.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 ml-auto"
+                      onClick={() => {
+                        const headers = [...TEMPLATE_HEADERS, 'Errors'];
+                        const csv = headers.join(',') + '\n' + errorRows.map(r => [
+                          r.patient_name, r.patient_email, r.patient_phone, r.date_of_birth,
+                          r.gender, r.allergies, r.health_conditions, r.blood_type,
+                          r.medications, r.notes, r.errors.join('; ')
+                        ].map(v => `"${(v ?? '').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
+                        const blob = new Blob([csv], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `onecare-import-errors-${Date.now()}.csv`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      <Download className="h-3.5 w-3.5 mr-1.5" /> Download error rows
+                    </Button>
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent>

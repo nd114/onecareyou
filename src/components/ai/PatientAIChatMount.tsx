@@ -19,15 +19,21 @@ const ALLOWED_PREFIXES = [
   '/settings',
 ];
 
-// Routes to exclude even if a prefix matches (clinician-side).
-const EXCLUDED_PREFIXES = ['/clinician'];
+// Routes to exclude even if a prefix matches.
+const EXCLUDED_PREFIXES = [
+  '/clinician',
+  '/onboarding',
+  '/install',
+  '/subscription-success',
+  '/assist', // Simple Mode IS the assistant — no need for a floating button on top of it
+];
 
 export function PatientAIChatMount() {
   const { user } = useAuth();
   const { pathname } = useLocation();
 
   if (!user) return null;
-  if (EXCLUDED_PREFIXES.some(p => pathname.startsWith(p))) return null;
+  if (EXCLUDED_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
   if (!ALLOWED_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
 
   return <AIChatFAB />;

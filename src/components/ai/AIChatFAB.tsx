@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Bot, X } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AIChatDrawer } from './AIChatDrawer';
-import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/**
+ * Floating "Ask the assistant" button. Rendered as a relative-positioned
+ * control inside <FabStack> so it lines up vertically with the bug button
+ * without ever overlapping. Position-fixed is handled by the stack.
+ */
 export function AIChatFAB() {
   const [open, setOpen] = useState(false);
 
@@ -16,16 +20,14 @@ export function AIChatFAB() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="pointer-events-auto"
           >
             <Button
               onClick={() => setOpen(true)}
-              className={cn(
-                "h-14 w-14 rounded-full shadow-lg gradient-primary border-0",
-                "hover:scale-105 transition-transform"
-              )}
+              className="h-14 w-14 rounded-full shadow-lg gradient-primary border-0 hover:scale-105 transition-transform"
               size="icon"
-              title="Ask AI"
+              title="Ask the OneCare Assistant"
+              aria-label="Open AI assistant"
             >
               <Bot className="h-6 w-6" />
             </Button>

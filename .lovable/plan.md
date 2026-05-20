@@ -1,106 +1,114 @@
-## Goal
+# Pre-Beta Audit + Simplified Mode Recommendation
 
-Get OneCare beta-ready in one focused milestone. Everything else (WhatsApp transport, hardware/RPM, virtual Rx, native store build, blog engine) is deferred to post-beta and tracked in `docs/launch-plan.md`.
+This is an **audit-only** pass. No code changes proposed yet — once you approve priorities, I'll create a separate fix plan.
 
-## Scope — what ships in this batch
+---
 
-### 1. Beta blockers (B1–B6)
+## Part 1 — Audit Findings
 
-- **B1 — Family-member switcher everywhere.** Mount `HeaderFamilySwitcher` (already exists) into the patient `Header` so it filters Vitals, Schedule, Medications, Adherence, Vault, Dashboard. Confirm every list/query reads `activeMemberId` from `FamilyContext`. Audit each page and add the filter where missing.
-- **B2 — Cookie banner re-appears after Accept.** Bug in `CookieConsentBanner`: `useEffect` reads `localStorage` once, but `acceptAll` / `acceptNecessary` set `showBanner=false` without persisting to the same key check order. Reproduce, fix the persistence/read path, add a Vitest case.
-- **B3 — Onboarding skip/resume.** Add a "Skip for now" link on each onboarding step and persist `last_completed_step` on the profile so returning users resume where they left off.
-- **B4 — Mobile pass + PWA** (see section 2).
-- **B5 — Demo account daily reset.** New scheduled edge function `reset-demo-accounts` (cron daily 03:00 UTC) that re-seeds demo patient + clinician via existing `seed-demo-data` function. Demo data will also need to be updated so it is recent for the tester (mot having the most recent details logged to have been 3 months ago, for example - should be recent).
-- **B6 — Beta pack placeholders.** Fill `[INSERT DATES]` and `[INSERT GOOGLE FORM LINK]` in `docs/beta-tester-pack.md`.
+### Patient side
 
-### 2. Mobile-first pass + installable PWA
+**P0 (blocks beta)**
 
-- **Mobile audit** of patient routes only (Dashboard, Vitals, Medications, Schedule, HealthVault, CareCircle, Settings, Messages). Fix tap targets <44px, horizontal scrolls, table-to-card conversions, modal heights on 360px viewports.
-- **Manifest-only PWA** (no aggressive service-worker caching — follows Lovable's PWA guidance):
-  - Add `public/manifest.json` with `display: "standalone"`, OneCare icons (192/512), theme color, `start_url: "/"`.
-  - Link manifest + apple-touch-icon + theme-color in `index.html`.
-  - Replace existing `public/sw.js` (legacy push-notification SW) with a **kill-switch SW** that unregisters itself, then remove it next release. Reason: the current SW caches under name `meditracker-v1` and will conflict with offline-queue logic.
-  - Build a dedicated `/install` page with platform-detected instructions (iOS Share→Add to Home Screen, Android browser-menu install).
-- **Capacitor**: leave config as-is. No store build in this batch — flagged for post-beta milestone.
+1. **AI consent gate is opaque.** `patient-ai-chat` returns 403 if `ai_processing_consent` is false, but `AIChatDrawer` opens `AIConsentDialog` *only on first send attempt*. A user who has consent revoked elsewhere just sees the error toast. → Need a graceful re-prompt path.
+2. **Bug + AI buttons stacked on small screens.** Bug button is `bottom-24 right-6`, AI FAB is `bottom-6 right-6`. They no longer overlap, but on a 360px viewport the OfflineBanner + bottom-mobile-nav (if any) + these two FABs crowd the thumb zone. Needs a single FAB stack container.
+3. **Offline write-queue toasts are silent on success-after-replay.** When connectivity returns and `flushQueue` posts a vital, the UI doesn't tell the user "your offline reading from 2hrs ago synced." Risk: users add the same reading twice.
+4. **Family switcher scope leak risk.** `FamilyContext.activeMemberId` is read by `useVitals`/`useMedications`/`useScheduleEntries`, but `useAdherenceReport`, `usePatientGuidance`, `useHealthDocuments`, and `useMessages` were not verified — they may still show the primary patient's data when a family member is active.
+5. **Onboarding "Skip for now"** persists `last_completed_step` but there's no resume CTA on the dashboard — a skipped user lands on a half-empty dashboard with no nudge.
 
-### 3. Offline mode (write queue + cached reads)
+**P1**
+6. AI chat history is in-memory only (`useAIChat` `useState`). Refresh wipes the conversation — fine for v1 but worth telling testers.
+7. `PatientAIChatMount` excludes `/clinician` but not `/onboarding`, `/install`, `/subscription-success` — the FAB shows on Install page.
+8. `BugReportButton` is mounted globally including on public marketing pages (`/`, `/pricing`, `/for-clinicians`) — exposes beta-tester UX to anonymous prospects.
+9. Cookie banner + offline banner + bug FAB + AI FAB = 4 simultaneous overlays possible on `/dashboard` first visit.
+10. `Sparkles` / `Bot` icon used as agent identity — violates our own chat-agent-ui-contract (agent should have a domain-specific mark).
+11. Health Vault upload has no progress indicator on slow mobile uploads.
+12. Schedule "mark as taken" optimistic update doesn't revert if the queued write later fails after max retries.
 
-- Add `idb` (lightweight IndexedDB wrapper) dependency.
-- New module `src/lib/offline/`:
-  - `db.ts` — IndexedDB schema: `pending_writes` (id, table, op, payload, created_at, retries) and `cached_reads` (key, payload, fetched_at).
-  - `queue.ts` — `enqueue(write)`, `flush()` on `online` event + on app focus. Exponential backoff, max 5 retries.
-  - `cache.ts` — `cacheRead(key, payload)` and `getCachedRead(key)`.
-- Wire write paths: vitals create, medication taken/missed log, schedule check-off, symptom note. These call queue if `!navigator.onLine`, otherwise call Supabase directly + also cache for offline read.
-- Wire cached reads: dashboard summary, last 90d vitals, active medications, today's schedule. On page mount, render cached data with a "Last synced X ago" banner if offline, then refresh when online.
-- **Out of scope**: AI chat, file uploads, messaging — show offline banner.
-- New `OfflineBanner` component shown in patient header when `!navigator.onLine`.
+**P2 / polish**
+13. `useAIChat` doesn't truncate context client-side — sends all messages each call (server caps to last 10, so wasted bandwidth on mobile).
+14. No empty-state for `/messages` when patient has no clinician connection.
+15. No "your data is saved locally and will sync" indicator near the offline banner.
 
-### 4. Unified `/pricing` + public `/for-clinicians`
+### Clinician side
 
-- **Unified `/pricing**`: rewrite `src/pages/Pricing.tsx` with a top-of-page `Tabs` toggle (Patients / Clinicians). Both tier sets render on the same canonical URL. `src/pages/ClinicianPricing.tsx` becomes a 301 redirect → `/pricing?audience=clinicians`. Update `pricing-constants.ts` consumers accordingly. Update sitemap + footer links.
-- **New `/for-clinicians` public route**: clinician-oriented hero, value props (triage inbox, shared patient pools, EHR sync, BAA, audit log), social proof slots, pricing CTA → `/pricing?audience=clinicians`, sign-up CTA → `/clinician/signup`. Pulls copy from existing `src/pages/ClinicianWhyOneCare.tsx`. Add to sitemap, header public nav, SEO indexed.
+**P0**
 
-### 5. WhatsApp provider-agnostic scaffold (no transport yet)
+1. **Session timeout collision.** 30-min HIPAA timeout is enforced, but the clinician messages page uses Supabase realtime which keeps the tab "active" — timer may never trigger if WebSocket pings count as activity. Needs verification.
+2. `**patient_basic_info` view vs sensitive data**: `ClinicianPatientDetail` reads from both paths but I didn't confirm every tab (Vitals, Vault, Adherence, Messages) gates on the matching `provider_shares.permissions` JSONB field. A clinician with `vitals: true` but `profile: false` may still see avatar/DOB.
+3. **Bulk import error rows are silent.** `ClinicianPatientImport` shows row counts but no downloadable error CSV — testers can't debug failed rows.
 
-- New module `src/lib/whatsapp/`:
-  - `provider.ts` — interface `WhatsAppProvider` with `sendTemplate`, `sendMessage`, `handleInboundWebhook`.
-  - `noop-provider.ts` — default implementation that logs + no-ops in dev.
-  - `index.ts` — exports `getProvider()`; reads `WHATSAPP_PROVIDER` env to pick implementation later.
-- New edge function stub `whatsapp-webhook` (returns 200, logs payload). No real transport, no Meta verification yet.
-- New DB columns on `messages`: `transport` (`'in-app' | 'whatsapp'`, default `'in-app'`), `external_message_id` (nullable). No behavior change today; lets us slot in Twilio or 360dialog later without migration.
-- New `docs/whatsapp-integration-plan.md` capturing the Twilio vs 360dialog tradeoff for the post-beta decision.
+**P1**
+4. Practice RBAC: invite flow exists but no UI to *revoke* a team member's access after they're added.
+5. `ClinicianAlerts` lists triggered alerts but no "acknowledge" / "snooze" action — alerts just accumulate.
+6. Clinician sign-out doesn't clear `useClinicianTour` localStorage flag → next clinician on same browser skips onboarding.
+7. EHR sync history dialog opens with all-time logs — no date filter, will be unusable after a few weeks of real use.
+8. No mobile layout for clinician routes (`ClinicianDashboard`, `ClinicianPatients`) — clinicians using a phone in rounds will struggle.
 
-### 6. Memory + docs
+**P2**
+9. Subscription tier limits (`patient-limit-banner`) only check on dashboard load; importing past the limit isn't blocked at the action.
+10. No audit log surface UI — the `useHipaaAuditLog` writes happen, but clinicians have nowhere to view their own access history (required for some BAAs).
 
-- Update `mem://index.md` Core with: "Patient app is mobile-first + installable PWA. Offline queue for vitals/meds writes via IndexedDB; cached reads for dashboard/vitals/meds. No SW caching of HTML."
-- New memory files:
-  - `mem://technical/architecture/offline-strategy` — write queue + cached reads design.
-  - `mem://features/marketing/unified-pricing-and-clinician-landing` — IA decision.
-  - `mem://features/messaging/whatsapp-scaffold` — provider-agnostic interface + post-beta decision pending.
-- Update `docs/launch-plan.md` with deferred items and target sequencing.
-- Add changelog entry `0.9.7`.
+### Cross-cutting
 
-## Out of scope (post-beta, tracked separately)
+- **Memory drift**: `mem://index.md` says "Patient AI Assistant uses Gemini 1.5 Flash" — actual code uses `google/gemini-3-flash-preview`. Should refresh.
+- **SEO**: `/install` and `/for-clinicians` not in `sitemap.xml` (verify).
+- **Service worker**: kill-switch SW is in place but no telemetry to confirm legacy SW was actually unregistered for returning testers.
+- **Beta tester pack** mentions features (Family switcher, offline) but doesn't include a known-issues section.
 
-- Hardware/RPM integration (Apple Health, Health Connect, BLE BP/glucose, Dexcom).
-- WhatsApp actual transport (Twilio or 360dialog) + Meta Business verification flow.
-- Virtual prescription framework.
-- Capacitor native store builds (TestFlight, Play Console).
-- Blog/content engine.
-- Paystack + NGN regional pricing.
+---
 
-## Technical details
+## Part 2 — Simplified / "AI Mode": My Recommendation
 
-- **IndexedDB lib**: `idb` (~1KB gzipped, promise-based, well-maintained). Not Dexie — simpler API matches our scoped use.
-- **Online detection**: `navigator.onLine` + `online`/`offline` events + a 5s ping to `${SUPABASE_URL}/auth/v1/health` to detect captive-portal/Wi-Fi-but-no-internet cases.
-- **Queue flush**: on `online` event, on `visibilitychange` to visible, and on app mount. Idempotency key per write to avoid double-insert when network blips mid-flush.
-- **PWA caching**: explicitly NO Workbox runtime cache for HTML. Kill-switch SW for the existing `meditracker-v1` SW must ship one release before fully removing `/sw.js`, otherwise devices with the old SW keep serving stale shells (per Lovable PWA guidance).
-- **Pricing redirect**: handle in React Router via a `Navigate` element so the canonical URL is `/pricing?audience=clinicians`. Add `<link rel="canonical">` accordingly.
-- **DB migration** (small): add `transport` + `external_message_id` columns to `messages` with safe defaults + index on `external_message_id`. RLS unchanged.
+You asked for my thoughts on each option. Here they are honestly.
 
-## Files affected (rough)
+### Option A — Patient-only conversational shell (read + write)
 
-New:
+**My take:** Highest user delight, highest risk. The moment AI can write data ("log my BP 140/90"), you inherit responsibility for misparsed numbers, wrong family member, accidental dose-marking. Needs confirm-step on every write, full audit trail, and clear "AI did this" badges on records. Doable, but doubles QA surface. **Not for first beta.**
 
-- `public/manifest.json`, updated `public/sw.js` (kill-switch), `src/pages/Install.tsx`, `src/pages/ForClinicians.tsx`
-- `src/lib/offline/{db,queue,cache,index}.ts`, `src/components/layout/OfflineBanner.tsx`
-- `src/lib/whatsapp/{provider,noop-provider,index}.ts`, `supabase/functions/whatsapp-webhook/index.ts`, `supabase/functions/reset-demo-accounts/index.ts`
-- 3 memory files, `docs/whatsapp-integration-plan.md`
+### Option B — Patient + Clinician AI mode
 
-Edited:
+**My take:** Tempting but premature. Clinician "command bar" sounds great in demos ("show high-risk diabetics this week") but clinicians under time pressure want deterministic UI, not a text box that might misinterpret them. Most successful clinical AI (Abridge, DAX) does *ambient* not *command*. **Defer.**
 
-- `index.html`, `src/components/layout/Header.tsx`, `src/components/consent/CookieConsentBanner.tsx`, `src/pages/Onboarding.tsx`, `src/pages/Pricing.tsx`, `src/pages/ClinicianPricing.tsx`, `src/App.tsx` (routes), `src/hooks/useVitals.ts`, `src/hooks/useMedications.ts`, `src/hooks/useScheduleEntries.ts`, `src/hooks/useDashboardStats.ts`, `src/lib/changelog-data.ts`, `docs/beta-tester-pack.md`, `docs/launch-plan.md`, `mem://index.md`, `package.json` (add `idb`), `public/sitemap.xml`
+### Option C — Patient conversational shell + read-only summaries ⭐ RECOMMENDED for beta
 
-## Validation
+**My take:** This is the sweet spot for v1.
 
-- Vitest: cookie-banner persistence, offline queue enqueue/flush, family-context filtering.
-- Manual: mobile 360×800 walkthrough of each patient route; toggle airplane mode → enter vital → re-connect → confirm sync; install PWA on Android Chrome and iOS Safari; visit `/pricing` and toggle audience; visit `/for-clinicians`.
-- Build check (automatic).
+- AI can answer ("what's my average BP this week?", "did I take my metformin yesterday?", "what's an A1C?", "where do I add a vital?")
+- AI can navigate (already does via `[NAVIGATE:/path]`)
+- AI **cannot** create/edit/delete data — users still tap UI for writes
+- No new audit/consent complexity beyond what exists
+- Ships in ~2 days
+- Fully reversible — if users want write actions in v2, the same chat surface absorbs them
 
-## Estimated effort
+This is also the most honest answer to "make it feel like Claude/Gemini": those don't write to your bank account either.
 
-~5–6 working days end-to-end. Beta pack can go out the day after this lands.
+### Option D — Just upgrade the existing Assistant
 
-&nbsp;
+**My take:** Underwhelming as a positioning story. Your differentiator post-beta will partly be "talk to your health data" — that deserves a real mode, not a bigger drawer. But the *implementation* of Option C should reuse the existing `useAIChat` + `patient-ai-chat` edge function — so technically it's D underneath, presented as a mode.
 
-Lastly I hope for our mobile app approach that we really wouldn't need to build from scratch for it to have a native feel. Will capacitor be okay, or is there an alternative that will let us port the code and the AI can help with understanding and reconfiguring perhaps?
+### My recommendation
+
+**Ship Option C as "Simple Mode" toggle in patient settings + a `/assist` route**, text-only (per your answer), reusing existing AI infra. Concretely:
+
+- New `/assist` route: full-page chat (not a drawer), large input, suggestion chips ("Show this week's vitals", "What did I take yesterday?", "Add a vital" → navigates).
+- Settings toggle: "Default to Simple Mode on sign-in" → routes to `/assist` instead of `/dashboard`.
+- Server-side: extend `patient-ai-chat` with **read-only tools** (`getRecentVitals`, `getTodaySchedule`, `getActiveMedications`, `getAdherenceSummary`) using AI SDK `tool()` pattern. No write tools.
+- Honest disclosure: "Simple Mode is AI-assisted. It can read your data but won't change it — tap the buttons for that."
+- Voice deferred per your answer (mic icon greyed with "coming soon").
+
+**Effort:** ~2 days *after* the audit fixes above.
+**Risk:** Low — no new write paths, no new consent surface, no new RLS.
+
+---
+
+## Part 3 — Suggested next sequence
+
+1. **You pick which audit items to fix** (I'd recommend all P0s, both patient and clinician, plus P1 #4 & #6 clinician, P1 #7 & #8 patient).
+2. I produce a focused **Fix Plan** (separate `plan--create` call) with file-level changes.
+3. After fixes land + a fresh smoke test, build **Simple Mode (Option C)** as its own milestone.
+4. Refresh memory + changelog (`0.9.8`).
+
+Tell me which P0/P1 items you want in scope and I'll write the fix plan.
+
+Go ahead with your recommendations. No need to produce a fix plan, i think you've identified them here, so just go ahead and fix and implement. I like your option C, so go ahead with that as it's own milestone as you have indicated. 

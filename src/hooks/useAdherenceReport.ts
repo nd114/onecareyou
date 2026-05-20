@@ -35,15 +35,19 @@ export interface AdherenceReport {
   weekOverWeekChange: number;
 }
 
+import { useActiveFamilyMember } from '@/contexts/FamilyContext';
+
 export const useAdherenceReport = (days: number = 7) => {
   const { user, profile } = useAuth();
   const { medications } = useMedications();
+  const { activeMemberId } = useActiveFamilyMember();
 
-  // Check if user has report enabled
+  // Adherence reports are only tracked for the primary account today.
   const isReportEnabled = (profile as any)?.weekly_adherence_report_enabled !== false;
+  const familyScopeBlocks = activeMemberId !== null;
 
   const reportQuery = useQuery({
-    queryKey: ['adherence_report', user?.id, days],
+    queryKey: ['adherence_report', user?.id, activeMemberId, days],
     queryFn: async (): Promise<AdherenceReport> => {
       if (!user?.id) throw new Error('Not authenticated');
 
@@ -142,7 +146,7 @@ export const useAdherenceReport = (days: number = 7) => {
         weekOverWeekChange,
       };
     },
-    enabled: !!user?.id && isReportEnabled,
+    enabled: !!user?.id && isReportEnabled && !familyScopeBlocks,
   });
 
   return {
@@ -150,6 +154,7 @@ export const useAdherenceReport = (days: number = 7) => {
     isLoading: reportQuery.isLoading,
     error: reportQuery.error,
     isReportEnabled,
+    familyScopeBlocks,
     refetch: reportQuery.refetch,
   };
 };

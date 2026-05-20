@@ -20,6 +20,7 @@ import {
   XCircle,
   Sun,
   Moon,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -327,6 +328,13 @@ export function Header() {
                   {/* Patient-only menu items - reduced since core items are in header */}
                   {!isClinician && (
                     <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/assist" className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          Simple Mode
+                          <Badge variant="outline" className="text-[9px] h-4 ml-auto">Beta</Badge>
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/guidance" className="flex items-center gap-2">
                           <Inbox className="h-4 w-4" />
