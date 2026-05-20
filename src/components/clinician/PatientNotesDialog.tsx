@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, CheckCircle2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface PatientNotesDialogProps {
   open: boolean;
