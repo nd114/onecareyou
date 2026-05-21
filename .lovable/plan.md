@@ -1,114 +1,102 @@
-# Pre-Beta Audit + Simplified Mode Recommendation
+# Plan: Signed-in UI fixes + Simple Mode enhancements
 
-This is an **audit-only** pass. No code changes proposed yet — once you approve priorities, I'll create a separate fix plan.
-
----
-
-## Part 1 — Audit Findings
-
-### Patient side
-
-**P0 (blocks beta)**
-
-1. **AI consent gate is opaque.** `patient-ai-chat` returns 403 if `ai_processing_consent` is false, but `AIChatDrawer` opens `AIConsentDialog` *only on first send attempt*. A user who has consent revoked elsewhere just sees the error toast. → Need a graceful re-prompt path.
-2. **Bug + AI buttons stacked on small screens.** Bug button is `bottom-24 right-6`, AI FAB is `bottom-6 right-6`. They no longer overlap, but on a 360px viewport the OfflineBanner + bottom-mobile-nav (if any) + these two FABs crowd the thumb zone. Needs a single FAB stack container.
-3. **Offline write-queue toasts are silent on success-after-replay.** When connectivity returns and `flushQueue` posts a vital, the UI doesn't tell the user "your offline reading from 2hrs ago synced." Risk: users add the same reading twice.
-4. **Family switcher scope leak risk.** `FamilyContext.activeMemberId` is read by `useVitals`/`useMedications`/`useScheduleEntries`, but `useAdherenceReport`, `usePatientGuidance`, `useHealthDocuments`, and `useMessages` were not verified — they may still show the primary patient's data when a family member is active.
-5. **Onboarding "Skip for now"** persists `last_completed_step` but there's no resume CTA on the dashboard — a skipped user lands on a half-empty dashboard with no nudge.
-
-**P1**
-6. AI chat history is in-memory only (`useAIChat` `useState`). Refresh wipes the conversation — fine for v1 but worth telling testers.
-7. `PatientAIChatMount` excludes `/clinician` but not `/onboarding`, `/install`, `/subscription-success` — the FAB shows on Install page.
-8. `BugReportButton` is mounted globally including on public marketing pages (`/`, `/pricing`, `/for-clinicians`) — exposes beta-tester UX to anonymous prospects.
-9. Cookie banner + offline banner + bug FAB + AI FAB = 4 simultaneous overlays possible on `/dashboard` first visit.
-10. `Sparkles` / `Bot` icon used as agent identity — violates our own chat-agent-ui-contract (agent should have a domain-specific mark).
-11. Health Vault upload has no progress indicator on slow mobile uploads.
-12. Schedule "mark as taken" optimistic update doesn't revert if the queued write later fails after max retries.
-
-**P2 / polish**
-13. `useAIChat` doesn't truncate context client-side — sends all messages each call (server caps to last 10, so wasted bandwidth on mobile).
-14. No empty-state for `/messages` when patient has no clinician connection.
-15. No "your data is saved locally and will sync" indicator near the offline banner.
-
-### Clinician side
-
-**P0**
-
-1. **Session timeout collision.** 30-min HIPAA timeout is enforced, but the clinician messages page uses Supabase realtime which keeps the tab "active" — timer may never trigger if WebSocket pings count as activity. Needs verification.
-2. `**patient_basic_info` view vs sensitive data**: `ClinicianPatientDetail` reads from both paths but I didn't confirm every tab (Vitals, Vault, Adherence, Messages) gates on the matching `provider_shares.permissions` JSONB field. A clinician with `vitals: true` but `profile: false` may still see avatar/DOB.
-3. **Bulk import error rows are silent.** `ClinicianPatientImport` shows row counts but no downloadable error CSV — testers can't debug failed rows.
-
-**P1**
-4. Practice RBAC: invite flow exists but no UI to *revoke* a team member's access after they're added.
-5. `ClinicianAlerts` lists triggered alerts but no "acknowledge" / "snooze" action — alerts just accumulate.
-6. Clinician sign-out doesn't clear `useClinicianTour` localStorage flag → next clinician on same browser skips onboarding.
-7. EHR sync history dialog opens with all-time logs — no date filter, will be unusable after a few weeks of real use.
-8. No mobile layout for clinician routes (`ClinicianDashboard`, `ClinicianPatients`) — clinicians using a phone in rounds will struggle.
-
-**P2**
-9. Subscription tier limits (`patient-limit-banner`) only check on dashboard load; importing past the limit isn't blocked at the action.
-10. No audit log surface UI — the `useHipaaAuditLog` writes happen, but clinicians have nowhere to view their own access history (required for some BAAs).
-
-### Cross-cutting
-
-- **Memory drift**: `mem://index.md` says "Patient AI Assistant uses Gemini 1.5 Flash" — actual code uses `google/gemini-3-flash-preview`. Should refresh.
-- **SEO**: `/install` and `/for-clinicians` not in `sitemap.xml` (verify).
-- **Service worker**: kill-switch SW is in place but no telemetry to confirm legacy SW was actually unregistered for returning testers.
-- **Beta tester pack** mentions features (Family switcher, offline) but doesn't include a known-issues section.
+I split this into **Part A — Bugs to fix now** and **Part B — Simple Mode roadmap** (which needs a couple of decisions before I build it). I'll need answers on Part B before starting it, but Part A can ship immediately on approval.
 
 ---
 
-## Part 2 — Simplified / "AI Mode": My Recommendation
+## Part A — Bug fixes (ship now)
 
-You asked for my thoughts on each option. Here they are honestly.
+### A1. Nav bar overflows on signed-in pages
 
-### Option A — Patient-only conversational shell (read + write)
+**Cause:** `Header.tsx` uses three `flex-1` lanes (logo / nav / right-side) with 7 nav links plus Family switcher + Bell + Avatar+name. Between ~1024–1366 px the center nav pushes the logo and avatar off-screen (visible in images 1 & 2 — "OneCare" and "James Thompson" get clipped).
 
-**My take:** Highest user delight, highest risk. The moment AI can write data ("log my BP 140/90"), you inherit responsibility for misparsed numbers, wrong family member, accidental dose-marking. Needs confirm-step on every write, full audit trail, and clear "AI did this" badges on records. Doable, but doubles QA surface. **Not for first beta.**
+**Fix:**
 
-### Option B — Patient + Clinician AI mode
+- Remove `flex-1` on the side lanes; let logo and right-side size to content and center nav take remaining space.
+- Drop nav `gap` to `gap-2 lg:gap-5`, use `text-[13px] lg:text-sm`.
+- Hide username label below `xl` (already does at `lg` — push to `xl`).
+- Promote the `md:` breakpoint for the full nav to `lg:` and show a compact "More" menu on `md` so 7 links don't compress.
+- Constrain container to `max-w-screen-2xl` and keep `overflow-x-hidden` on header.
 
-**My take:** Tempting but premature. Clinician "command bar" sounds great in demos ("show high-risk diabetics this week") but clinicians under time pressure want deterministic UI, not a text box that might misinterpret them. Most successful clinical AI (Abridge, DAX) does *ambient* not *command*. **Defer.**
+### A2. Schedule / Settings / Guidance reroute to home
 
-### Option C — Patient conversational shell + read-only summaries ⭐ RECOMMENDED for beta
+**Cause:** `Schedule.tsx` calls `useServiceWorker()`, which registers `/sw.js`. `public/sw.js` is the kill-switch SW — on `activate` it calls `clients.matchAll(...).navigate(url + '?sw-cleanup=...')` on every open tab and then unregisters. When SW state is mid-cycle, that navigate plus the SPA's auth bootstrap can land the user back on `/`. Memory rule already says: **no SW caching of HTML, legacy SW killed.**
 
-**My take:** This is the sweet spot for v1.
+**Fix:**
 
-- AI can answer ("what's my average BP this week?", "did I take my metformin yesterday?", "what's an A1C?", "where do I add a vital?")
-- AI can navigate (already does via `[NAVIGATE:/path]`)
-- AI **cannot** create/edit/delete data — users still tap UI for writes
-- No new audit/consent complexity beyond what exists
-- Ships in ~2 days
-- Fully reversible — if users want write actions in v2, the same chat surface absorbs them
+- Remove the `useServiceWorker()` call from `Schedule.tsx` (and any other page that imports it).
+- Replace `public/sw.js` with a truly inert stub: install, immediately `self.registration.unregister()`, **no `clients.claim()` and no `clients.navigate()**` so existing devices still clean up but never reload anyone.
+- Leave the `useServiceWorker` hook file in place for now but make it a no-op that returns nulls, so nothing re-registers.
 
-This is also the most honest answer to "make it feel like Claude/Gemini": those don't write to your bank account either.
+### A3. Assistant replies render raw markdown
 
-### Option D — Just upgrade the existing Assistant
+**Cause:** Both `Assist.tsx` and `AIChatDrawer.tsx` render `message.content` inside a `<p whitespace-pre-wrap>`, so `**bold**`, lists, and headings stay literal (image 3).
 
-**My take:** Underwhelming as a positioning story. Your differentiator post-beta will partly be "talk to your health data" — that deserves a real mode, not a bigger drawer. But the *implementation* of Option C should reuse the existing `useAIChat` + `patient-ai-chat` edge function — so technically it's D underneath, presented as a mode.
+**Fix:**
 
-### My recommendation
+- Add `react-markdown` + `remark-gfm`.
+- Create `src/components/ai/MarkdownMessage.tsx` that wraps `ReactMarkdown` with our prose tokens, sized for chat bubbles (tight spacing, smaller headings, list bullets, code styling, link styling that uses `text-primary underline`).
+- Replace the `<p>` in `MessageRow` (Assist) and `MessageBubble` (Drawer) with `<MarkdownMessage>` for assistant messages only — keep user messages plain text.
 
-**Ship Option C as "Simple Mode" toggle in patient settings + a `/assist` route**, text-only (per your answer), reusing existing AI infra. Concretely:
+### A4. AI chat drawer: close X overlaps trash icon
 
-- New `/assist` route: full-page chat (not a drawer), large input, suggestion chips ("Show this week's vitals", "What did I take yesterday?", "Add a vital" → navigates).
-- Settings toggle: "Default to Simple Mode on sign-in" → routes to `/assist` instead of `/dashboard`.
-- Server-side: extend `patient-ai-chat` with **read-only tools** (`getRecentVitals`, `getTodaySchedule`, `getActiveMedications`, `getAdherenceSummary`) using AI SDK `tool()` pattern. No write tools.
-- Honest disclosure: "Simple Mode is AI-assisted. It can read your data but won't change it — tap the buttons for that."
-- Voice deferred per your answer (mic icon greyed with "coming soon").
+**Cause:** Radix `SheetContent` renders a built-in close button at `top-4 right-4`. Our header puts `<Trash2>` button in the same corner.
 
-**Effort:** ~2 days *after* the audit fixes above.
-**Risk:** Low — no new write paths, no new consent surface, no new RLS.
+**Fix:** Add `pr-10` to `SheetHeader` and move the trash button into the title row so it sits inline-left of the close X with `gap-2`, not absolute-stacked.
+
+### A5. Bug + AI FABs visually crowd input on Simple Mode
+
+**Cause:** `FabStack` is `fixed bottom-4 right-4`, but on `/assist` the chat input bar also has a send button anchored bottom-right; they overlap on small viewports. Bug button stays visible on `/assist` (AI button is excluded there).
+
+**Fix:**
+
+- On routes where a sticky bottom input exists (`/assist`, `/messages`, `/clinician/messages`), raise the FabStack with `bottom-24` (above the input bar) — drive it from a `useLocation()` check inside `FabStack`.
+- Also ensure FabStack children all use `position: relative` and `pointer-events-auto`; verify AIChatFAB wraps its motion.div with `pointer-events-auto` (already does) — no other change needed.
+
+### A6. Medications page briefly flashes "at limit"
+
+**Cause:** `useSubscription()` starts with `subscription = null` → `isPremium = false` → if patient has ≥ `FREE_MEDICATION_LIMIT` active meds, the upgrade banner renders for one paint before `checkSubscription()` resolves.
+
+**Fix:** Expose `subscription === null || checkingStatus` as a `subscriptionReady` boolean (true once first response lands). In `Medications.tsx`, render the limit badge and upgrade banner only when `subscriptionReady` is true. Same gating for the Add button's disabled state.
 
 ---
 
-## Part 3 — Suggested next sequence
+## Part B — Simple Mode v1.1 (needs your input)
 
-1. **You pick which audit items to fix** (I'd recommend all P0s, both patient and clinician, plus P1 #4 & #6 clinician, P1 #7 & #8 patient).
-2. I produce a focused **Fix Plan** (separate `plan--create` call) with file-level changes.
-3. After fixes land + a fresh smoke test, build **Simple Mode (Option C)** as its own milestone.
-4. Refresh memory + changelog (`0.9.8`).
+You asked for: (1) a "Quick Mode" transition animation, (2) logging of text conversations, (3) photo-OCR auto-fill with user confirmation, (4) voice input with audio archived for compliance, (5) the same audio→summary loop on the clinician side with approval.
 
-Tell me which P0/P1 items you want in scope and I'll write the fix plan.
+Here's my recommendation, but I'd like to confirm scope first via questions.
 
-Go ahead with your recommendations. No need to produce a fix plan, i think you've identified them here, so just go ahead and fix and implement. I like your option C, so go ahead with that as it's own milestone as you have indicated. 
+### Proposed direction
+
+1. **Transition** — Tap "Simple Mode" → full-screen gradient-green wash slides in from right with "Simple Mode" wordmark fading in, then resolves into the chat. Reverse on exit. Implemented as a single `framer-motion` layout wrapper on `/assist` plus a triggered overlay component on enter/exit. Cheap, no library beyond what we have. Approved! 
+2. **Conversation logging** — Persist every Simple Mode message to a new `ai_conversations` + `ai_messages` pair (patient-owned, RLS-scoped), with `source = 'simple_mode' | 'drawer'`, `input_modality = 'text' | 'voice' | 'image_ocr'`, and a JSONB `metadata` (e.g. detected route, tool calls). Compliance retention default 7 years (HIPAA), purgeable on account deletion. Approved!
+3. **Photo → OCR → confirm** — Existing `src/lib/ocr.ts` is already in the project. New flow: paperclip button in Simple Mode → user uploads/takes photo → edge function `simple-mode-extract` runs OCR + Gemini extraction → returns structured candidate (med name, dose, frequency / or vital + value + unit) → renders a **confirm card** in the chat with editable fields → on submit, writes to the right table. **Nothing is saved without explicit user tap. Yes, absolutely.**
+4. **Voice → transcript → confirm** — Mic button records up to 60s, uploads to a private `voice-notes` bucket, edge function calls Gemini transcription, returns transcript and proposed action; user confirms before write. Audio file retained alongside transcript. - Okay for now, but also looking to longer sessions; perhaps we can connect Otter or something similar in? Then the clinician can confirm.
+5. **Clinician parallel** — Same primitive on clinician side for visit/dictation notes: record → transcribe → summarize → clinician sees side-by-side audio player + transcript + AI summary → must click **Approve transcript** and **Approve summary** before either is saved to the patient record. Stored in a `clinician_dictations` table with audit log entry on each approval. - Yes correct but also as I said in '4'. 
+
+### Questions I need to ask before building Part B
+
+I'll send these as a 3-question prompt right after you approve Part A so we can ship the fixes immediately and iterate on Simple Mode in the next pass:
+
+1. Build all of Part B (transition + logging + OCR + voice + clinician dictation) in one go, or only the transition + logging now and defer OCR/voice/clinician? Build all in one go if you can. Else, second pass is okay. 
+2. For logged conversations, should the user be able to see and delete their own Simple Mode history from Settings (recommended yes)? Yes they can, but we should retain it and state reason why in our policies - they should note that using it is in agreement to said policies on information collection and retention and any other legal concerns.
+3. For the clinician dictation flow, is approval **per-patient** (clinician must approve each dictation against the patient record before it is filed) or **bulk** (queue review)? - Yes per patient review would be optimal, but in the event that they have many patients and deal with them in sequence, we should enable them to be able to bulk approve but note that we don't bear any responsibility for errors due to them not reviewing; we can also just queue it for their approval when they are ready, after all if any errors or any thing is to be affixed to a patients profile, they must explicitly approve. 
+
+---
+
+## Files I expect to touch in Part A
+
+- `src/components/layout/Header.tsx` — nav sizing
+- `public/sw.js` — inert kill-switch (no claim/navigate)
+- `src/hooks/useServiceWorker.ts` — neuter to no-op
+- `src/pages/Schedule.tsx` — drop `useServiceWorker()` call
+- `src/components/ai/MarkdownMessage.tsx` *(new)*
+- `src/components/ai/AIChatDrawer.tsx` — markdown + header layout
+- `src/pages/Assist.tsx` — markdown
+- `src/components/beta/FabStack.tsx` — route-aware bottom offset
+- `src/pages/Medications.tsx` — gate limit UI on `subscriptionReady`
+- `src/hooks/useSubscription.ts` — expose `subscriptionReady`
+- `package.json` — add `react-markdown`, `remark-gfm`
+
+No database changes in Part A. Part B will need a migration (conversations, messages, dictations, storage buckets, RLS) — I'll write that with the implementation.
