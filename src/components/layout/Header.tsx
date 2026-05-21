@@ -445,8 +445,9 @@ export function Header() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:hidden border-t border-border bg-background"
+          className="lg:hidden border-t border-border bg-background"
         >
+
           <nav className="container py-4 flex flex-col gap-2">
             {navLinks.map((link) => (
               <Link
