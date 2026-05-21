@@ -98,7 +98,7 @@ const Dashboard = () => {
             Welcome back, {userName}! 👋
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Here's your health overview for today, </> <span className="font-semibold text-foreground">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+            Here's your health overview for today, <span className="font-semibold text-foreground">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
           </p>
         </motion.div>
 
