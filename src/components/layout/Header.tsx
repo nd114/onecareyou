@@ -428,13 +428,16 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile: family switcher + menu button */}
-        <div className="md:hidden flex items-center gap-1.5 flex-1 justify-end">
-          {isAuthenticated && !isClinician && <HeaderFamilySwitcher compact />}
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        {/* Hamburger: shown whenever the full desktop nav is hidden (below lg).
+            On mobile (below md) also includes compact family switcher since the
+            right-side cluster is hidden there. */}
+        <div className="lg:hidden flex items-center gap-1.5 ml-auto">
+          {isAuthenticated && !isClinician && <div className="md:hidden"><HeaderFamilySwitcher compact /></div>}
+          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle navigation">
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
+
       </div>
 
       {/* Mobile Menu */}
