@@ -29,15 +29,37 @@ const defaultPreferences: CookiePreferences = {
   functional: true,
 };
 
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : null;
+}
+
+function writeCookie(name: string, value: string, days = 365) {
+  if (typeof document === 'undefined') return;
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
 function readConsent(): CookiePreferences | null {
   if (typeof window === 'undefined') return null;
+  // Try localStorage first, then cookie fallback (preview iframes / strict
+  // tracking-prevention browsers may wipe localStorage between visits).
   try {
     const raw = window.localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as CookiePreferences;
+    if (raw) return JSON.parse(raw) as CookiePreferences;
   } catch {
-    return null;
+    // ignore
   }
+  try {
+    const raw = readCookie(COOKIE_CONSENT_KEY);
+    if (raw) return JSON.parse(raw) as CookiePreferences;
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 export function CookieConsentBanner() {
