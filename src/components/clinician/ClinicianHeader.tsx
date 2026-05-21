@@ -20,6 +20,8 @@ import {
   Inbox,
   AlertTriangle,
   MessageSquare,
+  Mic,
+
   MoreHorizontal,
   Building2,
   Database,
@@ -136,8 +138,10 @@ export function ClinicianHeader() {
     { to: "/clinician/patients", label: "Patients", icon: Users },
     { to: "/clinician/messages", label: "Messages", icon: MessageSquare },
     { to: "/clinician/guidance", label: "Guidance", icon: FileText },
+    { to: "/clinician/dictations", label: "Dictations", icon: Mic },
     { to: "/clinician/alerts", label: "Alerts", icon: AlertTriangle },
   ];
+
 
 
   return (

@@ -177,11 +177,9 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Spacer for medium screens where full nav is hidden, so right cluster stays at the edge */}
-        <div className="hidden md:flex lg:hidden flex-1" />
+        {/* Right-side cluster: visible from md+, takes remaining space at md/lg so the hamburger sits flush right */}
+        <div className="hidden md:flex items-center justify-end gap-2 shrink-0 ml-auto">
 
-        {/* Auth Buttons - sized to content */}
-        <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
 
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -430,13 +428,16 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile: family switcher + menu button */}
-        <div className="md:hidden flex items-center gap-1.5 flex-1 justify-end">
-          {isAuthenticated && !isClinician && <HeaderFamilySwitcher compact />}
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        {/* Hamburger: shown whenever the full desktop nav is hidden (below lg).
+            On mobile (below md) also includes compact family switcher since the
+            right-side cluster is hidden there. */}
+        <div className="lg:hidden flex items-center gap-1.5 ml-auto">
+          {isAuthenticated && !isClinician && <div className="md:hidden"><HeaderFamilySwitcher compact /></div>}
+          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle navigation">
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
+
       </div>
 
       {/* Mobile Menu */}
@@ -444,8 +445,9 @@ export function Header() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:hidden border-t border-border bg-background"
+          className="lg:hidden border-t border-border bg-background"
         >
+
           <nav className="container py-4 flex flex-col gap-2">
             {navLinks.map((link) => (
               <Link

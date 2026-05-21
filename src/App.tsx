@@ -77,6 +77,8 @@ import { BugReportButton } from "./components/beta/BugReportButton";
 import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
 import { FabStack } from "./components/beta/FabStack";
 import Assist from "./pages/Assist";
+import ClinicianDictations from "./pages/ClinicianDictations";
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -290,6 +292,12 @@ const App = () => (
                 <Assist />
               </ProtectedRoute>
             } />
+            <Route path="/clinician/dictations" element={
+              <ProtectedRoute>
+                <ClinicianDictations />
+              </ProtectedRoute>
+            } />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsentBanner />

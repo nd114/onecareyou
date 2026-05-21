@@ -54,6 +54,8 @@ import { CareAlertSettings } from '@/components/care/CareAlertSettings';
 import { PatientAvatarUpload } from '@/components/settings/PatientAvatarUpload';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
+import { AIHistorySection } from '@/components/settings/AIHistorySection';
+
 
 interface ConsentLogEntry {
   id: string;
@@ -562,6 +564,12 @@ const Settings = () => {
               </CardContent>
             </Card>
           </motion.div>
+
+          {/* AI Conversation History */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <AIHistorySection />
+          </motion.div>
+
 
           {/* Preferences */}
           <motion.div
