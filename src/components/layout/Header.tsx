@@ -177,11 +177,9 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Spacer for medium screens where full nav is hidden, so right cluster stays at the edge */}
-        <div className="hidden md:flex lg:hidden flex-1" />
+        {/* Right-side cluster: visible from md+, takes remaining space at md/lg so the hamburger sits flush right */}
+        <div className="hidden md:flex items-center justify-end gap-2 shrink-0 ml-auto">
 
-        {/* Auth Buttons - sized to content */}
-        <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
 
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
