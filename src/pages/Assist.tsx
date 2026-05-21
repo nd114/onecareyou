@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, ArrowRight, Loader2, Mic, Trash2, ArrowLeft, AlertTriangle, User as UserIcon, Sparkles } from 'lucide-react';
+import { Bot, ArrowRight, Loader2, Mic, MicOff, Trash2, ArrowLeft, AlertTriangle, User as UserIcon, Sparkles, Paperclip, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -12,16 +12,13 @@ import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
+import { SimpleModeTransition } from '@/components/ai/SimpleModeTransition';
+import { useConversationLogger } from '@/hooks/useConversationLogger';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-/**
- * Simple Mode: a full-page conversational interface to OneCare.
- *
- * v1 scope: read + navigate only. The assistant can answer questions about
- * the user's data (vitals, meds, schedule, adherence) and deep-link into
- * the regular UI. It cannot create, edit, or delete data — those still
- * require tapping the standard controls. This is intentional for beta.
- */
 const SUGGESTIONS = [
   { label: "What did I take today?", icon: '💊' },
   { label: "Show my blood pressure this week", icon: '📈' },
@@ -52,12 +49,7 @@ function MessageRow({ message, onNavigate }: { message: ChatMessage; onNavigate:
           <MarkdownMessage content={message.content} />
         )}
         {message.suggestedRoute && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="mt-3 h-8"
-            onClick={() => onNavigate(message.suggestedRoute!)}
-          >
+          <Button size="sm" variant="secondary" className="mt-3 h-8" onClick={() => onNavigate(message.suggestedRoute!)}>
             Take me there <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
           </Button>
         )}
@@ -73,32 +65,41 @@ function MessageRow({ message, onNavigate }: { message: ChatMessage; onNavigate:
 
 export default function Assist() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { messages, isLoading, sendMessage, clearChat } = useAIChat();
   const { hasConsent, grantConsent } = useAIConsent();
+  const { logMessage, reset: resetLog } = useConversationLogger('simple_mode');
+  const recorder = useVoiceRecorder();
   const [input, setInput] = useState('');
   const [showConsent, setShowConsent] = useState(false);
+  const [isProcessingMedia, setIsProcessingMedia] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastLoggedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isLoading]);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const handleSend = async (override?: string) => {
+  // Log every newly-arrived assistant message that we haven't logged yet
+  useEffect(() => {
+    if (!messages.length) return;
+    const last = messages[messages.length - 1];
+    if (last.role === 'assistant' && last.id !== lastLoggedRef.current) {
+      lastLoggedRef.current = last.id;
+      void logMessage({ role: 'assistant', content: last.content });
+    }
+  }, [messages, logMessage]);
+
+  const handleSend = async (override?: string, modality: 'text' | 'voice' | 'image_ocr' = 'text') => {
     const text = (override ?? input).trim();
     if (!text) return;
-    if (!hasConsent) {
-      setShowConsent(true);
-      return;
-    }
+    if (!hasConsent) { setShowConsent(true); return; }
     if (!override) setInput('');
+    void logMessage({ role: 'user', content: text, inputModality: modality });
     const err = await sendMessage(text);
     if (err?.kind === 'consent_required') {
       setShowConsent(true);
@@ -117,9 +118,71 @@ export default function Assist() {
   const handleNavigate = (route: string) => navigate(route);
   const firstName = profile?.name?.split(' ')[0] || 'there';
 
+  const handleMicClick = async () => {
+    if (recorder.isRecording) {
+      const blob = await recorder.stop();
+      if (!blob || !user) return;
+      setIsProcessingMedia(true);
+      try {
+        const b64 = await blobToBase64(blob);
+        const path = `${user.id}/${Date.now()}.webm`;
+        await supabase.storage.from('voice-notes').upload(path, blob, { contentType: blob.type, upsert: false });
+        const { data, error } = await supabase.functions.invoke('media-extract', {
+          body: { mode: 'voice', data: b64, mimeType: blob.type },
+        });
+        if (error) throw error;
+        const transcript = (data?.transcript || '').trim();
+        if (!transcript) {
+          toast.error("Couldn't understand that recording. Try again?");
+        } else {
+          await handleSend(transcript, 'voice');
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Voice transcription failed');
+      } finally {
+        setIsProcessingMedia(false);
+      }
+    } else {
+      const ok = await recorder.start();
+      if (!ok && recorder.error) toast.error(recorder.error);
+    }
+  };
+
+  const handleFileChosen = async (file: File | null) => {
+    if (!file || !user) return;
+    if (!hasConsent) { setShowConsent(true); return; }
+    setIsProcessingMedia(true);
+    try {
+      const b64 = await blobToBase64(file);
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      await supabase.storage.from('simple-mode-images').upload(path, file, { contentType: file.type, upsert: false });
+      const { data, error } = await supabase.functions.invoke('media-extract', {
+        body: { mode: 'image', data: b64, mimeType: file.type },
+      });
+      if (error) throw error;
+      const transcript = data?.transcript || '';
+      const extracted = data?.extracted;
+      const prompt = buildPromptFromExtraction(transcript, extracted);
+      if (!prompt) {
+        toast.error("Couldn't read that image. Try a clearer photo?");
+      } else {
+        await handleSend(prompt, 'image_ocr');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Image read failed');
+    } finally {
+      setIsProcessingMedia(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const recordingSeconds = Math.floor(recorder.elapsedMs / 1000);
+
   return (
     <>
       <SEOHead title="Simple Mode — OneCare Assistant" description="Chat with OneCare to check your vitals, medications, and schedule." noIndex />
+      <SimpleModeTransition />
       <Header />
       <div className="min-h-[calc(100vh-4rem)] flex flex-col bg-background">
         <div className="border-b px-4 py-3 flex items-center justify-between bg-card/50">
@@ -134,12 +197,12 @@ export default function Assist() {
                 <Badge variant="outline" className="text-[10px] h-5">Beta</Badge>
               </div>
               <p className="text-[11px] text-muted-foreground leading-tight">
-                Ask anything about your health — I can read your data and guide you.
+                Ask anything — type, speak, or snap a photo. I'll read and guide; I won't change records.
               </p>
             </div>
           </div>
           {messages.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={clearChat} className="h-8">
+            <Button variant="ghost" size="sm" onClick={() => { clearChat(); resetLog(); lastLoggedRef.current = null; }} className="h-8">
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
               Clear
             </Button>
@@ -155,39 +218,30 @@ export default function Assist() {
                 </div>
                 <h2 className="text-xl font-semibold">Hi {firstName} 👋</h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  I can answer questions about your health data, explain medical concepts, and take you to the right page.
-                  I won't change anything in your records — tap the buttons in the regular app for that.
+                  Tap the mic to speak, the paperclip to snap a med bottle or device readout, or just type below.
                 </p>
               </div>
-
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3 px-1">Try asking</p>
                 <div className="grid sm:grid-cols-2 gap-2">
                   {SUGGESTIONS.map(s => (
-                    <Card
-                      key={s.label}
-                      className="p-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm flex items-center gap-2 border-dashed"
-                      onClick={() => handleSend(s.label)}
-                    >
+                    <Card key={s.label} className="p-3 cursor-pointer hover:bg-muted/50 transition-colors text-sm flex items-center gap-2 border-dashed" onClick={() => handleSend(s.label)}>
                       <span className="text-base">{s.icon}</span>
                       <span>{s.label}</span>
                     </Card>
                   ))}
                 </div>
               </div>
-
               <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                 <span>
-                  Simple Mode provides general information only, not medical advice. Always confirm with your healthcare provider.
+                  Simple Mode is for general information, not medical advice. Voice and image inputs are stored privately and can be deleted from Settings → AI History.
                 </span>
               </div>
             </div>
           ) : (
             <>
-              {messages.map(msg => (
-                <MessageRow key={msg.id} message={msg} onNavigate={handleNavigate} />
-              ))}
+              {messages.map(msg => <MessageRow key={msg.id} message={msg} onNavigate={handleNavigate} />)}
               {isLoading && (
                 <div className="flex gap-3 mb-6">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -204,37 +258,46 @@ export default function Assist() {
 
         <div className="border-t bg-card/50 px-4 py-3">
           <div className="max-w-3xl mx-auto flex gap-2 items-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 flex-shrink-0 opacity-60"
-              disabled
-              title="Voice input — coming soon"
-              aria-label="Voice input coming soon"
-            >
-              <Mic className="h-4 w-4" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => handleFileChosen(e.target.files?.[0] ?? null)}
+            />
+            <Button type="button" variant="outline" size="icon" className="h-10 w-10 flex-shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isProcessingMedia || isLoading || recorder.isRecording}
+              title="Snap a photo of a med bottle or device reading"
+              aria-label="Attach a photo">
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant={recorder.isRecording ? 'destructive' : 'outline'} size="icon"
+              className="h-10 w-10 flex-shrink-0"
+              onClick={handleMicClick}
+              disabled={isProcessingMedia || isLoading}
+              title={recorder.isRecording ? `Stop (${recordingSeconds}s)` : 'Hold to speak'}
+              aria-label={recorder.isRecording ? 'Stop recording' : 'Start voice recording'}>
+              {recorder.isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </Button>
             <Textarea
               ref={inputRef}
-              value={input}
+              value={recorder.isRecording ? `Recording… ${recordingSeconds}s / 60s` : input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message OneCare…"
+              placeholder={isProcessingMedia ? 'Processing…' : 'Message OneCare…'}
               className="min-h-[40px] max-h-[160px] resize-none text-sm"
               rows={1}
-              disabled={isLoading}
+              disabled={isLoading || isProcessingMedia || recorder.isRecording}
             />
-            <Button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              className="h-10 px-4 flex-shrink-0 gradient-primary border-0"
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            <Button onClick={() => handleSend()} disabled={!input.trim() || isLoading || isProcessingMedia || recorder.isRecording}
+              className="h-10 px-4 flex-shrink-0 gradient-primary border-0">
+              {isLoading || isProcessingMedia ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-            Voice input coming soon. Simple Mode reads your data — it doesn't change records.
+            Voice limited to 60s in beta — longer dictation (Otter-style streaming) coming soon. Simple Mode reads your data; it doesn't change records.
           </p>
         </div>
       </div>
@@ -242,12 +305,33 @@ export default function Assist() {
       <AIConsentDialog
         open={showConsent}
         onOpenChange={setShowConsent}
-        onConsent={async () => {
-          await grantConsent();
-          setShowConsent(false);
-        }}
+        onConsent={async () => { await grantConsent(); setShowConsent(false); }}
         onDecline={() => setShowConsent(false)}
       />
     </>
   );
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1] ?? '');
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function buildPromptFromExtraction(transcript: string, extracted: { kind?: string; medication?: { name?: string; dose?: string; frequency?: string }; vital?: { type?: string; value?: string; unit?: string } } | undefined): string {
+  if (extracted?.kind === 'medication' && extracted.medication?.name) {
+    const m = extracted.medication;
+    return `I just took a photo of a medication. Please help me confirm and walk me through saving it:\n\n- Name: ${m.name}\n- Dose: ${m.dose ?? 'not visible'}\n- Frequency: ${m.frequency ?? 'not visible'}\n\nIs this safe with my current meds? If so, take me to the page to add it.`;
+  }
+  if (extracted?.kind === 'vital' && extracted.vital?.value) {
+    const v = extracted.vital;
+    return `I just took a photo of a ${v.type} reading: ${v.value} ${v.unit ?? ''}. Is this in normal range for me, and how do I log it?`;
+  }
+  return transcript ? `I took a photo. Here's what's on it:\n\n${transcript}\n\nWhat should I do with this?` : '';
 }
