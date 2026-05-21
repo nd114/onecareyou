@@ -62,6 +62,9 @@ export function useConversationLogger(source: 'simple_mode' | 'drawer') {
     if (error) {
       console.warn('[conversation-log] failed to log message', error);
     }
+  }, [user, ensureConversation]);
+
+
 
 
   const reset = useCallback(() => {
