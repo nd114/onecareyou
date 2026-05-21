@@ -54,6 +54,8 @@ import { CareAlertSettings } from '@/components/care/CareAlertSettings';
 import { PatientAvatarUpload } from '@/components/settings/PatientAvatarUpload';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
+import { AIHistorySection } from '@/components/settings/AIHistorySection';
+
 
 interface ConsentLogEntry {
   id: string;
