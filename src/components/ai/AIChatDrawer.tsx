@@ -11,6 +11,7 @@ import {
 import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
+import { MarkdownMessage } from './MarkdownMessage';
 import { cn } from '@/lib/utils';
 
 interface AIChatDrawerProps {
@@ -80,11 +81,15 @@ function MessageBubble({ message, onNavigate }: { message: ChatMessage; onNaviga
       )}
       <div className={cn(
         'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm',
-        isUser 
-          ? 'bg-primary text-primary-foreground rounded-br-md' 
+        isUser
+          ? 'bg-primary text-primary-foreground rounded-br-md'
           : 'bg-muted rounded-bl-md'
       )}>
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        ) : (
+          <MarkdownMessage content={message.content} />
+        )}
         {message.suggestedRoute && (
           <Button
             size="sm"
@@ -159,14 +164,14 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
-          <SheetHeader className="px-4 pt-4 pb-2 border-b">
-            <div className="flex items-center justify-between">
-              <SheetTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" />
-                OneCare Assistant
+          <SheetHeader className="px-4 pt-4 pb-2 pr-12 border-b">
+            <div className="flex items-center gap-2">
+              <SheetTitle className="flex items-center gap-2 flex-1 min-w-0">
+                <Bot className="h-5 w-5 text-primary shrink-0" />
+                <span className="truncate">OneCare Assistant</span>
               </SheetTitle>
               {messages.length > 0 && (
-                <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8">
+                <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8 shrink-0" title="Clear conversation">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}

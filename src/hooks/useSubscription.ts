@@ -141,5 +141,8 @@ export function useSubscription() {
     createCheckout,
     openCustomerPortal,
     isPremium: subscription?.tier === 'premium' || subscription?.tier === 'family' || subscription?.tier === 'enterprise',
+    // True once the first check returns (success or null). Used by UI to avoid
+    // flashing "at limit" / upgrade banners before we know the user's real tier.
+    subscriptionReady: subscription !== null,
   };
 }

@@ -1,9 +1,10 @@
-// Kill-switch service worker.
-// The legacy `meditracker-v1` SW cached push-notification logic and is being
-// removed. This stub installs immediately, clears every cache, unregisters
-// itself, and reloads any tabs so the next request goes straight to the
-// network. Keep this file for at least one release cycle before deleting it,
-// so devices that still have the old SW registered get the cleanup signal.
+// Inert kill-switch service worker.
+//
+// The legacy `meditracker-v1` SW cached push-notification logic and HTML.
+// This stub no longer claims clients or navigates them — it just installs,
+// clears caches, and unregisters itself silently. Existing devices get
+// cleaned up the next time the SW loads; nothing in the app should be
+// re-registering this file (see useServiceWorker hook, which is a no-op).
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
@@ -12,19 +13,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     try {
-      await self.clients.claim();
       const names = await caches.keys();
       await Promise.all(names.map((n) => caches.delete(n)));
-      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      await Promise.all(clients.map((c) => {
-        try {
-          const url = new URL(c.url);
-          url.searchParams.set('sw-cleanup', Date.now().toString());
-          return c.navigate(url.toString());
-        } catch {
-          return undefined;
-        }
-      }));
       await self.registration.unregister();
     } catch (e) {
       // best-effort cleanup; never throw
@@ -33,3 +23,5 @@ self.addEventListener('activate', (event) => {
 });
 
 // No fetch handler — let the network handle every request.
+// No clients.claim() — do not steal control of open tabs.
+// No clients.navigate() — do not reload anyone.

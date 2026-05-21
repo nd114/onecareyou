@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { useScheduleEntries } from '@/hooks/useScheduleEntries';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useMedicationReminders } from '@/hooks/useMedicationReminders';
-import { useServiceWorker } from '@/hooks/useServiceWorker';
+// useServiceWorker removed: legacy SW retired; no-op shim no longer needed here.
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState, useEffect, useRef } from 'react';
 import { format, addDays, subDays, isToday as checkIsToday } from 'date-fns';
@@ -39,8 +39,7 @@ const Schedule = () => {
   const { isSupported, isGranted, requestPermission, scheduleMedicationReminder } = usePushNotifications();
   const { isEnabled: remindersEnabled, sendTestReminder, scheduledCount } = useMedicationReminders();
   
-  // Initialize service worker
-  useServiceWorker();
+  // Service worker intentionally not registered here — see public/sw.js.
   
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
   const [skipEntryId, setSkipEntryId] = useState<string | null>(null);
