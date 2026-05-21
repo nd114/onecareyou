@@ -292,6 +292,12 @@ const App = () => (
                 <Assist />
               </ProtectedRoute>
             } />
+            <Route path="/clinician/dictations" element={
+              <ProtectedRoute>
+                <ClinicianDictations />
+              </ProtectedRoute>
+            } />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsentBanner />
