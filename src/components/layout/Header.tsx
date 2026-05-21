@@ -324,7 +324,7 @@ export function Header() {
                         {userInitials || <User className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium max-w-[120px] truncate hidden lg:inline">{userName}</span>
+                    <span className="font-medium max-w-[120px] truncate hidden xl:inline">{userName}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
