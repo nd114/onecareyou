@@ -87,7 +87,14 @@ export function CookieConsentBanner() {
   }, []);
 
   const savePreferences = (prefs: CookiePreferences) => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, JSON.stringify(prefs));
+    const serialized = JSON.stringify(prefs);
+    try {
+      localStorage.setItem(COOKIE_CONSENT_KEY, serialized);
+    } catch {
+      // localStorage may be unavailable (private mode, partitioned storage)
+    }
+    // Cookie fallback so consent survives even if localStorage is wiped.
+    writeCookie(COOKIE_CONSENT_KEY, serialized);
     setPreferences(prefs);
     setShowBanner(false);
     setShowPreferences(false);
