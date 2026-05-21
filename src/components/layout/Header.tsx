@@ -146,11 +146,11 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-hidden">
       {isAuthenticated && !isClinician && <OfflineBanner />}
-      <div className="container flex h-16 items-center gap-4 md:gap-6 lg:gap-8">
-        {/* Logo - fixed width for symmetry */}
-        <div className="flex-1 flex justify-start shrink-0">
+      <div className="container max-w-screen-2xl flex h-16 items-center gap-3 lg:gap-5">
+        {/* Logo - sized to content so it never gets clipped */}
+        <div className="flex justify-start shrink-0">
           <Link to="/" className="flex items-center gap-2">
             <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
@@ -162,13 +162,13 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Desktop Navigation - truly centered */}
-        <nav className="hidden md:flex items-center justify-center gap-3 lg:gap-6">
+        {/* Desktop Navigation - takes remaining space, scrolls horizontally if needed on tight widths */}
+        <nav className="hidden lg:flex flex-1 items-center justify-center gap-2 xl:gap-5 min-w-0 overflow-x-auto scrollbar-none">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               to={link.href}
-              className={`text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap ${
+              className={`text-[13px] xl:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap ${
                 location.pathname === link.href ? "text-primary" : "text-muted-foreground"
               }`}
             >
@@ -177,9 +177,12 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop Auth Buttons / User Menu */}
-        {/* Auth Buttons - fixed width for symmetry */}
-        <div className="flex-1 hidden md:flex items-center justify-end gap-3">
+        {/* Spacer for medium screens where full nav is hidden, so right cluster stays at the edge */}
+        <div className="hidden md:flex lg:hidden flex-1" />
+
+        {/* Auth Buttons - sized to content */}
+        <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
+
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
