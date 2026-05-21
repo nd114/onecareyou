@@ -35,7 +35,7 @@ const Medications = () => {
   const [activeTab, setActiveTab] = useState<'list' | 'interactions'>('list');
   const [showDiscontinued, setShowDiscontinued] = useState(false);
   const { medications, isLoading, deleteMedication } = useMedications();
-  const { isPremium, checkSubscription } = useSubscription();
+  const { isPremium, subscriptionReady, checkSubscription } = useSubscription();
 
   // Check subscription on mount
   useEffect(() => {
@@ -45,13 +45,15 @@ const Medications = () => {
   const activeMedications = medications.filter(med => med.is_active);
   const discontinuedMedications = medications.filter(med => !med.is_active);
 
-  const filteredMedications = (showDiscontinued ? medications : activeMedications).filter(med => 
+  const filteredMedications = (showDiscontinued ? medications : activeMedications).filter(med =>
     med.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const medicationLimit = isPremium ? Infinity : FREE_MEDICATION_LIMIT;
   const currentCount = activeMedications.length;
-  const isAtLimit = !isPremium && currentCount >= FREE_MEDICATION_LIMIT;
+  // Only consider "at limit" after subscription has loaded, so free users don't
+  // see a brief upgrade banner flash while we wait for the tier check.
+  const isAtLimit = subscriptionReady && !isPremium && currentCount >= FREE_MEDICATION_LIMIT;
 
   const handleDelete = async (id: string) => {
     await deleteMedication.mutateAsync(id);

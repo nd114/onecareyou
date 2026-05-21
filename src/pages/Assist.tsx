@@ -11,6 +11,7 @@ import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
 import { cn } from '@/lib/utils';
 
 /**
@@ -45,7 +46,11 @@ function MessageRow({ message, onNavigate }: { message: ChatMessage; onNavigate:
           ? 'bg-primary text-primary-foreground rounded-br-sm'
           : 'bg-muted rounded-bl-sm'
       )}>
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+        ) : (
+          <MarkdownMessage content={message.content} />
+        )}
         {message.suggestedRoute && (
           <Button
             size="sm"
