@@ -49,7 +49,7 @@ export function useConversationLogger(source: 'simple_mode' | 'drawer') {
     if (!user) return;
     const conversationId = await ensureConversation();
     if (!conversationId) return;
-    const { error } = await supabase.from('ai_messages').insert({
+    const { error } = await supabase.from('ai_messages').insert([{
       conversation_id: conversationId,
       user_id: user.id,
       role: input.role,
@@ -57,15 +57,12 @@ export function useConversationLogger(source: 'simple_mode' | 'drawer') {
       input_modality: input.inputModality ?? 'text',
       audio_path: input.audioPath ?? null,
       image_path: input.imagePath ?? null,
-      metadata: input.metadata ?? {},
-    });
+      metadata: (input.metadata ?? {}) as never,
+    }]);
     if (error) {
       console.warn('[conversation-log] failed to log message', error);
-      return;
     }
-    // best-effort message-count bump
-    await supabase.rpc('increment' as never, {} as never).catch(() => {});
-  }, [user, ensureConversation]);
+
 
   const reset = useCallback(() => {
     conversationIdRef.current = null;
