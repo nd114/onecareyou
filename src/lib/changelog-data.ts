@@ -14,6 +14,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-05-21',
+    version: '0.9.8',
+    title: 'Simple Mode v1.1 + Clinician Dictation + signed-in UI fixes',
+    tags: ['patient', 'clinician', 'ai', 'platform'],
+    bullets: [
+      'Fix — Auth profile fetched twice on every page load (AuthContext ran both onAuthStateChange and getSession). Now once. Removes the visible double-render flash.',
+      'Fix — Nav bar disappeared between 768–1024px (hamburger was md:hidden, full nav was lg:flex). Hamburger now covers the full sub-lg range; right-side cluster sits flush with ml-auto.',
+      'Simple Mode v1.1 — Gradient transition overlay on /assist enter, full conversation logging (ai_conversations + ai_messages with RLS, 3 modalities), voice input (60s cap, Gemini transcription via media-extract edge function), photo OCR (paperclip → med/vital extraction → confirm prompt), and Settings → AI Conversation History with per-row + bulk delete and retention-policy notice.',
+      'Clinician Dictations — New /clinician/dictations page. Record up to 60s, audio stored in private clinician-dictations bucket, clinician-dictation-process edge function transcribes + summarizes via Gemini. Per-dictation Approve transcript / Approve summary required before filing. Bulk-approve queue available with explicit liability acknowledgement modal.',
+      'Storage — Three new private buckets: voice-notes, simple-mode-images, clinician-dictations (owner-only RLS on storage.objects).',
+      'Longer-form continuous dictation (Otter-style streaming) tracked for a follow-up; current 60s cap covers most Simple Mode prompts and short visit notes.',
+    ],
+  },
+
+  {
     date: '2026-05-20',
     version: '0.9.7',
     title: 'Beta readiness pass: PWA, offline-first patient writes, unified pricing, /for-clinicians',
