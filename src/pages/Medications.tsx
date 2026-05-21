@@ -92,12 +92,12 @@ const Medications = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              {!isPremium && (
+              {subscriptionReady && !isPremium && (
                 <Badge variant="outline" className="py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
                   {currentCount}/{medicationLimit} medications
                 </Badge>
               )}
-              {isPremium && (
+              {subscriptionReady && isPremium && (
                 <Badge className="gradient-primary border-0 py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
                   <Crown className="h-3 w-3 mr-1" />
                   Premium
