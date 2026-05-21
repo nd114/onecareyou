@@ -468,6 +468,38 @@ export function Header() {
                 {/* Patient-only mobile menu items - secondary items not in navLinks */}
                 {!isClinician && (
                   <>
+                    <Link
+                      to="/assist"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Simple Mode
+                      <Badge variant="outline" className="text-[9px] h-4 ml-auto">Beta</Badge>
+                    </Link>
+                    <Link
+                      to="/guidance"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Healthcare Instructions
+                    </Link>
+                    {showAdherenceReport && (
+                      <Link
+                        to="/adherence-report"
+                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Adherence Report
+                      </Link>
+                    )}
+                    <Link
+                      to="/knowledge-base"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Medication Info
+                    </Link>
                     {hasFamilyAccess && (
                       <Link
                         to="/family"
@@ -477,13 +509,6 @@ export function Header() {
                         Family Dashboard
                       </Link>
                     )}
-                    <Link
-                      to="/guidance"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Healthcare Instructions
-                    </Link>
                     <Link
                       to="/onboarding"
                       className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
