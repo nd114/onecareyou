@@ -64,6 +64,89 @@ export type Database = {
           },
         ]
       }
+      ai_conversations: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          message_count: number
+          metadata: Json
+          source: string
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          message_count?: number
+          metadata?: Json
+          source?: string
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          message_count?: number
+          metadata?: Json
+          source?: string
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_messages: {
+        Row: {
+          audio_path: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          image_path: string | null
+          input_modality: string
+          metadata: Json
+          role: string
+          user_id: string
+        }
+        Insert: {
+          audio_path?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          input_modality?: string
+          metadata?: Json
+          role: string
+          user_id: string
+        }
+        Update: {
+          audio_path?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          input_modality?: string
+          metadata?: Json
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_logs: {
         Row: {
           acknowledged_at: string | null
@@ -383,6 +466,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      clinician_dictations: {
+        Row: {
+          audio_path: string
+          bulk_approved: boolean
+          clinician_user_id: string
+          created_at: string
+          duration_seconds: number | null
+          error_message: string | null
+          id: string
+          metadata: Json
+          patient_label: string | null
+          patient_user_id: string | null
+          status: string
+          summary: string | null
+          summary_approved_at: string | null
+          summary_approved_by: string | null
+          transcript: string | null
+          transcript_approved_at: string | null
+          transcript_approved_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          audio_path: string
+          bulk_approved?: boolean
+          clinician_user_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          patient_label?: string | null
+          patient_user_id?: string | null
+          status?: string
+          summary?: string | null
+          summary_approved_at?: string | null
+          summary_approved_by?: string | null
+          transcript?: string | null
+          transcript_approved_at?: string | null
+          transcript_approved_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audio_path?: string
+          bulk_approved?: boolean
+          clinician_user_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          patient_label?: string | null
+          patient_user_id?: string | null
+          status?: string
+          summary?: string | null
+          summary_approved_at?: string | null
+          summary_approved_by?: string | null
+          transcript?: string | null
+          transcript_approved_at?: string | null
+          transcript_approved_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       clinician_guidance: {
         Row: {
