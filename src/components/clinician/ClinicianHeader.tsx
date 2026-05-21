@@ -162,7 +162,7 @@ export function ClinicianHeader() {
         </div>
 
         {/* Desktop Navigation - Tab Style - truly centered */}
-        <nav className="hidden md:flex items-center justify-center gap-1">
+        <nav className="hidden lg:flex items-center justify-center gap-1">
           {navLinks.map((link) => (
             <Link key={link.to} to={link.to}>
               <Button
@@ -220,7 +220,7 @@ export function ClinicianHeader() {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="hidden md:flex"
+            className="hidden lg:flex"
             aria-label="Toggle theme"
           >
             {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -229,7 +229,7 @@ export function ClinicianHeader() {
           {/* Notification Bell - Popover with notifications */}
           <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden md:flex relative" aria-label="View notifications">
+              <Button variant="ghost" size="icon" className="hidden lg:flex relative" aria-label="View notifications">
                 <Bell className="h-5 w-5" />
                 {totalBadgeCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
@@ -338,7 +338,7 @@ export function ClinicianHeader() {
           </Popover>
 
           {/* Desktop Profile Dropdown */}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 px-2">
@@ -381,7 +381,7 @@ export function ClinicianHeader() {
           </div>
 
           {/* Mobile Menu Button */}
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
@@ -389,7 +389,7 @@ export function ClinicianHeader() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background">
+        <div className="lg:hidden border-t border-border bg-background">
           <nav className="container py-4 space-y-2">
             <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Navigation</p>
             {navLinks.map((link) => (
