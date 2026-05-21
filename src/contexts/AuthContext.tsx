@@ -89,38 +89,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         const newUserId = session?.user?.id ?? null;
         const previousUserId = previousUserIdRef.current;
-        
+
         // Detect user switch (different user logging in) - clear all cached data
         if (previousUserId && newUserId && previousUserId !== newUserId) {
           console.log('[Auth] User switch detected, clearing cached data');
           clearAllUserData();
         }
-        
-        // Update tracked user ID
-        previousUserIdRef.current = newUserId;
-        
+
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Defer profile fetch with setTimeout to avoid deadlock
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id).then(setProfile);
-          }, 0);
-        } else {
-          setProfile(null);
+
+        // Only refetch the profile when the user identity actually changes
+        // (initial sign-in, user switch, sign-out). Skip TOKEN_REFRESHED and
+        // other events that fire with the same user — those were causing a
+        // duplicate profiles fetch on every page load.
+        const userChanged = previousUserId !== newUserId;
+        previousUserIdRef.current = newUserId;
+
+        if (userChanged) {
+          if (session?.user) {
+            // Defer profile fetch with setTimeout to avoid deadlock
+            setTimeout(() => {
+              fetchProfile(session.user.id).then(setProfile);
+            }, 0);
+          } else {
+            setProfile(null);
+          }
         }
-        
+
         setLoading(false);
       }
     );
 
-    // onAuthStateChange fires immediately with INITIAL_SESSION, so it covers
-    // the initial mount. We don't call getSession() separately — that would
-    // trigger a duplicate fetchProfile and a second render pass on every page.
-
     return () => subscription.unsubscribe();
   }, []);
+
 
 
   const signUp = async (email: string, password: string, name: string) => {
