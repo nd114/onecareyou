@@ -21,6 +21,7 @@ import {
   Sun,
   Moon,
   Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
