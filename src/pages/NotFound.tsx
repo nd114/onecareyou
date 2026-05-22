@@ -35,8 +35,8 @@ const NotFound = () => {
             doesn't exist or has moved.
           </p>
           <div className="flex gap-2 justify-center">
-            <Button asChild variant="outline">
-              <Link to={-1 as unknown as string}>Go back</Link>
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              Go back
             </Button>
             <Button asChild>
               <Link
