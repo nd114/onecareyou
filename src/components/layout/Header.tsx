@@ -177,11 +177,12 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Spacer so grid middle column stays centered on mobile/tablet when nav is hidden */}
-        <div className="lg:hidden" aria-hidden />
+        {/* Right column: contains both the md+ action cluster and the <lg hamburger */}
+        <div className="flex items-center justify-end gap-2 shrink-0">
 
         {/* Right-side cluster: visible from md+ */}
         <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
+
 
 
 
