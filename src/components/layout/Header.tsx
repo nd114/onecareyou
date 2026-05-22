@@ -422,27 +422,68 @@ export function Header() {
           <nav className="container py-4 flex flex-col gap-1">
             {isAuthenticated && !isClinician ? (
               <>
-                {PATIENT_PILLARS.map((pillar) => (
-                  <div key={pillar.key} className="pb-2">
-                    <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {pillar.label}
-                    </p>
-                    {pillar.tabs.map((tab) => (
-                      <Link
-                        key={tab.to}
-                        to={tab.to}
-                        className={`block px-4 py-2 text-sm font-medium rounded-lg ${
-                          location.pathname === tab.to
-                            ? "text-primary bg-primary/5"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                {PATIENT_PILLARS.map((pillar) => {
+                  const isExpanded =
+                    expandedPillar === pillar.key ||
+                    (expandedPillar === null && activePillar === pillar.key);
+                  const isCurrentPillar = activePillar === pillar.key;
+                  return (
+                    <div key={pillar.key}>
+                      <div
+                        className={`flex items-center rounded-lg ${
+                          isCurrentPillar ? "bg-primary/5" : ""
                         }`}
-                        onClick={() => setMobileMenuOpen(false)}
                       >
-                        {tab.label}
-                      </Link>
-                    ))}
-                  </div>
-                ))}
+                        <Link
+                          to={pillar.primary}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`flex-1 px-4 py-3 text-sm font-semibold ${
+                            isCurrentPillar
+                              ? "text-primary"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {pillar.label}
+                        </Link>
+                        {pillar.tabs.length > 1 && (
+                          <button
+                            type="button"
+                            aria-label={`${isExpanded ? "Collapse" : "Expand"} ${pillar.label}`}
+                            aria-expanded={isExpanded}
+                            onClick={() =>
+                              setExpandedPillar(isExpanded ? "" : pillar.key)
+                            }
+                            className="p-3 text-muted-foreground hover:text-foreground"
+                          >
+                            <ChevronRight
+                              className={`h-4 w-4 transition-transform ${
+                                isExpanded ? "rotate-90" : ""
+                              }`}
+                            />
+                          </button>
+                        )}
+                      </div>
+                      {isExpanded && pillar.tabs.length > 1 && (
+                        <div className="ml-2 mb-2 border-l border-border/60 pl-2">
+                          {pillar.tabs.map((tab) => (
+                            <Link
+                              key={tab.to}
+                              to={tab.to}
+                              className={`block px-3 py-2 text-sm rounded-lg ${
+                                location.pathname === tab.to.split("#")[0]
+                                  ? "text-primary bg-primary/5"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                              }`}
+                              onClick={() => setMobileMenuOpen(false)}
+                            >
+                              {tab.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 <div className="border-t border-border my-2" />
                 <Link
                   to="/settings"
