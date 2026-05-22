@@ -153,6 +153,7 @@ const ForgotPassword = () => {
           </CardContent>
         </Card>
       </motion.div>
+      </div>
     </div>
   );
 };
