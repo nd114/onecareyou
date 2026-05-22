@@ -75,8 +75,7 @@ export function Header() {
     .toUpperCase()
     .slice(0, 2);
   const subscriptionTier = (profile?.subscription_tier || "free") as string;
-  const hasFamilyAccess = subscriptionTier === "family" || subscriptionTier === "premium";
-  const showAdherenceReport = profile?.weekly_adherence_report_enabled ?? true;
+  void subscriptionTier;
 
   // Get avatar URL - for patients from profile, for clinicians from clinician profile
   const avatarUrl = isClinician ? clinicianProfile?.avatar_url : profile?.avatar_url;
