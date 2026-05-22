@@ -222,6 +222,7 @@ const SignIn = () => {
           <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
         </p>
       </motion.div>
+      </div>
     </div>
   );
 };
