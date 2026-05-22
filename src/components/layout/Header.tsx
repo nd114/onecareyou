@@ -330,45 +330,9 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {/* Patient-only menu items - reduced since core items are in header */}
+                  {/* Patient avatar menu — account-level only (pillars handle product nav) */}
                   {!isClinician && (
                     <>
-                      <DropdownMenuItem asChild>
-                        <Link to="/assist" className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-primary" />
-                          Simple Mode
-                          <Badge variant="outline" className="text-[9px] h-4 ml-auto">Beta</Badge>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/guidance" className="flex items-center gap-2">
-                          <Inbox className="h-4 w-4" />
-                          Healthcare Instructions
-                        </Link>
-                      </DropdownMenuItem>
-                      {showAdherenceReport && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/adherence-report" className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Adherence Report
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem asChild>
-                        <Link to="/knowledge-base" className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4" />
-                          Medication Info
-                        </Link>
-                      </DropdownMenuItem>
-                      {hasFamilyAccess && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/family" className="flex items-center gap-2">
-                            <UserPlus className="h-4 w-4" />
-                            Family Dashboard
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <Link to="/onboarding" className="flex items-center gap-2">
                           <Heart className="h-4 w-4" />
