@@ -618,22 +618,6 @@ const ClinicianSettings = () => {
             </CardContent>
           </Card>
 
-          {/* Practice Invitations (if any) */}
-          <div className="mt-6">
-            <PracticeInvitationsCard />
-          </div>
-
-          {/* Practice/Team Management - Pro+ only */}
-          {hasFeatureAccess(tier, 'team_management') && (
-            <div id="practice-team" className="mt-6 scroll-mt-20">
-              <PracticeTeamSection />
-            </div>
-          )}
-
-          {/* Subscription Management */}
-          <div className="mt-6">
-            <SubscriptionManagementCard patientCount={patients.length} />
-          </div>
 
           {/* EHR Connections */}
           <div id="ehr-connections" className="scroll-mt-20">
