@@ -2420,6 +2420,17 @@ export type Database = {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
+      get_clinician_basic_info: {
+        Args: { clinician_ids: string[] }
+        Returns: {
+          avatar_url: string
+          first_name: string
+          last_name: string
+          practice_name: string
+          title: string
+          user_id: string
+        }[]
+      }
       get_current_user_email: { Args: never; Returns: string }
       has_practice_role: {
         Args: {

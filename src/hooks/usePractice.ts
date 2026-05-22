@@ -112,9 +112,14 @@ export function usePractice() {
     queryFn: async () => {
       if (!user || memberships.length === 0) return [];
       const practiceIds = memberships.map(m => m.practice_id);
+      // Sensitive columns (tax_id, npi, stripe_*, subscription_*) are revoked at the
+      // column-grant level for the authenticated role; selecting them is forbidden
+      // for non-service-role clients. We explicitly list the safe columns here.
+      const SAFE_PRACTICE_COLUMNS =
+        'id,name,phone,email,address,city,state,zip_code,country,logo_url,primary_color,patient_limit,member_limit,created_by,created_at,updated_at,is_active';
       const { data, error } = await (supabase
         .from('practices' as any)
-        .select('*')
+        .select(SAFE_PRACTICE_COLUMNS)
         .in('id', practiceIds) as any);
       if (error) throw error;
       return (data || []) as Practice[];
@@ -184,7 +189,7 @@ export function usePractice() {
       const { data: practice, error } = await (supabase
         .from('practices' as any)
         .insert({ ...data, created_by: user.id })
-        .select()
+        .select('id,name,phone,email,address,city,state,zip_code,country,logo_url,primary_color,patient_limit,member_limit,created_by,created_at,updated_at,is_active')
         .single() as any);
       if (error) throw error;
       return practice as Practice;
