@@ -189,7 +189,7 @@ export function usePractice() {
       const { data: practice, error } = await (supabase
         .from('practices' as any)
         .insert({ ...data, created_by: user.id })
-        .select()
+        .select('id,name,phone,email,address,city,state,zip_code,country,logo_url,primary_color,patient_limit,member_limit,created_by,created_at,updated_at,is_active')
         .single() as any);
       if (error) throw error;
       return practice as Practice;
