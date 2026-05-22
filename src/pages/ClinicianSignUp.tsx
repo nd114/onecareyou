@@ -154,14 +154,19 @@ const ClinicianSignUp = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col bg-background">
+        <AuthHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
+      <AuthHeader />
+      <div className="flex-1 gradient-hero flex items-center justify-center p-4">
       <SEOHead
         title="Clinician Sign Up — Create Your Provider Account"
         description="Create your OneCare clinician account. Access patient monitoring, clinical guidance tools, and care coordination for your practice."
