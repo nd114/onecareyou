@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { AuthHeader } from '@/components/layout/AuthHeader';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff, Loader2, Heart, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
