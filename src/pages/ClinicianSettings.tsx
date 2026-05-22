@@ -617,17 +617,6 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
-
-
-          {/* EHR Connections */}
-          <div id="ehr-connections" className="scroll-mt-20">
-            <EHRConnectionsSection />
-          </div>
-
-          {/* Practice Branding - Enterprise only */}
-          {hasFeatureAccess(tier, 'practice_branding') && (
-            <PracticeBrandingCard />
-          )}
         </motion.div>
       </main>
     </div>
