@@ -418,84 +418,64 @@ export function Header() {
           className="lg:hidden border-t border-border bg-background"
         >
 
-          <nav className="container py-4 flex flex-col gap-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={`px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg ${
-                  location.pathname === link.href
-                    ? "text-primary bg-primary/5"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-            {isAuthenticated ? (
+          <nav className="container py-4 flex flex-col gap-1">
+            {isAuthenticated && !isClinician ? (
               <>
-                {/* Patient-only mobile menu items - secondary items not in navLinks */}
-                {!isClinician && (
-                  <>
-                    <Link
-                      to="/assist"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      Simple Mode
-                      <Badge variant="outline" className="text-[9px] h-4 ml-auto">Beta</Badge>
-                    </Link>
-                    <Link
-                      to="/guidance"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Healthcare Instructions
-                    </Link>
-                    {showAdherenceReport && (
+                {PATIENT_PILLARS.map((pillar) => (
+                  <div key={pillar.key} className="pb-2">
+                    <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {pillar.label}
+                    </p>
+                    {pillar.tabs.map((tab) => (
                       <Link
-                        to="/adherence-report"
-                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                        key={tab.to}
+                        to={tab.to}
+                        className={`block px-4 py-2 text-sm font-medium rounded-lg ${
+                          location.pathname === tab.to
+                            ? "text-primary bg-primary/5"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        Adherence Report
+                        {tab.label}
                       </Link>
-                    )}
-                    <Link
-                      to="/knowledge-base"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Medication Info
-                    </Link>
-                    {hasFamilyAccess && (
-                      <Link
-                        to="/family"
-                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Family Dashboard
-                      </Link>
-                    )}
-                    <Link
-                      to="/onboarding"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Health Profile
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Settings
-                    </Link>
-                  </>
-                )}
-                {/* Clinician mobile menu items - Settings in navLinks now */}
+                    ))}
+                  </div>
+                ))}
+                <div className="border-t border-border my-2" />
+                <Link
+                  to="/settings"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-destructive hover:bg-muted rounded-lg text-left"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : isAuthenticated ? (
+              <>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={`px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg ${
+                      location.pathname === link.href
+                        ? "text-primary bg-primary/5"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
