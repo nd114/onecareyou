@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { AuthHeader } from '@/components/layout/AuthHeader';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff, Loader2, Heart, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,15 +89,20 @@ const ResetPassword = () => {
 
   if (isValidSession === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col bg-background">
+        <AuthHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   if (!isValidSession) {
     return (
-      <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col">
+        <AuthHeader />
+        <div className="flex-1 gradient-hero flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,12 +137,15 @@ const ResetPassword = () => {
             </CardContent>
           </Card>
         </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
+      <AuthHeader />
+      <div className="flex-1 gradient-hero flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -237,6 +246,7 @@ const ResetPassword = () => {
           </CardContent>
         </Card>
       </motion.div>
+      </div>
     </div>
   );
 };

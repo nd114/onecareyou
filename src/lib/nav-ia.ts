@@ -43,7 +43,6 @@ export const PATIENT_PILLARS: PatientPillar[] = [
       { to: "/medications", label: "Medications" },
       { to: "/health-vault", label: "Vault" },
       { to: "/adherence-report", label: "Adherence" },
-      { to: "/onboarding", label: "Health Profile" },
     ],
   },
   {

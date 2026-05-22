@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { AuthHeader } from '@/components/layout/AuthHeader';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Loader2, Heart } from 'lucide-react';
@@ -78,14 +79,20 @@ const SignUp = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col bg-background">
+        <AuthHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
+      <AuthHeader />
+      <div className="flex-1 gradient-hero flex items-center justify-center p-4">
+
       <SEOHead
         title="Sign Up — Create Your Free Account"
         description="Create your free OneCare account. Track medications, monitor vitals, and share health updates with your care team."
@@ -229,6 +236,7 @@ const SignUp = () => {
           <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
         </p>
       </motion.div>
+      </div>
     </div>
   );
 };
