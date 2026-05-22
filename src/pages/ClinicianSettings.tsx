@@ -249,15 +249,6 @@ const ClinicianSettings = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Button 
-            variant="ghost" 
-            className="mb-6"
-            onClick={() => navigate('/clinician/dashboard')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-
           <div className="mb-6">
             <h1 className="font-display text-2xl sm:text-3xl font-bold mb-2">
               Settings
@@ -266,6 +257,7 @@ const ClinicianSettings = () => {
               Manage your profile and notification preferences
             </p>
           </div>
+
 
           {/* Professional Profile (merged with Personal Info) */}
           <Card className="mb-6">
@@ -625,33 +617,6 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Practice Invitations (if any) */}
-          <div className="mt-6">
-            <PracticeInvitationsCard />
-          </div>
-
-          {/* Practice/Team Management - Pro+ only */}
-          {hasFeatureAccess(tier, 'team_management') && (
-            <div id="practice-team" className="mt-6 scroll-mt-20">
-              <PracticeTeamSection />
-            </div>
-          )}
-
-          {/* Subscription Management */}
-          <div className="mt-6">
-            <SubscriptionManagementCard patientCount={patients.length} />
-          </div>
-
-          {/* EHR Connections */}
-          <div id="ehr-connections" className="scroll-mt-20">
-            <EHRConnectionsSection />
-          </div>
-
-          {/* Practice Branding - Enterprise only */}
-          {hasFeatureAccess(tier, 'practice_branding') && (
-            <PracticeBrandingCard />
-          )}
         </motion.div>
       </main>
     </div>

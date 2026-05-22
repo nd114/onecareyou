@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, Mail, Loader2, Send, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { UserPlus, Mail, Loader2, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,20 +13,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePatientInvitations } from "@/hooks/usePatientInvitations";
-import { useNavigate } from "react-router-dom";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { UpgradeLimitDialog } from "@/components/clinician/UpgradeLimitDialog";
 
 interface InvitePatientDialogProps {
   trigger?: React.ReactNode;
   disabled?: boolean;
   disabledReason?: string;
+  currentCount?: number;
+  limit?: number;
+  tierName?: string;
 }
 
-export function InvitePatientDialog({ trigger, disabled, disabledReason }: InvitePatientDialogProps) {
+export function InvitePatientDialog({
+  trigger,
+  disabled,
+  disabledReason,
+  currentCount = 0,
+  limit = 0,
+  tierName = "current",
+}: InvitePatientDialogProps) {
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const navigate = useNavigate();
   const { sendInvitation } = usePatientInvitations();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,41 +49,32 @@ export function InvitePatientDialog({ trigger, disabled, disabledReason }: Invit
     setOpen(false);
   };
 
-  // If disabled, show tooltip on hover
+  // When at limit, keep the button enabled but route the click to an Upgrade dialog
   if (disabled) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span>
-            {trigger || (
-              <Button className="gradient-primary border-0 opacity-50 cursor-not-allowed" disabled>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite Patient
-              </Button>
-            )}
+      <>
+        {trigger ? (
+          <span onClick={() => setUpgradeOpen(true)} className="contents">
+            {trigger}
           </span>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs p-3">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-sm">Patient Limit Reached</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {disabledReason || "Upgrade your plan to invite more patients."}
-              </p>
-              <Button
-                size="sm"
-                variant="link"
-                className="h-auto p-0 mt-1 text-xs"
-                onClick={() => navigate("/clinician/pricing")}
-              >
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                Upgrade Plan
-              </Button>
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
+        ) : (
+          <Button
+            className="gradient-primary border-0"
+            onClick={() => setUpgradeOpen(true)}
+            data-tour="invite-patient"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Invite Patient
+          </Button>
+        )}
+        <UpgradeLimitDialog
+          open={upgradeOpen}
+          onOpenChange={setUpgradeOpen}
+          currentCount={currentCount}
+          limit={limit}
+          tierName={tierName}
+        />
+      </>
     );
   }
 

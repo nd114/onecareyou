@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { STRIPE_PRICES, PRICE_INFO, FREE_FEATURE_DETAIL, PREMIUM_FEATURE_DETAIL, COMING_SOON_FEATURES } from '@/lib/pricing-constants';
 import {
   Accordion,
@@ -55,11 +56,24 @@ const faqs = [
 
 const Pricing = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialAudience = searchParams.get('audience') === 'clinicians' ? 'clinicians' : 'patients';
+  const { user, profile } = useAuth();
+  const { isClinician } = useClinicianProfile();
+  // Signed-in users are locked to their own audience to prevent cross-context navigation
+  const lockedAudience: 'patients' | 'clinicians' | null = user
+    ? isClinician
+      ? 'clinicians'
+      : 'patients'
+    : null;
+  const initialAudience = lockedAudience ?? (searchParams.get('audience') === 'clinicians' ? 'clinicians' : 'patients');
   const [audience, setAudience] = useState<'patients' | 'clinicians'>(initialAudience);
   const [isAnnual, setIsAnnual] = useState(true);
-  const { user, profile } = useAuth();
   const { createCheckout, loading, isPremium } = useSubscription();
+
+  useEffect(() => {
+    if (lockedAudience && audience !== lockedAudience) {
+      setAudience(lockedAudience);
+    }
+  }, [lockedAudience]);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -67,6 +81,8 @@ const Pricing = () => {
     else next.delete('audience');
     setSearchParams(next, { replace: true });
   }, [audience]);
+
+  const showAudienceToggle = !lockedAudience;
 
   if (audience === 'clinicians') {
     return (
@@ -76,14 +92,16 @@ const Pricing = () => {
           description="OneCare clinician plans: Solo, Pro, and Enterprise. HIPAA-ready, BAA on Enterprise, per-clinician pricing."
           canonical="/pricing?audience=clinicians"
         />
-        <div className="container px-4 pt-6">
-          <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="patients">For Patients</TabsTrigger>
-              <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+        {showAudienceToggle && (
+          <div className="container px-4 pt-6">
+            <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="patients">For Patients</TabsTrigger>
+                <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
         <ClinicianPricing />
       </div>
     );
@@ -144,12 +162,14 @@ const Pricing = () => {
               </span>
             </h1>
 
-            <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto mb-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="patients">For Patients</TabsTrigger>
-                <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {showAudienceToggle && (
+              <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto mb-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="patients">For Patients</TabsTrigger>
+                  <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
               Start free and upgrade when you're ready. No hidden fees, cancel anytime.
