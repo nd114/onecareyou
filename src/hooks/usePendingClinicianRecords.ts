@@ -35,15 +35,14 @@ export function usePendingClinicianRecords() {
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Fetch clinician names
+      // Fetch clinician names via a SECURITY DEFINER RPC that returns only safe
+      // display fields (no Stripe IDs, license, push subscription, etc.).
       const clinicianIds = [...new Set(data.map(r => r.clinician_user_id))];
-      const { data: clinicians } = await supabase
-        .from('clinician_profiles')
-        .select('user_id, first_name, last_name, title, practice_name')
-        .in('user_id', clinicianIds);
+      const { data: clinicians } = await (supabase
+        .rpc('get_clinician_basic_info' as any, { clinician_ids: clinicianIds }) as any);
 
       const clinicianMap = new Map(
-        (clinicians || []).map(c => [c.user_id, c])
+        ((clinicians as any[]) || []).map((c: any) => [c.user_id, c])
       );
 
       return data.map(record => {
