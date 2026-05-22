@@ -47,7 +47,7 @@ const FamilyDashboard = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
-      <SectionTabs section=\"team\" variant=\"patient\" />
+      <SectionTabs section="team\" variant="patient" />
         <main className="container py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

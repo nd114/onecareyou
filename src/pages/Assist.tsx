@@ -185,7 +185,7 @@ export default function Assist() {
       <SEOHead title="Simple Mode — OneCare Assistant" description="Chat with OneCare to check your vitals, medications, and schedule." noIndex />
       <SimpleModeTransition />
       <Header />
-      <SectionTabs section=\"learn\" variant=\"patient\" />
+      <SectionTabs section="learn\" variant="patient" />
       <div className="min-h-[calc(100vh-4rem)] flex flex-col bg-background">
         <div className="border-b px-4 py-3 flex items-center justify-between bg-card/50">
           <div className="flex items-center gap-2">

@@ -157,7 +157,7 @@ export default function ClinicianDictations() {
     <>
       <SEOHead title="Dictations — OneCare Clinician" description="Voice-dictated visit notes with AI transcription and summary, requiring clinician approval." noIndex />
       <ClinicianHeader />
-      <SectionTabs section=\"communicate\" variant=\"clinician\" />
+      <SectionTabs section="communicate\" variant="clinician" />
       <main className="container max-w-5xl mx-auto px-4 py-6 space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Dictations</h1>

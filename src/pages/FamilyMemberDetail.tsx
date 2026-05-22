@@ -62,7 +62,7 @@ const FamilyMemberDetail = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
-      <SectionTabs section=\"team\" variant=\"patient\" />
+      <SectionTabs section="team\" variant="patient" />
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>

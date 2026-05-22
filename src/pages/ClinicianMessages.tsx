@@ -53,7 +53,7 @@ const ClinicianMessages = () => {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <ClinicianHeader />
-      <SectionTabs section=\"communicate\" variant=\"clinician\" />
+      <SectionTabs section="communicate\" variant="clinician" />
       <main className="container px-4 sm:px-6 py-6 sm:py-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="font-display text-2xl sm:text-3xl font-bold flex items-center gap-2">
