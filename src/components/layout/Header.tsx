@@ -44,6 +44,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
+import { PATIENT_PILLARS, getPatientPillarForRoute } from "@/lib/nav-ia";
 
 export function Header() {
   const location = useLocation();
@@ -119,24 +120,17 @@ export function Header() {
     }
   };
 
-  // Patients get core navigation in header, secondary items in dropdown
-  // Clinicians use ClinicianHeader exclusively - this Header is for patients and guests only
+  // Navigation IA v2 — 4 pillars for authenticated patients.
+  // Clinicians use ClinicianHeader exclusively.
+  const activePillar = isAuthenticated ? getPatientPillarForRoute(location.pathname) : null;
   const navLinks = isAuthenticated
-    ? [
-        { href: "/dashboard", label: "Dashboard" },
-        { href: "/medications", label: "Medications" },
-        { href: "/vitals", label: "Vitals" },
-        { href: "/schedule", label: "Schedule" },
-        { href: "/messages", label: "Messages" },
-        { href: "/care-circle", label: "Care Circle" },
-        { href: "/health-vault", label: "Health Vault" },
-      ]
+    ? PATIENT_PILLARS.map((p) => ({ href: p.primary, label: p.label, pillarKey: p.key }))
     : [
-        { href: "/", label: "Home" },
-        { href: "/about", label: "About" },
-        { href: "/features", label: "Features" },
-        { href: "/pricing", label: "Pricing" },
-        { href: "/contact", label: "Contact" },
+        { href: "/", label: "Home", pillarKey: undefined as string | undefined },
+        { href: "/about", label: "About", pillarKey: undefined },
+        { href: "/features", label: "Features", pillarKey: undefined },
+        { href: "/pricing", label: "Pricing", pillarKey: undefined },
+        { href: "/contact", label: "Contact", pillarKey: undefined },
       ];
 
   const handleSignOut = async () => {
@@ -164,17 +158,22 @@ export function Header() {
 
         {/* Desktop Navigation - true page-centered via grid middle column */}
         <nav className="hidden lg:flex items-center justify-center gap-2 xl:gap-5 min-w-0 overflow-x-auto scrollbar-none">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={`text-[13px] xl:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap ${
-                location.pathname === link.href ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = link.pillarKey
+              ? activePillar === link.pillarKey
+              : location.pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={`text-[13px] xl:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap ${
+                  isActive ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right column: contains both the md+ action cluster and the <lg hamburger */}
