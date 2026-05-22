@@ -151,6 +151,11 @@ const App = () => (
                 <ClinicianSettings />
               </ProtectedRoute>
             } />
+            <Route path="/clinician/practice" element={
+              <ProtectedRoute>
+                <ClinicianPractice />
+              </ProtectedRoute>
+            } />
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
