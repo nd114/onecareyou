@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { useVitals, VitalRecord } from '@/hooks/useVitals';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
@@ -62,6 +63,7 @@ const Vitals = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section="health" variant="patient" />
       
       <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}

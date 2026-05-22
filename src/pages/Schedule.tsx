@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useScheduleEntries } from '@/hooks/useScheduleEntries';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useMedicationReminders } from '@/hooks/useMedicationReminders';
@@ -137,6 +138,7 @@ const Schedule = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section="today" variant="patient" />
       
       <main className="container py-8">
         {/* Header */}

@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProviderShares } from '@/hooks/useProviderShares';
@@ -87,6 +88,7 @@ const CareCircle = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section="team" variant="patient" />
       
       <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}

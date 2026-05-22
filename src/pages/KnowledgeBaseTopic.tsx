@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useMedicationSearch } from '@/hooks/useMedicationInfo';
 
 // Health topic configurations
@@ -165,6 +166,7 @@ const KnowledgeBaseTopic = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
+      <SectionTabs section="learn" variant="patient" />
         <main className="container py-8 max-w-5xl">
           <Card className="p-8 text-center">
             <h1 className="text-2xl font-bold mb-2">Topic Not Found</h1>

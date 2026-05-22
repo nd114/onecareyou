@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useFamilyMembers } from '@/hooks/useFamilyMembers';
 import { useMedications } from '@/hooks/useMedications';
 import { useVitals } from '@/hooks/useVitals';
@@ -61,6 +62,7 @@ const FamilyMemberDetail = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
+      <SectionTabs section="team" variant="patient" />
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>

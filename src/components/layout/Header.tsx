@@ -44,6 +44,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
+import { PATIENT_PILLARS, getPatientPillarForRoute } from "@/lib/nav-ia";
 
 export function Header() {
   const location = useLocation();
@@ -74,8 +75,7 @@ export function Header() {
     .toUpperCase()
     .slice(0, 2);
   const subscriptionTier = (profile?.subscription_tier || "free") as string;
-  const hasFamilyAccess = subscriptionTier === "family" || subscriptionTier === "premium";
-  const showAdherenceReport = profile?.weekly_adherence_report_enabled ?? true;
+  void subscriptionTier;
 
   // Get avatar URL - for patients from profile, for clinicians from clinician profile
   const avatarUrl = isClinician ? clinicianProfile?.avatar_url : profile?.avatar_url;
@@ -119,24 +119,17 @@ export function Header() {
     }
   };
 
-  // Patients get core navigation in header, secondary items in dropdown
-  // Clinicians use ClinicianHeader exclusively - this Header is for patients and guests only
+  // Navigation IA v2 — 4 pillars for authenticated patients.
+  // Clinicians use ClinicianHeader exclusively.
+  const activePillar = isAuthenticated ? getPatientPillarForRoute(location.pathname) : null;
   const navLinks = isAuthenticated
-    ? [
-        { href: "/dashboard", label: "Dashboard" },
-        { href: "/medications", label: "Medications" },
-        { href: "/vitals", label: "Vitals" },
-        { href: "/schedule", label: "Schedule" },
-        { href: "/messages", label: "Messages" },
-        { href: "/care-circle", label: "Care Circle" },
-        { href: "/health-vault", label: "Health Vault" },
-      ]
+    ? PATIENT_PILLARS.map((p) => ({ href: p.primary, label: p.label, pillarKey: p.key }))
     : [
-        { href: "/", label: "Home" },
-        { href: "/about", label: "About" },
-        { href: "/features", label: "Features" },
-        { href: "/pricing", label: "Pricing" },
-        { href: "/contact", label: "Contact" },
+        { href: "/", label: "Home", pillarKey: undefined as string | undefined },
+        { href: "/about", label: "About", pillarKey: undefined },
+        { href: "/features", label: "Features", pillarKey: undefined },
+        { href: "/pricing", label: "Pricing", pillarKey: undefined },
+        { href: "/contact", label: "Contact", pillarKey: undefined },
       ];
 
   const handleSignOut = async () => {
@@ -164,17 +157,22 @@ export function Header() {
 
         {/* Desktop Navigation - true page-centered via grid middle column */}
         <nav className="hidden lg:flex items-center justify-center gap-2 xl:gap-5 min-w-0 overflow-x-auto scrollbar-none">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={`text-[13px] xl:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap ${
-                location.pathname === link.href ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = link.pillarKey
+              ? activePillar === link.pillarKey
+              : location.pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={`text-[13px] xl:text-sm font-medium transition-colors hover:text-foreground whitespace-nowrap ${
+                  isActive ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right column: contains both the md+ action cluster and the <lg hamburger */}
@@ -331,45 +329,9 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {/* Patient-only menu items - reduced since core items are in header */}
+                  {/* Patient avatar menu — account-level only (pillars handle product nav) */}
                   {!isClinician && (
                     <>
-                      <DropdownMenuItem asChild>
-                        <Link to="/assist" className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-primary" />
-                          Simple Mode
-                          <Badge variant="outline" className="text-[9px] h-4 ml-auto">Beta</Badge>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/guidance" className="flex items-center gap-2">
-                          <Inbox className="h-4 w-4" />
-                          Healthcare Instructions
-                        </Link>
-                      </DropdownMenuItem>
-                      {showAdherenceReport && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/adherence-report" className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            Adherence Report
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem asChild>
-                        <Link to="/knowledge-base" className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4" />
-                          Medication Info
-                        </Link>
-                      </DropdownMenuItem>
-                      {hasFamilyAccess && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/family" className="flex items-center gap-2">
-                            <UserPlus className="h-4 w-4" />
-                            Family Dashboard
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <Link to="/onboarding" className="flex items-center gap-2">
                           <Heart className="h-4 w-4" />
@@ -455,84 +417,64 @@ export function Header() {
           className="lg:hidden border-t border-border bg-background"
         >
 
-          <nav className="container py-4 flex flex-col gap-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={`px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg ${
-                  location.pathname === link.href
-                    ? "text-primary bg-primary/5"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-            {isAuthenticated ? (
+          <nav className="container py-4 flex flex-col gap-1">
+            {isAuthenticated && !isClinician ? (
               <>
-                {/* Patient-only mobile menu items - secondary items not in navLinks */}
-                {!isClinician && (
-                  <>
-                    <Link
-                      to="/assist"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      Simple Mode
-                      <Badge variant="outline" className="text-[9px] h-4 ml-auto">Beta</Badge>
-                    </Link>
-                    <Link
-                      to="/guidance"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Healthcare Instructions
-                    </Link>
-                    {showAdherenceReport && (
+                {PATIENT_PILLARS.map((pillar) => (
+                  <div key={pillar.key} className="pb-2">
+                    <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {pillar.label}
+                    </p>
+                    {pillar.tabs.map((tab) => (
                       <Link
-                        to="/adherence-report"
-                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                        key={tab.to}
+                        to={tab.to}
+                        className={`block px-4 py-2 text-sm font-medium rounded-lg ${
+                          location.pathname === tab.to
+                            ? "text-primary bg-primary/5"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        Adherence Report
+                        {tab.label}
                       </Link>
-                    )}
-                    <Link
-                      to="/knowledge-base"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Medication Info
-                    </Link>
-                    {hasFamilyAccess && (
-                      <Link
-                        to="/family"
-                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Family Dashboard
-                      </Link>
-                    )}
-                    <Link
-                      to="/onboarding"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Health Profile
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Settings
-                    </Link>
-                  </>
-                )}
-                {/* Clinician mobile menu items - Settings in navLinks now */}
+                    ))}
+                  </div>
+                ))}
+                <div className="border-t border-border my-2" />
+                <Link
+                  to="/settings"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-destructive hover:bg-muted rounded-lg text-left"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : isAuthenticated ? (
+              <>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={`px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg ${
+                      location.pathname === link.href
+                        ? "text-primary bg-primary/5"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);

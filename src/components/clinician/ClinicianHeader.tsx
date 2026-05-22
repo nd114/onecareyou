@@ -46,6 +46,7 @@ import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { CLINICIAN_PILLARS, getClinicianPillarForRoute } from "@/lib/nav-ia";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -130,17 +131,13 @@ export function ClinicianHeader() {
 
   const initials = getInitials();
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
-
-  // Alert badge uses unreadCount from notifications
-  const navLinks = [
-    { to: "/clinician/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/clinician/patients", label: "Patients", icon: Users },
-    { to: "/clinician/messages", label: "Messages", icon: MessageSquare },
-    { to: "/clinician/guidance", label: "Guidance", icon: FileText },
-    { to: "/clinician/dictations", label: "Dictations", icon: Mic },
-    { to: "/clinician/alerts", label: "Alerts", icon: AlertTriangle },
-  ];
+  const activePillar = getClinicianPillarForRoute(location.pathname);
+  // Navigation IA v2 — 4 pillars. Sub-tabs render via SectionTabs inside each pillar page.
+  const navLinks = CLINICIAN_PILLARS.map((p) => ({
+    to: p.primary,
+    label: p.label,
+    pillarKey: p.key,
+  }));
 
 
 
@@ -161,56 +158,23 @@ export function ClinicianHeader() {
           </Link>
         </div>
 
-        {/* Desktop Navigation - Tab Style - truly centered */}
+        {/* Desktop Navigation - 4 pillars, truly centered */}
         <nav className="hidden lg:flex items-center justify-center gap-1">
-          {navLinks.map((link) => (
-            <Link key={link.to} to={link.to}>
-              <Button
-                variant="ghost"
-                className={`relative ${
-                  isActive(link.to) ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <link.icon className="h-4 w-4 mr-2" />
-                {link.label}
-              </Button>
-            </Link>
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                <MoreHorizontal className="h-4 w-4 mr-2" />
-                More
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-56 bg-background border">
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/settings#practice-team" className="flex items-center gap-2 cursor-pointer">
-                  <Building2 className="h-4 w-4" />
-                  Practice & Team
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/settings#ehr-connections" className="flex items-center gap-2 cursor-pointer">
-                  <Database className="h-4 w-4" />
-                  EHR Integrations
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/baa" className="flex items-center gap-2 cursor-pointer">
-                  <ShieldCheck className="h-4 w-4" />
-                  BAA
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">
-                  <Settings className="h-4 w-4" />
-                  All Settings
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {navLinks.map((link) => {
+            const isActive = activePillar === link.pillarKey;
+            return (
+              <Link key={link.to} to={link.to}>
+                <Button
+                  variant="ghost"
+                  className={`relative ${
+                    isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Button>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
@@ -390,20 +354,27 @@ export function ClinicianHeader() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-border bg-background">
-          <nav className="container py-4 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Navigation</p>
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-2 py-2 rounded-md transition-colors ${
-                  isActive(link.to) ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50"
-                }`}
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
+          <nav className="container py-4 space-y-1">
+            {CLINICIAN_PILLARS.map((pillar) => (
+              <div key={pillar.key} className="pb-1">
+                <p className="px-2 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {pillar.label}
+                </p>
+                {pillar.tabs.map((tab) => (
+                  <Link
+                    key={tab.to}
+                    to={tab.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block px-2 py-2 rounded-md text-sm transition-colors ${
+                      location.pathname === tab.to.split("#")[0]
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
+              </div>
             ))}
 
             <div className="border-t border-border my-3" />

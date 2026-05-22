@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useFamilyMembers, FamilyMember } from '@/hooks/useFamilyMembers';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -46,6 +47,7 @@ const FamilyDashboard = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
+      <SectionTabs section="team" variant="patient" />
         <main className="container py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
