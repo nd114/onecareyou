@@ -5,6 +5,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  ChevronRight,
   Users,
   Bell,
   Settings,
