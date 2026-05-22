@@ -49,7 +49,9 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
+      <AuthHeader />
+      <div className="flex-1 gradient-hero flex items-center justify-center p-4">
       <SEOHead title="Forgot Password" description="Reset your OneCare account password. Enter your email to receive a password reset link." canonical="/forgot-password" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
