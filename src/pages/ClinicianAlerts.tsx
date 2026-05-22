@@ -114,8 +114,10 @@ const ClinicianAlerts = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <ClinicianHeader />
+      <SectionTabs section="today" variant="clinician" />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6">
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
