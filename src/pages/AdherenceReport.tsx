@@ -97,6 +97,7 @@ const AdherenceReport = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section="health" variant="patient" />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-5xl">
         <motion.div
@@ -104,14 +105,8 @@ const AdherenceReport = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
         >
-          <Button variant="ghost" asChild className="mb-4">
-            <Link to="/dashboard">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-          
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">
                 Medication Adherence Report
