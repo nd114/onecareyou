@@ -1,89 +1,99 @@
-# OneCare UI/UX Redesign Plan (Deferred — Post-Functionality)
+# OneCare UI/UX Redesign Plan
 
-**Status:** Approved direction, **deferred** until functional gaps are closed.
-**Decision date:** May 2026
-**Scope:** Full redesign of patient app, clinician app, and marketing site.
-
----
-
-## Why deferred
-
-Audit (May 2026) showed multiple functional gaps that must be closed before redesign
-work begins, otherwise we'd be polishing broken flows. Functionality first, design
-second. See `docs/comprehensive-platform-review.md` for the full audit and quick-fix
-log.
+**Status:** IA reshuffle delivered May 2026. Visual redesign still deferred.
+**Last updated:** May 2026
 
 ---
 
-## Phase A — Design system reset (1 sprint, foundational)
+## What's delivered (May 2026 — Nav IA v2)
 
-1. Define new tokens in `src/index.css` + `tailwind.config.ts` — color, type scale,
-   radius, spacing rhythm, motion durations.
+The information architecture pieces of the old Phase B + Phase C have shipped
+ahead of the visual redesign. Concretely:
+
+- **Patient app**: 4 pillars (Today · My Health · Care Team · Learn) replace the
+  old 7-tab top nav + 5-item avatar menu. Each pillar has a sub-tab bar so
+  sibling pages are one click apart. Avatar menu is now account-only.
+- **Clinician app**: 4 pillars (Today · Patients · Communicate · Practice)
+  replace the old 6 tabs + More dropdown. Alerts fold into Today; Guidance +
+  Dictations live under Communicate.
+- **Mobile menu**: grouped by pillar with sub-tabs visible. Hamburger retained
+  (no bottom tab bar yet — see Deferred below).
+- **Source of truth**: `src/lib/nav-ia.ts` defines all pillars and tabs. Active-
+  pillar detection in `getPatientPillarForRoute` / `getClinicianPillarForRoute`.
+  Sub-tab bar component: `src/components/layout/SectionTabs.tsx`.
+
+All old URLs preserved — no migration needed for bookmarks or clinician →
+patient deep links.
+
+---
+
+## Deferred — Visual redesign (Phase A) + still-pending IA pieces
+
+### Phase A — Design system reset (1 sprint)
+
+1. Define new tokens in `src/index.css` + `tailwind.config.ts` — color, type
+   scale, radius, spacing rhythm, motion durations.
 2. Apply to shadcn primitives (Button, Card, Input, Tabs, Dialog) once —
    propagates everywhere via existing semantic tokens.
 3. Refresh logo treatment + hero illustration system. Replace hardcoded mock
-   dashboard numbers on landing with real product screenshots once we're out of beta.
+   dashboard numbers on landing with real product screenshots once out of beta.
 
-**Deliverable:** Updated `index.css`, `tailwind.config.ts`, primitive variant
-sweep, and a `/style-guide` internal page rendering every token + primitive.
+### Patient Workspace tab cluster (clinician side)
 
----
+Replace today's Patient Detail page with a tabbed Patient Workspace:
+**Overview · Vitals · Medications · Vault · Guidance · Dictations · Notes ·
+Sharing**. Respects granted permissions. Not yet implemented.
 
-## Phase B — Clinician shell rebuild (1 sprint, biggest UX win)
+### Care Mode pill (deferred per user direction)
 
-1. **Left-nav layout** replacing the cramped 4-tab top nav. Items:
-   Dashboard, Patients, Inbox (Alerts), Schedule, Templates, Practice, Settings.
-   This exposes Practice/Team, Templates, EHR, Analytics, BAA — all currently
-   buried inside Settings.
-2. **Patient Workspace page** combining Detail + Adherence + Documents + Notes
-   in one focused view with tabs that respect granted permissions.
-3. **Triage Inbox** replacing today's Alerts page (unread → action → done flow,
-   with assignment to team member when on Pro/Enterprise).
+A header pill switching between Standard / Trial / Recovery contexts. Decision:
+trial/study flagging will be **clinician-driven**, not a patient-side toggle,
+when shipped. Documented in `.lovable/plan.md` §3.
 
----
+### Mobile bottom tab bar (deferred per user direction)
 
-## Phase C — Patient shell rebuild (1 sprint)
+A 5-tab bottom bar for the patient app (Today · Health · + AI · Team · Learn)
+would replace the hamburger on mobile and align with Capacitor app-store builds.
+Hamburger stays for now.
 
-1. **Member switcher in header** — applies family context globally to
-   Vitals/Meds/Schedule/Vault. (Functional gap; tracked in P3 as priority 1.)
-2. **New Dashboard:** today's actions on top, trends below, AI chat persistent
-   across all pages (not just dashboard).
-3. **Mobile-first pass** with bottom nav (Capacitor app-store ready).
+### Triage Inbox + Templates (clinician)
 
----
+Single triage queue mixing unread messages, vital alerts, missed adherence,
+pending invitations, pending BAA actions. Filter chips by type. Replaces the
+current split between Dashboard, Alerts, and Messages reads. Not yet
+implemented — current Today pillar still lists Overview + Alerts as two
+sub-tabs.
 
-## Phase D — Marketing site (parallel, 1 sprint)
+### Phase D — Marketing site
 
-1. **Split landing:** `/` for patients, `/for-clinicians` for clinicians
-   (`/clinician/why-onecare` is buried today).
-2. **Unified `/pricing`** with patient + clinician tabs.
-3. **Trust strip** (already added to Footer in housekeeping pass), security
-   page, real testimonials.
-4. **`/blog`** for SEO content (zero organic traffic confirmed in May 2026
+1. Real testimonials replacing placeholders.
+2. `/blog` for SEO content (zero organic traffic confirmed in May 2026
    analytics review).
+3. Trust + security page expansion.
 
 ---
 
-## When to start
+## Cross-cutting items still folded into the future redesign
 
-Trigger conditions (all must be true):
+- Mobile audit for clinician dashboard, patient detail, and settings
+  (currently desktop-first; large LOC pages).
+- Loading-state standardization (skeleton system).
+- Error-state standardization (retry CTAs).
+- i18n infrastructure — currently English-only, language toggles non-functional.
+  Wire `react-i18next` during Phase A, ship Spanish + French during Phase D.
 
-- [ ] Family member context-switching landed on patient app
-- [ ] In-app secure messaging shipped
-- [ ] Clinician Triage Inbox + Templates library shipped
+---
+
+## When to start Phase A
+
+Trigger conditions:
+
+- [x] Family member context-switching landed on patient app
+- [x] In-app secure messaging shipped
+- [x] Navigation IA reshuffle landed (May 2026)
+- [ ] Clinician Patient Workspace + Triage Inbox shipped
 - [ ] Out of public beta (or close to)
 
 Once those are true, generate 3 design directions per shell (clinician,
 patient, marketing) via the design-directions skill; user picks one per
 shell; we implement.
-
----
-
-## Cross-cutting items folded into the redesign
-
-- Mobile audit for clinician dashboard, patient detail, and settings (currently
-  desktop-first; 683 / 668 / 934 LOC).
-- Loading-state standardization (skeleton system).
-- Error-state standardization (retry CTAs).
-- i18n infrastructure — currently English-only, language toggles non-functional.
-  Wire `react-i18next` during Phase A, ship Spanish + French during Phase D.

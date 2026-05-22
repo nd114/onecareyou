@@ -14,6 +14,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-05-22',
+    version: '0.9.9',
+    title: 'Navigation IA v2 — 4 pillars for patients + clinicians',
+    tags: ['patient', 'clinician', 'platform'],
+    bullets: [
+      'Patient header collapsed from 7 top tabs + 5 avatar items to 4 mission pillars: Today, My Health, Care Team, Learn. Avatar menu is account-only now (Health Profile, Settings, Sign out).',
+      'Clinician header collapsed from 6 tabs + More dropdown to 4 pillars: Today, Patients, Communicate, Practice. Alerts merged into Today; Guidance + Dictations live under Communicate.',
+      'Each pillar page now shows a sticky sub-tab bar so siblings (Vitals/Medications/Vault/Adherence/Profile under My Health, etc.) are one click away from each other without going back to the top nav.',
+      'Mobile hamburger menu now groups every destination under its pillar heading instead of one flat 13-link wall.',
+      'All existing URLs preserved — bookmarks and clinician → patient links keep working. No DB changes.',
+      'Source of truth: src/lib/nav-ia.ts. Deferred for later: Care Mode pill (trial/study context, will be clinician-side) and mobile bottom tab bar.',
+    ],
+  },
+
+  {
     date: '2026-05-21',
     version: '0.9.8',
     title: 'Simple Mode v1.1 + Clinician Dictation + signed-in UI fixes',
