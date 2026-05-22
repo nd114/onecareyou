@@ -148,7 +148,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-hidden">
       {isAuthenticated && !isClinician && <OfflineBanner />}
-      <div className="container max-w-screen-2xl flex h-16 items-center gap-3 lg:gap-5">
+      <div className="container max-w-screen-2xl grid h-16 items-center gap-3 lg:gap-5 grid-cols-[auto_1fr_auto]">
         {/* Logo - sized to content so it never gets clipped */}
         <div className="flex justify-start shrink-0">
           <Link to="/" className="flex items-center gap-2">
@@ -162,8 +162,8 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Desktop Navigation - takes remaining space, scrolls horizontally if needed on tight widths */}
-        <nav className="hidden lg:flex flex-1 items-center justify-center gap-2 xl:gap-5 min-w-0 overflow-x-auto scrollbar-none">
+        {/* Desktop Navigation - true page-centered via grid middle column */}
+        <nav className="hidden lg:flex items-center justify-center gap-2 xl:gap-5 min-w-0 overflow-x-auto scrollbar-none">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -177,8 +177,13 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Right-side cluster: visible from md+, takes remaining space at md/lg so the hamburger sits flush right */}
-        <div className="hidden md:flex items-center justify-end gap-2 shrink-0 ml-auto">
+        {/* Right column: contains both the md+ action cluster and the <lg hamburger */}
+        <div className="flex items-center justify-end gap-2 shrink-0">
+
+        {/* Right-side cluster: visible from md+ */}
+        <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
+
+
 
 
           {loading ? (
@@ -437,8 +442,10 @@ export function Header() {
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
+        </div>
 
       </div>
+
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
