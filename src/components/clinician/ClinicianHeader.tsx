@@ -46,6 +46,7 @@ import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { CLINICIAN_PILLARS, getClinicianPillarForRoute } from "@/lib/nav-ia";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -130,17 +131,13 @@ export function ClinicianHeader() {
 
   const initials = getInitials();
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
-
-  // Alert badge uses unreadCount from notifications
-  const navLinks = [
-    { to: "/clinician/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/clinician/patients", label: "Patients", icon: Users },
-    { to: "/clinician/messages", label: "Messages", icon: MessageSquare },
-    { to: "/clinician/guidance", label: "Guidance", icon: FileText },
-    { to: "/clinician/dictations", label: "Dictations", icon: Mic },
-    { to: "/clinician/alerts", label: "Alerts", icon: AlertTriangle },
-  ];
+  const activePillar = getClinicianPillarForRoute(location.pathname);
+  // Navigation IA v2 — 4 pillars. Sub-tabs render via SectionTabs inside each pillar page.
+  const navLinks = CLINICIAN_PILLARS.map((p) => ({
+    to: p.primary,
+    label: p.label,
+    pillarKey: p.key,
+  }));
 
 
 
