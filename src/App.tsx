@@ -27,6 +27,7 @@ import ClinicianPortal from "./pages/ClinicianPortal";
 import ClinicianSignUp from "./pages/ClinicianSignUp";
 import ClinicianDashboard from "./pages/ClinicianDashboard";
 import ClinicianSettings from "./pages/ClinicianSettings";
+import ClinicianPractice from "./pages/ClinicianPractice";
 import FamilyDashboard from "./pages/FamilyDashboard";
 import FamilyMemberDetail from "./pages/FamilyMemberDetail";
 import Onboarding from "./pages/Onboarding";
