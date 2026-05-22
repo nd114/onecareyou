@@ -62,6 +62,7 @@ export function Header() {
   } = useClinicianNotifications();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
