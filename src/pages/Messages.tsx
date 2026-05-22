@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ const Messages = () => {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <Header />
+      <SectionTabs section=\"team\" variant=\"patient\" />
       <main className="container px-4 sm:px-6 py-6 sm:py-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="font-display text-2xl sm:text-3xl font-bold flex items-center gap-2">

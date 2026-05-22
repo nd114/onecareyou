@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
@@ -58,6 +59,7 @@ const HealthVault = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <SectionTabs section=\"health\" variant=\"patient\" />
       <main className="container py-8 px-4 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

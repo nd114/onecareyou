@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useAdherenceReport } from '@/hooks/useAdherenceReport';
 import { useState } from 'react';
 import {
@@ -58,6 +59,7 @@ const AdherenceReport = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
+      <SectionTabs section=\"health\" variant=\"patient\" />
         <main className="container py-8 max-w-4xl">
           <Button variant="ghost" asChild className="mb-6">
             <Link to="/dashboard">

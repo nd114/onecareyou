@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useMedicationSearch } from '@/hooks/useMedicationInfo';
 import { useMedications } from '@/hooks/useMedications';
 import { useState } from 'react';
@@ -100,6 +101,7 @@ const KnowledgeBase = () => {
       />
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section=\"learn\" variant=\"patient\" />
       
       <main className="container py-8 max-w-5xl">
         <motion.div

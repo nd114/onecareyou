@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { usePatientGuidance } from '@/hooks/usePatientGuidance';
 import { useDueDateReminders } from '@/hooks/useDueDateReminders';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
@@ -101,6 +102,7 @@ const PatientGuidance = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
+      <SectionTabs section=\"today\" variant=\"patient\" />
         <main className="container px-4 sm:px-6 py-4 sm:py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>

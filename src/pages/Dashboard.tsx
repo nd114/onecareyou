@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMedications } from '@/hooks/useMedications';
 import { useScheduleEntries } from '@/hooks/useScheduleEntries';
@@ -86,6 +87,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section=\"today\" variant=\"patient\" />
       
       <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Welcome Section */}

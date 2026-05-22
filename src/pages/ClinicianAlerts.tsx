@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useAlertRules, type AlertLog } from '@/hooks/useAlertRules';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
@@ -64,6 +65,7 @@ const ClinicianAlerts = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
+      <SectionTabs section=\"today\" variant=\"clinician\" />
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>

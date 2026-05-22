@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useMedications } from '@/hooks/useMedications';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
@@ -74,6 +75,7 @@ const Medications = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section=\"health\" variant=\"patient\" />
       
       <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}
