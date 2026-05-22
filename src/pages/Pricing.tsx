@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { STRIPE_PRICES, PRICE_INFO, FREE_FEATURE_DETAIL, PREMIUM_FEATURE_DETAIL, COMING_SOON_FEATURES } from '@/lib/pricing-constants';
 import {
   Accordion,
