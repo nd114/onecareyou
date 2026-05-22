@@ -158,56 +158,23 @@ export function ClinicianHeader() {
           </Link>
         </div>
 
-        {/* Desktop Navigation - Tab Style - truly centered */}
+        {/* Desktop Navigation - 4 pillars, truly centered */}
         <nav className="hidden lg:flex items-center justify-center gap-1">
-          {navLinks.map((link) => (
-            <Link key={link.to} to={link.to}>
-              <Button
-                variant="ghost"
-                className={`relative ${
-                  isActive(link.to) ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <link.icon className="h-4 w-4 mr-2" />
-                {link.label}
-              </Button>
-            </Link>
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                <MoreHorizontal className="h-4 w-4 mr-2" />
-                More
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-56 bg-background border">
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/settings#practice-team" className="flex items-center gap-2 cursor-pointer">
-                  <Building2 className="h-4 w-4" />
-                  Practice & Team
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/settings#ehr-connections" className="flex items-center gap-2 cursor-pointer">
-                  <Database className="h-4 w-4" />
-                  EHR Integrations
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/baa" className="flex items-center gap-2 cursor-pointer">
-                  <ShieldCheck className="h-4 w-4" />
-                  BAA
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">
-                  <Settings className="h-4 w-4" />
-                  All Settings
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {navLinks.map((link) => {
+            const isActive = activePillar === link.pillarKey;
+            return (
+              <Link key={link.to} to={link.to}>
+                <Button
+                  variant="ghost"
+                  className={`relative ${
+                    isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Button>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
