@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { AuthHeader } from '@/components/layout/AuthHeader';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Loader2, Heart } from 'lucide-react';
