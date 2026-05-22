@@ -87,7 +87,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
-      <SectionTabs section="today\" variant="patient" />
+      <SectionTabs section="today" variant="patient" />
       
       <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Welcome Section */}

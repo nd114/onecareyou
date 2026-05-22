@@ -59,7 +59,7 @@ const AdherenceReport = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
-      <SectionTabs section="health\" variant="patient" />
+      <SectionTabs section="health" variant="patient" />
         <main className="container py-8 max-w-4xl">
           <Button variant="ghost" asChild className="mb-6">
             <Link to="/dashboard">

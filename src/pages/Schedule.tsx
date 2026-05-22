@@ -138,7 +138,7 @@ const Schedule = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
-      <SectionTabs section="today\" variant="patient" />
+      <SectionTabs section="today" variant="patient" />
       
       <main className="container py-8">
         {/* Header */}

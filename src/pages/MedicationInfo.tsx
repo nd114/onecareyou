@@ -46,7 +46,7 @@ const MedicationInfo = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
-      <SectionTabs section="learn\" variant="patient" />
+      <SectionTabs section="learn" variant="patient" />
       
       <main className="container py-8 max-w-4xl">
         <motion.div

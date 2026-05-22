@@ -88,7 +88,7 @@ const CareCircle = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
-      <SectionTabs section="team\" variant="patient" />
+      <SectionTabs section="team" variant="patient" />
       
       <main className="container px-4 sm:px-6 py-4 sm:py-8">
         {/* Header */}

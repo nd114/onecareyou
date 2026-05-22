@@ -59,7 +59,7 @@ const HealthVault = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <SectionTabs section="health\" variant="patient" />
+      <SectionTabs section="health" variant="patient" />
       <main className="container py-8 px-4 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
