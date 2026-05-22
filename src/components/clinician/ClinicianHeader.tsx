@@ -61,6 +61,7 @@ export function ClinicianHeader() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
 
   const toggleTheme = () => {
     // Toggle between light and dark, defaulting from resolved if on system
