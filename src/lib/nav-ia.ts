@@ -97,12 +97,14 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
   {
     key: "practice",
     label: "Practice",
-    primary: "/clinician/settings",
+    primary: "/clinician/practice",
     tabs: [
-      { to: "/clinician/settings", label: "Settings" },
-      { to: "/clinician/settings#practice-team", label: "Practice & Team" },
-      { to: "/clinician/settings#ehr-connections", label: "EHR" },
+      { to: "/clinician/practice", label: "Overview" },
+      { to: "/clinician/practice#practice-team", label: "Team" },
+      { to: "/clinician/practice#ehr-connections", label: "EHR" },
+      { to: "/clinician/practice#subscription", label: "Subscription" },
       { to: "/clinician/baa", label: "BAA" },
+      { to: "/clinician/settings", label: "Settings" },
     ],
   },
 ];
