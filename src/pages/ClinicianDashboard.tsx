@@ -308,6 +308,9 @@ const ClinicianDashboard = () => {
                     <InvitePatientDialog 
                       disabled={patientCount >= patientLimit}
                       disabledReason={`You've reached your limit of ${patientLimit} patients. Upgrade to add more.`}
+                      currentCount={patientCount}
+                      limit={patientLimit}
+                      tierName={tier}
                     />
                     <Button 
                       variant="outline" 
