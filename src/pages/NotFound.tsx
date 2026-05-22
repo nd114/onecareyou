@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isClinician } = useClinicianProfile();
 
