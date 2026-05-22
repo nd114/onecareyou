@@ -162,12 +162,14 @@ const Pricing = () => {
               </span>
             </h1>
 
-            <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto mb-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="patients">For Patients</TabsTrigger>
-                <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {showAudienceToggle && (
+              <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto mb-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="patients">For Patients</TabsTrigger>
+                  <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
               Start free and upgrade when you're ready. No hidden fees, cancel anytime.
