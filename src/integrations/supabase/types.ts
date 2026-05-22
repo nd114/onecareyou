@@ -724,6 +724,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "clinician_patient_records_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "clinician_patient_records_provider_share_id_fkey"
             columns: ["provider_share_id"]
             isOneToOne: false
@@ -1781,6 +1788,13 @@ export type Database = {
             referencedRelation: "practices"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "practice_invitations_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       practice_members: {
@@ -1843,6 +1857,13 @@ export type Database = {
             referencedRelation: "practices"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "practice_members_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       practice_patient_access: {
@@ -1879,6 +1900,13 @@ export type Database = {
             columns: ["practice_id"]
             isOneToOne: false
             referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_patient_access_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -2409,6 +2437,78 @@ export type Database = {
         }
         Relationships: []
       }
+      practices_safe: {
+        Row: {
+          address: string | null
+          brand_accent_color: string | null
+          brand_logo_url: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          id: string | null
+          is_active: boolean | null
+          logo_url: string | null
+          member_limit: number | null
+          name: string | null
+          patient_limit: number | null
+          phone: string | null
+          primary_color: string | null
+          state: string | null
+          subscription_status: string | null
+          subscription_tier: string | null
+          updated_at: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          brand_accent_color?: string | null
+          brand_logo_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          logo_url?: string | null
+          member_limit?: number | null
+          name?: string | null
+          patient_limit?: number | null
+          phone?: string | null
+          primary_color?: string | null
+          state?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          brand_accent_color?: string | null
+          brand_logo_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          logo_url?: string | null
+          member_limit?: number | null
+          name?: string | null
+          patient_limit?: number | null
+          phone?: string | null
+          primary_color?: string | null
+          state?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
@@ -2419,6 +2519,17 @@ export type Database = {
       clinician_has_patient_permission: {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
+      }
+      get_clinician_basic_info: {
+        Args: { clinician_ids: string[] }
+        Returns: {
+          avatar_url: string
+          first_name: string
+          last_name: string
+          practice_name: string
+          title: string
+          user_id: string
+        }[]
       }
       get_current_user_email: { Args: never; Returns: string }
       has_practice_role: {
