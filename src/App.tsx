@@ -77,6 +77,7 @@ import { Navigate } from "react-router-dom";
 import { BugReportButton } from "./components/beta/BugReportButton";
 import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
 import { FabStack } from "./components/beta/FabStack";
+import { StandaloneLaunchRedirect } from "@/components/auth/StandaloneLaunchRedirect";
 import Assist from "./pages/Assist";
 import ClinicianDictations from "./pages/ClinicianDictations";
 
@@ -91,6 +92,7 @@ const App = () => (
         <FamilyProvider>
         <BrowserRouter future={routerFutureFlags}>
           <ScrollToTop />
+          <StandaloneLaunchRedirect />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/sign-in" element={<SignIn />} />
