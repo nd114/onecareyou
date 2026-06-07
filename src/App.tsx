@@ -324,6 +324,11 @@ const App = () => (
                 <ClinicianAudit />
               </ProtectedRoute>
             } />
+            <Route path="/clinician/reports" element={
+              <ProtectedRoute>
+                <ClinicianReports />
+              </ProtectedRoute>
+            } />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
