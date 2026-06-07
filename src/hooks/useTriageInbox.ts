@@ -42,9 +42,8 @@ export function useTriageInbox() {
     const m = new Map<string, string>();
     for (const p of patients) {
       const display =
-        (p as any).profile?.name ||
-        (p as any).name ||
-        (p as any).email ||
+        (p as any).patient_name ||
+        (p as any).patient_email ||
         "Patient";
       m.set(p.user_id, display);
     }
