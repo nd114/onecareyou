@@ -1,5 +1,6 @@
 // Phase 4.1 — Persistent action rail for patient detail.
 // Sticky right-column shortcuts for the most frequent clinician actions.
+import { useState } from "react";
 import { Send, Bell, MessageSquare, FileSignature, Network, ClipboardList, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface Props {
 
 export function PatientActionRail({ patientId, patientUserId, patientName, onTabChange }: Props) {
   const stub = { id: patientId, user_id: patientUserId, patient_name: patientName };
+  const [taskOpen, setTaskOpen] = useState(false);
 
   return (
     <Card className="sticky top-20">
@@ -57,14 +59,10 @@ export function PatientActionRail({ patientId, patientUserId, patientName, onTab
             </Button>
           }
         />
-        <CreateTaskDialog
-          defaultPatientUserId={patientUserId}
-          trigger={
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              <ClipboardList className="h-4 w-4 mr-2" /> Add task
-            </Button>
-          }
-        />
+        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setTaskOpen(true)}>
+          <ClipboardList className="h-4 w-4 mr-2" /> Add task
+        </Button>
+        <CreateTaskDialog open={taskOpen} onOpenChange={setTaskOpen} patientUserId={patientUserId} />
         <Button
           variant="ghost"
           size="sm"

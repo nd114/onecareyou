@@ -30,39 +30,41 @@ function useOwnerReports() {
     queryFn: async (): Promise<Stats> => {
       const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
       const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+      const sb = supabase as any;
 
       const [
-        { count: patientCount },
-        { count: activeAlertRules },
-        { count: unhandledAlerts },
-        { count: guidanceSent7d },
-        { data: guidance },
-        { count: encounters30d },
-        { count: signedEncounters30d },
-        { count: messageThreads7d },
+        patientCount,
+        activeAlertRules,
+        unhandledAlerts,
+        guidanceSent7d,
+        guidance,
+        encounters30d,
+        signedEncounters30d,
+        messageThreads7d,
       ] = await Promise.all([
-        supabase.from("provider_shares").select("id", { count: "exact", head: true }).eq("is_active", true),
-        supabase.from("clinician_alert_rules").select("id", { count: "exact", head: true }).eq("is_active", true),
-        supabase.from("alert_logs").select("id", { count: "exact", head: true }).eq("acknowledged", false),
-        supabase.from("clinician_guidance").select("id", { count: "exact", head: true }).gte("created_at", since7),
-        supabase.from("clinician_guidance").select("status").gte("created_at", since30),
-        (supabase as any).from("encounters").select("id", { count: "exact", head: true }).gte("created_at", since30),
-        (supabase as any).from("encounters").select("id", { count: "exact", head: true }).eq("status", "signed").gte("created_at", since30),
-        supabase.from("messages").select("id", { count: "exact", head: true }).gte("created_at", since7),
+        sb.from("provider_shares").select("id", { count: "exact", head: true }).eq("is_active", true),
+        sb.from("clinician_alert_rules").select("id", { count: "exact", head: true }).eq("is_active", true),
+        sb.from("alert_logs").select("id", { count: "exact", head: true }).eq("acknowledged", false),
+        sb.from("clinician_guidance").select("id", { count: "exact", head: true }).gte("created_at", since7),
+        sb.from("clinician_guidance").select("status").gte("created_at", since30),
+        sb.from("encounters").select("id", { count: "exact", head: true }).gte("created_at", since30),
+        sb.from("encounters").select("id", { count: "exact", head: true }).eq("status", "signed").gte("created_at", since30),
+        sb.from("messages").select("id", { count: "exact", head: true }).gte("created_at", since7),
       ]);
 
-      const acked = (guidance ?? []).filter((g: any) => g.status === "acknowledged" || g.status === "completed").length;
-      const ackRate = guidance && guidance.length > 0 ? Math.round((acked / guidance.length) * 100) : 0;
+      const guidanceRows: any[] = (guidance as any).data ?? [];
+      const acked = guidanceRows.filter((g) => g.status === "acknowledged" || g.status === "completed").length;
+      const ackRate = guidanceRows.length > 0 ? Math.round((acked / guidanceRows.length) * 100) : 0;
 
       return {
-        patientCount: patientCount ?? 0,
-        activeAlertRules: activeAlertRules ?? 0,
-        unhandledAlerts: unhandledAlerts ?? 0,
-        guidanceSent7d: guidanceSent7d ?? 0,
+        patientCount: (patientCount as any).count ?? 0,
+        activeAlertRules: (activeAlertRules as any).count ?? 0,
+        unhandledAlerts: (unhandledAlerts as any).count ?? 0,
+        guidanceSent7d: (guidanceSent7d as any).count ?? 0,
         guidanceAckRate: ackRate,
-        encounters30d: encounters30d ?? 0,
-        signedEncounters30d: signedEncounters30d ?? 0,
-        messageThreads7d: messageThreads7d ?? 0,
+        encounters30d: (encounters30d as any).count ?? 0,
+        signedEncounters30d: (signedEncounters30d as any).count ?? 0,
+        messageThreads7d: (messageThreads7d as any).count ?? 0,
       };
     },
     enabled: !!user,
