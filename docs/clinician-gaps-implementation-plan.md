@@ -1,9 +1,12 @@
 # OneCare - Clinician Feature Gaps & Implementation Plan
 
+> **Superseded for active sequencing by `.lovable/plan.md` (June 2026 — Clinician Depth Plan).**
+> The 4-phase plan there (Roles & workday → Templates & ops → Practice surface → Patient-detail actions) is the source of truth for what's being built. The sprints below remain accurate as a historical inventory of gaps; strategic items intentionally not built are catalogued in `docs/clinician-strategic-roadmap.md`.
+
 ## Overview
 This document identifies gaps in OneCare's clinician offering compared to competitors and outlines an implementation plan prioritized by revenue impact.
 
-**Last Updated:** March 2026
+**Last Updated:** June 2026
 **Analysis Scope:** Clinician-focused features, subscription system, enterprise capabilities, bulk patient onboarding
 
 ---

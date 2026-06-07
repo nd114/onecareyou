@@ -10,14 +10,16 @@ This document outlines planned features that are not yet implemented but are par
 > - [`docs/tech-and-process-opportunities.md`](./tech-and-process-opportunities.md) — 2025–2026 new tech & GTM opportunities
 > - [`docs/ui-redesign-plan.md`](./ui-redesign-plan.md) — Deferred full redesign (Phase A–D)
 
-## Confirmed P3 sequence (May 2026)
+## Confirmed P3 sequence (June 2026 — Clinician Depth Plan)
 
-1. **Family member context-switching** (Vitals/Meds/Schedule/Vault/Adherence) — biggest patient-side credibility bug.
-2. **In-app secure messaging** (HIPAA chat) — #1 competitor gap; reinforces "one continuous record" wedge.
-3. **Clinician shell improvements** — Templates library + Triage Inbox + expose buried features (Practice/Team/EHR/Analytics/BAA) in nav. UI shell rebuild deferred to redesign plan.
-4. **Patient subscription/payment polish** — consistent Stripe checkout surfacing + tier-gated UI prompts.
-5. **EHR integration via QHIN** (Particle Health / Health Gorilla) — pivot from per-EHR FHIR to one QHIN integration.
-6. **Ambient scribe + voice entry** — defensible AI differentiator.
+Current build sequence is the 4-phase **Clinician Depth Plan** in `.lovable/plan.md`. Strategic-but-deferred items are catalogued in `docs/clinician-strategic-roadmap.md`.
+
+1. **Phase 1 — Roles, panels, workday surface:** RBAC (clinician/nurse/front_desk/billing/read_only), patient panels + coverage, Today/Triage Inbox, Encounter object, Tasks. Includes PWA hardening (manifest, icons, standalone routing).
+2. **Phase 2 — Templates & group ops:** DB-backed guidance templates + specialty packs, visit templates, bulk/cohort actions, internal practice messaging, intra-OneCare referrals.
+3. **Phase 3 — Practice ops & compliance surface:** split Practice page by capability, audit/access viewer, one-click compliance pack, owner KPI reports.
+4. **Phase 4 — Patient-detail action layer:** persistent action rail, QHIN Network Records tab shell, risk-explanation drawer.
+
+Older P3 ordering (family switcher → messaging → clinician shell → patient subscription polish → QHIN → ambient scribe) is now folded into the phases above; family switcher + messaging have shipped, QHIN provenance is live, ambient scribe lives in `clinician-strategic-roadmap.md`.
 
 ## NB items captured from May 2026 audit
 
