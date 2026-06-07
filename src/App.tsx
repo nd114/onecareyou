@@ -26,6 +26,7 @@ import CareCircle from "./pages/CareCircle";
 import ClinicianPortal from "./pages/ClinicianPortal";
 import ClinicianSignUp from "./pages/ClinicianSignUp";
 import ClinicianDashboard from "./pages/ClinicianDashboard";
+import ClinicianToday from "./pages/ClinicianToday";
 import ClinicianSettings from "./pages/ClinicianSettings";
 import ClinicianPractice from "./pages/ClinicianPractice";
 import FamilyDashboard from "./pages/FamilyDashboard";
@@ -116,6 +117,11 @@ const App = () => (
             <Route path="/clinician/patient/:inviteCode" element={
               <ProtectedRoute>
                 <ClinicianPatientDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/today" element={
+              <ProtectedRoute>
+                <ClinicianToday />
               </ProtectedRoute>
             } />
             <Route path="/clinician/dashboard" element={
