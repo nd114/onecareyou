@@ -414,6 +414,59 @@ export type Database = {
           },
         ]
       }
+      clinical_templates: {
+        Row: {
+          body: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_archived: boolean
+          is_system: boolean
+          kind: string
+          name: string
+          owner_user_id: string | null
+          practice_id: string | null
+          specialty: string | null
+          updated_at: string
+        }
+        Insert: {
+          body?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_system?: boolean
+          kind?: string
+          name: string
+          owner_user_id?: string | null
+          practice_id?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_system?: boolean
+          kind?: string
+          name?: string
+          owner_user_id?: string | null
+          practice_id?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_templates_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinician_alert_rules: {
         Row: {
           alert_method: string | null
@@ -1153,6 +1206,83 @@ export type Database = {
         }
         Relationships: []
       }
+      encounters: {
+        Row: {
+          assessment: string | null
+          chief_complaint: string | null
+          clinician_user_id: string
+          cpt_codes: string[] | null
+          created_at: string
+          follow_up_in_days: number | null
+          follow_up_task_id: string | null
+          icd_codes: string[] | null
+          id: string
+          metadata: Json
+          objective: string | null
+          occurred_at: string
+          patient_user_id: string
+          plan: string | null
+          practice_id: string | null
+          signed_at: string | null
+          status: string
+          subjective: string | null
+          updated_at: string
+          visit_type: string
+        }
+        Insert: {
+          assessment?: string | null
+          chief_complaint?: string | null
+          clinician_user_id: string
+          cpt_codes?: string[] | null
+          created_at?: string
+          follow_up_in_days?: number | null
+          follow_up_task_id?: string | null
+          icd_codes?: string[] | null
+          id?: string
+          metadata?: Json
+          objective?: string | null
+          occurred_at?: string
+          patient_user_id: string
+          plan?: string | null
+          practice_id?: string | null
+          signed_at?: string | null
+          status?: string
+          subjective?: string | null
+          updated_at?: string
+          visit_type?: string
+        }
+        Update: {
+          assessment?: string | null
+          chief_complaint?: string | null
+          clinician_user_id?: string
+          cpt_codes?: string[] | null
+          created_at?: string
+          follow_up_in_days?: number | null
+          follow_up_task_id?: string | null
+          icd_codes?: string[] | null
+          id?: string
+          metadata?: Json
+          objective?: string | null
+          occurred_at?: string
+          patient_user_id?: string
+          plan?: string | null
+          practice_id?: string | null
+          signed_at?: string | null
+          status?: string
+          subjective?: string | null
+          updated_at?: string
+          visit_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encounters_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enterprise_inquiries: {
         Row: {
           clinician_user_id: string | null
@@ -1679,6 +1809,53 @@ export type Database = {
           transport?: string
         }
         Relationships: []
+      }
+      patient_action_log: {
+        Row: {
+          action: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          patient_user_id: string
+          practice_id: string | null
+          ref_id: string | null
+          ref_table: string | null
+          summary: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          patient_user_id: string
+          practice_id?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          summary?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          patient_user_id?: string
+          practice_id?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_action_log_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       patient_invitations: {
         Row: {

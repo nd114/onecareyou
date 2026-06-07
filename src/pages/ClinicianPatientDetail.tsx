@@ -32,6 +32,8 @@ import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicato
 import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
 import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
 import { MessageThread } from '@/components/messaging/MessageThread';
+import { EncountersTab } from '@/components/clinician/EncountersTab';
+import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
@@ -339,8 +341,9 @@ const ClinicianPatientDetail = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Tabs defaultValue="vitals" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-8">
+          <Tabs defaultValue="encounters" className="space-y-4">
+            <TabsList className="flex flex-wrap w-full justify-start gap-1 h-auto">
+              <TabsTrigger value="encounters">Encounters</TabsTrigger>
               <TabsTrigger value="vitals">Vitals</TabsTrigger>
               <TabsTrigger value="medications">Meds</TabsTrigger>
               <TabsTrigger value="adherence">Adherence</TabsTrigger>
@@ -358,7 +361,20 @@ const ClinicianPatientDetail = () => {
                 Messages
               </TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="encounters">
+              <EncountersTab
+                patientUserId={patient.user_id}
+                patientName={patient.patient_name || 'Patient'}
+              />
+            </TabsContent>
+
+            <TabsContent value="activity">
+              <PatientActivityTab patientUserId={patient.user_id} />
+            </TabsContent>
+
 
             {/* Messages Tab */}
             <TabsContent value="messages">
