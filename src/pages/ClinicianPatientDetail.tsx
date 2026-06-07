@@ -32,6 +32,8 @@ import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicato
 import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
 import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
 import { MessageThread } from '@/components/messaging/MessageThread';
+import { EncountersTab } from '@/components/clinician/EncountersTab';
+import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
