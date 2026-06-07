@@ -101,7 +101,7 @@ const ClinicianToday = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <SEOHead title="Today · OneCare" noindex />
+      <SEOHead title="Today · OneCare" noIndex />
       <ClinicianHeader />
       <SectionTabs section="today" variant="clinician" />
 
