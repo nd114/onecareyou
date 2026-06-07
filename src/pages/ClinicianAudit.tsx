@@ -23,7 +23,7 @@ function toCsv(rows: any[]): string {
 }
 
 export default function ClinicianAudit() {
-  const { has, isLoading: capsLoading } = useClinicianCapabilities();
+  const { can, loading: capsLoading } = useClinicianCapabilities();
   const { data: entries = [], isLoading } = useAuditLog({ limit: 500 });
   const [query, setQuery] = useState("");
 
@@ -61,7 +61,7 @@ export default function ClinicianAudit() {
     );
   }
 
-  if (!has("view_audit")) {
+  if (!can("view_audit" as any)) {
     return <Navigate to="/clinician/today" replace />;
   }
 
