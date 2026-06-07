@@ -24,7 +24,7 @@ export interface ClinicalTemplate {
 
 export function useClinicalTemplates(kind?: TemplateKind) {
   const { user } = useAuth();
-  const { practice } = usePractice();
+  const { currentPractice: practice } = usePractice();
   const qc = useQueryClient();
 
   const list = useQuery({
