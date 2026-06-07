@@ -1883,6 +1883,94 @@ export type Database = {
           },
         ]
       }
+      practice_patient_assignments: {
+        Row: {
+          assigned_by: string | null
+          assignment_role: string
+          clinician_user_id: string
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          notes: string | null
+          patient_user_id: string
+          practice_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assignment_role?: string
+          clinician_user_id: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          patient_user_id: string
+          practice_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assignment_role?: string
+          clinician_user_id?: string
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          patient_user_id?: string
+          practice_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_patient_assignments_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_role_permissions: {
+        Row: {
+          capability: string
+          created_at: string
+          granted: boolean
+          id: string
+          practice_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          updated_at: string
+        }
+        Insert: {
+          capability: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          practice_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          updated_at?: string
+        }
+        Update: {
+          capability?: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          practice_id?: string
+          role?: Database["public"]["Enums"]["practice_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_role_permissions_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practices: {
         Row: {
           address: string | null
@@ -2432,11 +2520,19 @@ export type Database = {
         }[]
       }
       get_current_user_email: { Args: never; Returns: string }
+      has_practice_capability: {
+        Args: { _capability: string; _user_id: string }
+        Returns: boolean
+      }
       has_practice_role: {
         Args: {
           practice_uuid: string
           required_role: Database["public"]["Enums"]["practice_role"]
         }
+        Returns: boolean
+      }
+      is_assigned_to_patient: {
+        Args: { _patient_user_id: string; _user_id: string }
         Returns: boolean
       }
       is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
@@ -2446,7 +2542,16 @@ export type Database = {
       }
     }
     Enums: {
-      practice_role: "owner" | "admin" | "provider" | "staff"
+      practice_role:
+        | "owner"
+        | "admin"
+        | "provider"
+        | "staff"
+        | "clinician"
+        | "nurse"
+        | "front_desk"
+        | "billing"
+        | "read_only"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2574,7 +2679,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      practice_role: ["owner", "admin", "provider", "staff"],
+      practice_role: [
+        "owner",
+        "admin",
+        "provider",
+        "staff",
+        "clinician",
+        "nurse",
+        "front_desk",
+        "billing",
+        "read_only",
+      ],
     },
   },
 } as const
