@@ -1,12 +1,13 @@
 // Phase 4.1 — Persistent action rail for patient detail.
 // Sticky right-column shortcuts for the most frequent clinician actions.
 import { useState } from "react";
-import { Send, Bell, MessageSquare, FileSignature, Network, ClipboardList, Activity } from "lucide-react";
+import { Send, Bell, MessageSquare, FileSignature, Network, ClipboardList, Activity, Share2, StickyNote } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CreateGuidanceDialog } from "@/components/clinician/CreateGuidanceDialog";
 import { CreateAlertRuleDialog } from "@/components/clinician/CreateAlertRuleDialog";
 import { CreateTaskDialog } from "@/components/clinician/CreateTaskDialog";
+import { ReferralDialog } from "@/components/clinician/ReferralDialog";
 
 interface Props {
   patientId: string;
@@ -63,6 +64,22 @@ export function PatientActionRail({ patientId, patientUserId, patientName, onTab
           <ClipboardList className="h-4 w-4 mr-2" /> Add task
         </Button>
         <CreateTaskDialog open={taskOpen} onOpenChange={setTaskOpen} patientUserId={patientUserId} />
+        <ReferralDialog
+          patientUserId={patientUserId}
+          trigger={
+            <Button variant="ghost" size="sm" className="w-full justify-start">
+              <Share2 className="h-4 w-4 mr-2" /> Refer
+            </Button>
+          }
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start"
+          onClick={() => onTabChange?.("internal")}
+        >
+          <StickyNote className="h-4 w-4 mr-2" /> Internal note
+        </Button>
         <Button
           variant="ghost"
           size="sm"
