@@ -39,6 +39,13 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
+      "name": "Clinician Inbox",
+      "short_name": "Inbox",
+      "description": "Triage queue for clinicians",
+      "url": "/clinician/today",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "Vitals",
       "short_name": "Vitals",
       "description": "Log a vital reading",
