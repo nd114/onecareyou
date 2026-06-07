@@ -61,7 +61,7 @@ export default function ClinicianAudit() {
     );
   }
 
-  if (!can("view_audit" as any)) {
+  if (!can("view_audit")) {
     return <Navigate to="/clinician/today" replace />;
   }
 
