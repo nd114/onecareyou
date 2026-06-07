@@ -81,6 +81,8 @@ import { FabStack } from "./components/beta/FabStack";
 import { StandaloneLaunchRedirect } from "@/components/auth/StandaloneLaunchRedirect";
 import Assist from "./pages/Assist";
 import ClinicianDictations from "./pages/ClinicianDictations";
+import ClinicianTemplates from "./pages/ClinicianTemplates";
+import ClinicianAudit from "./pages/ClinicianAudit";
 
 
 const App = () => (
@@ -309,6 +311,16 @@ const App = () => (
             <Route path="/clinician/dictations" element={
               <ProtectedRoute>
                 <ClinicianDictations />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/templates" element={
+              <ProtectedRoute>
+                <ClinicianTemplates />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/audit" element={
+              <ProtectedRoute>
+                <ClinicianAudit />
               </ProtectedRoute>
             } />
 
