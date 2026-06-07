@@ -35,7 +35,7 @@ export function StandaloneLaunchRedirect() {
     if (location.pathname !== "/") return;
     if (!isStandalone()) return;
 
-    navigate(isClinician ? "/clinician/dashboard" : "/dashboard", {
+    navigate(isClinician ? "/clinician/today" : "/dashboard", {
       replace: true,
     });
   }, [authLoading, clinicianLoading, user, isClinician, location.pathname, navigate]);
