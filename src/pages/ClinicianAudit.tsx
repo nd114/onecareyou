@@ -67,7 +67,7 @@ export default function ClinicianAudit() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <SEOHead title="Audit & Access Log — OneCare" description="HIPAA-grade access timeline for your practice." noindex />
+      <SEOHead title="Audit & Access Log — OneCare" description="HIPAA-grade access timeline for your practice." noIndex />
       <ClinicianHeader />
       <main className="container py-6 sm:py-10 px-4 sm:px-6 max-w-6xl">
         <div className="flex items-center gap-3 mb-6">

@@ -59,7 +59,7 @@ export default function ClinicianTemplates() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <SEOHead title="Clinical Templates — OneCare" description="Reusable SOAP, assessment and guidance templates for your practice." noindex />
+      <SEOHead title="Clinical Templates — OneCare" description="Reusable SOAP, assessment and guidance templates for your practice." noIndex />
       <ClinicianHeader />
       <main className="container py-6 sm:py-10 px-4 sm:px-6 max-w-5xl">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
