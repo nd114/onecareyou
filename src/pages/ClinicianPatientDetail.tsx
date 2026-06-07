@@ -35,6 +35,7 @@ import { MessageThread } from '@/components/messaging/MessageThread';
 import { EncountersTab } from '@/components/clinician/EncountersTab';
 import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
 import { NetworkRecordsTab } from '@/components/clinician/NetworkRecordsTab';
+import { PatientActionRail } from '@/components/clinician/PatientActionRail';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
@@ -54,6 +55,8 @@ const ClinicianPatientDetail = () => {
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('encounters');
+  const [showRiskDetails, setShowRiskDetails] = useState(false);
 
   // Find the patient by invite code
   const patient = useMemo(() => 
@@ -218,14 +221,20 @@ const ClinicianPatientDetail = () => {
                 </span>
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="font-display text-2xl font-bold">
                     {patient.patient_name || 'Unknown Patient'}
                   </h1>
-                  <PatientRiskIndicator 
-                    vitals={vitals}
-                    adherenceRate={adherenceRate || undefined}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRiskDetails((v) => !v)}
+                    aria-label="Toggle risk details"
+                  >
+                    <PatientRiskIndicator
+                      vitals={vitals}
+                      adherenceRate={adherenceRate || undefined}
+                    />
+                  </button>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                   {patient.patient_email && (
@@ -269,6 +278,19 @@ const ClinicianPatientDetail = () => {
             {patient.permissions?.adherence && <Badge variant="secondary">Adherence Access</Badge>}
             {patient.permissions?.profile && <Badge variant="secondary">Profile Access</Badge>}
           </div>
+
+          {showRiskDetails && (
+            <div className="mt-4 rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Why this risk level?
+              </p>
+              <PatientRiskIndicator
+                vitals={vitals}
+                adherenceRate={adherenceRate || undefined}
+                showDetails
+              />
+            </div>
+          )}
         </motion.div>
 
         {/* Quick Stats */}
@@ -341,8 +363,9 @@ const ClinicianPatientDetail = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4"
         >
-          <Tabs defaultValue="encounters" className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 min-w-0">
             <TabsList className="flex flex-wrap w-full justify-start gap-1 h-auto">
               <TabsTrigger value="encounters">Encounters</TabsTrigger>
               <TabsTrigger value="vitals">Vitals</TabsTrigger>
@@ -719,6 +742,15 @@ const ClinicianPatientDetail = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          <aside className="hidden lg:block">
+            <PatientActionRail
+              patientId={patient.id}
+              patientUserId={patient.user_id}
+              patientName={patient.patient_name || 'Patient'}
+              onTabChange={setActiveTab}
+            />
+          </aside>
         </motion.div>
       </main>
     </div>

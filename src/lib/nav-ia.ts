@@ -103,6 +103,7 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     tabs: [
       { to: "/clinician/practice", label: "Overview" },
       { to: "/clinician/practice#practice-team", label: "Team" },
+      { to: "/clinician/reports", label: "Reports" },
       { to: "/clinician/audit", label: "Audit" },
       { to: "/clinician/practice#ehr-connections", label: "EHR" },
       { to: "/clinician/practice#subscription", label: "Subscription" },

@@ -83,6 +83,7 @@ import Assist from "./pages/Assist";
 import ClinicianDictations from "./pages/ClinicianDictations";
 import ClinicianTemplates from "./pages/ClinicianTemplates";
 import ClinicianAudit from "./pages/ClinicianAudit";
+import ClinicianReports from "./pages/ClinicianReports";
 
 
 const App = () => (
@@ -321,6 +322,11 @@ const App = () => (
             <Route path="/clinician/audit" element={
               <ProtectedRoute>
                 <ClinicianAudit />
+              </ProtectedRoute>
+            } />
+            <Route path="/clinician/reports" element={
+              <ProtectedRoute>
+                <ClinicianReports />
               </ProtectedRoute>
             } />
 
