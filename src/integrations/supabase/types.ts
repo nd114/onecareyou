@@ -1971,6 +1971,74 @@ export type Database = {
           },
         ]
       }
+      practice_tasks: {
+        Row: {
+          assignee_user_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          due_at: string | null
+          id: string
+          notes: string | null
+          patient_user_id: string | null
+          practice_id: string
+          priority: string
+          snoozed_until: string | null
+          source: string
+          source_alert_id: string | null
+          source_guidance_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_user_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          due_at?: string | null
+          id?: string
+          notes?: string | null
+          patient_user_id?: string | null
+          practice_id: string
+          priority?: string
+          snoozed_until?: string | null
+          source?: string
+          source_alert_id?: string | null
+          source_guidance_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_user_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          due_at?: string | null
+          id?: string
+          notes?: string | null
+          patient_user_id?: string | null
+          practice_id?: string
+          priority?: string
+          snoozed_until?: string | null
+          source?: string
+          source_alert_id?: string | null
+          source_guidance_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_tasks_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practices: {
         Row: {
           address: string | null
