@@ -1501,6 +1501,36 @@ export type Database = {
         }
         Relationships: []
       }
+      internal_notes: {
+        Row: {
+          author_user_id: string
+          body: string
+          created_at: string
+          id: string
+          patient_user_id: string
+          pinned: boolean
+          updated_at: string
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          created_at?: string
+          id?: string
+          patient_user_id: string
+          pinned?: boolean
+          updated_at?: string
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          patient_user_id?: string
+          pinned?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       international_drug_mappings: {
         Row: {
           brand_name: string
@@ -2565,6 +2595,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          from_clinician_user_id: string
+          id: string
+          notes: string | null
+          patient_user_id: string
+          reason: string
+          specialty: string | null
+          status: string
+          to_clinician_user_id: string | null
+          to_email: string | null
+          to_name: string | null
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          created_at?: string
+          from_clinician_user_id: string
+          id?: string
+          notes?: string | null
+          patient_user_id: string
+          reason: string
+          specialty?: string | null
+          status?: string
+          to_clinician_user_id?: string | null
+          to_email?: string | null
+          to_name?: string | null
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          created_at?: string
+          from_clinician_user_id?: string
+          id?: string
+          notes?: string | null
+          patient_user_id?: string
+          reason?: string
+          specialty?: string | null
+          status?: string
+          to_clinician_user_id?: string | null
+          to_email?: string | null
+          to_name?: string | null
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: []
       }
       schedule_entries: {
         Row: {
