@@ -34,6 +34,7 @@ import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
 import { MessageThread } from '@/components/messaging/MessageThread';
 import { EncountersTab } from '@/components/clinician/EncountersTab';
 import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
+import { NetworkRecordsTab } from '@/components/clinician/NetworkRecordsTab';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
@@ -361,8 +362,13 @@ const ClinicianPatientDetail = () => {
                 Messages
               </TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
+              <TabsTrigger value="network">Network</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="network">
+              <NetworkRecordsTab patientUserId={patient.user_id} />
+            </TabsContent>
 
             <TabsContent value="encounters">
               <EncountersTab

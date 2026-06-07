@@ -93,6 +93,7 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
       { to: "/clinician/messages", label: "Messages" },
       { to: "/clinician/guidance", label: "Guidance" },
       { to: "/clinician/dictations", label: "Dictations" },
+      { to: "/clinician/templates", label: "Templates" },
     ],
   },
   {
@@ -102,6 +103,7 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     tabs: [
       { to: "/clinician/practice", label: "Overview" },
       { to: "/clinician/practice#practice-team", label: "Team" },
+      { to: "/clinician/audit", label: "Audit" },
       { to: "/clinician/practice#ehr-connections", label: "EHR" },
       { to: "/clinician/practice#subscription", label: "Subscription" },
       { to: "/clinician/baa", label: "BAA" },
