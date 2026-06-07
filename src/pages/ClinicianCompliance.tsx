@@ -94,17 +94,17 @@ export default function ClinicianCompliance() {
       const { data: baa } = await supabase
         .from("baa_agreements")
         .select("*")
-        .eq("user_id", u.user?.id ?? "")
-        .order("signed_at", { ascending: false })
+        .eq("clinician_user_id", u.user?.id ?? "")
+        .order("created_at", { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .maybeSingle<any>();
 
       const baaText = baa
         ? `BAA — Signed
-Signed at: ${baa.signed_at ?? "n/a"}
-Signer: ${baa.signer_name ?? "n/a"} <${baa.signer_email ?? "n/a"}>
+Signed at: ${baa.signed_at ?? baa.created_at ?? "n/a"}
+Signer: ${baa.contact_name ?? "n/a"} <${baa.contact_email ?? "n/a"}>
 Practice: ${baa.practice_name ?? "n/a"}
-Version: ${baa.version ?? "1.0"}`
+Version: ${baa.agreement_version ?? "1.0"}`
         : "BAA — Not yet signed. Sign at /clinician/baa before sharing this pack with patients.";
 
       const auditCsv = toCsv(filteredAudit, [
@@ -143,7 +143,7 @@ This bundle is a snapshot. Re-generate after material changes to your practice o
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="Compliance Pack | OneCare" noindex />
+      <SEOHead title="Compliance Pack | OneCare" noIndex />
       <ClinicianHeader />
       <main className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
         <div className="flex items-center gap-3">
