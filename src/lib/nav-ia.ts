@@ -102,17 +102,15 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     primary: "/clinician/practice",
     tabs: [
       { to: "/clinician/practice", label: "Overview" },
-      { to: "/clinician/practice#practice-team", label: "Team" },
       { to: "/clinician/reports", label: "Reports" },
       { to: "/clinician/audit", label: "Audit" },
       { to: "/clinician/compliance", label: "Compliance" },
-      { to: "/clinician/practice#ehr-connections", label: "EHR" },
-      { to: "/clinician/practice#subscription", label: "Subscription" },
       { to: "/clinician/baa", label: "BAA" },
       { to: "/clinician/settings", label: "Settings" },
     ],
   },
 ];
+
 
 export function getPatientPillarForRoute(pathname: string): PatientPillarKey | null {
   for (const p of PATIENT_PILLARS) {
