@@ -27,7 +27,8 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
+import { SectionTabs } from "@/components/layout/SectionTabs";
 import { SignaturePad } from '@/components/signature/SignaturePad';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
@@ -304,6 +305,7 @@ const ClinicianBAA = () => {
     return (
       <div className="min-h-screen bg-background">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         <main className="container py-16 px-4 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -316,6 +318,7 @@ const ClinicianBAA = () => {
     return (
       <div className="min-h-screen bg-background">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         <main className="container py-16 px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -350,6 +353,7 @@ const ClinicianBAA = () => {
     return (
       <div className="min-h-screen bg-background">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         
         <main className="container py-8 px-4">
           <motion.div
@@ -527,6 +531,7 @@ const ClinicianBAA = () => {
   return (
     <div className="min-h-screen bg-background">
       <ClinicianHeader />
+      <SectionTabs section="practice" variant="clinician" />
       
       <main className="container py-8 px-4">
         <motion.div
