@@ -78,6 +78,7 @@ import { Navigate } from "react-router-dom";
 import { BugReportButton } from "./components/beta/BugReportButton";
 import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
 import { FabStack } from "./components/beta/FabStack";
+import { MobileBottomNav } from "./components/layout/MobileBottomNav";
 import { StandaloneLaunchRedirect } from "@/components/auth/StandaloneLaunchRedirect";
 import Assist from "./pages/Assist";
 import ClinicianDictations from "./pages/ClinicianDictations";
@@ -343,6 +344,7 @@ const App = () => (
             <PatientAIChatMount />
             <BugReportButton />
           </FabStack>
+          <MobileBottomNav />
         </BrowserRouter>
         </FamilyProvider>
       </AuthProvider>
