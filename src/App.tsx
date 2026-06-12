@@ -344,6 +344,7 @@ const App = () => (
             <PatientAIChatMount />
             <BugReportButton />
           </FabStack>
+          <MobileBottomNav />
         </BrowserRouter>
         </FamilyProvider>
       </AuthProvider>
