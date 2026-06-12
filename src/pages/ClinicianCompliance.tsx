@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Shield, Download, Loader2, FileCheck2, FileText } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
+import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -145,6 +146,7 @@ This bundle is a snapshot. Re-generate after material changes to your practice o
     <div className="min-h-screen bg-background">
       <SEOHead title="Compliance Pack | OneCare" noIndex />
       <ClinicianHeader />
+      <SectionTabs section="practice" variant="clinician" />
       <main className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
         <div className="flex items-center gap-3">
           <Shield className="h-6 w-6 text-primary" />
