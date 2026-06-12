@@ -25,7 +25,10 @@ export function FabStack({ children }: { children: ReactNode }) {
     <div
       className={cn(
         'fixed right-4 sm:right-6 z-50 flex flex-col items-end gap-3 pointer-events-none',
-        raised ? 'bottom-24 sm:bottom-24' : 'bottom-4 sm:bottom-6',
+        raised
+          ? 'bottom-24 sm:bottom-24'
+          // Raise above the mobile bottom nav (~60px) on small screens.
+          : 'bottom-20 sm:bottom-6',
       )}
       aria-hidden={false}
     >
