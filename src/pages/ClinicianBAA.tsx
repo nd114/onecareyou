@@ -305,6 +305,7 @@ const ClinicianBAA = () => {
     return (
       <div className="min-h-screen bg-background">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         <main className="container py-16 px-4 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -317,6 +318,7 @@ const ClinicianBAA = () => {
     return (
       <div className="min-h-screen bg-background">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         <main className="container py-16 px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -351,6 +353,7 @@ const ClinicianBAA = () => {
     return (
       <div className="min-h-screen bg-background">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         
         <main className="container py-8 px-4">
           <motion.div
@@ -528,6 +531,7 @@ const ClinicianBAA = () => {
   return (
     <div className="min-h-screen bg-background">
       <ClinicianHeader />
+      <SectionTabs section="practice" variant="clinician" />
       
       <main className="container py-8 px-4">
         <motion.div
