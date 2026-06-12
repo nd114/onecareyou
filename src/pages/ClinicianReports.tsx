@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Users, Bell, MessageSquare, FileText, TrendingUp, Loader2 } from "lucide-react";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
+import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,7 @@ export default function ClinicianReports() {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         <main className="container py-10 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></main>
       </div>
     );
@@ -106,6 +108,7 @@ export default function ClinicianReports() {
     <div className="min-h-screen bg-muted/30">
       <SEOHead title="Practice Reports — OneCare" description="Operational KPIs for your practice." noIndex />
       <ClinicianHeader />
+      <SectionTabs section="practice" variant="clinician" />
       <main className="container py-6 sm:py-10 px-4 sm:px-6 max-w-6xl">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
           <div>

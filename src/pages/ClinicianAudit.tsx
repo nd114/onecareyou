@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { Shield, Download, Loader2, Search } from "lucide-react";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
+import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ export default function ClinicianAudit() {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
         <main className="container py-10 text-center">
           <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
         </main>
@@ -69,6 +71,7 @@ export default function ClinicianAudit() {
     <div className="min-h-screen bg-muted/30">
       <SEOHead title="Audit & Access Log — OneCare" description="HIPAA-grade access timeline for your practice." noIndex />
       <ClinicianHeader />
+      <SectionTabs section="practice" variant="clinician" />
       <main className="container py-6 sm:py-10 px-4 sm:px-6 max-w-6xl">
         <div className="flex items-center gap-3 mb-6">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">

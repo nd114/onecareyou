@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Plus, Trash2, FileText, Loader2 } from "lucide-react";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
+import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ export default function ClinicianTemplates() {
     <div className="min-h-screen bg-muted/30">
       <SEOHead title="Clinical Templates — OneCare" description="Reusable SOAP, assessment and guidance templates for your practice." noIndex />
       <ClinicianHeader />
+      <SectionTabs section="communicate" variant="clinician" />
       <main className="container py-6 sm:py-10 px-4 sm:px-6 max-w-5xl">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
           <div>
