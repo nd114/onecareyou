@@ -7,6 +7,8 @@ export type ClinicianPillarKey = "today" | "patients" | "communicate" | "practic
 export interface NavTab {
   to: string;
   label: string;
+  /** Additional route prefixes that should highlight this tab. */
+  match?: string[];
 }
 
 export interface PatientPillar {
@@ -61,7 +63,7 @@ export const PATIENT_PILLARS: PatientPillar[] = [
     primary: "/assist",
     tabs: [
       { to: "/assist", label: "Ask AI" },
-      { to: "/knowledge-base", label: "Knowledge Base" },
+      { to: "/knowledge-base", label: "Knowledge Base", match: ["/medication-info"] },
     ],
   },
 ];
@@ -82,7 +84,8 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     label: "Patients",
     primary: "/clinician/patients",
     tabs: [
-      { to: "/clinician/patients", label: "All Patients" },
+      { to: "/clinician/patients", label: "All Patients", match: ["/clinician/patient"] },
+      { to: "/clinician/patients/import", label: "Import" },
     ],
   },
   {
@@ -112,23 +115,55 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
 ];
 
 
-export function getPatientPillarForRoute(pathname: string): PatientPillarKey | null {
-  for (const p of PATIENT_PILLARS) {
-    if (p.tabs.some((t) => pathname === t.to || pathname.startsWith(t.to + "/"))) return p.key;
+function tabCandidates(tab: NavTab) {
+  return [tab.to.split("#")[0], ...(tab.match || [])].filter(Boolean);
+}
+
+function routeMatchScore(pathname: string, candidate: string) {
+  if (pathname === candidate) return 10_000 + candidate.length;
+  if (candidate !== "/" && pathname.startsWith(candidate + "/")) return candidate.length;
+  return 0;
+}
+
+export function getActiveNavTab(tabs: NavTab[], pathname: string, hash = "") {
+  let best: { tab: NavTab; score: number } | null = null;
+
+  for (const tab of tabs) {
+    const [tabPath, tabHash] = tab.to.split("#");
+    const score = Math.max(
+      ...tabCandidates(tab).map((candidate) => routeMatchScore(pathname, candidate))
+    );
+
+    if (tabHash && (pathname !== tabPath || hash !== `#${tabHash}`)) continue;
+    if (score > 0 && (!best || score > best.score)) best = { tab, score };
   }
-  // Common sub-routes
-  if (pathname.startsWith("/medications") || pathname.startsWith("/medication-info")) return "health";
+
+  return best?.tab || null;
+}
+
+export function isNavTabActive(tab: NavTab, tabs: NavTab[], pathname: string, hash = "") {
+  return getActiveNavTab(tabs, pathname, hash)?.to === tab.to;
+}
+
+export function getPatientPillarForRoute(pathname: string): PatientPillarKey | null {
+  let best: { key: PatientPillarKey; score: number } | null = null;
+  for (const p of PATIENT_PILLARS) {
+    const tab = getActiveNavTab(p.tabs, pathname);
+    if (!tab) continue;
+    const score = Math.max(...tabCandidates(tab).map((candidate) => routeMatchScore(pathname, candidate)));
+    if (!best || score > best.score) best = { key: p.key, score };
+  }
   if (pathname.startsWith("/family")) return "team";
-  return null;
+  return best?.key || null;
 }
 
 export function getClinicianPillarForRoute(pathname: string): ClinicianPillarKey | null {
+  let best: { key: ClinicianPillarKey; score: number } | null = null;
   for (const p of CLINICIAN_PILLARS) {
-    if (p.tabs.some((t) => {
-      const base = t.to.split("#")[0];
-      return pathname === base || pathname.startsWith(base + "/");
-    })) return p.key;
+    const tab = getActiveNavTab(p.tabs, pathname);
+    if (!tab) continue;
+    const score = Math.max(...tabCandidates(tab).map((candidate) => routeMatchScore(pathname, candidate)));
+    if (!best || score > best.score) best = { key: p.key, score };
   }
-  if (pathname.startsWith("/clinician/patient")) return "patients";
-  return null;
+  return best?.key || null;
 }
