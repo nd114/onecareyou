@@ -126,15 +126,23 @@ function routeMatchScore(pathname: string, candidate: string) {
 }
 
 export function getActiveNavTab(tabs: NavTab[], pathname: string, hash = "") {
+  const hashTab = hash
+    ? tabs.find((tab) => {
+        const [tabPath, tabHash] = tab.to.split("#");
+        return tabHash && pathname === tabPath && hash === `#${tabHash}`;
+      })
+    : null;
+  if (hashTab) return hashTab;
+
   let best: { tab: NavTab; score: number } | null = null;
 
   for (const tab of tabs) {
-    const [tabPath, tabHash] = tab.to.split("#");
+    const [, tabHash] = tab.to.split("#");
     const score = Math.max(
       ...tabCandidates(tab).map((candidate) => routeMatchScore(pathname, candidate))
     );
 
-    if (tabHash && (pathname !== tabPath || hash !== `#${tabHash}`)) continue;
+    if (tabHash) continue;
     if (score > 0 && (!best || score > best.score)) best = { tab, score };
   }
 
