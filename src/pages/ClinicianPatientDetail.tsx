@@ -211,10 +211,10 @@ const ClinicianPatientDetail = () => {
           <Button 
             variant="ghost" 
             className="mb-4"
-            onClick={() => navigate('/clinician/dashboard')}
+            onClick={() => navigate('/clinician/patients')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to Patients
           </Button>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

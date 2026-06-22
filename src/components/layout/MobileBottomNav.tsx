@@ -80,7 +80,6 @@ export function MobileBottomNav() {
     "/data-processing",
     "/medical-disclaimer",
     "/sitemap",
-    "/knowledge-base",
   ]);
   if (PUBLIC_EXACT.has(pathname)) return null;
 
