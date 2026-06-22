@@ -47,7 +47,7 @@ import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CLINICIAN_PILLARS, getClinicianPillarForRoute } from "@/lib/nav-ia";
+import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive } from "@/lib/nav-ia";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -398,20 +398,23 @@ export function ClinicianHeader() {
                   </div>
                   {isExpanded && pillar.tabs.length > 1 && (
                     <div className="ml-2 mb-1 border-l border-border/60 pl-2">
-                      {pillar.tabs.map((tab) => (
-                        <Link
-                          key={tab.to}
-                          to={tab.to}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`block px-3 py-2 rounded-md text-sm transition-colors ${
-                            location.pathname === tab.to.split("#")[0]
-                              ? "bg-muted text-foreground"
-                              : "text-muted-foreground hover:bg-muted/50"
-                          }`}
-                        >
-                          {tab.label}
-                        </Link>
-                      ))}
+                      {pillar.tabs.map((tab) => {
+                        const isActive = isNavTabActive(tab, pillar.tabs, location.pathname, location.hash);
+                        return (
+                          <Link
+                            key={tab.to}
+                            to={tab.to}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                              isActive
+                                ? "bg-muted text-foreground"
+                                : "text-muted-foreground hover:bg-muted/50"
+                            }`}
+                          >
+                            {tab.label}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

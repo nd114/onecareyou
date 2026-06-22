@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   PATIENT_PILLARS,
   CLINICIAN_PILLARS,
+  isNavTabActive,
   type PatientPillarKey,
   type ClinicianPillarKey,
 } from "@/lib/nav-ia";
@@ -23,9 +24,6 @@ export function SectionTabs({ section, variant = "patient" }: Props) {
   const pillar = pillars.find((p) => p.key === section);
   if (!pillar || pillar.tabs.length <= 1) return null;
 
-  // Detect whether THIS pillar uses any hash anchors
-  const usesHashTabs = pillar.tabs.some((t) => t.to.includes("#"));
-
   return (
     <div className="border-b border-border/60 bg-background/60 backdrop-blur">
       <div className="container max-w-screen-2xl">
@@ -34,21 +32,7 @@ export function SectionTabs({ section, variant = "patient" }: Props) {
           className="flex items-center gap-1 overflow-x-auto scrollbar-none -mx-2 px-2 py-2"
         >
           {pillar.tabs.map((tab) => {
-            const [tabPath, tabHash] = tab.to.split("#");
-            let isActive: boolean;
-            if (usesHashTabs) {
-              // Hash-driven pillar (e.g. Practice → /clinician/settings#...).
-              // Only one of the hash tabs should highlight at a time.
-              if (tabHash) {
-                isActive = pathname === tabPath && hash === `#${tabHash}`;
-              } else {
-                // The "root" tab (no hash) is active only when on the path with no hash
-                isActive = pathname === tabPath && !hash;
-              }
-            } else {
-              isActive =
-                pathname === tabPath || pathname.startsWith(tabPath + "/");
-            }
+            const isActive = isNavTabActive(tab, pillar.tabs, pathname, hash);
             return (
               <Link
                 key={tab.to}

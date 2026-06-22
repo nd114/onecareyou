@@ -45,7 +45,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
-import { PATIENT_PILLARS, getPatientPillarForRoute } from "@/lib/nav-ia";
+import { PATIENT_PILLARS, getPatientPillarForRoute, isNavTabActive } from "@/lib/nav-ia";
 
 export function Header() {
   const location = useLocation();
@@ -465,20 +465,23 @@ export function Header() {
                       </div>
                       {isExpanded && pillar.tabs.length > 1 && (
                         <div className="ml-2 mb-2 border-l border-border/60 pl-2">
-                          {pillar.tabs.map((tab) => (
-                            <Link
-                              key={tab.to}
-                              to={tab.to}
-                              className={`block px-3 py-2 text-sm rounded-lg ${
-                                location.pathname === tab.to.split("#")[0]
-                                  ? "text-primary bg-primary/5"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                              }`}
-                              onClick={() => setMobileMenuOpen(false)}
-                            >
-                              {tab.label}
-                            </Link>
-                          ))}
+                          {pillar.tabs.map((tab) => {
+                            const isActive = isNavTabActive(tab, pillar.tabs, location.pathname, location.hash);
+                            return (
+                              <Link
+                                key={tab.to}
+                                to={tab.to}
+                                className={`block px-3 py-2 text-sm rounded-lg ${
+                                  isActive
+                                    ? "text-primary bg-primary/5"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                }`}
+                                onClick={() => setMobileMenuOpen(false)}
+                              >
+                                {tab.label}
+                              </Link>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
