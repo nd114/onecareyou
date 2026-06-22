@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
@@ -105,6 +106,7 @@ const ClinicianPatients = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
+        <SectionTabs section="patients" variant="clinician" />
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -153,6 +155,7 @@ const ClinicianPatients = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <ClinicianHeader />
+      <SectionTabs section="patients" variant="clinician" />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6">
         <motion.div

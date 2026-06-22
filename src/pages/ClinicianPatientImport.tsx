@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { toast } from 'sonner';
 
@@ -221,6 +222,7 @@ const ClinicianPatientImport = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <ClinicianHeader />
+      <SectionTabs section="patients" variant="clinician" />
 
       <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-4xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">

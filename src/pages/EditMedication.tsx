@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
@@ -125,6 +126,7 @@ const EditMedication = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <Header />
+        <SectionTabs section="health" variant="patient" />
         <main className="container py-8 max-w-2xl flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -135,6 +137,7 @@ const EditMedication = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section="health" variant="patient" />
       
       <main className="container py-8 max-w-2xl">
         <motion.div
