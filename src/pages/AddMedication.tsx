@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Header } from '@/components/layout/Header';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
@@ -103,6 +104,7 @@ const AddMedication = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
+      <SectionTabs section="health" variant="patient" />
       
       <main className="container py-8 max-w-2xl">
         <motion.div

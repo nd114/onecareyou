@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { SectionTabs } from '@/components/layout/SectionTabs';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
@@ -184,6 +185,7 @@ const ClinicianPatientDetail = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
+        <SectionTabs section="patients" variant="clinician" />
         <main className="container py-8">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
@@ -197,6 +199,7 @@ const ClinicianPatientDetail = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <ClinicianHeader />
+      <SectionTabs section="patients" variant="clinician" />
       
       <main className="container py-4 sm:py-8 px-4 sm:px-6">
         {/* Back Button & Header */}
@@ -208,10 +211,10 @@ const ClinicianPatientDetail = () => {
           <Button 
             variant="ghost" 
             className="mb-4"
-            onClick={() => navigate('/clinician/dashboard')}
+            onClick={() => navigate('/clinician/patients')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to Patients
           </Button>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
