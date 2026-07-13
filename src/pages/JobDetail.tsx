@@ -49,6 +49,8 @@ const JobDetail = () => {
   if (!job) {
     return (
       <div className="min-h-screen flex flex-col">
+        <SEOHead title="Position Not Found" description="This job posting is no longer available." noIndex />
+
         <Header />
         <main className="flex-1 container px-4 py-16">
           <div className="text-center">
