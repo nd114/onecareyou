@@ -22,6 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getJobById, getIconComponent } from '@/lib/job-listings';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { jobPostingSchema, breadcrumbSchema } from '@/components/seo/structuredData';
+
 
 const JobDetail = () => {
   const { jobId } = useParams<{ jobId: string }>();
@@ -46,6 +49,8 @@ const JobDetail = () => {
   if (!job) {
     return (
       <div className="min-h-screen flex flex-col">
+        <SEOHead title="Position Not Found" description="This job posting is no longer available." noIndex />
+
         <Header />
         <main className="flex-1 container px-4 py-16">
           <div className="text-center">
@@ -181,7 +186,22 @@ const JobDetail = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title={`${job.title} — ${job.location} | Careers`}
+        description={job.description}
+        canonical={`/careers/${job.id}`}
+        ogType="article"
+        jsonLd={[
+          jobPostingSchema(job),
+          breadcrumbSchema([
+            { name: 'Home', path: '/' },
+            { name: 'Careers', path: '/careers' },
+            { name: job.title, path: `/careers/${job.id}` },
+          ]),
+        ]}
+      />
       <Header />
+
       
       <main className="flex-1">
         {/* Header Section */}

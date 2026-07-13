@@ -1,0 +1,41 @@
+# OneCare
+
+> OneCare is a connected health platform that eliminates information asymmetry between patients and their care teams — track vitals, manage medications, store health records, and share continuous updates with clinicians from hospital to home.
+
+OneCare gives patients (and their families) a single home for their health data — vitals, medications, lab results, documents, schedules — and gives clinicians a live, longitudinal view of their patients between visits. The platform is HIPAA-aligned, mobile-first, works offline, and installs as a PWA. Clinicians get an inbox-style "Today" triage, encounters/SOAP notes, clinical templates, referrals, alerts, and role-based access for private practices and larger groups. Planned integrations include FHIR and QHIN (Particle Health) for network-wide record retrieval.
+
+## Product
+
+- [Features](/features): Full feature list across patient and clinician sides
+- [Pricing](/pricing): Plans for patients and clinicians (audience toggle)
+- [For Clinicians](/for-clinicians): Why practices choose OneCare
+- [Install](/install): Install OneCare as a PWA on iOS, Android, or desktop
+
+## Company
+
+- [About](/about): Mission — eliminate post-discharge information asymmetry
+- [Contact](/contact): Get in touch with the OneCare team
+- [Careers](/careers): Open roles — remote-first, patient-first culture
+- [Help Center](/help): FAQs and product guides
+- [Knowledge Base](/knowledge): Health-literacy articles and guides
+
+## Open roles
+
+- [Sales Development Representative](/careers/sdr): Remote, part-time / contract — clinic outreach and demo scheduling
+- [Healthcare Content Specialist](/careers/content): Remote, paid — patient education content and clinical thought leadership
+- [Community Growth Lead (Nigeria)](/careers/community-growth-lead): Lagos / Abuja, paid — on-the-ground adoption, pharmacy partnerships
+- [Clinical Advisory Board](/careers/clinical-advisor): Remote, unpaid advisory — physicians and nurses shaping remote patient monitoring
+- [Product Feedback Panel](/careers/product-panel): Remote, unpaid — clinicians shaping product direction
+
+## Legal
+
+- [Privacy Policy](/privacy): How OneCare handles personal and health data
+- [Terms of Service](/terms): Platform usage terms
+- [Medical Disclaimer](/disclaimer): OneCare is not a substitute for professional medical advice
+- [Data Processing](/data-processing): GDPR and data-processing details
+
+## Optional
+
+- [Sitemap](/sitemap): Human-readable index of public pages
+- [Clinician Pricing](/pricing?audience=clinicians): Practice and enterprise pricing
+- [Why OneCare (Clinicians)](/clinician/why-onecare): Deeper clinician value overview
