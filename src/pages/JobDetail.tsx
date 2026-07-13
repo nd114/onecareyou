@@ -22,6 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getJobById, getIconComponent } from '@/lib/job-listings';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { jobPostingSchema, breadcrumbSchema } from '@/components/seo/structuredData';
+
 
 const JobDetail = () => {
   const { jobId } = useParams<{ jobId: string }>();
