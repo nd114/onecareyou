@@ -186,7 +186,22 @@ const JobDetail = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEOHead
+        title={`${job.title} — ${job.location} | Careers`}
+        description={job.description}
+        canonical={`/careers/${job.id}`}
+        ogType="article"
+        jsonLd={[
+          jobPostingSchema(job),
+          breadcrumbSchema([
+            { name: 'Home', path: '/' },
+            { name: 'Careers', path: '/careers' },
+            { name: job.title, path: `/careers/${job.id}` },
+          ]),
+        ]}
+      />
       <Header />
+
       
       <main className="flex-1">
         {/* Header Section */}
