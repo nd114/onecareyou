@@ -77,3 +77,66 @@ export function productSchema(name: string, description: string, price: string, 
     },
   };
 }
+
+export function jobPostingSchema(job: {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  type: 'paid' | 'unpaid';
+  commitment: string;
+  location: string;
+}) {
+  const employmentType = /full/i.test(job.commitment)
+    ? 'FULL_TIME'
+    : /contract/i.test(job.commitment)
+    ? 'CONTRACTOR'
+    : /part/i.test(job.commitment)
+    ? 'PART_TIME'
+    : 'OTHER';
+
+  const isRemote = /remote/i.test(job.location);
+  const datePosted = new Date().toISOString().split('T')[0];
+  const validThrough = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split('T')[0];
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.description,
+    identifier: {
+      '@type': 'PropertyValue',
+      name: BRAND.name,
+      value: job.id,
+    },
+    datePosted,
+    validThrough,
+    employmentType,
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: BRAND.name,
+      sameAs: BRAND.urls.published,
+      logo: `${BRAND.urls.published}/favicon.png`,
+    },
+    industry: 'Healthcare Technology',
+    occupationalCategory: job.category,
+    jobLocationType: isRemote ? 'TELECOMMUTE' : undefined,
+    applicantLocationRequirements: isRemote
+      ? { '@type': 'Country', name: 'Worldwide' }
+      : undefined,
+    jobLocation: isRemote
+      ? undefined
+      : {
+          '@type': 'Place',
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: job.location,
+          },
+        },
+    directApply: true,
+    url: `${BRAND.urls.published}/careers/${job.id}`,
+  };
+}
+
