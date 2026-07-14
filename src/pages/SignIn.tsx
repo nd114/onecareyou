@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { z } from 'zod';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
