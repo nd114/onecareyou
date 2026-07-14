@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 const signUpSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
@@ -217,6 +218,17 @@ const SignUp = () => {
                 )}
               </Button>
             </form>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            <GoogleSignInButton label="Sign up with Google" redirectTo="/onboarding" />
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
