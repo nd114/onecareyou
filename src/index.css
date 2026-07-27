@@ -152,7 +152,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: "Epilogue", system-ui, sans-serif;
   }
 
   h1,
@@ -161,8 +161,21 @@
   h4,
   h5,
   h6 {
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-family: "Fraunces", "Times New Roman", serif;
+    font-optical-sizing: auto;
     @apply font-bold tracking-tight;
+  }
+
+  .font-serif-display {
+    font-family: "Fraunces", "Times New Roman", serif;
+    font-optical-sizing: auto;
+  }
+  .font-sans-body {
+    font-family: "Epilogue", system-ui, sans-serif;
+  }
+  .eyebrow {
+    font-family: "Epilogue", system-ui, sans-serif;
+    @apply text-[11px] font-bold tracking-[0.2em] uppercase;
   }
 }
 
