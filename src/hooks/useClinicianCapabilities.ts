@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 
 export type PracticeCapability =
   | "view_phi"
@@ -61,6 +62,7 @@ interface MembershipRow {
 
 export function useClinicianCapabilities() {
   const { user } = useAuth();
+  const { isClinician } = useClinicianProfile();
   const [membership, setMembership] = useState<MembershipRow | null>(null);
   const [grants, setGrants] = useState<Set<PracticeCapability>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -85,7 +87,11 @@ export function useClinicianCapabilities() {
 
     if (!memberRow) {
       setMembership(null);
-      setGrants(new Set());
+      // Solo clinician (verified clinician profile, no practice yet) is the
+      // owner of their own workspace — grant all capabilities so audit,
+      // reports, compliance, templates, etc. are accessible without forcing
+      // them to create a practice first. Non-clinicians get nothing.
+      setGrants(isClinician ? new Set(ALL_CAPABILITIES) : new Set());
       setLoading(false);
       return;
     }
@@ -108,7 +114,7 @@ export function useClinicianCapabilities() {
     for (const [cap, ok] of results) if (ok) next.add(cap);
     setGrants(next);
     setLoading(false);
-  }, [user]);
+  }, [user, isClinician]);
 
   useEffect(() => {
     load();

@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
+import { PatientRoute } from "@/components/auth/PatientRoute";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { queryClient } from "@/lib/query-client";
@@ -176,59 +177,59 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <Dashboard />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/medications" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <Medications />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/medications/add" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <AddMedication />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/medications/:id/edit" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <EditMedication />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/schedule" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <Schedule />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/vitals" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <Vitals />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/care-circle" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <CareCircle />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/health-vault" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <HealthVault />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/messages" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <Messages />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/family" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <FamilyDashboard />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/family/:memberId" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <FamilyMemberDetail />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/settings" element={
               <ProtectedRoute>
@@ -236,34 +237,34 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/guidance" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <PatientGuidance />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/adherence-report" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <AdherenceReport />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/knowledge-base" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <KnowledgeBase />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/knowledge-base/:topicSlug" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <KnowledgeBaseTopic />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/medication-info/:drugName" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <MedicationInfo />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/subscription-success" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <SubscriptionSuccess />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             {/* Internal/unlisted pages */}
             <Route path="/ehr-comparison" element={
@@ -308,9 +309,9 @@ const App = () => (
               </ClinicianRoute>
             } />
             <Route path="/assist" element={
-              <ProtectedRoute>
+              <PatientRoute>
                 <Assist />
-              </ProtectedRoute>
+              </PatientRoute>
             } />
             <Route path="/clinician/dictations" element={
               <ClinicianRoute>
