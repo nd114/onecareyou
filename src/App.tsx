@@ -12,6 +12,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { queryClient } from "@/lib/query-client";
@@ -120,54 +121,54 @@ const App = () => (
             <Route path="/careers/:jobId" element={<JobDetail />} />
             {/* Patient detail view - requires auth */}
             <Route path="/clinician/patient/:inviteCode" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianPatientDetail />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/today" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianToday />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/dashboard" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianDashboard />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/patients" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianPatients />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/guidance" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianGuidance />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/alerts" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianAlerts />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/messages" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianMessages />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/patients/import" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianPatientImport />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/settings" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianSettings />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/practice" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianPractice />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/onboarding" element={
               <ProtectedRoute>
@@ -287,24 +288,24 @@ const App = () => (
             <Route path="/clinician/pricing" element={<Navigate to="/pricing?audience=clinicians" replace />} />
             <Route path="/clinician/why-onecare" element={<ClinicianWhyOneCare />} />
             <Route path="/clinician/patients/:inviteCode" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianPatientDetail />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/enterprise-inquiry" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <EnterpriseInquiry />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/baa" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianBAA />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/subscription-success" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianSubscriptionSuccess />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/assist" element={
               <ProtectedRoute>
@@ -312,29 +313,29 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/clinician/dictations" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianDictations />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/templates" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianTemplates />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/audit" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianAudit />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/reports" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianReports />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
             <Route path="/clinician/compliance" element={
-              <ProtectedRoute>
+              <ClinicianRoute>
                 <ClinicianCompliance />
-              </ProtectedRoute>
+              </ClinicianRoute>
             } />
 
             <Route path="*" element={<NotFound />} />
