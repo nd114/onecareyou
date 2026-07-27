@@ -2,97 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Epilogue:wght@400;500;600;700&display=swap");
 
 /* Marpe Design System - Health & Wellness Theme */
 
 @layer base {
   :root {
-    /* Core colors - Emerald/Teal health theme */
-    --background: 0 0% 100%;
-    --foreground: 210 20% 15%;
+    /* Emerald Prestige — forest/cream/gold */
+    --background: 45 56% 92%;         /* cream #f5f0e0 */
+    --foreground: 0 0% 5%;            /* ink #0d0d0d */
 
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card-foreground: 0 0% 5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover-foreground: 0 0% 5%;
 
-    /* Primary - Emerald/Teal */
-    --primary: 168 76% 36%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary — deep emerald */
+    --primary: 158 78% 17%;           /* #064e3b */
+    --primary-foreground: 45 56% 92%; /* cream */
 
-    /* Secondary - Soft blue-gray */
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 210 20% 20%;
+    /* Secondary — soft cream surface */
+    --secondary: 45 40% 88%;
+    --secondary-foreground: 158 78% 17%;
 
-    --muted: 210 15% 95%;
-    --muted-foreground: 210 12% 45%;
+    --muted: 45 30% 90%;
+    --muted-foreground: 158 20% 30%;
 
-    /* Accent - Ocean blue */
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent — gold */
+    --accent: 43 55% 54%;             /* #c9a84c */
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 168 76% 36%;
+    --border: 158 20% 82%;
+    --input: 158 20% 82%;
+    --ring: 158 78% 17%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Marpe specific tokens */
-    --emerald: 168 76% 36%;
-    --emerald-light: 168 76% 95%;
-    --emerald-dark: 168 76% 28%;
+    /* Brand tokens */
+    --emerald: 158 78% 17%;
+    --emerald-mid: 163 80% 26%;       /* #0d7a5f */
+    --emerald-light: 158 40% 92%;
+    --gold: 43 55% 54%;
+    --gold-light: 43 55% 85%;
+    --cream: 45 56% 92%;
+    --ink: 0 0% 5%;
 
+    /* Legacy tokens kept for existing components */
     --ocean: 199 89% 48%;
     --ocean-light: 199 89% 95%;
-
     --indigo: 234 89% 60%;
     --indigo-light: 234 89% 95%;
-
     --amber: 38 92% 50%;
     --amber-light: 38 92% 95%;
-
     --rose: 346 77% 50%;
     --rose-light: 346 77% 95%;
 
-    /* Severity colors */
-    --severity-high: 0 84% 60%;
+    --severity-high: 0 72% 45%;
     --severity-moderate: 25 95% 53%;
-    --severity-low: 48 96% 53%;
+    --severity-low: 43 55% 54%;
 
-    /* Status colors */
-    --status-success: 142 71% 45%;
-    --status-pending: 199 89% 48%;
-    --status-missed: 0 84% 60%;
+    --status-success: 158 78% 30%;
+    --status-pending: 43 55% 54%;
+    --status-missed: 0 72% 45%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(168 76% 36%) 0%, hsl(199 89% 48%) 100%);
-    --gradient-stats-1: linear-gradient(135deg, hsl(168 76% 36%) 0%, hsl(168 76% 45%) 100%);
-    --gradient-stats-2: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(199 89% 58%) 100%);
-    --gradient-stats-3: linear-gradient(135deg, hsl(234 89% 60%) 0%, hsl(234 89% 70%) 100%);
-    --gradient-stats-4: linear-gradient(135deg, hsl(280 84% 55%) 0%, hsl(280 84% 65%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(168 76% 95%) 0%, hsl(199 89% 95%) 50%, hsl(234 89% 95%) 100%);
-    --gradient-dark: linear-gradient(135deg, hsl(210 20% 10%) 0%, hsl(220 25% 15%) 100%);
+    /* Gradients — restrained, no wellness-soft */
+    --gradient-primary: linear-gradient(135deg, hsl(158 78% 17%) 0%, hsl(163 80% 26%) 100%);
+    --gradient-stats-1: linear-gradient(135deg, hsl(158 78% 17%) 0%, hsl(163 80% 26%) 100%);
+    --gradient-stats-2: linear-gradient(135deg, hsl(163 80% 26%) 0%, hsl(158 78% 17%) 100%);
+    --gradient-stats-3: linear-gradient(135deg, hsl(43 55% 54%) 0%, hsl(43 55% 44%) 100%);
+    --gradient-stats-4: linear-gradient(135deg, hsl(0 0% 5%) 0%, hsl(158 78% 12%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(45 56% 92%) 0%, hsl(45 40% 88%) 100%);
+    --gradient-dark: linear-gradient(135deg, hsl(0 0% 5%) 0%, hsl(158 78% 12%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(210 20% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(210 20% 15% / 0.1), 0 2px 4px -2px hsl(210 20% 15% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(210 20% 15% / 0.1), 0 4px 6px -4px hsl(210 20% 15% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(210 20% 15% / 0.1), 0 8px 10px -6px hsl(210 20% 15% / 0.1);
-    --shadow-glow: 0 0 20px hsl(168 76% 36% / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(158 78% 8% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(158 78% 8% / 0.08), 0 2px 4px -2px hsl(158 78% 8% / 0.08);
+    --shadow-lg: 0 10px 15px -3px hsl(158 78% 8% / 0.10), 0 4px 6px -4px hsl(158 78% 8% / 0.10);
+    --shadow-xl: 0 20px 25px -5px hsl(158 78% 8% / 0.12), 0 8px 10px -6px hsl(158 78% 8% / 0.12);
+    --shadow-glow: 0 0 20px hsl(43 55% 54% / 0.3);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 168 76% 36%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 168 76% 95%;
-    --sidebar-accent-foreground: 168 76% 20%;
-    --sidebar-border: 210 20% 90%;
-    --sidebar-ring: 168 76% 36%;
+    --sidebar-background: 45 56% 94%;
+    --sidebar-foreground: 158 20% 20%;
+    --sidebar-primary: 158 78% 17%;
+    --sidebar-primary-foreground: 45 56% 92%;
+    --sidebar-accent: 158 40% 92%;
+    --sidebar-accent-foreground: 158 78% 17%;
+    --sidebar-border: 158 20% 82%;
+    --sidebar-ring: 158 78% 17%;
   }
 
   .dark {
@@ -153,7 +152,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: "Epilogue", system-ui, sans-serif;
   }
 
   h1,
@@ -162,8 +161,21 @@
   h4,
   h5,
   h6 {
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-family: "Fraunces", "Times New Roman", serif;
+    font-optical-sizing: auto;
     @apply font-bold tracking-tight;
+  }
+
+  .font-serif-display {
+    font-family: "Fraunces", "Times New Roman", serif;
+    font-optical-sizing: auto;
+  }
+  .font-sans-body {
+    font-family: "Epilogue", system-ui, sans-serif;
+  }
+  .eyebrow {
+    font-family: "Epilogue", system-ui, sans-serif;
+    @apply text-[11px] font-bold tracking-[0.2em] uppercase;
   }
 }
 
