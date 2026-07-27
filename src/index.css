@@ -95,53 +95,64 @@
   }
 
   .dark {
-    --background: 220 20% 8%;
-    --foreground: 210 20% 95%;
+    /* Emerald Prestige — dark */
+    --background: 158 30% 7%;         /* deep forest ink */
+    --foreground: 45 40% 92%;         /* cream */
 
-    --card: 220 20% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 158 25% 11%;
+    --card-foreground: 45 40% 92%;
 
-    --popover: 220 20% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 158 25% 11%;
+    --popover-foreground: 45 40% 92%;
 
-    --primary: 168 76% 45%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary — brighter emerald so it reads on dark */
+    --primary: 158 55% 40%;
+    --primary-foreground: 45 56% 94%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 158 20% 16%;
+    --secondary-foreground: 45 30% 88%;
 
-    --muted: 220 20% 18%;
-    --muted-foreground: 210 15% 60%;
+    --muted: 158 15% 18%;
+    --muted-foreground: 45 15% 70%;
 
-    --accent: 199 89% 55%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent — gold, slightly brighter */
+    --accent: 43 65% 60%;
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 62% 45%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 168 76% 45%;
+    --border: 158 20% 22%;
+    --input: 158 20% 22%;
+    --ring: 158 55% 40%;
 
-    /* Dark-mode override: tinted surfaces stay dark, not white-ish */
-    --emerald-light: 168 50% 16%;
-    --ocean-light: 199 60% 16%;
-    --indigo-light: 234 50% 18%;
-    --amber-light: 38 50% 16%;
-    --rose-light: 346 50% 18%;
+    /* Brand tokens — dark overrides */
+    --emerald: 158 55% 40%;
+    --emerald-mid: 163 60% 45%;
+    --emerald-light: 158 30% 18%;
+    --gold: 43 65% 60%;
+    --gold-light: 43 45% 30%;
+    --cream: 45 40% 92%;
+    --ink: 45 40% 92%;
 
-    /* Dark mode hero gradient */
-    --gradient-hero: linear-gradient(135deg, hsl(220 20% 12%) 0%, hsl(220 25% 15%) 50%, hsl(225 25% 18%) 100%);
+    /* Tinted surfaces stay dark */
+    --ocean-light: 199 40% 18%;
+    --indigo-light: 234 40% 20%;
+    --amber-light: 38 40% 18%;
+    --rose-light: 346 40% 20%;
 
+    --gradient-hero: linear-gradient(180deg, hsl(158 30% 7%) 0%, hsl(158 25% 11%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(158 55% 30%) 0%, hsl(163 60% 45%) 100%);
+    --gradient-dark: linear-gradient(135deg, hsl(158 30% 7%) 0%, hsl(158 25% 11%) 100%);
 
-    --sidebar-background: 220 20% 10%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 168 76% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 168 76% 45%;
+    --sidebar-background: 158 30% 9%;
+    --sidebar-foreground: 45 30% 88%;
+    --sidebar-primary: 158 55% 40%;
+    --sidebar-primary-foreground: 45 56% 94%;
+    --sidebar-accent: 158 20% 16%;
+    --sidebar-accent-foreground: 45 30% 88%;
+    --sidebar-border: 158 20% 22%;
+    --sidebar-ring: 158 55% 40%;
   }
 }
 

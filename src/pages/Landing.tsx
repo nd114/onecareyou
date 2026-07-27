@@ -109,9 +109,11 @@ export default function Landing() {
                 </span>
               </div>
               <h1 className="font-serif-display text-[3.25rem] sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-primary leading-[0.95] tracking-tight">
-                The record,
+                Shared
                 <br />
-                <span className="italic font-medium">co-authored.</span>
+                Health
+                <br />
+                <span className="text-[hsl(var(--gold))]">Intelligence.</span>
               </h1>
             </div>
             <div className="col-span-12 lg:col-span-4 lg:pb-4">
@@ -143,7 +145,7 @@ export default function Landing() {
 
           {/* Product mockup — browser chrome */}
           <div className="mt-16 lg:mt-20">
-            <div className="rounded-lg border border-primary/20 bg-white shadow-2xl overflow-hidden">
+            <div className="rounded-lg border border-primary/20 bg-card shadow-2xl overflow-hidden">
               {/* Chrome */}
               <div className="flex items-center gap-2 px-4 py-3 bg-[hsl(var(--secondary))] border-b border-primary/10">
                 <div className="flex gap-1.5">
@@ -255,7 +257,7 @@ export default function Landing() {
 
       {/* CO-AUTHORSHIP SECTION */}
       <section className="mx-auto max-w-7xl px-6 py-20 lg:py-28">
-        <div className="grid grid-cols-12 gap-0 border border-primary/20 bg-white">
+        <div className="grid grid-cols-12 gap-0 border border-primary/20 bg-card">
           <div className="col-span-12 md:col-span-7 p-10 lg:p-14 bg-primary text-primary-foreground">
             <div className="flex items-center gap-3 mb-10">
               <span className="h-px w-10 bg-[hsl(var(--gold))]" aria-hidden />
