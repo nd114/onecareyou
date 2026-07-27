@@ -109,9 +109,11 @@ export default function Landing() {
                 </span>
               </div>
               <h1 className="font-serif-display text-[3.25rem] sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-primary leading-[0.95] tracking-tight">
-                The record,
+                Shared
                 <br />
-                <span className="italic font-medium">co-authored.</span>
+                Health
+                <br />
+                <span className="text-[hsl(var(--gold))]">Intelligence.</span>
               </h1>
             </div>
             <div className="col-span-12 lg:col-span-4 lg:pb-4">
