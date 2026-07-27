@@ -89,10 +89,11 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEOHead
-        title="OneCare — a shared health record for patients and their care team"
+        title="A shared health record for patients and their care team"
         description="OneCare is a co-authored health record. Patients log care between visits, clinicians see it as it happens, and both work from the same page."
-        structuredData={[organizationSchema, webApplicationSchema]}
+        jsonLd={[organizationSchema(), webApplicationSchema()]}
       />
+
 
       {isClinician ? <ClinicianHeader /> : <Header />}
 
