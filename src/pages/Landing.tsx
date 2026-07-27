@@ -72,7 +72,7 @@ const timeline = [
   {
     who: 'Clinician',
     time: '09:04',
-    label: 'Dr. Adeyemi replied',
+    label: 'Dr. Chen replied',
     value: 'Reduce dose to 5mg. Follow up in 3 days.',
   },
   {
@@ -164,7 +164,7 @@ export default function Landing() {
                 <div>
                   <div className="eyebrow text-foreground/50 mb-1">Patient</div>
                   <div className="font-serif-display text-2xl font-bold text-primary">
-                    Amara Okoye
+                    Sarah Mitchell
                   </div>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-[hsl(var(--emerald-light))] px-3 py-1 text-xs font-semibold text-primary">
@@ -314,7 +314,7 @@ export default function Landing() {
                 BP 128 / 82
               </div>
               <div className="text-xs text-foreground/60 mt-1">
-                Logged 08:12 · Amara O.
+                Logged 08:12 · Sarah M.
               </div>
             </div>
             <div className="p-5 bg-background border-l-4 border-primary shadow-lg">
@@ -328,7 +328,7 @@ export default function Landing() {
                 Adjust ramipril to 5mg
               </div>
               <div className="text-xs text-foreground/60 mt-1">
-                09:04 · Dr. Adeyemi
+                09:04 · Dr. Chen
               </div>
             </div>
           </div>
