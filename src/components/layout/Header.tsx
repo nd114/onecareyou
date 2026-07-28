@@ -22,6 +22,7 @@ import {
   Moon,
   Sparkles,
   ChevronRight,
+  Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
