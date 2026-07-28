@@ -92,17 +92,18 @@ const Pricing = () => {
           description="OneCare clinician plans: Solo, Pro, and Enterprise. HIPAA-ready, BAA on Enterprise, per-clinician pricing."
           canonical="/pricing?audience=clinicians"
         />
-        {showAudienceToggle && (
-          <div className="container px-4 pt-6">
-            <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="patients">For Patients</TabsTrigger>
-                <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        )}
-        <ClinicianPricing />
+        <ClinicianPricing
+          audienceSlot={
+            showAudienceToggle ? (
+              <Tabs value={audience} onValueChange={(v) => setAudience(v as 'patients' | 'clinicians')} className="max-w-md mx-auto">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="patients">For Patients</TabsTrigger>
+                  <TabsTrigger value="clinicians">For Clinicians</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            ) : undefined
+          }
+        />
       </div>
     );
   }
