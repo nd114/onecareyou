@@ -180,8 +180,8 @@ export function Header() {
         {/* Right column: contains both the md+ action cluster and the <lg hamburger */}
         <div className="flex items-center justify-end gap-2 shrink-0">
 
-        {/* Right-side cluster: visible from md+ */}
-        <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
+        {/* Right-side cluster: visible from lg+ (desktop only) */}
+        <div className="hidden lg:flex items-center justify-end gap-2 shrink-0">
 
 
 
@@ -217,7 +217,6 @@ export function Header() {
                     )}
                   </div>
                   {isClinician ? (
-                    // Clinician notifications
                     clinicianNotifications.length > 0 ? (
                       <ScrollArea className="max-h-80">
                         <div className="divide-y">
@@ -264,8 +263,7 @@ export function Header() {
                         <p className="text-xs mt-1">You'll be notified when patients respond to your guidance</p>
                       </div>
                     )
-                  ) : // Patient notifications
-                  unreadGuidance.length > 0 ? (
+                  ) : unreadGuidance.length > 0 ? (
                     <ScrollArea className="max-h-80">
                       <div className="divide-y">
                         {unreadGuidance.slice(0, 10).map((item) => (
@@ -331,7 +329,6 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {/* Patient avatar menu — account-level only (pillars handle product nav) */}
                   {!isClinician && (
                     <>
                       <DropdownMenuItem asChild>
@@ -348,7 +345,6 @@ export function Header() {
                       </DropdownMenuItem>
                     </>
                   )}
-                  {/* Clinician-only menu items */}
                   {isClinician && (
                     <>
                       <DropdownMenuItem asChild>
@@ -375,18 +371,7 @@ export function Header() {
             </>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-              >
-                {resolvedTheme === 'dark' ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </Button>
+              <ThemeMenu />
               <Button variant="ghost" asChild>
                 <Link to="/sign-in">Sign In</Link>
               </Button>
@@ -397,9 +382,7 @@ export function Header() {
           )}
         </div>
 
-        {/* Hamburger: shown whenever the full desktop nav is hidden (below lg).
-            On mobile (below md) also includes compact family switcher since the
-            right-side cluster is hidden there. */}
+        {/* Below lg: hamburger only (auth actions live inside the drawer). */}
         <div className="lg:hidden flex items-center gap-1.5 ml-auto">
           {isAuthenticated && !isClinician && <div className="md:hidden"><HeaderFamilySwitcher compact /></div>}
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle navigation">
