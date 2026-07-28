@@ -27,7 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianSubscription, CLINICIAN_TIER_INFO, ClinicianTier } from '@/hooks/useClinicianSubscription';
 
-const ClinicianPricing = () => {
+const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } = {}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isClinician } = useClinicianProfile();
@@ -75,7 +75,11 @@ const ClinicianPricing = () => {
         canonical="/clinician/pricing"
       />
       {isClinician ? <ClinicianHeader /> : <Header />}
-      
+
+      {audienceSlot && (
+        <div className="container px-4 pt-6">{audienceSlot}</div>
+      )}
+
       <main className="container py-12 px-4">
         {/* Hero Section */}
         <motion.div

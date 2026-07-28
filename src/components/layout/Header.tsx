@@ -22,6 +22,7 @@ import {
   Moon,
   Sparkles,
   ChevronRight,
+  Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -180,8 +181,8 @@ export function Header() {
         {/* Right column: contains both the md+ action cluster and the <lg hamburger */}
         <div className="flex items-center justify-end gap-2 shrink-0">
 
-        {/* Right-side cluster: visible from md+ */}
-        <div className="hidden md:flex items-center justify-end gap-2 shrink-0">
+        {/* Right-side cluster: visible from lg+ (desktop only) */}
+        <div className="hidden lg:flex items-center justify-end gap-2 shrink-0">
 
 
 
@@ -217,7 +218,6 @@ export function Header() {
                     )}
                   </div>
                   {isClinician ? (
-                    // Clinician notifications
                     clinicianNotifications.length > 0 ? (
                       <ScrollArea className="max-h-80">
                         <div className="divide-y">
@@ -264,8 +264,7 @@ export function Header() {
                         <p className="text-xs mt-1">You'll be notified when patients respond to your guidance</p>
                       </div>
                     )
-                  ) : // Patient notifications
-                  unreadGuidance.length > 0 ? (
+                  ) : unreadGuidance.length > 0 ? (
                     <ScrollArea className="max-h-80">
                       <div className="divide-y">
                         {unreadGuidance.slice(0, 10).map((item) => (
@@ -331,7 +330,6 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {/* Patient avatar menu — account-level only (pillars handle product nav) */}
                   {!isClinician && (
                     <>
                       <DropdownMenuItem asChild>
@@ -348,7 +346,6 @@ export function Header() {
                       </DropdownMenuItem>
                     </>
                   )}
-                  {/* Clinician-only menu items */}
                   {isClinician && (
                     <>
                       <DropdownMenuItem asChild>
@@ -375,18 +372,7 @@ export function Header() {
             </>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-              >
-                {resolvedTheme === 'dark' ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </Button>
+              <ThemeMenu />
               <Button variant="ghost" asChild>
                 <Link to="/sign-in">Sign In</Link>
               </Button>
@@ -397,9 +383,7 @@ export function Header() {
           )}
         </div>
 
-        {/* Hamburger: shown whenever the full desktop nav is hidden (below lg).
-            On mobile (below md) also includes compact family switcher since the
-            right-side cluster is hidden there. */}
+        {/* Below lg: hamburger only (auth actions live inside the drawer). */}
         <div className="lg:hidden flex items-center gap-1.5 ml-auto">
           {isAuthenticated && !isClinician && <div className="md:hidden"><HeaderFamilySwitcher compact /></div>}
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle navigation">
@@ -532,37 +516,93 @@ export function Header() {
                 </button>
               </>
             ) : (
-              <div className="flex flex-col gap-2 mt-2 px-4">
-                <Button
-                  variant="outline"
-                  onClick={toggleTheme}
-                  className="w-full justify-start"
-                >
-                  {resolvedTheme === 'dark' ? (
-                    <>
-                      <Sun className="h-4 w-4 mr-2" />
-                      Light Mode
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="h-4 w-4 mr-2" />
-                      Dark Mode
-                    </>
-                  )}
-                </Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" asChild className="flex-1">
+              <>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={`px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg ${
+                      location.pathname === link.href
+                        ? "text-primary bg-primary/5"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <div className="border-t border-border my-2" />
+                <div className="px-4 pb-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Appearance</p>
+                  <ThemeSegmented />
+                </div>
+                <div className="flex gap-2 mt-2 px-4">
+                  <Button variant="outline" asChild className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                     <Link to="/sign-in">Sign In</Link>
                   </Button>
-                  <Button asChild className="flex-1 gradient-primary border-0">
+                  <Button asChild className="flex-1 gradient-primary border-0" onClick={() => setMobileMenuOpen(false)}>
                     <Link to="/sign-up">Get Started</Link>
                   </Button>
                 </div>
-              </div>
+              </>
             )}
           </nav>
         </motion.div>
       )}
     </header>
+  );
+}
+
+function ThemeMenu() {
+  const { theme, setTheme } = useTheme();
+  const Icon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Theme">
+          <Icon className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          <Sun className="h-4 w-4 mr-2" /> Light {theme === "light" && "•"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          <Moon className="h-4 w-4 mr-2" /> Dark {theme === "dark" && "•"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          <Monitor className="h-4 w-4 mr-2" /> System {theme === "system" && "•"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ThemeSegmented() {
+  const { theme, setTheme } = useTheme();
+  const opts: { key: "light" | "dark" | "system"; label: string; Icon: typeof Sun }[] = [
+    { key: "light", label: "Light", Icon: Sun },
+    { key: "dark", label: "Dark", Icon: Moon },
+    { key: "system", label: "System", Icon: Monitor },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-1 rounded-lg border border-border p-1 bg-muted/30">
+      {opts.map(({ key, label, Icon }) => {
+        const active = theme === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTheme(key)}
+            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+              active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

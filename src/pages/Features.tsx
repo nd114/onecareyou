@@ -2,13 +2,12 @@ import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { breadcrumbSchema } from '@/components/seo/structuredData';
 import { Link } from 'react-router-dom';
-import { 
-  Shield, 
-  Clock, 
-  Heart, 
-  TrendingUp, 
-  Pill, 
-  Calendar,
+import {
+  Shield,
+  Clock,
+  Heart,
+  TrendingUp,
+  Pill,
   Bell,
   Users,
   FileText,
@@ -17,12 +16,13 @@ import {
   Zap,
   ArrowRight,
   Check,
-  Share2
+  Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { FEATURE_MOCKUPS } from '@/components/features/FeatureMockup';
 
 const coreFeatures = [
   {
@@ -159,40 +159,47 @@ const Features = () => {
             </p>
           </motion.div>
 
-          <div className="space-y-12">
-            {coreFeatures.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="overflow-hidden">
-                  <div className={`grid md:grid-cols-2 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
-                    <CardHeader className={`p-8 ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                      <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                        <feature.icon className="h-7 w-7 text-primary" />
-                      </div>
-                      <CardTitle className="text-2xl mb-2">{feature.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {feature.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className={`p-8 bg-muted/30 ${index % 2 === 1 ? 'md:order-1' : ''}`}>
-                      <ul className="space-y-3">
-                        {feature.details.map((detail) => (
-                          <li key={detail} className="flex items-center gap-3">
-                            <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                            <span>{detail}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
+          <div className="space-y-20 lg:space-y-28">
+            {coreFeatures.map((feature, index) => {
+              const Mockup = FEATURE_MOCKUPS[feature.title];
+              const reverse = index % 2 === 1;
+              return (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 0.5 }}
+                  className={`grid gap-10 lg:gap-16 items-center lg:grid-cols-2 ${
+                    reverse ? "lg:[&>*:first-child]:order-2" : ""
+                  }`}
+                >
+                  <div>
+                    <p className="eyebrow text-primary mb-4">
+                      0{index + 1} — {feature.title}
+                    </p>
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
+                      <feature.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-display text-2xl md:text-3xl font-bold mb-4 leading-tight">
+                      {feature.title}
+                    </h3>
+                    <p className="text-base md:text-lg text-muted-foreground mb-6">
+                      {feature.description}
+                    </p>
+                    <ul className="space-y-2.5">
+                      {feature.details.map((detail) => (
+                        <li key={detail} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-sm md:text-base">{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </Card>
-              </motion.div>
-            ))}
+                  <div>{Mockup ? <Mockup /> : null}</div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
