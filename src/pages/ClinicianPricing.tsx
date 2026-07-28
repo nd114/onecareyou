@@ -75,7 +75,11 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
         canonical="/clinician/pricing"
       />
       {isClinician ? <ClinicianHeader /> : <Header />}
-      
+
+      {audienceSlot && (
+        <div className="container px-4 pt-6">{audienceSlot}</div>
+      )}
+
       <main className="container py-12 px-4">
         {/* Hero Section */}
         <motion.div
