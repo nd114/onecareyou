@@ -552,3 +552,57 @@ export function Header() {
     </header>
   );
 }
+
+function ThemeMenu() {
+  const { theme, setTheme } = useTheme();
+  const Icon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Theme">
+          <Icon className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          <Sun className="h-4 w-4 mr-2" /> Light {theme === "light" && "•"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          <Moon className="h-4 w-4 mr-2" /> Dark {theme === "dark" && "•"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          <Monitor className="h-4 w-4 mr-2" /> System {theme === "system" && "•"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ThemeSegmented() {
+  const { theme, setTheme } = useTheme();
+  const opts: { key: "light" | "dark" | "system"; label: string; Icon: typeof Sun }[] = [
+    { key: "light", label: "Light", Icon: Sun },
+    { key: "dark", label: "Dark", Icon: Moon },
+    { key: "system", label: "System", Icon: Monitor },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-1 rounded-lg border border-border p-1 bg-muted/30">
+      {opts.map(({ key, label, Icon }) => {
+        const active = theme === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTheme(key)}
+            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+              active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
