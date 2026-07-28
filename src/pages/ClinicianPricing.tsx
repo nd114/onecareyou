@@ -27,7 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianSubscription, CLINICIAN_TIER_INFO, ClinicianTier } from '@/hooks/useClinicianSubscription';
 
-const ClinicianPricing = () => {
+const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } = {}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isClinician } = useClinicianProfile();
