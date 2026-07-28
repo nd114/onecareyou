@@ -2,13 +2,12 @@ import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { breadcrumbSchema } from '@/components/seo/structuredData';
 import { Link } from 'react-router-dom';
-import { 
-  Shield, 
-  Clock, 
-  Heart, 
-  TrendingUp, 
-  Pill, 
-  Calendar,
+import {
+  Shield,
+  Clock,
+  Heart,
+  TrendingUp,
+  Pill,
   Bell,
   Users,
   FileText,
@@ -17,12 +16,13 @@ import {
   Zap,
   ArrowRight,
   Check,
-  Share2
+  Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { FEATURE_MOCKUPS } from '@/components/features/FeatureMockup';
 
 const coreFeatures = [
   {
