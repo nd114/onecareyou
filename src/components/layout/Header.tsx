@@ -515,33 +515,35 @@ export function Header() {
                 </button>
               </>
             ) : (
-              <div className="flex flex-col gap-2 mt-2 px-4">
-                <Button
-                  variant="outline"
-                  onClick={toggleTheme}
-                  className="w-full justify-start"
-                >
-                  {resolvedTheme === 'dark' ? (
-                    <>
-                      <Sun className="h-4 w-4 mr-2" />
-                      Light Mode
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="h-4 w-4 mr-2" />
-                      Dark Mode
-                    </>
-                  )}
-                </Button>
-                <div className="flex gap-2">
-                  <Button variant="outline" asChild className="flex-1">
+              <>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    className={`px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg ${
+                      location.pathname === link.href
+                        ? "text-primary bg-primary/5"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <div className="border-t border-border my-2" />
+                <div className="px-4 pb-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Appearance</p>
+                  <ThemeSegmented />
+                </div>
+                <div className="flex gap-2 mt-2 px-4">
+                  <Button variant="outline" asChild className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                     <Link to="/sign-in">Sign In</Link>
                   </Button>
-                  <Button asChild className="flex-1 gradient-primary border-0">
+                  <Button asChild className="flex-1 gradient-primary border-0" onClick={() => setMobileMenuOpen(false)}>
                     <Link to="/sign-up">Get Started</Link>
                   </Button>
                 </div>
-              </div>
+              </>
             )}
           </nav>
         </motion.div>
