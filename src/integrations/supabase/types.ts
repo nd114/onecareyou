@@ -288,6 +288,134 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          metadata: Json
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          metadata?: Json
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          metadata?: Json
+          source?: string | null
+        }
+        Relationships: []
+      }
+      beta_nda_signatures: {
+        Row: {
+          affirmed: boolean
+          booking_uid: string | null
+          created_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          nda_hash: string | null
+          nda_version: string
+          signed_at: string
+          signed_name: string
+          tester_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          affirmed?: boolean
+          booking_uid?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          nda_hash?: string | null
+          nda_version: string
+          signed_at?: string
+          signed_name: string
+          tester_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          affirmed?: boolean
+          booking_uid?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          nda_hash?: string | null
+          nda_version?: string
+          signed_at?: string
+          signed_name?: string
+          tester_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_nda_signatures_tester_id_fkey"
+            columns: ["tester_id"]
+            isOneToOne: false
+            referencedRelation: "beta_testers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beta_testers: {
+        Row: {
+          booking_end: string | null
+          booking_start: string | null
+          booking_status: string
+          booking_uid: string | null
+          clinician_role: string | null
+          country: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          joined_whatsapp: boolean
+          phone: string | null
+          practice_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_end?: string | null
+          booking_start?: string | null
+          booking_status?: string
+          booking_uid?: string | null
+          clinician_role?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          joined_whatsapp?: boolean
+          phone?: string | null
+          practice_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_end?: string | null
+          booking_start?: string | null
+          booking_status?: string
+          booking_uid?: string | null
+          clinician_role?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          joined_whatsapp?: boolean
+          phone?: string | null
+          practice_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       care_alert_logs: {
         Row: {
           id: string
