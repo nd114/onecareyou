@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.sync-bug-to-notion]
 verify_jwt = false
+
+[functions.beta-slots]
+verify_jwt = false
+
+[functions.beta-book]
+verify_jwt = false

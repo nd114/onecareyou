@@ -18,6 +18,9 @@ import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { queryClient } from "@/lib/query-client";
 import Landing from "./pages/Landing";
+import BetaLanding from "./pages/BetaLanding";
+import BetaBooking from "./pages/BetaBooking";
+import BetaNDA from "./pages/BetaNDA";
 import Dashboard from "./pages/Dashboard";
 import Medications from "./pages/Medications";
 import AddMedication from "./pages/AddMedication";
@@ -103,6 +106,9 @@ const App = () => (
           <StandaloneLaunchRedirect />
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/beta" element={<BetaLanding />} />
+            <Route path="/beta/book" element={<BetaBooking />} />
+            <Route path="/beta/nda" element={<BetaNDA />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
