@@ -12,7 +12,7 @@ const BodySchema = z.object({
   practiceName: z.string().trim().max(160).optional(),
   country: z.string().trim().max(80).optional(),
   phone: z.string().trim().max(40).optional(),
-  slotStart: z.string().datetime(),
+  slotStart: z.string().datetime({ offset: true }),
   timeZone: z.string().trim().min(1).max(64),
   ndaVersion: z.string().trim().min(1).max(20),
   signedName: z.string().trim().min(2).max(120),
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        start: b.slotStart,
+        start: new Date(b.slotStart).toISOString(),
         eventTypeId: Number(eventTypeId),
         attendee: {
           name: b.fullName,
