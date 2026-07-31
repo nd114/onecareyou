@@ -12,6 +12,7 @@ import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { MarkdownMessage } from './MarkdownMessage';
+import { ProposedActionsCard } from './ProposedActionsCard';
 import { cn } from '@/lib/utils';
 
 interface AIChatDrawerProps {
@@ -69,7 +70,17 @@ function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void })
   );
 }
 
-function MessageBubble({ message, onNavigate }: { message: ChatMessage; onNavigate: (route: string) => void }) {
+function MessageBubble({
+  message,
+  onNavigate,
+  onApprove,
+  onDiscard,
+}: {
+  message: ChatMessage;
+  onNavigate: (route: string) => void;
+  onApprove: (id: string) => void;
+  onDiscard: (id: string) => void;
+}) {
   const isUser = message.role === 'user';
 
   return (
@@ -90,6 +101,14 @@ function MessageBubble({ message, onNavigate }: { message: ChatMessage; onNaviga
         ) : (
           <MarkdownMessage content={message.content} />
         )}
+        {!isUser && (
+          <ProposedActionsCard
+            message={message}
+            onApprove={onApprove}
+            onDiscard={onDiscard}
+            compact
+          />
+        )}
         {message.suggestedRoute && (
           <Button
             size="sm"
@@ -109,6 +128,7 @@ function MessageBubble({ message, onNavigate }: { message: ChatMessage; onNaviga
     </div>
   );
 }
+
 
 export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
   const navigate = useNavigate();
