@@ -132,7 +132,7 @@ function MessageBubble({
 
 export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
   const navigate = useNavigate();
-  const { messages, isLoading, sendMessage, clearChat } = useAIChat();
+  const { messages, isLoading, sendMessage, clearChat, approveActions, discardActions } = useAIChat();
   const { hasConsent, grantConsent } = useAIConsent();
   const [input, setInput] = useState('');
   const [showConsent, setShowConsent] = useState(false);
@@ -236,8 +236,15 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
             )}
 
             {messages.map(msg => (
-              <MessageBubble key={msg.id} message={msg} onNavigate={handleNavigate} />
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onNavigate={handleNavigate}
+                onApprove={approveActions}
+                onDiscard={discardActions}
+              />
             ))}
+
 
             {isLoading && (
               <div className="flex gap-2 mb-4">
