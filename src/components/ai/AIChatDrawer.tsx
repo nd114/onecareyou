@@ -12,6 +12,7 @@ import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { MarkdownMessage } from './MarkdownMessage';
+import { ProposedActionsCard } from './ProposedActionsCard';
 import { cn } from '@/lib/utils';
 
 interface AIChatDrawerProps {
@@ -69,7 +70,17 @@ function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void })
   );
 }
 
-function MessageBubble({ message, onNavigate }: { message: ChatMessage; onNavigate: (route: string) => void }) {
+function MessageBubble({
+  message,
+  onNavigate,
+  onApprove,
+  onDiscard,
+}: {
+  message: ChatMessage;
+  onNavigate: (route: string) => void;
+  onApprove: (id: string) => void;
+  onDiscard: (id: string) => void;
+}) {
   const isUser = message.role === 'user';
 
   return (
@@ -89,6 +100,14 @@ function MessageBubble({ message, onNavigate }: { message: ChatMessage; onNaviga
           <p className="whitespace-pre-wrap">{message.content}</p>
         ) : (
           <MarkdownMessage content={message.content} />
+        )}
+        {!isUser && (
+          <ProposedActionsCard
+            message={message}
+            onApprove={onApprove}
+            onDiscard={onDiscard}
+            compact
+          />
         )}
         {message.suggestedRoute && (
           <Button
@@ -110,9 +129,10 @@ function MessageBubble({ message, onNavigate }: { message: ChatMessage; onNaviga
   );
 }
 
+
 export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
   const navigate = useNavigate();
-  const { messages, isLoading, sendMessage, clearChat } = useAIChat();
+  const { messages, isLoading, sendMessage, clearChat, approveActions, discardActions } = useAIChat();
   const { hasConsent, grantConsent } = useAIConsent();
   const [input, setInput] = useState('');
   const [showConsent, setShowConsent] = useState(false);
@@ -216,8 +236,15 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
             )}
 
             {messages.map(msg => (
-              <MessageBubble key={msg.id} message={msg} onNavigate={handleNavigate} />
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onNavigate={handleNavigate}
+                onApprove={approveActions}
+                onDiscard={discardActions}
+              />
             ))}
+
 
             {isLoading && (
               <div className="flex gap-2 mb-4">

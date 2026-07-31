@@ -48,6 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive } from "@/lib/nav-ia";
+import { Header } from "@/components/layout/Header";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -62,6 +63,15 @@ export function ClinicianHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
+
+  // Public clinician marketing pages (why-onecare, EHR comparison, etc.) render
+  // this header too. Without a session there is no clinician identity to show —
+  // fall back to the public marketing header so visitors don't see a fake
+  // "signed in" avatar and app nav.
+  if (!user) {
+    return <Header />;
+  }
+
 
   const toggleTheme = () => {
     // Toggle between light and dark, defaulting from resolved if on system
