@@ -67,7 +67,8 @@ function MessageRow({ message, onNavigate }: { message: ChatMessage; onNavigate:
 export default function Assist() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { messages, isLoading, sendMessage, clearChat } = useAIChat();
+  // Simple Mode stays read-only — no write actions proposed here.
+  const { messages, isLoading, sendMessage, clearChat } = useAIChat({ allowActions: false });
   const { hasConsent, grantConsent } = useAIConsent();
   const { logMessage, reset: resetLog } = useConversationLogger('simple_mode');
   const recorder = useVoiceRecorder();
