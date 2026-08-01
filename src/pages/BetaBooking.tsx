@@ -408,7 +408,7 @@ export default function BetaBooking() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-primary/10">
               <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                 <ShieldCheck className="h-4 w-4" />
-                Mutual NDA · v{NDA_VERSION}
+                Mutual NDA
               </div>
               <button
                 type="button"
