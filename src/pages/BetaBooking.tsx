@@ -9,6 +9,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -235,13 +237,14 @@ export default function BetaBooking() {
       />
 
       <header className="border-b border-primary/10">
-        <div className="mx-auto max-w-2xl px-6 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-2xl px-6 py-4 flex items-center justify-between gap-4">
           <Link to="/beta" className="inline-flex items-center gap-2 text-sm text-foreground/60 hover:text-primary">
             <ArrowLeft className="h-4 w-4" /> Beta programme
           </Link>
-          <span className="eyebrow text-foreground/50">Step 1 of 3</span>
+          <ThemeToggle />
         </div>
       </header>
+
 
       <div className="mx-auto max-w-2xl px-6 py-10 space-y-12">
         <div>
@@ -405,7 +408,7 @@ export default function BetaBooking() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-primary/10">
               <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                 <ShieldCheck className="h-4 w-4" />
-                Mutual NDA · v{NDA_VERSION}
+                Mutual NDA
               </div>
               <button
                 type="button"

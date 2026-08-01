@@ -1,7 +1,8 @@
 import { SEOHead } from '@/components/seo/SEOHead';
-import { NDA_SECTIONS, NDA_TITLE, NDA_VERSION } from '@/lib/beta-nda';
+import { NDA_SECTIONS, NDA_TITLE } from '@/lib/beta-nda';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 
 export function NdaBody() {
   return (
@@ -30,15 +31,19 @@ export default function BetaNDA() {
         description="The mutual non-disclosure agreement signed by OneCare beta testers."
         noIndex
       />
+      <header className="border-b border-primary/10">
+        <div className="mx-auto max-w-3xl px-6 py-4 flex items-center justify-between gap-4">
+          <Link
+            to="/beta"
+            className="inline-flex items-center gap-2 text-sm text-foreground/60 hover:text-primary"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to the beta programme
+          </Link>
+          <ThemeToggle />
+        </div>
+      </header>
       <div className="mx-auto max-w-3xl px-6 py-12">
-        <Link
-          to="/beta"
-          className="inline-flex items-center gap-2 text-sm text-foreground/60 hover:text-primary mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to the beta programme
-        </Link>
-        <span className="eyebrow text-[hsl(var(--gold))]">Version {NDA_VERSION}</span>
-        <h1 className="font-serif-display text-3xl lg:text-4xl font-bold text-primary mt-3 mb-8">
+        <h1 className="font-serif-display text-3xl lg:text-4xl font-bold text-primary mb-8">
           {NDA_TITLE}
         </h1>
         <NdaBody />

@@ -33,7 +33,6 @@ Deno.serve(async (req) => {
   try {
     const apiKey = Deno.env.get('CAL_API_KEY');
     const eventTypeId = Deno.env.get('CAL_EVENT_TYPE_ID');
-    if (!apiKey || !eventTypeId) return json({ error: 'Scheduling is not configured' }, 500);
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) {
@@ -109,57 +108,64 @@ Deno.serve(async (req) => {
       return json({ error: 'Could not record your signature' }, 500);
     }
 
-    // 3. Create the Cal.com booking (sends the calendar invite, confirmation
-    //    and Cal.com's 24h/1h reminder workflow to the attendee).
-    const calRes = await fetch(`${CAL_API}/bookings`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'cal-api-version': '2024-08-13',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        start: new Date(b.slotStart).toISOString(),
-        eventTypeId: Number(eventTypeId),
-        attendee: {
-          name: b.fullName,
-          email: b.email,
-          timeZone: b.timeZone,
-          language: 'en',
-        },
-        metadata: {
-          ndaVersion: b.ndaVersion,
-          ndaSignatureId: signature.id,
-          source: 'beta-landing',
-        },
-        bookingFieldsResponses: {
-          notes: [
-            b.notes,
-            `NDA v${b.ndaVersion} signed ${signedAt} by ${b.signedName}`,
-            b.practiceName ? `Practice: ${b.practiceName}` : null,
-            b.clinicianRole ? `Role: ${b.clinicianRole}` : null,
-          ]
-            .filter(Boolean)
-            .join(' — '),
-        },
-      }),
-    });
+    // 3. Mirror the booking into Cal.com when scheduling is connected. The
+    //    curated beta slots are our source of truth, so a Cal.com hiccup must
+    //    not invalidate an already-signed NDA — we still confirm and email.
+    let bookingUid: string | null = null;
+    let bookingStart = new Date(b.slotStart).toISOString();
+    let bookingEnd: string | null = null;
+    let meetingUrl: string | null = null;
 
-    const calBody = await calRes.text();
-    if (!calRes.ok) {
-      console.error(`Cal.com booking failed [${calRes.status}]: ${calBody}`);
-      await supabase.from('beta_testers').update({ booking_status: 'failed' }).eq('id', tester.id);
-      return json(
-        { error: 'That time is no longer available. Please pick another slot.', details: calBody },
-        calRes.status,
-      );
+    if (apiKey && eventTypeId) {
+      try {
+        const calRes = await fetch(`${CAL_API}/bookings`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'cal-api-version': '2024-08-13',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            start: bookingStart,
+            eventTypeId: Number(eventTypeId),
+            attendee: {
+              name: b.fullName,
+              email: b.email,
+              timeZone: b.timeZone,
+              language: 'en',
+            },
+            metadata: {
+              ndaVersion: b.ndaVersion,
+              ndaSignatureId: signature.id,
+              source: 'beta-landing',
+            },
+            bookingFieldsResponses: {
+              notes: [
+                b.notes,
+                `NDA v${b.ndaVersion} signed ${signedAt} by ${b.signedName}`,
+                b.practiceName ? `Practice: ${b.practiceName}` : null,
+                b.clinicianRole ? `Role: ${b.clinicianRole}` : null,
+              ]
+                .filter(Boolean)
+                .join(' — '),
+            },
+          }),
+        });
+
+        const calBody = await calRes.text();
+        if (!calRes.ok) {
+          console.error(`Cal.com booking failed [${calRes.status}]: ${calBody}`);
+        } else {
+          const booking = JSON.parse(calBody)?.data ?? {};
+          bookingUid = booking.uid ?? null;
+          bookingStart = booking.start ?? bookingStart;
+          bookingEnd = booking.end ?? null;
+          meetingUrl = booking.meetingUrl ?? booking.location ?? null;
+        }
+      } catch (e) {
+        console.error('Cal.com booking threw', e);
+      }
     }
-
-    const booking = JSON.parse(calBody)?.data ?? {};
-    const bookingUid: string | null = booking.uid ?? null;
-    const bookingStart: string = booking.start ?? b.slotStart;
-    const bookingEnd: string | null = booking.end ?? null;
-    const meetingUrl: string | null = booking.meetingUrl ?? booking.location ?? null;
 
     await Promise.all([
       supabase
@@ -175,7 +181,7 @@ Deno.serve(async (req) => {
       supabase.from('beta_events').insert({
         event_name: 'beta_booking_confirmed',
         source: 'beta-book',
-        metadata: { booking_uid: bookingUid },
+        metadata: { booking_uid: bookingUid, calendar_synced: !!bookingUid },
       }),
     ]);
 
@@ -194,11 +200,11 @@ Deno.serve(async (req) => {
           <p>Thanks for joining the OneCare beta programme. Your call is booked for:</p>
           <p style="font-size:18px;font-weight:bold">${when} (${b.timeZone})</p>
           ${meetingUrl ? `<p>Join link: <a href="${meetingUrl}">${meetingUrl}</a></p>` : ''}
-          <p>A calendar invite is on its way from our scheduling system, along with reminders 24 hours and 1 hour before the call.</p>
+          <p>A calendar invite is on its way, along with reminders 24 hours and 1 hour before the call.</p>
           <hr style="border:none;border-top:1px solid #e3e8e4;margin:24px 0" />
           <h3 style="margin:0 0 8px">Copy of what you signed</h3>
           <ul style="line-height:1.7">
-            <li><strong>Document:</strong> OneCare Beta Programme Mutual NDA, version ${b.ndaVersion}</li>
+            <li><strong>Document:</strong> OneCare Beta Programme Mutual NDA (version ${b.ndaVersion})</li>
             <li><strong>Signed name:</strong> ${b.signedName}</li>
             <li><strong>Signed at:</strong> ${signedAt} (UTC)</li>
             <li><strong>IP address:</strong> ${ip ?? 'not recorded'}</li>

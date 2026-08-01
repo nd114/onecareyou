@@ -23,12 +23,17 @@ interface AIChatDrawerProps {
 function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void }) {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  // Set while the user is intentionally dictating — used to restart the
+  // recogniser when the browser ends a segment on a natural pause, so audio
+  // capture only stops when the user actually presses stop.
+  const wantsListeningRef = useRef(false);
 
   const supported = typeof window !== 'undefined' && 
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   const toggle = () => {
     if (listening) {
+      wantsListeningRef.current = false;
       recognitionRef.current?.stop();
       setListening(false);
       return;
@@ -36,23 +41,43 @@ function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void })
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.lang = 'en-US';
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      onTranscript(transcript);
+      let finalText = '';
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+      }
+      if (finalText.trim()) onTranscript(finalText.trim());
+    };
+
+    recognition.onerror = (event: any) => {
+      // 'no-speech' fires on a quiet gap — keep listening instead of dropping out.
+      if (event?.error === 'no-speech') return;
+      wantsListeningRef.current = false;
       setListening(false);
     };
 
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => {
+      if (wantsListeningRef.current) {
+        try {
+          recognition.start();
+          return;
+        } catch {
+          /* fall through to stopping */
+        }
+      }
+      setListening(false);
+    };
 
     recognitionRef.current = recognition;
+    wantsListeningRef.current = true;
     recognition.start();
     setListening(true);
   };
+
 
   if (!supported) return null;
 
