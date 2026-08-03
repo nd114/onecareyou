@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { AddFamilyMemberDialog } from '@/components/family/AddFamilyMemberDialog';
+import { ageFromDateOnly } from '@/lib/date-only';
 
 const FamilyDashboard = () => {
   const navigate = useNavigate();
@@ -34,8 +35,8 @@ const FamilyDashboard = () => {
   const hasFamilyAccess = subscriptionTier === 'family' || subscriptionTier === 'premium';
   const calculateAge = (dob: string | null): string => {
     if (!dob) return 'Age not set';
-    const age = differenceInYears(new Date(), new Date(dob));
-    return `${age} years old`;
+    const age = ageFromDateOnly(dob);
+    return age === null ? 'Age not set' : `${age} years old`;
   };
 
   const getRelationshipLabel = (rel: string | null): string => {

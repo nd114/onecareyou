@@ -39,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { EditFamilyMemberDialog } from '@/components/family/EditFamilyMemberDialog';
+import { ageFromDateOnly, formatDateOnly } from '@/lib/date-only';
 
 const FamilyMemberDetail = () => {
   const { memberId } = useParams();
@@ -93,9 +94,7 @@ const FamilyMemberDetail = () => {
     );
   }
 
-  const age = member.date_of_birth 
-    ? differenceInYears(new Date(), new Date(member.date_of_birth))
-    : null;
+  const age = ageFromDateOnly(member.date_of_birth);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -302,9 +301,7 @@ const FamilyMemberDetail = () => {
                     <div>
                       <h4 className="font-semibold mb-1">Date of Birth</h4>
                       <p className="text-muted-foreground">
-                        {member.date_of_birth 
-                          ? format(new Date(member.date_of_birth), 'MMMM d, yyyy')
-                          : 'Not set'}
+                        {formatDateOnly(member.date_of_birth) ?? 'Not set'}
                       </p>
                     </div>
                     <div>

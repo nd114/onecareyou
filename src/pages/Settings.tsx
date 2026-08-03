@@ -56,6 +56,7 @@ import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
+import { formatDateOnly } from '@/lib/date-only';
 
 
 interface ConsentLogEntry {
@@ -354,7 +355,7 @@ const Settings = () => {
                   {(profile as any)?.date_of_birth && (
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Date of Birth</p>
-                      <p className="text-sm font-medium">{new Date((profile as any).date_of_birth).toLocaleDateString()}</p>
+                      <p className="text-sm font-medium">{formatDateOnly((profile as any).date_of_birth, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                     </div>
                   )}
                   {(profile as any)?.gender && (
