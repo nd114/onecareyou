@@ -26,7 +26,7 @@ import { useFamilyMembers } from '@/hooks/useFamilyMembers';
 import { useMedications } from '@/hooks/useMedications';
 import { useVitals } from '@/hooks/useVitals';
 import { Loader2 } from 'lucide-react';
-import { differenceInYears, format } from 'date-fns';
+import { format } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,

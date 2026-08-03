@@ -21,7 +21,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useFamilyMembers, FamilyMember } from '@/hooks/useFamilyMembers';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { format, differenceInYears } from 'date-fns';
+import { format } from 'date-fns';
 import { AddFamilyMemberDialog } from '@/components/family/AddFamilyMemberDialog';
 import { ageFromDateOnly } from '@/lib/date-only';
 
