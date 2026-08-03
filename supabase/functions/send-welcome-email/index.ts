@@ -128,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
 
                 <!-- CTA Button -->
                 <div style="text-align: center; margin-bottom: 24px;">
-                  <a href="https://onecareyou.lovable.app/dashboard" 
+                  <a href="https://onecare.you/dashboard" 
                      style="display: inline-block; background: linear-gradient(135deg, #14b8a6, #0ea5e9); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                     Get Started
                   </a>
@@ -136,7 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
 
                 <!-- Support -->
                 <p style="color: #71717a; font-size: 14px; line-height: 1.6; margin-bottom: 8px;">
-                  Need help getting started? Visit our <a href="https://onecareyou.lovable.app/help" style="color: #14b8a6; text-decoration: underline;">Help Center</a> or reply to this email.
+                  Need help getting started? Visit our <a href="https://onecare.you/help" style="color: #14b8a6; text-decoration: underline;">Help Center</a> or reply to this email.
                 </p>
 
                 <!-- Footer -->

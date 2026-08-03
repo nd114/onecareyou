@@ -10,7 +10,7 @@
 
 ## Domain
 - Primary: `onecare.you`
-- App URL: `https://onecareyou.lovable.app`
+- App URL: `https://onecare.you`
 
 ## Logo
 The OneCare logo features an "O" stylized to form a heart shape:
