@@ -307,7 +307,7 @@ export default function Assist() {
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-            Voice limited to 60s in beta — longer dictation (Otter-style streaming) coming soon. Simple Mode reads your data; it doesn't change records.
+            Voice limited to 60s in beta — dictation lands in the box so you can edit before sending — longer dictation (Otter-style streaming) coming soon. Simple Mode reads your data; it doesn't change records.
           </p>
         </div>
       </div>
