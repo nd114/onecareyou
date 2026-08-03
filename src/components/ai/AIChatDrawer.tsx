@@ -184,9 +184,12 @@ function MessageBubble({
 
 export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
   const navigate = useNavigate();
-  const { messages, isLoading, sendMessage, clearChat, approveActions, discardActions } = useAIChat();
+  const { messages, isLoading, sendMessage, clearChat, approveActions, discardActions } = useAIChat({
+    persistKey: 'onecare.assistant.chat.v1',
+  });
   const { hasConsent, grantConsent } = useAIConsent();
   const [input, setInput] = useState('');
+  const [interim, setInterim] = useState('');
   const [showConsent, setShowConsent] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -204,6 +207,7 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     if (!input.trim()) return;
     const text = input;
     setInput('');
+    setInterim('');
     const err = await sendMessage(text);
     if (err?.kind === 'consent_required') {
       // Consent was revoked elsewhere — re-prompt instead of just toasting.
@@ -224,13 +228,12 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     onOpenChange(false);
   };
 
-  const handleVoiceTranscript = (text: string) => {
-    if (!hasConsent) {
-      setShowConsent(true);
-      return;
-    }
-    sendMessage(text);
+  /** Dictation only fills the draft — the user still presses send. */
+  const handleFinalText = (text: string) => {
+    setInterim('');
+    setInput(prev => (prev ? `${prev.replace(/\s+$/, '')} ${text}` : text));
   };
+
 
   return (
     <>
