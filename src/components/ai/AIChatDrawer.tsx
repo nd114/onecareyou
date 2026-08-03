@@ -313,25 +313,35 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
             )}
           </ScrollArea>
 
-          <div className="border-t p-3 flex gap-2">
-            <VoiceButton onTranscript={handleVoiceTranscript} />
-            <Textarea
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question..."
-              className="min-h-[36px] max-h-[100px] resize-none text-sm"
-              rows={1}
-            />
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              className="h-9 w-9 flex-shrink-0 gradient-primary border-0"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="border-t p-3 space-y-1.5">
+            {interim && (
+              <p className="text-xs text-muted-foreground italic px-1">{interim}…</p>
+            )}
+            <div className="flex gap-2">
+              <VoiceButton
+                onFinalText={handleFinalText}
+                onInterimText={setInterim}
+                disabled={isLoading}
+              />
+              <Textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask a question, or dictate and edit before sending..."
+                className="min-h-[36px] max-h-[100px] resize-none text-sm"
+                rows={1}
+              />
+              <Button
+                size="icon"
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+                className="h-9 w-9 flex-shrink-0 gradient-primary border-0"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+
         </SheetContent>
       </Sheet>
 
