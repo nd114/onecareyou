@@ -20,22 +20,44 @@ interface AIChatDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void }) {
+/**
+ * Dictation button.
+ *
+ * Speech is appended to the message draft — never sent automatically — so the
+ * user can proof-read (and edit) before pressing send. Recognition keeps
+ * running through natural pauses until the user presses stop.
+ */
+function VoiceButton({
+  onFinalText,
+  onInterimText,
+  disabled,
+}: {
+  onFinalText: (text: string) => void;
+  onInterimText: (text: string) => void;
+  disabled?: boolean;
+}) {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-  // Set while the user is intentionally dictating — used to restart the
-  // recogniser when the browser ends a segment on a natural pause, so audio
-  // capture only stops when the user actually presses stop.
   const wantsListeningRef = useRef(false);
 
   const supported = typeof window !== 'undefined' && 
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
+  useEffect(() => () => {
+    wantsListeningRef.current = false;
+    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
+  }, []);
+
+  const stop = () => {
+    wantsListeningRef.current = false;
+    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
+    setListening(false);
+    onInterimText('');
+  };
+
   const toggle = () => {
     if (listening) {
-      wantsListeningRef.current = false;
-      recognitionRef.current?.stop();
-      setListening(false);
+      stop();
       return;
     }
 
@@ -47,17 +69,20 @@ function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void })
 
     recognition.onresult = (event: any) => {
       let finalText = '';
+      let interimText = '';
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+        const chunk = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalText += chunk;
+        else interimText += chunk;
       }
-      if (finalText.trim()) onTranscript(finalText.trim());
+      if (finalText.trim()) onFinalText(finalText.trim());
+      onInterimText(interimText.trim());
     };
 
     recognition.onerror = (event: any) => {
-      // 'no-speech' fires on a quiet gap — keep listening instead of dropping out.
-      if (event?.error === 'no-speech') return;
-      wantsListeningRef.current = false;
-      setListening(false);
+      // 'no-speech' / 'aborted' fire on quiet gaps — keep listening.
+      if (event?.error === 'no-speech' || event?.error === 'aborted') return;
+      stop();
     };
 
     recognition.onend = () => {
@@ -70,6 +95,7 @@ function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void })
         }
       }
       setListening(false);
+      onInterimText('');
     };
 
     recognitionRef.current = recognition;
@@ -87,8 +113,9 @@ function VoiceButton({ onTranscript }: { onTranscript: (text: string) => void })
       size="icon"
       variant={listening ? 'destructive' : 'outline'}
       onClick={toggle}
+      disabled={disabled}
       className="h-9 w-9 flex-shrink-0"
-      title={listening ? 'Stop listening' : 'Voice input'}
+      title={listening ? 'Stop dictating' : 'Dictate your message'}
     >
       {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
     </Button>
