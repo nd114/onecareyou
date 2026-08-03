@@ -68,7 +68,10 @@ export default function Assist() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   // Simple Mode stays read-only — no write actions proposed here.
-  const { messages, isLoading, sendMessage, clearChat } = useAIChat({ allowActions: false });
+  const { messages, isLoading, sendMessage, clearChat } = useAIChat({
+    allowActions: false,
+    persistKey: 'onecare.simple-mode.chat.v1',
+  });
   const { hasConsent, grantConsent } = useAIConsent();
   const { logMessage, reset: resetLog } = useConversationLogger('simple_mode');
   const recorder = useVoiceRecorder();
@@ -137,7 +140,11 @@ export default function Assist() {
         if (!transcript) {
           toast.error("Couldn't understand that recording. Try again?");
         } else {
-          await handleSend(transcript, 'voice');
+          // Drop the transcript into the box so the user can proof-read and
+          // edit it before sending — never auto-send dictation.
+          setInput(prev => (prev ? `${prev.replace(/\s+$/, '')} ${transcript}` : transcript));
+          setTimeout(() => inputRef.current?.focus(), 0);
+          toast.success('Transcribed — check it, then press send.');
         }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Voice transcription failed');
@@ -300,7 +307,7 @@ export default function Assist() {
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center mt-2 max-w-3xl mx-auto">
-            Voice limited to 60s in beta — longer dictation (Otter-style streaming) coming soon. Simple Mode reads your data; it doesn't change records.
+            Voice limited to 60s in beta — dictation lands in the box so you can edit before sending — longer dictation (Otter-style streaming) coming soon. Simple Mode reads your data; it doesn't change records.
           </p>
         </div>
       </div>

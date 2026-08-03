@@ -2,93 +2,93 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Main Pages -->
   <url>
-    <loc>https://onecareyou.lovable.app/</loc>
+    <loc>https://onecare.you/</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/features</loc>
+    <loc>https://onecare.you/features</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/pricing</loc>
+    <loc>https://onecare.you/pricing</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/about</loc>
+    <loc>https://onecare.you/about</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/contact</loc>
+    <loc>https://onecare.you/contact</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/help</loc>
+    <loc>https://onecare.you/help</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/knowledge</loc>
+    <loc>https://onecare.you/knowledge</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/careers</loc>
+    <loc>https://onecare.you/careers</loc>
     <lastmod>2026-07-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/careers/sdr</loc>
+    <loc>https://onecare.you/careers/sdr</loc>
     <lastmod>2026-07-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/careers/content</loc>
+    <loc>https://onecare.you/careers/content</loc>
     <lastmod>2026-07-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/careers/clinical-advisor</loc>
+    <loc>https://onecare.you/careers/clinical-advisor</loc>
     <lastmod>2026-07-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/careers/product-panel</loc>
+    <loc>https://onecare.you/careers/product-panel</loc>
     <lastmod>2026-07-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/careers/community-growth-lead</loc>
+    <loc>https://onecare.you/careers/community-growth-lead</loc>
     <lastmod>2026-07-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://onecareyou.lovable.app/sitemap</loc>
+    <loc>https://onecare.you/sitemap</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
-    <loc>https://onecareyou.lovable.app/install</loc>
+    <loc>https://onecare.you/install</loc>
     <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -96,19 +96,19 @@
 
   <!-- Clinician Pages -->
   <url>
-    <loc>https://onecareyou.lovable.app/for-clinicians</loc>
+    <loc>https://onecare.you/for-clinicians</loc>
     <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/clinician/sign-up</loc>
+    <loc>https://onecare.you/clinician/sign-up</loc>
     <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/clinician/why-onecare</loc>
+    <loc>https://onecare.you/clinician/why-onecare</loc>
     <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -116,13 +116,13 @@
 
   <!-- Authentication -->
   <url>
-    <loc>https://onecareyou.lovable.app/sign-in</loc>
+    <loc>https://onecare.you/sign-in</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/sign-up</loc>
+    <loc>https://onecare.you/sign-up</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -130,25 +130,25 @@
 
   <!-- Legal -->
   <url>
-    <loc>https://onecareyou.lovable.app/privacy</loc>
+    <loc>https://onecare.you/privacy</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/terms</loc>
+    <loc>https://onecare.you/terms</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/disclaimer</loc>
+    <loc>https://onecare.you/disclaimer</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://onecareyou.lovable.app/data-processing</loc>
+    <loc>https://onecare.you/data-processing</loc>
     <lastmod>2026-03-24</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

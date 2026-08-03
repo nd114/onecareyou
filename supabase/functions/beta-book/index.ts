@@ -3,7 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3.23.8';
 
 const CAL_API = 'https://api.cal.com/v2';
-const APP_URL = 'https://onecareyou.lovable.app';
+const APP_URL = 'https://onecare.you';
 
 const BodySchema = z.object({
   fullName: z.string().trim().min(2).max(120),

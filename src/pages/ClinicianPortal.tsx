@@ -30,6 +30,7 @@ import { VitalsSummaryView } from '@/components/clinician/VitalsSummaryView';
 import { AlertThresholdDialog } from '@/components/clinician/AlertThresholdDialog';
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatDateOnly } from '@/lib/date-only';
 
 interface SharedData {
   patientName?: string;
@@ -356,7 +357,7 @@ const ClinicianPortal = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">Date of Birth</p>
-                          <p className="font-medium">{data.profile.date_of_birth ? format(new Date(data.profile.date_of_birth), 'PPP') : 'Not set'}</p>
+                          <p className="font-medium">{formatDateOnly(data.profile.date_of_birth) ?? 'Not set'}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Gender</p>

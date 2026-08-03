@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,15 +22,55 @@ export type AIChatError = { kind: 'consent_required' | 'rate_limit' | 'unavailab
 interface UseAIChatOptions {
   /** Set false for read-only surfaces (e.g. Simple Mode). */
   allowActions?: boolean;
+  /**
+   * When set, the conversation is kept in localStorage under this key so the
+   * user can close the drawer (or the tab) and come back to it.
+   */
+  persistKey?: string;
+}
+
+/** Cap what we persist so localStorage never grows unbounded. */
+const MAX_PERSISTED_MESSAGES = 60;
+
+function loadPersisted(key: string | undefined): ChatMessage[] {
+  if (!key || typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((m: ChatMessage) => ({
+      ...m,
+      timestamp: new Date(m.timestamp),
+      // Never restore an un-actioned proposal — it may no longer be valid.
+      proposedActions: m.actionState === 'pending' ? undefined : m.proposedActions,
+      actionState: m.actionState === 'pending' ? undefined : m.actionState,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export function useAIChat(options: UseAIChatOptions = {}) {
   const allowActions = options.allowActions !== false;
+  const persistKey = options.persistKey;
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadPersisted(persistKey));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<AIChatError | null>(null);
+
+  useEffect(() => {
+    if (!persistKey || typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        persistKey,
+        JSON.stringify(messages.slice(-MAX_PERSISTED_MESSAGES)),
+      );
+    } catch {
+      /* storage full or unavailable — persistence is best-effort */
+    }
+  }, [messages, persistKey]);
 
   const sendMessage = useCallback(async (userMessage: string): Promise<AIChatError | null> => {
     if (!userMessage.trim() || isLoading) return null;

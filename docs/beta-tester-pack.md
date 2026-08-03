@@ -1,8 +1,8 @@
 # OneCare Founding Tester Pack
 
 > **Testing Window:** May 25 – June 22, 2026 (4 weeks)
-> **Platform:** https://onecareyou.lovable.app
-> **Install on phone:** https://onecareyou.lovable.app/install
+> **Platform:** https://onecare.you
+> **Install on phone:** https://onecare.you/install
 > **Support:** hello@onecare.you
 > **Bug Reporting:** Use the in-app 🐛 button (bottom-left corner on every page)
 > **Feedback Form:** https://forms.gle/onecare-beta-feedback _(invite-only — link sent in your welcome email)_
@@ -24,7 +24,7 @@ These topics will be covered verbally in the first meeting — no need to read u
 
 ## Account Setup
 
-**Step 1 — Fresh Sign-Up:** Register at https://onecareyou.lovable.app/sign-up with your real email. Note your first impressions (confirmation email speed, onboarding clarity, empty dashboard).
+**Step 1 — Fresh Sign-Up:** Register at https://onecare.you/sign-up with your real email. Note your first impressions (confirmation email speed, onboarding clarity, empty dashboard).
 
 **Step 2 — Demo Account:** After completing sign-up, switch to the pre-loaded demo account for deeper testing:
 

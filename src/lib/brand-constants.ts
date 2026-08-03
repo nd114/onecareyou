@@ -26,8 +26,8 @@ export const BRAND = {
   },
   
   urls: {
-    app: 'https://onecareyou.lovable.app',
-    published: 'https://onecareyou.lovable.app',
+    app: 'https://onecare.you',
+    published: 'https://onecare.you',
   },
   
   legal: {
