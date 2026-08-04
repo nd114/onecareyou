@@ -15,6 +15,20 @@ export interface JobListing {
   iconName: "TrendingUp" | "Megaphone" | "Stethoscope" | "Users";
 }
 
+export type JobType = JobListing["type"];
+
+/** Single source of truth for how a job's compensation type is labelled. */
+export const JOB_TYPE_LABELS: Record<JobType, string> = {
+  paid: "Paid",
+  commission: "Commission",
+  advisory: "Advisory",
+  contract: "Contract",
+  volunteer: "Volunteer",
+};
+
+export const jobTypeLabel = (type: string) =>
+  JOB_TYPE_LABELS[type as JobType] ?? type;
+
 export const jobListings: JobListing[] = [
   {
     id: "sdr",
