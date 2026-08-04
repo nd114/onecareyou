@@ -217,11 +217,11 @@ export function AdminJobs() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="commission">Commission</SelectItem>
-                    <SelectItem value="advisory">Advisory</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="volunteer">Volunteer</SelectItem>
+                    {Object.entries(JOB_TYPE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
