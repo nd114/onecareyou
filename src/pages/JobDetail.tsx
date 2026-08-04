@@ -130,11 +130,23 @@ const JobDetail = () => {
     try {
       let resumePath = null;
 
-      // Upload resume if provided
+      // Upload resume if provided.
+      // Each upload goes into its own random UUID folder so no applicant can
+      // guess, squat, or collide with another applicant's storage path.
       if (resumeFile) {
-        const fileExt = resumeFile.name.split('.').pop();
-        const fileName = `${Date.now()}-${formData.fullName.replace(/\s+/g, '-').toLowerCase()}.${fileExt}`;
-        
+        const allowedExts = ['pdf', 'doc', 'docx', 'rtf', 'txt', 'odt'];
+        const fileExt = (resumeFile.name.split('.').pop() ?? '').toLowerCase();
+        if (!allowedExts.includes(fileExt)) {
+          throw new Error('Resume must be a PDF, DOC, DOCX, RTF, ODT or TXT file');
+        }
+
+        const safeName = formData.fullName
+          .replace(/[^a-zA-Z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .toLowerCase()
+          .slice(0, 40) || 'resume';
+        const fileName = `${crypto.randomUUID()}/${safeName}.${fileExt}`;
+
         const { error: uploadError } = await supabase.storage
           .from('resumes')
           .upload(fileName, resumeFile);
@@ -144,6 +156,7 @@ const JobDetail = () => {
         }
         resumePath = fileName;
       }
+
 
       // Insert application into database
       const { error: insertError } = await supabase
