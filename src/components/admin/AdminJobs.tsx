@@ -33,6 +33,7 @@ import {
   type JobPosting,
   type JobPostingInput,
 } from "@/hooks/useJobPostings";
+import { JOB_TYPE_LABELS, jobTypeLabel } from "@/lib/job-listings";
 
 const ICONS = ["TrendingUp", "Megaphone", "Stethoscope", "Users"] as const;
 
