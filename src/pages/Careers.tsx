@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { getIconComponent } from '@/lib/job-listings';
+import { getIconComponent, jobTypeLabel } from '@/lib/job-listings';
 import { usePublishedJobs, toJobListing } from '@/hooks/useJobPostings';
 
 const values = [
@@ -190,7 +190,7 @@ const Careers = () => {
                                 variant={job.type === 'paid' ? 'default' : 'outline'}
                                 className={job.type === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
                               >
-                                {job.type === 'paid' ? 'Paid' : 'Unpaid Advisory'}
+                                {jobTypeLabel(job.type)}
                               </Badge>
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
