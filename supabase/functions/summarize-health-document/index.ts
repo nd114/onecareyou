@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Caller must be signed in — the function reads PHI with the service role
+  const caller = await requireUser(req, corsHeaders);
+  if (caller instanceof Response) return caller;
 
   try {
     const { documentId } = await req.json();
@@ -40,6 +45,40 @@ serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Authorization: only the document owner, or a clinician with an active
+    // share that grants document access, may summarize this document.
+    if (doc.user_id !== caller.id) {
+      const { data: allowed } = await supabase.rpc("clinician_has_patient_permission", {
+        patient_user_id: doc.user_id,
+        permission_key: "documents",
+      });
+
+      // rpc runs as service role, so re-check the share explicitly for this caller
+      let hasShare = false;
+      if (allowed !== null) {
+        const { data: shares } = await supabase
+          .from("provider_shares")
+          .select("permissions, expires_at, is_active, clinician_user_id, provider_email")
+          .eq("user_id", doc.user_id)
+          .eq("is_active", true);
+
+        hasShare = (shares ?? []).some((s: any) =>
+          (s.clinician_user_id === caller.id ||
+            (caller.email && s.provider_email?.toLowerCase() === caller.email.toLowerCase())) &&
+          (!s.expires_at || new Date(s.expires_at) > new Date()) &&
+          s.permissions?.documents === true
+        );
+      }
+
+      if (!hasShare) {
+        console.error("Forbidden document summary attempt", { caller: caller.id });
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Verify AI consent before processing

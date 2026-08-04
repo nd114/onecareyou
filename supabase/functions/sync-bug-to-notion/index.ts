@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,19 +15,42 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only signed-in users may push into the internal bug tracker
+  const caller = await requireUser(req, corsHeaders);
+  if (caller instanceof Response) return caller;
+
   try {
     const NOTION_API_KEY = Deno.env.get("NOTION_API_KEY");
     if (!NOTION_API_KEY) {
       throw new Error("NOTION_API_KEY is not configured");
     }
 
-    const { bugReport } = await req.json();
+    const raw = await req.json().catch(() => null);
+    const bugReport = raw?.bugReport;
 
-    if (!bugReport || !bugReport.description) {
+    if (!bugReport || typeof bugReport.description !== "string" || !bugReport.description.trim()) {
       return new Response(
         JSON.stringify({ error: "Missing bug report data" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Cap every free-text field so the endpoint cannot be used to dump bulk content
+    const cap = (v: unknown, max: number) =>
+      typeof v === "string" ? v.slice(0, max) : "";
+    bugReport.description = cap(bugReport.description, 4000);
+    bugReport.page_url = cap(bugReport.page_url, 500) || null;
+    bugReport.category = cap(bugReport.category, 40);
+    bugReport.id = cap(bugReport.id, 60);
+    // Always attribute the report to the verified caller, never to a client-supplied id
+    bugReport.user_id = caller.id;
+    if (bugReport.browser_info && typeof bugReport.browser_info === "object") {
+      bugReport.browser_info = {
+        userAgent: cap(bugReport.browser_info.userAgent, 300),
+        viewport: cap(bugReport.browser_info.viewport, 40),
+      };
+    } else {
+      bugReport.browser_info = {};
     }
 
     const categoryMap: Record<string, string> = {
