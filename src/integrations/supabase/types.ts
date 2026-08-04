@@ -1697,6 +1697,7 @@ export type Database = {
       }
       job_applications: {
         Row: {
+          admin_notes: string | null
           cover_letter: string | null
           created_at: string
           email: string
@@ -1714,6 +1715,7 @@ export type Database = {
           years_experience: string | null
         }
         Insert: {
+          admin_notes?: string | null
           cover_letter?: string | null
           created_at?: string
           email: string
@@ -1731,6 +1733,7 @@ export type Database = {
           years_experience?: string | null
         }
         Update: {
+          admin_notes?: string | null
           cover_letter?: string | null
           created_at?: string
           email?: string
@@ -1746,6 +1749,69 @@ export type Database = {
           status?: string
           updated_at?: string
           years_experience?: string | null
+        }
+        Relationships: []
+      }
+      job_postings: {
+        Row: {
+          category: string
+          commitment: string
+          created_at: string
+          created_by: string | null
+          description: string
+          full_description: string
+          icon_name: string
+          id: string
+          is_published: boolean
+          location: string
+          nice_to_have: string[]
+          qualifications: string[]
+          responsibilities: string[]
+          slug: string
+          sort_order: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          commitment?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          full_description?: string
+          icon_name?: string
+          id?: string
+          is_published?: boolean
+          location?: string
+          nice_to_have?: string[]
+          qualifications?: string[]
+          responsibilities?: string[]
+          slug: string
+          sort_order?: number
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          commitment?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          full_description?: string
+          icon_name?: string
+          id?: string
+          is_published?: boolean
+          location?: string
+          nice_to_have?: string[]
+          qualifications?: string[]
+          responsibilities?: string[]
+          slug?: string
+          sort_order?: number
+          title?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2829,6 +2895,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vitals: {
         Row: {
           created_at: string
@@ -2982,6 +3069,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_assigned_to_patient: {
         Args: { _patient_user_id: string; _user_id: string }
         Returns: boolean
@@ -2993,6 +3087,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       practice_role:
         | "owner"
         | "admin"
@@ -3130,6 +3225,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       practice_role: [
         "owner",
         "admin",
