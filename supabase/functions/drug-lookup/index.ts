@@ -14,17 +14,11 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Input validation schemas
 const SearchRequestSchema = z.object({
-  action: z.enum(['search', 'get-info', 'get-rxcui', 'check-interactions', 'lookup-ndc', 'import-mappings']),
+  action: z.enum(['search', 'get-info', 'get-rxcui', 'check-interactions', 'lookup-ndc']),
   query: z.string().max(200).optional(),
   drugName: z.string().max(200).optional(),
   drugNames: z.array(z.string().max(200)).max(20).optional(),
   ndc: z.string().max(20).regex(/^[\d\-]+$/, 'Invalid NDC format').optional(),
-  mappings: z.array(z.object({
-    brand_name: z.string(),
-    generic_name: z.string(),
-    rxcui: z.string().optional(),
-    country_code: z.string().optional(),
-  })).max(1000).optional(),
 });
 
 type SearchRequest = z.infer<typeof SearchRequestSchema>;
@@ -729,49 +723,6 @@ serve(async (req) => {
         result = await lookupNDC(body.ndc);
         break;
       
-      case 'import-mappings':
-        // Bulk import international drug mappings (for Mendeley IDD data)
-        if (!body.mappings || body.mappings.length === 0) {
-          return new Response(
-            JSON.stringify({ error: 'Mappings array is required' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        // Prepare data with normalized brand names
-        const mappingsToInsert = body.mappings.map(m => ({
-          brand_name: m.brand_name,
-          brand_name_normalized: m.brand_name.toLowerCase().trim(),
-          generic_name: m.generic_name.toLowerCase().trim(),
-          rxcui: m.rxcui || null,
-          country_code: m.country_code || null,
-          source: 'mendeley_idd',
-        }));
-        
-        // Upsert to avoid duplicates
-        const { data: insertedData, error: insertError } = await supabase
-          .from('international_drug_mappings')
-          .upsert(mappingsToInsert, { 
-            onConflict: 'brand_name_normalized',
-            ignoreDuplicates: true 
-          })
-          .select('id');
-        
-        if (insertError) {
-          console.error('Import error:', insertError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to import mappings', details: insertError.message }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        result = { 
-          success: true, 
-          imported: mappingsToInsert.length,
-          message: `Successfully imported ${mappingsToInsert.length} drug mappings`
-        };
-        break;
-        
       default:
         return new Response(
           JSON.stringify({ error: 'Unknown action' }),
