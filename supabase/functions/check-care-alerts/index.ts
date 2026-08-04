@@ -30,7 +30,7 @@ serve(async (req) => {
   }
 
   // Internal scheduled job only — reject any public caller
-  const unauthorized = requireServiceRole(req, corsHeaders);
+  const unauthorized = await requireServiceRole(req, corsHeaders);
   if (unauthorized) return unauthorized;
 
   try {

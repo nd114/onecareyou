@@ -32,10 +32,36 @@ function bearer(req: Request): string | null {
   return token.length > 0 ? token : null;
 }
 
-/** True when the request presents the project service-role key (internal/cron caller). */
+/** True when the request presents the project service-role key (server-to-server caller). */
 export function isServiceRoleCall(req: Request): boolean {
   const token = bearer(req);
   return !!token && !!SERVICE_ROLE_KEY && token === SERVICE_ROLE_KEY;
+}
+
+/**
+ * True when the request presents the internal scheduler credential
+ * (public.cron_auth, readable only by the service role).
+ */
+export async function isCronCall(req: Request): Promise<boolean> {
+  const provided = req.headers.get("x-cron-secret");
+  if (!provided) return false;
+
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+  const { data, error } = await admin
+    .from("cron_auth")
+    .select("secret")
+    .eq("id", "internal")
+    .maybeSingle();
+
+  if (error || !data?.secret) return false;
+  return provided === data.secret;
+}
+
+/** True for either trusted internal caller: service-role key or scheduler credential. */
+export async function isInternalCall(req: Request): Promise<boolean> {
+  return isServiceRoleCall(req) || (await isCronCall(req));
 }
 
 /** Resolves the signed-in user from the request JWT, or null when absent/invalid. */
@@ -50,11 +76,11 @@ export async function getCallerUser(req: Request): Promise<CallerUser | null> {
 }
 
 /** Internal-only endpoints (pg_cron / server-to-server). Returns a 401 Response when rejected. */
-export function requireServiceRole(
+export async function requireServiceRole(
   req: Request,
   corsHeaders: Record<string, string>,
-): Response | null {
-  if (!isServiceRoleCall(req)) {
+): Promise<Response | null> {
+  if (!(await isInternalCall(req))) {
     return json({ error: "Unauthorized" }, 401, corsHeaders);
   }
   return null;
@@ -75,7 +101,7 @@ export async function requireServiceRoleOrUser(
   req: Request,
   corsHeaders: Record<string, string>,
 ): Promise<{ user: CallerUser | null } | Response> {
-  if (isServiceRoleCall(req)) return { user: null };
+  if (await isInternalCall(req)) return { user: null };
   const user = await getCallerUser(req);
   if (!user) return json({ error: "Unauthorized" }, 401, corsHeaders);
   return { user };
@@ -86,7 +112,7 @@ export async function requireServiceRoleOrAdmin(
   req: Request,
   corsHeaders: Record<string, string>,
 ): Promise<{ user: CallerUser | null } | Response> {
-  if (isServiceRoleCall(req)) return { user: null };
+  if (await isInternalCall(req)) return { user: null };
 
   const user = await getCallerUser(req);
   if (!user) return json({ error: "Unauthorized" }, 401, corsHeaders);
