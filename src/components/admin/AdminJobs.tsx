@@ -149,7 +149,7 @@ export function AdminJobs() {
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-semibold">{job.title}</h3>
                 <Badge variant={job.type === "paid" ? "default" : "outline"}>
-                  {job.type === "paid" ? "Paid" : "Unpaid"}
+                  {jobTypeLabel(job.type)}
                 </Badge>
                 {!job.is_published && <Badge variant="secondary">Draft</Badge>}
               </div>
