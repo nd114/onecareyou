@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { requireServiceRole } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,6 +28,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Internal scheduled job only — reject any public caller
+  const unauthorized = await requireServiceRole(req, corsHeaders);
+  if (unauthorized) return unauthorized;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

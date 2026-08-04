@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireServiceRoleOrUser } from "../_shared/auth.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -124,6 +125,11 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Scheduled job or a signed-in user (the app triggers this after logging a vital).
+  // Anonymous callers are rejected so the endpoint cannot be used to spam alert emails.
+  const caller = await requireServiceRoleOrUser(req, corsHeaders);
+  if (caller instanceof Response) return caller;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

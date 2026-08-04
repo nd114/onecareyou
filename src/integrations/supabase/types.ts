@@ -1051,6 +1051,27 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_auth: {
+        Row: {
+          created_at: string
+          id: string
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          secret?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       data_sharing_agreements: {
         Row: {
           agreed_at: string
