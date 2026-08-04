@@ -4,6 +4,7 @@
 //
 // Triggered by pg_cron daily at 03:00 UTC.
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { requireServiceRole } from '../_shared/auth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -12,6 +13,10 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  // Internal scheduled job only — this triggers expensive account re-seeding
+  const unauthorized = requireServiceRole(req, corsHeaders);
+  if (unauthorized) return unauthorized;
 
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/seed-demo-data`, {
