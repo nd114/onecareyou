@@ -1,45 +1,46 @@
-import { BRAND } from '@/lib/brand-constants';
+import { BRAND } from "@/lib/brand-constants";
 
 export function organizationSchema() {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
+    "@context": "https://schema.org",
+    "@type": "Organization",
     name: BRAND.name,
     url: BRAND.urls.published,
     logo: `${BRAND.urls.published}/favicon.png`,
     description: `${BRAND.name} eliminates information asymmetry between patients and providers. Track vitals, manage medications, and share health updates with your care team.`,
     contactPoint: {
-      '@type': 'ContactPoint',
+      "@type": "ContactPoint",
       email: BRAND.emails.support,
-      contactType: 'customer support',
+      contactType: "customer support",
     },
   };
 }
 
 export function webApplicationSchema() {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
     name: BRAND.name,
     url: BRAND.urls.published,
-    applicationCategory: 'HealthApplication',
-    operatingSystem: 'Web',
+    applicationCategory: "HealthApplication",
+    operatingSystem: "Web",
     offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-      description: 'Free plan with medication tracking and vitals monitoring',
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      description: "Free plan with medication tracking and vitals monitoring",
     },
-    description: 'Health tracking platform for patients and healthcare providers. Manage medications, track vitals, and coordinate care.',
+    description:
+      "Health tracking platform for patients and healthcare providers. Manage medications, track vitals, and coordinate care.",
   };
 }
 
 export function breadcrumbSchema(items: { name: string; path: string }[]) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
     itemListElement: items.map((item, index) => ({
-      '@type': 'ListItem',
+      "@type": "ListItem",
       position: index + 1,
       name: item.name,
       item: `${BRAND.urls.published}${item.path}`,
@@ -49,31 +50,31 @@ export function breadcrumbSchema(items: { name: string; path: string }[]) {
 
 export function faqSchema(faqs: { question: string; answer: string }[]) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
     mainEntity: faqs.map((faq) => ({
-      '@type': 'Question',
+      "@type": "Question",
       name: faq.question,
       acceptedAnswer: {
-        '@type': 'Answer',
+        "@type": "Answer",
         text: faq.answer,
       },
     })),
   };
 }
 
-export function productSchema(name: string, description: string, price: string, priceCurrency = 'USD') {
+export function productSchema(name: string, description: string, price: string, priceCurrency = "USD") {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
+    "@context": "https://schema.org",
+    "@type": "Product",
     name,
     description,
-    brand: { '@type': 'Brand', name: BRAND.name },
+    brand: { "@type": "Brand", name: BRAND.name },
     offers: {
-      '@type': 'Offer',
+      "@type": "Offer",
       price,
       priceCurrency,
-      availability: 'https://schema.org/InStock',
+      availability: "https://schema.org/InStock",
     },
   };
 }
@@ -83,31 +84,29 @@ export function jobPostingSchema(job: {
   title: string;
   description: string;
   category: string;
-  type: 'paid' | 'unpaid';
+  type: "paid" | "commission" | "advisory" | "contract" | "volunteer";
   commitment: string;
   location: string;
 }) {
   const employmentType = /full/i.test(job.commitment)
-    ? 'FULL_TIME'
+    ? "FULL_TIME"
     : /contract/i.test(job.commitment)
-    ? 'CONTRACTOR'
-    : /part/i.test(job.commitment)
-    ? 'PART_TIME'
-    : 'OTHER';
+      ? "CONTRACTOR"
+      : /part/i.test(job.commitment)
+        ? "PART_TIME"
+        : "OTHER";
 
   const isRemote = /remote/i.test(job.location);
-  const datePosted = new Date().toISOString().split('T')[0];
-  const validThrough = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split('T')[0];
+  const datePosted = new Date().toISOString().split("T")[0];
+  const validThrough = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   return {
-    '@context': 'https://schema.org',
-    '@type': 'JobPosting',
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
     title: job.title,
     description: job.description,
     identifier: {
-      '@type': 'PropertyValue',
+      "@type": "PropertyValue",
       name: BRAND.name,
       value: job.id,
     },
@@ -115,23 +114,21 @@ export function jobPostingSchema(job: {
     validThrough,
     employmentType,
     hiringOrganization: {
-      '@type': 'Organization',
+      "@type": "Organization",
       name: BRAND.name,
       sameAs: BRAND.urls.published,
       logo: `${BRAND.urls.published}/favicon.png`,
     },
-    industry: 'Healthcare Technology',
+    industry: "Healthcare Technology",
     occupationalCategory: job.category,
-    jobLocationType: isRemote ? 'TELECOMMUTE' : undefined,
-    applicantLocationRequirements: isRemote
-      ? { '@type': 'Country', name: 'Worldwide' }
-      : undefined,
+    jobLocationType: isRemote ? "TELECOMMUTE" : undefined,
+    applicantLocationRequirements: isRemote ? { "@type": "Country", name: "Worldwide" } : undefined,
     jobLocation: isRemote
       ? undefined
       : {
-          '@type': 'Place',
+          "@type": "Place",
           address: {
-            '@type': 'PostalAddress',
+            "@type": "PostalAddress",
             addressLocality: job.location,
           },
         },
@@ -139,4 +136,3 @@ export function jobPostingSchema(job: {
     url: `${BRAND.urls.published}/careers/${job.id}`,
   };
 }
-
