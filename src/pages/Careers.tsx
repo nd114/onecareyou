@@ -20,7 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { jobListings, getIconComponent } from '@/lib/job-listings';
+import { getIconComponent } from '@/lib/job-listings';
+import { usePublishedJobs, toJobListing } from '@/hooks/useJobPostings';
 
 const values = [
   {
@@ -48,6 +49,8 @@ const values = [
 const Careers = () => {
   const [searchParams] = useSearchParams();
   const applied = searchParams.get('applied') === 'true';
+  const { data: postings, isLoading: jobsLoading } = usePublishedJobs();
+  const jobs = (postings ?? []).map(toJobListing);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -156,7 +159,15 @@ const Careers = () => {
                   </AlertDescription>
                 </Alert>
               )}
-              {jobListings.map((job, index) => {
+              {jobsLoading && (
+                <p className="text-sm text-muted-foreground text-center py-10">Loading open positions…</p>
+              )}
+              {!jobsLoading && jobs.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-10">
+                  No open positions right now — check back soon.
+                </p>
+              )}
+              {jobs.map((job, index) => {
                 const IconComponent = getIconComponent(job.iconName);
                 return (
                   <motion.div

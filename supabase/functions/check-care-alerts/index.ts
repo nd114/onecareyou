@@ -138,7 +138,7 @@ serve(async (req) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                from: 'Marpe <alerts@updates.lovable.app>',
+                from: 'OneCare Alerts <alerts@onecare.you>',
                 to: [setting.alert_recipient_email],
                 subject: `⚠️ Care Alert: ${userName} has missed ${missedCount} medication dose${missedCount > 1 ? 's' : ''}`,
                 html: `
