@@ -21,7 +21,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { getJobById, getIconComponent } from '@/lib/job-listings';
+import { getIconComponent } from '@/lib/job-listings';
+import { usePublishedJobs, toJobListing } from '@/hooks/useJobPostings';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { jobPostingSchema, breadcrumbSchema } from '@/components/seo/structuredData';
 
@@ -31,7 +32,8 @@ const JobDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const job = jobId ? getJobById(jobId) : undefined;
+  const { data: postings, isLoading: jobsLoading } = usePublishedJobs();
+  const job = jobId ? (postings ?? []).map(toJobListing).find((j) => j.id === jobId) : undefined;
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -45,6 +47,18 @@ const JobDetail = () => {
     yearsExperience: '',
     howHeard: ''
   });
+
+  if (jobsLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center py-24">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!job) {
     return (
