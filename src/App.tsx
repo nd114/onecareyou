@@ -61,6 +61,8 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import EHRComparison from "./pages/EHRComparison";
 import AdminImport from "./pages/AdminImport";
 import AdminChangelog from "./pages/AdminChangelog";
+import AdminCareers from "./pages/AdminCareers";
+import { AdminRoute } from "./components/auth/AdminRoute";
 import ClinicianPricing from "./pages/ClinicianPricing";
 import EnterpriseInquiry from "./pages/EnterpriseInquiry";
 import ClinicianBAA from "./pages/ClinicianBAA";
@@ -282,6 +284,11 @@ const App = () => (
               <ProtectedRoute>
                 <AdminImport />
               </ProtectedRoute>
+            } />
+            <Route path="/admin/careers" element={
+              <AdminRoute>
+                <AdminCareers />
+              </AdminRoute>
             } />
             <Route path="/admin/changelog" element={
               <ProtectedRoute>
