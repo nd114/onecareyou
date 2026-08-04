@@ -159,6 +159,8 @@ serve(async (req) => {
     });
   }
   const isServiceCall = authHeader === `Bearer ${serviceKey}`;
+  let callerId: string | null = null;
+  let callerEmail: string | null = null;
   if (!isServiceCall) {
     const token = authHeader.replace("Bearer ", "");
     const auth = createClient(supabaseUrl, anonKey);
@@ -168,6 +170,8 @@ serve(async (req) => {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    callerId = u.user.id;
+    callerEmail = u.user.email ?? null;
   }
 
   try {
@@ -186,6 +190,13 @@ serve(async (req) => {
 
     switch (action) {
       case 'process_queue': {
+        // Queue processing exports PHI to external FHIR servers — internal only
+        if (!isServiceCall) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         // Process pending exports from the queue
         const { data: pendingItems, error: queueError } = await supabaseClient
           .from('ehr_export_queue')
@@ -335,6 +346,58 @@ serve(async (req) => {
 
         if (!vitalId || !connectionId || !patientFhirId) {
           throw new Error('Missing required parameters: vitalId, connectionId, patientFhirId');
+        }
+
+        // Authorization: a user may only queue a vital when they own the EHR
+        // connection AND are entitled to that patient's data. Without this an
+        // attacker could redirect someone else's readings to their own server.
+        if (!isServiceCall) {
+          const { data: conn } = await supabaseClient
+            .from('ehr_connections')
+            .select('id, clinician_user_id')
+            .eq('id', connectionId)
+            .maybeSingle();
+
+          if (!conn || conn.clinician_user_id !== callerId) {
+            logStep("Forbidden: connection not owned by caller", { connectionId });
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          const { data: vitalRow } = await supabaseClient
+            .from('vitals')
+            .select('id, user_id')
+            .eq('id', vitalId)
+            .maybeSingle();
+
+          if (!vitalRow) {
+            return new Response(JSON.stringify({ error: "Vital not found" }), {
+              status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          if (vitalRow.user_id !== callerId) {
+            const { data: shares } = await supabaseClient
+              .from('provider_shares')
+              .select('clinician_user_id, provider_email, expires_at, permissions')
+              .eq('user_id', vitalRow.user_id)
+              .eq('is_active', true);
+
+            const entitled = (shares ?? []).some((s: any) =>
+              (s.clinician_user_id === callerId ||
+                (callerEmail && s.provider_email?.toLowerCase() === callerEmail.toLowerCase())) &&
+              (!s.expires_at || new Date(s.expires_at) > new Date()) &&
+              s.permissions?.vitals === true
+            );
+
+            if (!entitled) {
+              logStep("Forbidden: caller has no active share for this patient", { vitalId });
+              return new Response(JSON.stringify({ error: "Forbidden" }), {
+                status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+              });
+            }
+          }
         }
 
         // Check if already queued

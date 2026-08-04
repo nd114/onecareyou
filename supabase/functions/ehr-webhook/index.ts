@@ -129,13 +129,24 @@ serve(async (req) => {
 
     for (const connection of targetConnections) {
       try {
-        // Verify signature if credentials are configured (webhook secret)
-        if (connection.credentials_encrypted && signature) {
-          const isValid = await verifySignature(bodyText, signature, connection.credentials_encrypted);
-          if (!isValid) {
-            logStep("Invalid signature for connection", { connectionId: connection.id });
-            continue;
-          }
+        // Signature verification is mandatory. A connection without a configured
+        // webhook secret cannot be trusted, so its payloads are rejected outright
+        // instead of being written into the patient's chart unverified.
+        if (!connection.credentials_encrypted) {
+          logStep("Rejected: connection has no webhook secret configured", { connectionId: connection.id });
+          errorCount++;
+          continue;
+        }
+        if (!signature) {
+          logStep("Rejected: missing x-ehr-signature header", { connectionId: connection.id });
+          errorCount++;
+          continue;
+        }
+        const isValid = await verifySignature(bodyText, signature, connection.credentials_encrypted);
+        if (!isValid) {
+          logStep("Invalid signature for connection", { connectionId: connection.id });
+          errorCount++;
+          continue;
         }
 
         // Process based on event type
