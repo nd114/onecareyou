@@ -33,6 +33,7 @@ import {
   type JobPosting,
   type JobPostingInput,
 } from "@/hooks/useJobPostings";
+import { JOB_TYPE_LABELS, jobTypeLabel } from "@/lib/job-listings";
 
 const ICONS = ["TrendingUp", "Megaphone", "Stethoscope", "Users"] as const;
 
@@ -149,7 +150,7 @@ export function AdminJobs() {
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-semibold">{job.title}</h3>
                 <Badge variant={job.type === "paid" ? "default" : "outline"}>
-                  {job.type === "paid" ? "Paid" : "Unpaid"}
+                  {jobTypeLabel(job.type)}
                 </Badge>
                 {!job.is_published && <Badge variant="secondary">Draft</Badge>}
               </div>
@@ -216,11 +217,11 @@ export function AdminJobs() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="commission">Commission</SelectItem>
-                    <SelectItem value="advisory">Advisory</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="volunteer">Volunteer</SelectItem>
+                    {Object.entries(JOB_TYPE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

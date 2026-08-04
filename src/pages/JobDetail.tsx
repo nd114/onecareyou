@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { getIconComponent } from '@/lib/job-listings';
+import { getIconComponent, jobTypeLabel } from '@/lib/job-listings';
 import { usePublishedJobs, toJobListing } from '@/hooks/useJobPostings';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { jobPostingSchema, breadcrumbSchema } from '@/components/seo/structuredData';
@@ -258,7 +258,7 @@ const JobDetail = () => {
                     variant={job.type === 'paid' ? 'default' : 'outline'}
                     className={job.type === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
                   >
-                    {job.type === 'paid' ? 'Paid' : 'Unpaid Advisory'}
+                    {jobTypeLabel(job.type)}
                   </Badge>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
