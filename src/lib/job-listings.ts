@@ -92,7 +92,7 @@ You'll help shape how we communicate the value of OneCare through patient educat
     id: "clinical-advisor",
     title: "Clinical Advisory Board",
     category: "Advisory",
-    type: "unpaid",
+    type: "advisory",
     commitment: "Flexible",
     location: "Remote",
     description:
@@ -122,7 +122,7 @@ As an advisor, you'll provide invaluable clinical perspective to ensure OneCare 
     id: "product-panel",
     title: "Product Feedback Panel",
     category: "Advisory",
-    type: "unpaid",
+    type: "advisory",
     commitment: "Flexible",
     location: "Remote",
     description:
