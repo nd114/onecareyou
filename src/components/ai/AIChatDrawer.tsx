@@ -234,6 +234,69 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     setInput(prev => (prev ? `${prev.replace(/\s+$/, '')} ${text}` : text));
   };
 
+  /**
+   * Attachments are saved straight into the patient's Health Vault (their own
+   * record, via their session so RLS applies), then the assistant is told what
+   * arrived so it can talk about it.
+   */
+  const handleFileChosen = async (file: File | null) => {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    if (!hasConsent) { setShowConsent(true); return; }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Files need to be under 15 MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const doc = await uploadDocument.mutateAsync({
+        file,
+        title: file.name,
+        category: 'other',
+        sourceContext: 'assistant',
+        aiSummarize: true,
+        familyMemberId: null,
+      });
+
+      let extracted = '';
+      if (file.type.startsWith('image/')) {
+        try {
+          const b64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const { data } = await supabase.functions.invoke('media-extract', {
+            body: { mode: 'image', data: b64, mimeType: file.type },
+          });
+          extracted = (data?.transcript || '').trim();
+        } catch {
+          /* OCR is a bonus — the file is already safely in the vault */
+        }
+      }
+
+      await sendMessage(
+        [
+          `I've just uploaded "${file.name}" to my Health Vault.`,
+          extracted ? `Here's the text read from it:\n${extracted.slice(0, 4000)}` : '',
+          'Please tell me what it looks like and anything I should follow up on.',
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+      );
+      toast.success('Saved to your Health Vault');
+      void doc;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
+
 
   return (
     <>
