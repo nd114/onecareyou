@@ -87,10 +87,24 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     setIsLoading(true);
 
     try {
-      const history = [...messages, userMsg].map(m => ({
-        role: m.role,
-        content: m.content,
-      }));
+      // Tell the model what actually happened to earlier proposals so it never
+      // claims a change was made when it is still awaiting approval.
+      const history = [...messages, userMsg].map(m => {
+        let content = m.content;
+        if (m.role === 'assistant' && m.proposedActions?.length) {
+          const status =
+            m.actionState === 'applied'
+              ? `SYSTEM NOTE: the user approved your previous proposal and it was saved. Results: ${(m.actionOutcomes ?? [])
+                  .map(o => `${o.ok ? 'saved' : 'FAILED'} — ${o.message}`)
+                  .join('; ')}`
+              : m.actionState === 'discarded'
+                ? 'SYSTEM NOTE: the user discarded your previous proposal — nothing was saved.'
+                : 'SYSTEM NOTE: your previous proposal is still awaiting the user\'s approval — nothing has been saved yet.';
+          content = `${content}\n\n${status}`;
+        }
+        return { role: m.role, content };
+      });
+
 
       const { data, error: fnError } = await supabase.functions.invoke('patient-ai-chat', {
         body: { messages: history, allowActions },
