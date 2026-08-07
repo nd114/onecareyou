@@ -192,17 +192,9 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     });
 
     setMessages(prev => prev.map(m => (
-      m.id === messageId
-        ? {
-            ...m,
-            actionState: 'applied',
-            actionOutcomes: outcomes,
-            content: outcomes.some(o => !o.ok)
-              ? m.content
-              : m.content,
-          }
-        : m
+      m.id === messageId ? { ...m, actionState: 'applied', actionOutcomes: outcomes } : m
     )));
+
 
 
     return outcomes;
