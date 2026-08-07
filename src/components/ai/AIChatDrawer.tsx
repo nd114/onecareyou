@@ -317,7 +317,34 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
             {interim && (
               <p className="text-xs text-muted-foreground italic px-1">{interim}…</p>
             )}
+            {isUploading && (
+              <p className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                <Loader2 className="h-3 w-3 animate-spin" /> Saving your file to the Health Vault…
+              </p>
+            )}
             <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={e => handleFileChosen(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 flex-shrink-0"
+                disabled={isLoading || isUploading}
+                onClick={() => {
+                  if (!hasConsent) { setShowConsent(true); return; }
+                  fileInputRef.current?.click();
+                }}
+                title="Attach a document or photo (saved to your Health Vault)"
+                aria-label="Attach a file"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
               <VoiceButton
                 onFinalText={handleFinalText}
                 onInterimText={setInterim}
@@ -327,7 +354,7 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask a question, or dictate and edit before sending..."
+                placeholder="Ask a question, attach a file, or dictate..."
                 className="min-h-[36px] max-h-[100px] resize-none text-sm"
                 rows={1}
               />
@@ -341,6 +368,7 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
               </Button>
             </div>
           </div>
+
 
         </SheetContent>
       </Sheet>
