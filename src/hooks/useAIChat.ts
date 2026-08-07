@@ -184,14 +184,26 @@ export function useAIChat(options: UseAIChatOptions = {}) {
       outcomes.push(await executeAction(action, user.id));
     }
 
-    // Refresh anything the actions may have touched.
-    queryClient.invalidateQueries({ queryKey: ['medications', user.id] });
-    queryClient.invalidateQueries({ queryKey: ['schedule_entries', user.id] });
-    queryClient.invalidateQueries({ queryKey: ['vitals', user.id] });
+    // Refresh anything the actions may have touched. Query keys include dates
+    // and family scope, so match on the first key segment instead.
+    const touched = ['medications', 'schedule_entries', 'schedule-entries', 'vitals', 'dashboard-stats', 'adherence'];
+    queryClient.invalidateQueries({
+      predicate: (query) => touched.includes(String(query.queryKey[0])),
+    });
 
     setMessages(prev => prev.map(m => (
-      m.id === messageId ? { ...m, actionState: 'applied', actionOutcomes: outcomes } : m
+      m.id === messageId
+        ? {
+            ...m,
+            actionState: 'applied',
+            actionOutcomes: outcomes,
+            content: outcomes.some(o => !o.ok)
+              ? m.content
+              : m.content,
+          }
+        : m
     )));
+
 
     return outcomes;
   }, [messages, user?.id, queryClient]);
