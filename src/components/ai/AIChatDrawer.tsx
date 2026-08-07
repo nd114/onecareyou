@@ -192,10 +192,14 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     persistKey: 'onecare.assistant.chat.v1',
   });
   const { hasConsent, grantConsent } = useAIConsent();
+  const { uploadDocument } = useHealthDocuments();
   const [input, setInput] = useState('');
   const [interim, setInterim] = useState('');
   const [showConsent, setShowConsent] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     if (scrollRef.current) {
