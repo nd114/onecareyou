@@ -6,10 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Send, Loader2, Mic, MicOff, Trash2, ArrowRight, Bot, User, AlertTriangle 
+  Send, Loader2, Mic, MicOff, Trash2, ArrowRight, Bot, User, AlertTriangle, Paperclip 
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useHealthDocuments } from '@/hooks/useHealthDocuments';
 import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
+
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { MarkdownMessage } from './MarkdownMessage';
 import { ProposedActionsCard } from './ProposedActionsCard';
@@ -188,10 +192,14 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     persistKey: 'onecare.assistant.chat.v1',
   });
   const { hasConsent, grantConsent } = useAIConsent();
+  const { uploadDocument } = useHealthDocuments();
   const [input, setInput] = useState('');
   const [interim, setInterim] = useState('');
   const [showConsent, setShowConsent] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -233,6 +241,69 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     setInterim('');
     setInput(prev => (prev ? `${prev.replace(/\s+$/, '')} ${text}` : text));
   };
+
+  /**
+   * Attachments are saved straight into the patient's Health Vault (their own
+   * record, via their session so RLS applies), then the assistant is told what
+   * arrived so it can talk about it.
+   */
+  const handleFileChosen = async (file: File | null) => {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    if (!hasConsent) { setShowConsent(true); return; }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Files need to be under 15 MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const doc = await uploadDocument.mutateAsync({
+        file,
+        title: file.name,
+        category: 'other',
+        sourceContext: 'assistant',
+        aiSummarize: true,
+        familyMemberId: null,
+      });
+
+      let extracted = '';
+      if (file.type.startsWith('image/')) {
+        try {
+          const b64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          const { data } = await supabase.functions.invoke('media-extract', {
+            body: { mode: 'image', data: b64, mimeType: file.type },
+          });
+          extracted = (data?.transcript || '').trim();
+        } catch {
+          /* OCR is a bonus — the file is already safely in the vault */
+        }
+      }
+
+      await sendMessage(
+        [
+          `I've just uploaded "${file.name}" to my Health Vault.`,
+          extracted ? `Here's the text read from it:\n${extracted.slice(0, 4000)}` : '',
+          'Please tell me what it looks like and anything I should follow up on.',
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+      );
+      toast.success('Saved to your Health Vault');
+      void doc;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
 
 
   return (
@@ -317,7 +388,34 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
             {interim && (
               <p className="text-xs text-muted-foreground italic px-1">{interim}…</p>
             )}
+            {isUploading && (
+              <p className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                <Loader2 className="h-3 w-3 animate-spin" /> Saving your file to the Health Vault…
+              </p>
+            )}
             <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={e => handleFileChosen(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 flex-shrink-0"
+                disabled={isLoading || isUploading}
+                onClick={() => {
+                  if (!hasConsent) { setShowConsent(true); return; }
+                  fileInputRef.current?.click();
+                }}
+                title="Attach a document or photo (saved to your Health Vault)"
+                aria-label="Attach a file"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
               <VoiceButton
                 onFinalText={handleFinalText}
                 onInterimText={setInterim}
@@ -327,7 +425,7 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask a question, or dictate and edit before sending..."
+                placeholder="Ask a question, attach a file, or dictate..."
                 className="min-h-[36px] max-h-[100px] resize-none text-sm"
                 rows={1}
               />
@@ -341,6 +439,7 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
               </Button>
             </div>
           </div>
+
 
         </SheetContent>
       </Sheet>

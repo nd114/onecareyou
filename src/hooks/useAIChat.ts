@@ -87,10 +87,24 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     setIsLoading(true);
 
     try {
-      const history = [...messages, userMsg].map(m => ({
-        role: m.role,
-        content: m.content,
-      }));
+      // Tell the model what actually happened to earlier proposals so it never
+      // claims a change was made when it is still awaiting approval.
+      const history = [...messages, userMsg].map(m => {
+        let content = m.content;
+        if (m.role === 'assistant' && m.proposedActions?.length) {
+          const status =
+            m.actionState === 'applied'
+              ? `SYSTEM NOTE: the user approved your previous proposal and it was saved. Results: ${(m.actionOutcomes ?? [])
+                  .map(o => `${o.ok ? 'saved' : 'FAILED'} — ${o.message}`)
+                  .join('; ')}`
+              : m.actionState === 'discarded'
+                ? 'SYSTEM NOTE: the user discarded your previous proposal — nothing was saved.'
+                : 'SYSTEM NOTE: your previous proposal is still awaiting the user\'s approval — nothing has been saved yet.';
+          content = `${content}\n\n${status}`;
+        }
+        return { role: m.role, content };
+      });
+
 
       const { data, error: fnError } = await supabase.functions.invoke('patient-ai-chat', {
         body: { messages: history, allowActions },
@@ -170,14 +184,18 @@ export function useAIChat(options: UseAIChatOptions = {}) {
       outcomes.push(await executeAction(action, user.id));
     }
 
-    // Refresh anything the actions may have touched.
-    queryClient.invalidateQueries({ queryKey: ['medications', user.id] });
-    queryClient.invalidateQueries({ queryKey: ['schedule_entries', user.id] });
-    queryClient.invalidateQueries({ queryKey: ['vitals', user.id] });
+    // Refresh anything the actions may have touched. Query keys include dates
+    // and family scope, so match on the first key segment instead.
+    const touched = ['medications', 'schedule_entries', 'schedule-entries', 'vitals', 'dashboard-stats', 'adherence'];
+    queryClient.invalidateQueries({
+      predicate: (query) => touched.includes(String(query.queryKey[0])),
+    });
 
     setMessages(prev => prev.map(m => (
       m.id === messageId ? { ...m, actionState: 'applied', actionOutcomes: outcomes } : m
     )));
+
+
 
     return outcomes;
   }, [messages, user?.id, queryClient]);

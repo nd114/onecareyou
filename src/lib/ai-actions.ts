@@ -200,14 +200,78 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
           return { id: action.id, ok: false, message: `"${p.medication_name}" matches more than one medication — edit it from the medications page` };
         }
 
+        const med = meds[0];
         const { error } = await supabase
           .from('medications')
           .update({ times_of_day: times })
-          .eq('id', meds[0].id)
+          .eq('id', med.id)
           .eq('user_id', userId);
         if (error) throw error;
-        return { id: action.id, ok: true, message: `Reminder times updated for ${meds[0].name}` };
+
+        // Verify the write actually landed (RLS can silently match zero rows).
+        const { data: verify } = await supabase
+          .from('medications')
+          .select('times_of_day')
+          .eq('id', med.id)
+          .maybeSingle();
+        const saved: string[] = Array.isArray(verify?.times_of_day) ? (verify!.times_of_day as string[]) : [];
+        if (saved.join(',') !== times.join(',')) {
+          return {
+            id: action.id,
+            ok: false,
+            message: `Couldn't save the new times for ${med.name} — please change them on the medications page`,
+          };
+        }
+
+        // Keep today's reminders in sync, otherwise the schedule keeps showing
+        // the old doses and the change looks like it never happened.
+        const dayStart = new Date();
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+        const today = dayStart.toISOString().split('T')[0];
+
+        const { data: todayEntries } = await supabase
+          .from('schedule_entries')
+          .select('id, scheduled_time, status')
+          .eq('user_id', userId)
+          .eq('medication_id', med.id)
+          .gte('scheduled_time', dayStart.toISOString())
+          .lt('scheduled_time', dayEnd.toISOString());
+
+        const existing = todayEntries ?? [];
+        const staleIds = existing
+          .filter((e) => e.status === 'pending' && !times.includes(String(e.scheduled_time).slice(11, 16)))
+          .map((e) => e.id);
+        if (staleIds.length > 0) {
+          await supabase.from('schedule_entries').delete().in('id', staleIds);
+        }
+
+        const kept = new Set(
+          existing
+            .filter((e) => !staleIds.includes(e.id))
+            .map((e) => String(e.scheduled_time).slice(11, 16))
+        );
+        const missing = times.filter((t) => !kept.has(t));
+        if (missing.length > 0) {
+          await supabase.from('schedule_entries').insert(
+            missing.map((time) => ({
+              user_id: userId,
+              medication_id: med.id,
+              family_member_id: null,
+              scheduled_time: `${today}T${time}:00`,
+              status: 'pending' as const,
+            }))
+          );
+        }
+
+        return {
+          id: action.id,
+          ok: true,
+          message: `${med.name} reminders now set for ${times.join(', ')}`,
+        };
       }
+
 
       default:
         return { id: action.id, ok: false, message: 'Unsupported action' };
