@@ -6,10 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Send, Loader2, Mic, MicOff, Trash2, ArrowRight, Bot, User, AlertTriangle 
+  Send, Loader2, Mic, MicOff, Trash2, ArrowRight, Bot, User, AlertTriangle, Paperclip 
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useHealthDocuments } from '@/hooks/useHealthDocuments';
 import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
+
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { MarkdownMessage } from './MarkdownMessage';
 import { ProposedActionsCard } from './ProposedActionsCard';
