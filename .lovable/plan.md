@@ -1,144 +1,47 @@
-# OneCare — Modernization, QA, Strategy & Polish Sprint
+# Clinician depth + assistant fixes
 
-Four tracks, sequenced so the fast wins land first and the redesign happens on a working, tested base.
+## 1. Assistant: approvals that actually change things
 
----
+Confirmed gap: the assistant only has four proposal tools — log vital, add medication, mark dose taken, update medication times. There is **no** tool for removing or stopping anything, so "remove the 4am dose" or "stop this medication" can only be mapped onto a full time-list rewrite (or nothing at all), which is why approvals appear to do nothing.
 
-## Track 0 — Google logo fix (5 min, ships first)
+Work:
+- Add proposal tools for the missing intents: remove one reminder time, discontinue a medication, and correct/delete a mistaken vital entry.
+- Make the update path explicit about what the new full time list is, so removals can't be silently dropped.
+- Every action returns a verified outcome (re-read the row after writing) and the card shows "Saved", "Nothing changed", or the exact failure reason instead of a blanket "Applied".
+- The current failure is not yet root-caused for the *existing* update path. First step of the build is a live signed-in run of the exact flow from the screenshots (change Metformin to 4pm only) to capture the real error before changing that code path.
 
-`src/components/auth/GoogleSignInButton.tsx` currently renders a single-color red "G". Replace with the official Google 4-color SVG (blue/red/yellow/green paths per Google Identity brand guidelines). No behavior change.
+## 2. Clinician "Unknown Patient"
 
----
+Confirmed cause: that share has `profile: false` in its permissions, so RLS correctly hides the patient's profile row and the UI falls back to the string "Unknown Patient". It is a real, intentionally restricted share, not bad data.
 
-## Track 1 — Full role-matrix QA sweep
+Fix: render restricted shares honestly — show the invited email as the identifier plus a "Name not shared" badge, and surface which data types the patient did share. No permission changes.
 
-Drive Playwright headless against `http://localhost:8080` using the injected demo sessions.  Provision yourself the relevant access if any issues, but the following should suffice:  
-Patient: [demo-patient-1@onecare.you](mailto:demo-clinician-1@onecare.you)  
-Clinician: [demo-clinician-1@onecare.you](mailto:demo-clinician-1@onecare.you)  
-Password for both: Demo123!  
-  
-Test matrix:
+## 3. Patient list → simple list
 
-**Roles / tiers**
+Replace the current card-per-patient layout with a compact list: name, status, last activity. Row click opens the patient detail page, which keeps all the existing depth (guidance, alerts, messages, encounters). Add pagination (25 per page) with search working across the full set, not just the visible page.
 
-- Patient (Free, Family, Premium)
-- Clinician (Solo, Practice owner, Practice member, Enterprise)
-- Unauthenticated visitor (marketing + pricing + comparison)
-- Persona lenses (read-only walkthrough): observer, policy maker, hospital manager, C-suite exec — validates that public marketing + `/for-clinicians` + `/ehr-comparison` actually speak to each.
+## 4. Today pillar merged into one page
 
-**Flows tested per role**
+Today becomes a single page: ranked inbox queue + alerts + the key stats strip. Remove the Overview and Alerts sub-tabs, remove the duplicated in-dashboard Patients/Alerts tab switcher, and redirect the old routes to the merged page so existing links and the standalone/PWA launch path keep working.
 
-1. Sign-in (email + Google button render/click), sign-up, onboarding
-2. Nav pillars + sub-tabs (patient 4 pillars, clinician 4 pillars) — every link resolves, active state correct, no cross-role leakage
-3. Patient core: Dashboard, Vitals add/edit, Medications add, Schedule, Health Vault upload+share, Care Circle invite, Messages, Assist (Simple Mode), Family switcher
-4. Clinician core: Today/Triage, Patients list, Patient Detail tabs (Overview/Vitals/Meds/Vault/Guidance/Encounters/Notes/Activity/Network), Invite Patient dialog (previously greyed), Templates, Alerts, Audit, Compliance, Reports, Practice (RBAC add/remove member), BAA
-5. Comparison feature (`/ehr-comparison`) — all rows render, CTAs route correctly, mobile layout
-6. Pricing (`/pricing` audience toggle + `/clinician/pricing` 301)
-7. Billing gates: upgrade prompts don't cross-leak into patient dashboard (regression check on the earlier bug)
-8. PWA/mobile: manifest, standalone launch redirect, bottom nav visibility rules, FAB stacking, safe-area insets on iPhone viewport (390×844)
-9. Auth edge cases: sign-out clears context, protected routes bounce, password reset
+## 5. Attachments in clinician–patient chat
 
-**Deliverable**
+The messages table already has an `attachment_path` column but nothing reads or writes it. Add a private bucket for message attachments with access scoped to the two participants, an attach control in the thread composer on both the clinician and patient side, and inline rendering (image preview / file chip) that opens through a short-lived signed URL.
 
-- `docs/qa-report-jul-2026.md` — bug ledger with severity (P0 blocker → P3 polish), reproduction, screenshot
-- Fix everything P0/P1 in the same sprint; P2/P3 triaged into the doc for follow-up
-- Screenshots saved under `/tmp/browser/qa-jul-2026/` and the worst offenders attached to the redesign brief in Track 2
+## 6. Ambient clinical scribe
 
----
+Build on the existing encounters + dictations objects:
+- Record or upload visit audio from inside an encounter.
+- Transcribe, then generate a structured SOAP note plus suggested vitals/medication mentions.
+- Clinician reviews side-by-side (transcript vs draft), edits, and signs — nothing enters the encounter until signed.
+- Audit entry on generate and on sign.
 
-## Track 2 — UI/UX modernization via redesign skill
+The other roadmap items (problem list/ICD-10, care plans, orders & results) stay documented for later; the roadmap doc gets a note that scribe has moved into build.
 
-Current visual system reads generic: emerald+teal gradient stat cards, Inter+Plus Jakarta, standard shadcn defaults, template-y hero. The redesign follows the two-act redesign skill:
+## Technical notes
 
-**Act 1 — Pin the taste**
-Capture the live preview (Landing, Patient Dashboard, Clinician Today) via Playwright element screenshots. Ask 3 visual questions in one round:
-
-- Palette (4 curated swatches — leaning medical-trust: Ocean Deep, Navy Trust, Slate & Steel, Paper & Ink, or a custom clinical palette)
-- Type pair (4 options — leaning editorial/clinical: instrument-serif-work-sans, dm-serif-display-fira-sans, sora-manrope, urbanist-epilogue)
-- Layout (4 options — asymmetric, magazine, bento-grid, full-width-sections)
-
-**Act 2 — Four rendered directions**  
-Feed captured screenshots + locked palette/type/layout into `design--create_directions` to render 4 distinct compositions varying density, hierarchy, motion, and emphasis. User picks one via prototype question.
-
-**Act 3 — Implement chosen direction**
-
-- Rewrite tokens in `src/index.css` + `tailwind.config.ts` (copy verbatim from picked prototype)
-- Refresh shadcn primitive variants once (Button, Card, Input, Tabs, Dialog, Badge)
-- Restyle Landing hero, Patient Dashboard, Clinician Today, Pricing, Comparison — the 5 highest-traffic surfaces
-- Add motion register (Framer Motion micro-interactions on cards, page transitions)
-- Keep IA untouched — this is pure visual layer
-
-**Explicit anti-AI-generic rules applied**
-
-- No emerald→teal gradient stat cards
-- No purple/indigo-on-white
-- No default Inter body + Plus Jakarta heading (change at minimum one of the two)
-- No generic Sparkles/lucide-only iconography for brand marks
-- Deliberate whitespace rhythm, one distinctive typographic move, one signature interaction
-
----
-
-## Track 3 — Strategy, USP, fundraising docs
-
-Two artifacts:
-
-### 3a. `docs/strategy/platform-review-jul-2026.md` (internal, candid)
-
-Sections:
-
-1. Product Hunt readiness checklist (assets, tagline, launch-day plan, hunter, comment strategy, first-100 tactic) — go/no-go verdict
-2. Competitive landscape matrix vs Spruce Health, SimplePractice, Healthie, Elation, Athena, Epic MyChart, Zocdoc, Hint Health, Practice Better — feature parity, pricing, moat gaps
-3. USP articulation. Beyond patient-centricity:
-  - **Shared continuous record** — one canonical record patient + clinician both write to
-  - **Patient-consented data governance** — 4 sharing modes (hybrid ownership model already in memory)
-  - **Post-discharge asymmetry wedge** — mission-doc positioning
-  - **Family-scoped care** — caregiver_access + family switcher (unusual outside pediatrics)
-  - **AI transparency** — explicit consent modes + de-identification (13 regex patterns)
-  - **Interop-native from day 1** — QHIN/TEFCA + FHIR roadmap vs vendor lock-in incumbents
-  - **Dual-sided pricing** — patient-first freemium + clinician SaaS, most competitors are single-sided
-4. Where we win hands-down / where we're behind / where we're at parity
-5. Risks: HIPAA scaling, clinician adoption cost, incumbent bundling
-6. Where we should deploy
-7. Next courses of action (short term, medium term, long-term)
-
-### 3b. `docs/strategy/investor-onepager.md` (external, polished)
-
-Problem → wedge → traction → moat → market ($26B readmissions, $50B RPM) → business model → ask. Distilled from 3a.
-
-### 3c. Fundraising options section (in both docs, tuned)
-
-- **Non-dilutive first (fastest close):** SBIR/STTR Phase I ($275K, 6-mo close), NIH DTR, Google for Startups Cloud AI Accelerator, AWS Impact credits, Rock Health Summit prizes, Startup Health cohort
-- **Angel / pre-seed:** health-focused angels (Rock Health Angels, MedAngels, Halle Tecco's Rhia list), digital health syndicates on AngelList — 2–4 week close realistic
-- **Accelerators:** Y Combinator, Techstars Healthcare, Cedars-Sinai, MassChallenge HealthTech — cohort timing
-- **Strategic:** payer innovation funds (UnitedHealthcare Optum Ventures, Anthem, Blue Venture Fund), hospital system corp dev
-- **Revenue-based financing:** Pipe, Capchase, Founderpath — once clinician MRR exists
-- **Fast-close mechanics:** SAFE with cap, warm intros only, target 10–15 checks × $25K–$100K = $500K–$1M pre-seed in 6–8 weeks
-
----
-
-## Sequencing (single sprint)
-
-```text
-Day 1  Track 0 (Google logo) + Track 1 QA sweep (Playwright)
-Day 2  Track 1 fixes for P0/P1 bugs
-Day 3  Track 3 docs written (strategy + investor + fundraising)
-Day 4  Track 2 Act 1 — capture + 3 visual questions
-Day 5  Track 2 Act 2 — render 3 directions, user picks
-Day 6-7 Track 2 Act 3 — implement chosen direction across 5 surfaces
-```
-
-## Technical details
-
-- QA harness: Playwright headless, viewports 1280×1800 (desktop) + 390×844 (mobile). Session injection via `LOVABLE_BROWSER_SUPABASE_*` env vars. Screenshots to `/tmp/browser/qa-jul-2026/`.
-- Redesign lock: chosen prototype's CSS variables copied verbatim into `src/index.css`; no re-derivation.
-- No schema changes, no new edge functions, no auth changes in this sprint.
-- Google logo: inline 4-path SVG, no external asset.
-- Track 3 docs are markdown-only under `docs/strategy/`.
-- Ensure that Mobile and Tab views are also rightly changed/worked on without defect or error.
-
-## Out of scope
-
-- New features (messaging attachments, telehealth, ambient scribe — deferred)
-- QHIN wiring (already documented, no code)
-- i18n activation (Phase D)
-- Native mobile store submission
+- New proposal tool types in `patient-ai-chat` + matching executors in `src/lib/ai-actions.ts`; outcome verification per action.
+- `useClinicianPatients` stops substituting a fake name; restricted-share state is modelled explicitly.
+- `nav-ia.ts` clinician Today pillar drops its sub-tabs; `ClinicianDashboard` content folds into `ClinicianToday`.
+- New storage bucket + RLS policies on `storage.objects` for message attachments.
+- Scribe uses the existing dictation edge function pattern with a new SOAP-generation step writing a draft onto the encounter.
