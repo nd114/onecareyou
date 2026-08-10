@@ -74,10 +74,10 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     label: "Today",
     primary: "/clinician/today",
     tabs: [
-      { to: "/clinician/today", label: "Inbox" },
-      { to: "/clinician/dashboard", label: "Overview" },
-      { to: "/clinician/alerts", label: "Alerts" },
+      { to: "/clinician/today", label: "Today", match: ["/clinician/dashboard"] },
+      { to: "/clinician/alerts", label: "Alert rules" },
     ],
+
   },
   {
     key: "patients",
