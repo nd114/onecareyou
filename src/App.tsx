@@ -30,7 +30,6 @@ import Vitals from "./pages/Vitals";
 import CareCircle from "./pages/CareCircle";
 import ClinicianPortal from "./pages/ClinicianPortal";
 import ClinicianSignUp from "./pages/ClinicianSignUp";
-import ClinicianDashboard from "./pages/ClinicianDashboard";
 import ClinicianToday from "./pages/ClinicianToday";
 import ClinicianSettings from "./pages/ClinicianSettings";
 import ClinicianPractice from "./pages/ClinicianPractice";
