@@ -10,10 +10,13 @@ interface SharePermissions {
   profile: boolean;
 }
 
-interface PatientProfile {
+interface PatientIdentity {
+  user_id: string;
   name: string | null;
   email: string | null;
+  phone_number: string | null;
 }
+
 
 interface PatientShare {
   id: string;
@@ -30,6 +33,7 @@ interface PatientShare {
   clinician_notes: string | null;
   patient_name: string;
   patient_email: string | null;
+  patient_phone: string | null;
 }
 
 export function useClinicianPatients() {
@@ -42,8 +46,9 @@ export function useClinicianPatients() {
     isLoading,
     error,
   } = useQuery({
-    // v2 key to force a refetch after adding patient_name/patient_email fields
-    queryKey: ['clinician-patients-v2', user?.id],
+    // v3 key: identity now comes from get_patient_identity (name/contact are
+    // always available to a connected clinician, per medical record policy).
+    queryKey: ['clinician-patients-v3', user?.id],
     queryFn: async () => {
       if (!user?.email) return [];
 
@@ -58,37 +63,38 @@ export function useClinicianPatients() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Fetch patient profiles for each share
-      const patientUserIds = (data || []).map(share => share.user_id).filter(Boolean);
-      if (patientUserIds.length === 0) {
-        return (data || []).map(share => ({
-          ...share,
-          permissions: share.permissions as unknown as SharePermissions,
-          patient_name: 'Unknown Patient',
-          patient_email: null,
-        })) as PatientShare[];
+
+      const shares = data || [];
+      const patientUserIds = shares.map((share) => share.user_id).filter(Boolean);
+
+      // Basic identity (name + contact) is always retrievable for a connected
+      // patient — a clinician cannot manage a patient whose name or contact
+      // details they don't have on file. Granular sharing still governs
+      // vitals / medications / adherence.
+      const identityMap = new Map<string, PatientIdentity>();
+      if (patientUserIds.length > 0) {
+        const { data: identities, error: identityError } = await (supabase as any).rpc(
+          'get_patient_identity',
+          { patient_ids: patientUserIds },
+        );
+        if (identityError) console.error('Failed to load patient identities', identityError);
+        for (const row of (identities || []) as PatientIdentity[]) {
+          identityMap.set(row.user_id, row);
+        }
       }
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, name, email')
-        .in('user_id', patientUserIds);
-      
-      const profileMap = new Map(
-        (profiles || []).map(p => [p.user_id, p])
-      );
-      
-      return (data || []).map(share => {
-        const profile = profileMap.get(share.user_id);
+      return shares.map((share) => {
+        const identity = identityMap.get(share.user_id);
         return {
           ...share,
           permissions: share.permissions as unknown as SharePermissions,
-          patient_name: profile?.name || 'Unknown Patient',
-          patient_email: profile?.email || null,
+          patient_name: identity?.name || identity?.email || 'Patient (name pending)',
+          patient_email: identity?.email || null,
+          patient_phone: identity?.phone_number || null,
         };
       }) as PatientShare[];
     },
+
     enabled: !!user?.email,
   });
 
@@ -106,7 +112,7 @@ export function useClinicianPatients() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
       toast.success('Patient connected successfully');
     },
     onError: (error) => {
@@ -142,7 +148,7 @@ export function useClinicianPatients() {
     },
     onSuccess: (count) => {
       if (count > 0) {
-        queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
+        queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
         toast.success(`Connected with ${count} new patient${count > 1 ? 's' : ''}`);
       }
     },
@@ -162,7 +168,7 @@ export function useClinicianPatients() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
       toast.success('Patient notes saved');
     },
     onError: (error) => {

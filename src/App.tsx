@@ -30,7 +30,6 @@ import Vitals from "./pages/Vitals";
 import CareCircle from "./pages/CareCircle";
 import ClinicianPortal from "./pages/ClinicianPortal";
 import ClinicianSignUp from "./pages/ClinicianSignUp";
-import ClinicianDashboard from "./pages/ClinicianDashboard";
 import ClinicianToday from "./pages/ClinicianToday";
 import ClinicianSettings from "./pages/ClinicianSettings";
 import ClinicianPractice from "./pages/ClinicianPractice";
@@ -139,11 +138,9 @@ const App = () => (
                 <ClinicianToday />
               </ClinicianRoute>
             } />
-            <Route path="/clinician/dashboard" element={
-              <ClinicianRoute>
-                <ClinicianDashboard />
-              </ClinicianRoute>
-            } />
+            {/* Overview merged into Today — keep the old link working */}
+            <Route path="/clinician/dashboard" element={<Navigate to="/clinician/today" replace />} />
+
             <Route path="/clinician/patients" element={
               <ClinicianRoute>
                 <ClinicianPatients />

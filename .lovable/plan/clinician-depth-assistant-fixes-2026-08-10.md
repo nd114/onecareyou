@@ -5,6 +5,7 @@
 Confirmed gap: the assistant only has four proposal tools — log vital, add medication, mark dose taken, update medication times. There is **no** tool for removing or stopping anything, so "remove the 4am dose" or "stop this medication" can only be mapped onto a full time-list rewrite (or nothing at all), which is why approvals appear to do nothing.
 
 Work:
+
 - Add proposal tools for the missing intents: remove one reminder time, discontinue a medication, and correct/delete a mistaken vital entry.
 - Make the update path explicit about what the new full time list is, so removals can't be silently dropped.
 - Every action returns a verified outcome (re-read the row after writing) and the card shows "Saved", "Nothing changed", or the exact failure reason instead of a blanket "Applied".
@@ -14,7 +15,7 @@ Work:
 
 Confirmed cause: that share has `profile: false` in its permissions, so RLS correctly hides the patient's profile row and the UI falls back to the string "Unknown Patient". It is a real, intentionally restricted share, not bad data.
 
-Fix: render restricted shares honestly — show the invited email as the identifier plus a "Name not shared" badge, and surface which data types the patient did share. No permission changes.
+Fix: render restricted shares honestly — show the invited email as the identifier plus a "Name not shared" badge, and surface which data types the patient did share. No permission [changes.In](http://changes.In) that case, I think we should make the name and email/phone number sharable with the clinician mandatorily and preserved to be compliant with basic medical information sharing expectations - a doctor cannot be managing a patient whose name or contact they don't have on file (no hypothetical patient; so if a patient even retracts their sharing permissions, the doctor should have the record up to they disconnect and keep for however the policies are and we can put that disclaimer towards the patient to view).
 
 ## 3. Patient list → simple list
 
@@ -31,6 +32,7 @@ The messages table already has an `attachment_path` column but nothing reads or 
 ## 6. Ambient clinical scribe
 
 Build on the existing encounters + dictations objects:
+
 - Record or upload visit audio from inside an encounter.
 - Transcribe, then generate a structured SOAP note plus suggested vitals/medication mentions.
 - Clinician reviews side-by-side (transcript vs draft), edits, and signs — nothing enters the encounter until signed.

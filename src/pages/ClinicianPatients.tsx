@@ -1,16 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Users, 
+import {
+  Users,
   Loader2,
   RefreshCw,
-  StickyNote,
   Search,
-  Mail,
   Upload,
   Database,
+  Mail,
+  ChevronRight,
 } from 'lucide-react';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,40 +20,39 @@ import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
-import { usePatientVitalsSummaries } from '@/hooks/usePatientVitalsSummaries';
 import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
-import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
-import { PatientQuickActions } from '@/components/clinician/PatientQuickActions';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
-import { BulkPatientActions, PatientSelectCheckbox } from '@/components/clinician/BulkPatientActions';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InviteToOneCareButton, PatientTagManager } from '@/components/clinician/ManagedRecordActions';
 import { EditManagedRecordDialog } from '@/components/clinician/EditManagedRecordDialog';
 import { ManagedRecordFilterBar, applyManagedRecordFilters, type ManagedRecordFilters } from '@/components/clinician/ManagedRecordFilters';
 
+const PAGE_SIZE = 25;
+
+/** Compact "last activity" label for the patient list. */
+function lastActivityLabel(iso: string | null) {
+  if (!iso) return '—';
+  const then = new Date(iso).getTime();
+  const mins = Math.floor((Date.now() - then) / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 const ClinicianPatients = () => {
+
   const navigate = useNavigate();
   const { clinicianProfile, isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
   const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
   const { records: managedRecords, isLoading: isLoadingRecords } = useClinicianPatientRecords();
   const { patientLimit } = useClinicianSubscription();
-  
-  const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
-  const { data: vitalsSummaries = [] } = usePatientVitalsSummaries(patientUserIds);
-  
-  const vitalsByPatient = useMemo(() => {
-    const map: Record<string, { vitals: any[]; adherenceRate?: number }> = {};
-    vitalsSummaries.forEach(summary => {
-      map[summary.userId] = {
-        vitals: summary.vitals,
-        adherenceRate: summary.adherenceRate,
-      };
-    });
-    return map;
-  }, [vitalsSummaries]);
   
   const [notesDialog, setNotesDialog] = useState<{
     open: boolean;
@@ -62,7 +62,7 @@ const ClinicianPatients = () => {
   }>({ open: false, patientId: '', patientName: '', notes: '' });
 
   const [patientSearch, setPatientSearch] = useState('');
-  const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState('connected');
   const [managedFilters, setManagedFilters] = useState<ManagedRecordFilters>({ tag: '', condition: '', status: '' });
 
@@ -75,6 +75,19 @@ const ClinicianPatients = () => {
         (p.patient_email || '').toLowerCase().includes(searchLower)
     );
   }, [patients, patientSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / PAGE_SIZE));
+  const pagedPatients = useMemo(
+    () => filteredPatients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredPatients, page],
+  );
+
+  // Keep the page in range as the search narrows the list.
+  useEffect(() => {
+    setPage(1);
+  }, [patientSearch]);
+
+
   const filteredManagedRecords = useMemo(() => {
     let filtered = managedRecords;
     // Apply advanced filters
@@ -237,20 +250,6 @@ const ClinicianPatients = () => {
                 </div>
               )}
 
-              {/* Bulk Actions */}
-              {patients.length > 0 && (
-                <BulkPatientActions
-                  patients={filteredPatients.map(p => ({
-                    id: p.id,
-                    user_id: p.user_id,
-                    patient_name: p.patient_name || 'Unknown',
-                    patient_email: p.patient_email || '',
-                  }))}
-                  selectedIds={selectedPatientIds}
-                  onSelectionChange={setSelectedPatientIds}
-                />
-              )}
-
               {patients.length === 0 ? (
                 <div className="text-center py-10 px-4">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -282,116 +281,71 @@ const ClinicianPatients = () => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {filteredPatients.map((patient) => {
-                    const patientData = vitalsByPatient[patient.user_id];
-                    const isSelected = selectedPatientIds.has(patient.id);
-                    
-                    return (
-                      <div
+                <>
+                  <div className="divide-y rounded-lg border">
+                    {pagedPatients.map((patient) => (
+                      <button
                         key={patient.id}
-                        className={`p-3 sm:p-4 rounded-lg border hover:shadow-sm transition-shadow ${isSelected ? 'border-primary bg-primary/5' : ''}`}
+                        type="button"
+                        onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}
+                        className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-muted/50 transition-colors"
                       >
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-start gap-3">
-                            <PatientSelectCheckbox
-                              patientId={patient.id}
-                              isSelected={isSelected}
-                              onToggle={(id) => {
-                                const newSet = new Set(selectedPatientIds);
-                                if (newSet.has(id)) {
-                                  newSet.delete(id);
-                                } else {
-                                  newSet.add(id);
-                                }
-                                setSelectedPatientIds(newSet);
-                              }}
-                            />
-                            <div 
-                              className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                              onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}
-                            >
-                              <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="font-semibold text-primary">
-                                  {(patient.patient_name || 'Unknown Patient').charAt(0)}
-                                </span>
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="font-medium truncate">{patient.patient_name || 'Unknown Patient'}</p>
-                                  {patientData?.vitals && patientData.vitals.length > 0 && (
-                                    <PatientRiskIndicator 
-                                      vitals={patientData.vitals}
-                                      adherenceRate={patientData.adherenceRate}
-                                    />
-                                  )}
-                                </div>
-                                {patient.patient_email && (
-                                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                                    <Mail className="h-3 w-3 flex-shrink-0" />
-                                    <span className="truncate">{patient.patient_email}</span>
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {patient.permissions.vitals && <Badge variant="secondary" className="text-xs">Vitals</Badge>}
-                                  {patient.permissions.meds && <Badge variant="secondary" className="text-xs">Meds</Badge>}
-                                  {patient.permissions.adherence && <Badge variant="secondary" className="text-xs">Adherence</Badge>}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="h-8 w-8 flex-shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setNotesDialog({
-                                  open: true,
-                                  patientId: patient.id,
-                                  patientName: patient.patient_name,
-                                  notes: patient.clinician_notes || '',
-                                });
-                              }}
-                              title="Patient notes"
-                            >
-                              <StickyNote className={`h-4 w-4 ${patient.clinician_notes ? 'text-primary' : 'text-muted-foreground'}`} />
-                            </Button>
-                          </div>
-                          
-                          <div className="flex items-center justify-between gap-2 pt-2 border-t">
-                            <PatientQuickActions
-                              patient={{
-                                id: patient.id,
-                                user_id: patient.user_id,
-                                patient_name: patient.patient_name,
-                                patient_email: patient.patient_email,
-                              }}
-                              onViewNotes={() => setNotesDialog({
-                                open: true,
-                                patientId: patient.id,
-                                patientName: patient.patient_name,
-                                notes: patient.clinician_notes || '',
-                              })}
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs"
-                              onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}
-                            >
-                              View Details
-                            </Button>
-                          </div>
+                        <div className="h-9 w-9 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="font-semibold text-primary text-sm">
+                            {patient.patient_name.charAt(0).toUpperCase()}
+                          </span>
                         </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{patient.patient_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {patient.patient_email || 'No email on file'}
+                          </p>
+                        </div>
+                        <div className="hidden sm:block text-right">
+                          <Badge variant={patient.clinician_user_id ? 'secondary' : 'outline'} className="text-xs">
+                            {patient.clinician_user_id ? 'Connected' : 'Pending'}
+                          </Badge>
+                        </div>
+                        <div className="w-28 sm:w-36 text-right text-xs text-muted-foreground">
+                          {lastActivityLabel(patient.last_accessed_at || patient.created_at)}
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4">
+                      <p className="text-xs text-muted-foreground">
+                        Showing {(page - 1) * PAGE_SIZE + 1}–
+                        {Math.min(page * PAGE_SIZE, filteredPatients.length)} of {filteredPatients.length}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={page === 1}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={page >= totalPages}
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        >
+                          Next
+                        </Button>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
           </TabsContent>
+
 
           <TabsContent value="managed">
             <Card>

@@ -126,7 +126,7 @@ export function ClinicianDataConsentDialog({ record, open, onOpenChange }: Props
       }
 
       queryClient.invalidateQueries({ queryKey: ['pending-clinician-records'] });
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
       queryClient.invalidateQueries({ queryKey: ['provider-shares'] });
 
       toast.success('Connected with your healthcare provider');
