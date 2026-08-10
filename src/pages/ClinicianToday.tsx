@@ -129,6 +129,12 @@ const ClinicianToday = () => {
             </Button>
           </div>
 
+          {/* Onboarding + plan limits (merged in from the old Overview tab) */}
+          <ClinicianOnboardingCard />
+          <PatientLimitBanner patientCount={patients.length} />
+
+
+
           {/* Summary chips */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {[
