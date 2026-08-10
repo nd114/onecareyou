@@ -10,10 +10,13 @@ interface SharePermissions {
   profile: boolean;
 }
 
-interface PatientProfile {
+interface PatientIdentity {
+  user_id: string;
   name: string | null;
   email: string | null;
+  phone_number: string | null;
 }
+
 
 interface PatientShare {
   id: string;
