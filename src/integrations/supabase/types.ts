@@ -1372,6 +1372,10 @@ export type Database = {
           patient_user_id: string
           plan: string | null
           practice_id: string | null
+          scribe_audio_path: string | null
+          scribe_draft: Json | null
+          scribe_generated_at: string | null
+          scribe_transcript: string | null
           signed_at: string | null
           status: string
           subjective: string | null
@@ -1394,6 +1398,10 @@ export type Database = {
           patient_user_id: string
           plan?: string | null
           practice_id?: string | null
+          scribe_audio_path?: string | null
+          scribe_draft?: Json | null
+          scribe_generated_at?: string | null
+          scribe_transcript?: string | null
           signed_at?: string | null
           status?: string
           subjective?: string | null
@@ -1416,6 +1424,10 @@ export type Database = {
           patient_user_id?: string
           plan?: string | null
           practice_id?: string | null
+          scribe_audio_path?: string | null
+          scribe_draft?: Json | null
+          scribe_generated_at?: string | null
+          scribe_transcript?: string | null
           signed_at?: string | null
           status?: string
           subjective?: string | null
@@ -3079,6 +3091,15 @@ export type Database = {
         }[]
       }
       get_current_user_email: { Args: never; Returns: string }
+      get_patient_identity: {
+        Args: { patient_ids: string[] }
+        Returns: {
+          email: string
+          name: string
+          phone_number: string
+          user_id: string
+        }[]
+      }
       has_practice_capability: {
         Args: { _capability: string; _user_id: string }
         Returns: boolean
