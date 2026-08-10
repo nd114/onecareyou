@@ -88,7 +88,7 @@ export function useClinicianPatients() {
         return {
           ...share,
           permissions: share.permissions as unknown as SharePermissions,
-          patient_name: identity?.name || share.provider_name || identity?.email || 'Patient (name pending)',
+          patient_name: identity?.name || identity?.email || 'Patient (name pending)',
           patient_email: identity?.email || null,
           patient_phone: identity?.phone_number || null,
         };
@@ -112,7 +112,7 @@ export function useClinicianPatients() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
       toast.success('Patient connected successfully');
     },
     onError: (error) => {
@@ -148,7 +148,7 @@ export function useClinicianPatients() {
     },
     onSuccess: (count) => {
       if (count > 0) {
-        queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
+        queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
         toast.success(`Connected with ${count} new patient${count > 1 ? 's' : ''}`);
       }
     },
@@ -168,7 +168,7 @@ export function useClinicianPatients() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
       toast.success('Patient notes saved');
     },
     onError: (error) => {
