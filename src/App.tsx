@@ -139,11 +139,9 @@ const App = () => (
                 <ClinicianToday />
               </ClinicianRoute>
             } />
-            <Route path="/clinician/dashboard" element={
-              <ClinicianRoute>
-                <ClinicianDashboard />
-              </ClinicianRoute>
-            } />
+            {/* Overview merged into Today — keep the old link working */}
+            <Route path="/clinician/dashboard" element={<Navigate to="/clinician/today" replace />} />
+
             <Route path="/clinician/patients" element={
               <ClinicianRoute>
                 <ClinicianPatients />
