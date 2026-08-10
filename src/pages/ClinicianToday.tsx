@@ -24,7 +24,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
@@ -33,6 +32,10 @@ import { usePracticeTasks } from "@/hooks/usePracticeTasks";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { CreateTaskDialog } from "@/components/clinician/CreateTaskDialog";
 import { SEOHead } from "@/components/seo/SEOHead";
+import { ClinicianOnboardingCard } from "@/components/clinician/ClinicianOnboardingCard";
+import { PatientLimitBanner } from "@/components/clinician/PatientLimitBanner";
+import { useClinicianPatients } from "@/hooks/useClinicianPatients";
+
 
 function kindIcon(kind: TriageItem["kind"]) {
   if (kind === "message") return MessageSquare;
