@@ -73,6 +73,8 @@ const ClinicianToday = () => {
   const navigate = useNavigate();
   const { isClinician, isLoading: loadingProfile } = useClinicianProfile();
   const { items, isLoading, counts } = useTriageInbox();
+  const { patients } = useClinicianPatients();
+
   const { tasks, update, isLoading: loadingTasks } = usePracticeTasks({ scope: "mine" });
   const [filter, setFilter] = useState<"all" | "message" | "alert" | "task">("all");
   const [createOpen, setCreateOpen] = useState(false);
