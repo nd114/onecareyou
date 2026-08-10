@@ -41,20 +41,6 @@ const ClinicianPatients = () => {
   const { records: managedRecords, isLoading: isLoadingRecords } = useClinicianPatientRecords();
   const { patientLimit } = useClinicianSubscription();
   
-  const patientUserIds = useMemo(() => patients.map(p => p.user_id), [patients]);
-  const { data: vitalsSummaries = [] } = usePatientVitalsSummaries(patientUserIds);
-  
-  const vitalsByPatient = useMemo(() => {
-    const map: Record<string, { vitals: any[]; adherenceRate?: number }> = {};
-    vitalsSummaries.forEach(summary => {
-      map[summary.userId] = {
-        vitals: summary.vitals,
-        adherenceRate: summary.adherenceRate,
-      };
-    });
-    return map;
-  }, [vitalsSummaries]);
-  
   const [notesDialog, setNotesDialog] = useState<{
     open: boolean;
     patientId: string;
@@ -63,7 +49,7 @@ const ClinicianPatients = () => {
   }>({ open: false, patientId: '', patientName: '', notes: '' });
 
   const [patientSearch, setPatientSearch] = useState('');
-  const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState('connected');
   const [managedFilters, setManagedFilters] = useState<ManagedRecordFilters>({ tag: '', condition: '', status: '' });
 
@@ -76,6 +62,19 @@ const ClinicianPatients = () => {
         (p.patient_email || '').toLowerCase().includes(searchLower)
     );
   }, [patients, patientSearch]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPatients.length / PAGE_SIZE));
+  const pagedPatients = useMemo(
+    () => filteredPatients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredPatients, page],
+  );
+
+  // Keep the page in range as the search narrows the list.
+  useEffect(() => {
+    setPage(1);
+  }, [patientSearch]);
+
+
   const filteredManagedRecords = useMemo(() => {
     let filtered = managedRecords;
     // Apply advanced filters
