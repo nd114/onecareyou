@@ -1,6 +1,6 @@
 // Phase 1.4 — Encounter editor dialog + tab content.
 import { useState, useMemo } from "react";
-import { Plus, FileSignature, Loader2, ChevronRight, FileText } from "lucide-react";
+import { Plus, FileSignature, Loader2, ChevronRight, FileText, Mic } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useEncounters, type Encounter } from "@/hooks/useEncounters";
+import { EncounterScribePanel } from "@/components/clinician/EncounterScribePanel";
 import { usePatientActionLog } from "@/hooks/usePatientActionLog";
 import { useClinicalTemplates } from "@/hooks/useClinicalTemplates";
 import { format } from "date-fns";
@@ -38,6 +39,7 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
   const { templates } = useClinicalTemplates("visit");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Encounter | null>(null);
+  const [scribeFor, setScribeFor] = useState<Encounter | null>(null);
   const [draft, setDraft] = useState({
     visit_type: "follow_up",
     chief_complaint: "",
@@ -244,6 +246,9 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                 <div className="flex items-center gap-2">
                   {enc.status === "in_progress" && (
                     <>
+                      <Button variant="outline" size="sm" className="gap-1" onClick={() => setScribeFor(enc)}>
+                        <Mic className="h-3.5 w-3.5" /> Scribe
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => openEditor(enc)}>Edit</Button>
                       <Button size="sm" onClick={() => handleSign(enc)} className="gap-1">
                         <FileSignature className="h-3.5 w-3.5" /> Sign
@@ -261,6 +266,33 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
           </ul>
         )}
       </CardContent>
+
+      <Dialog open={!!scribeFor} onOpenChange={(o) => !o && setScribeFor(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ambient scribe — {patientName}</DialogTitle>
+          </DialogHeader>
+          {scribeFor && (
+            <EncounterScribePanel
+              encounter={scribeFor}
+              onApply={(fields) => {
+                setScribeFor(null);
+                setActive(scribeFor);
+                setDraft({
+                  visit_type: scribeFor.visit_type,
+                  chief_complaint: fields.chief_complaint,
+                  subjective: fields.subjective,
+                  objective: fields.objective,
+                  assessment: fields.assessment,
+                  plan: fields.plan,
+                  follow_up_in_days: fields.follow_up_in_days,
+                });
+                setOpen(true);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
