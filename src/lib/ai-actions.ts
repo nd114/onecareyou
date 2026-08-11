@@ -12,7 +12,10 @@ export type ProposedActionType =
   | 'log_vital'
   | 'add_medication'
   | 'mark_dose_taken'
-  | 'update_medication_times';
+  | 'update_medication_times'
+  | 'remove_medication_time'
+  | 'discontinue_medication'
+  | 'delete_vital';
 
 export interface ProposedAction {
   id: string;
@@ -66,6 +69,28 @@ export function describeAction(action: ProposedAction): { title: string; detail:
       return {
         title: `Update reminder times: ${p.medication_name}`,
         detail: times ? `New times: ${times}` : 'New reminder times',
+      };
+    }
+    case 'remove_medication_time':
+      return {
+        title: `Remove reminder time: ${p.medication_name}`,
+        detail: `Drop the ${pad(String(p.time_of_day))} reminder — other times stay`,
+      };
+    case 'discontinue_medication':
+      return {
+        title: `Stop medication: ${p.medication_name}`,
+        detail: [p.reason, 'Removes it from your list and clears its reminders'].filter(Boolean).join(' · '),
+      };
+    case 'delete_vital': {
+      const cfg = VITAL_CONFIG[p.type as VitalType];
+      return {
+        title: `Delete reading: ${cfg?.label ?? p.type}`,
+        detail: [
+          p.value != null ? `${p.value} ${cfg?.unit ?? ''}`.trim() : '',
+          p.recorded_at ? `recorded ${new Date(p.recorded_at).toLocaleString()}` : 'most recent entry',
+        ]
+          .filter(Boolean)
+          .join(' · '),
       };
     }
     default:
@@ -272,6 +297,133 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
         };
       }
 
+
+      case 'remove_medication_time': {
+        const time = pad(String(p.time_of_day ?? ''));
+        const meds = await findMedication(userId, p.medication_name ?? '');
+        if (meds.length === 0) return { id: action.id, ok: false, message: `Couldn't find "${p.medication_name}" in your medications` };
+        if (meds.length > 1) return { id: action.id, ok: false, message: `"${p.medication_name}" matches more than one medication — edit it from the medications page` };
+        const med = meds[0];
+        const current: string[] = Array.isArray(med.times_of_day) ? (med.times_of_day as string[]).map(pad) : [];
+        if (!current.includes(time)) {
+          return { id: action.id, ok: false, message: `${med.name} has no ${time} reminder — nothing changed` };
+        }
+        const next = current.filter((t) => t !== time);
+        const { error } = await supabase
+          .from('medications')
+          .update({ times_of_day: next })
+          .eq('id', med.id)
+          .eq('user_id', userId);
+        if (error) throw error;
+
+        const { data: verify } = await supabase
+          .from('medications')
+          .select('times_of_day')
+          .eq('id', med.id)
+          .maybeSingle();
+        const saved: string[] = Array.isArray(verify?.times_of_day) ? (verify!.times_of_day as string[]) : [];
+        if (saved.includes(time)) {
+          return { id: action.id, ok: false, message: `Couldn't remove the ${time} reminder for ${med.name} — please change it on the medications page` };
+        }
+
+        // Drop today's pending entry for that time so the schedule matches.
+        const dayStart = new Date();
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+        const { data: todayEntries } = await supabase
+          .from('schedule_entries')
+          .select('id, scheduled_time, status')
+          .eq('user_id', userId)
+          .eq('medication_id', med.id)
+          .gte('scheduled_time', dayStart.toISOString())
+          .lt('scheduled_time', dayEnd.toISOString());
+        const stale = (todayEntries ?? [])
+          .filter((e) => e.status === 'pending' && String(e.scheduled_time).slice(11, 16) === time)
+          .map((e) => e.id);
+        if (stale.length > 0) await supabase.from('schedule_entries').delete().in('id', stale);
+
+        return {
+          id: action.id,
+          ok: true,
+          message: next.length > 0
+            ? `${med.name} reminders now ${next.join(', ')}`
+            : `${med.name} has no reminder times left`,
+        };
+      }
+
+      case 'discontinue_medication': {
+        const meds = await findMedication(userId, p.medication_name ?? '');
+        if (meds.length === 0) return { id: action.id, ok: false, message: `Couldn't find "${p.medication_name}" in your medications` };
+        if (meds.length > 1) return { id: action.id, ok: false, message: `"${p.medication_name}" matches more than one medication — stop it from the medications page` };
+        const med = meds[0];
+        const { error } = await supabase
+          .from('medications')
+          .update({ is_active: false, end_date: new Date().toISOString().split('T')[0] })
+          .eq('id', med.id)
+          .eq('user_id', userId);
+        if (error) throw error;
+
+        const { data: verify } = await supabase
+          .from('medications')
+          .select('is_active')
+          .eq('id', med.id)
+          .maybeSingle();
+        if (verify?.is_active) {
+          return { id: action.id, ok: false, message: `Couldn't stop ${med.name} — please do it from the medications page` };
+        }
+
+        const now = new Date();
+        await supabase
+          .from('schedule_entries')
+          .delete()
+          .eq('user_id', userId)
+          .eq('medication_id', med.id)
+          .eq('status', 'pending')
+          .gte('scheduled_time', now.toISOString());
+
+        return { id: action.id, ok: true, message: `${med.name} stopped and its upcoming reminders removed` };
+      }
+
+      case 'delete_vital': {
+        const type = p.type as VitalType;
+        const cfg = VITAL_CONFIG[type];
+        if (!cfg) return { id: action.id, ok: false, message: `Unknown vital type "${p.type}"` };
+
+        let q = supabase
+          .from('vitals')
+          .select('id, value, recorded_at')
+          .eq('user_id', userId)
+          .is('family_member_id', null)
+          .eq('type', type)
+          .order('recorded_at', { ascending: false })
+          .limit(5);
+        if (p.value != null) q = q.eq('value', Number(p.value));
+        const { data: candidates, error: findErr } = await q;
+        if (findErr) throw findErr;
+
+        let target = (candidates ?? [])[0];
+        if (p.recorded_at) {
+          const wanted = new Date(p.recorded_at).getTime();
+          const match = (candidates ?? []).find(
+            (c) => Math.abs(new Date(c.recorded_at).getTime() - wanted) < 60 * 60 * 1000,
+          );
+          target = match ?? target;
+        }
+        if (!target) return { id: action.id, ok: false, message: `No matching ${cfg.label} reading found — nothing deleted` };
+
+        const { error } = await supabase.from('vitals').delete().eq('id', target.id).eq('user_id', userId);
+        if (error) throw error;
+
+        const { data: still } = await supabase.from('vitals').select('id').eq('id', target.id).maybeSingle();
+        if (still) return { id: action.id, ok: false, message: `Couldn't delete that ${cfg.label} reading — please remove it on the vitals page` };
+
+        return {
+          id: action.id,
+          ok: true,
+          message: `${cfg.label} reading from ${new Date(target.recorded_at).toLocaleString()} deleted`,
+        };
+      }
 
       default:
         return { id: action.id, ok: false, message: 'Unsupported action' };
