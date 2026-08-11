@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
-import { Send, Loader2, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useMessages, type Message } from '@/hooks/useMessages';
@@ -52,11 +52,61 @@ function groupMessages(messages: Message[]): DaySection[] {
   return days;
 }
 
+const IMAGE_RE = /\.(png|jpe?g|gif|webp|heic|avif)$/i;
+
+function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const fileName = path.split('/').pop()?.replace(/^[0-9a-f-]{36}-/i, '') ?? 'Attachment';
+  const isImage = IMAGE_RE.test(fileName);
+
+  useEffect(() => {
+    let active = true;
+    supabase.storage
+      .from('message-attachments')
+      .createSignedUrl(path, 300)
+      .then(({ data }) => {
+        if (active && data?.signedUrl) setUrl(data.signedUrl);
+      });
+    return () => {
+      active = false;
+    };
+  }, [path]);
+
+  if (isImage) {
+    return url ? (
+      <a href={url} target="_blank" rel="noreferrer" className="block mt-1">
+        <img src={url} alt={fileName} className="rounded-lg max-h-48 w-auto object-cover" loading="lazy" />
+      </a>
+    ) : (
+      <div className="mt-1 h-24 w-40 rounded-lg bg-background/20 animate-pulse" />
+    );
+  }
+
+  return (
+    <a
+      href={url ?? undefined}
+      target="_blank"
+      rel="noreferrer"
+      className={cn(
+        'mt-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs',
+        mine ? 'bg-primary-foreground/15' : 'bg-background/70',
+        !url && 'pointer-events-none opacity-70',
+      )}
+    >
+      <FileText className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate max-w-[160px]">{fileName}</span>
+      <Download className="h-3.5 w-3.5 shrink-0 opacity-70" />
+    </a>
+  );
+}
+
 export function MessageThread({ otherPartyUserId, otherPartyName, role, className }: Props) {
   const { user } = useAuth();
   const { messages, isLoading, send, markRead } = useMessages(otherPartyUserId, role);
   const [draft, setDraft] = useState('');
   const [otherTyping, setOtherTyping] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const lastTypingSentRef = useRef<number>(0);
@@ -112,10 +162,12 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
   }, [otherPartyUserId, messages.length]);
 
   const handleSend = async () => {
-    if (!draft.trim() || send.isPending) return;
+    if ((!draft.trim() && !file) || send.isPending) return;
     try {
-      await send.mutateAsync(draft);
+      await send.mutateAsync({ body: draft, file });
       setDraft('');
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch {
       /* hook surfaces toast */
     }
@@ -183,6 +235,9 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
                           )}
                         >
                           <div>{m.body}</div>
+                          {m.attachment_path && (
+                            <MessageAttachment path={m.attachment_path} mine={mine} />
+                          )}
                           {isLast && (
                             <div
                               className={cn(
@@ -216,7 +271,42 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
       </div>
 
       <div className="border-t px-3 pt-3 pb-2">
+        {file && (
+          <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/50 px-2 py-1.5 text-xs">
+            <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <span className="truncate flex-1">{file.name}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setFile(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Remove attachment"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         <div className="flex items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept="image/*,.pdf,.doc,.docx,.txt,.csv"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={send.isPending}
+            title="Attach a file"
+            aria-label="Attach a file"
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
           <Textarea
             value={draft}
             onChange={(e) => {
@@ -235,7 +325,7 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
           />
           <Button
             onClick={handleSend}
-            disabled={!draft.trim() || send.isPending}
+            disabled={(!draft.trim() && !file) || send.isPending}
             size="icon"
             className="shrink-0"
             title="Send (Enter)"

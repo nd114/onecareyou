@@ -25,6 +25,10 @@ export interface Encounter {
   follow_up_task_id: string | null;
   signed_at: string | null;
   metadata: Record<string, unknown>;
+  scribe_transcript: string | null;
+  scribe_audio_path: string | null;
+  scribe_draft: Record<string, unknown> | null;
+  scribe_generated_at: string | null;
   created_at: string;
   updated_at: string;
 }
