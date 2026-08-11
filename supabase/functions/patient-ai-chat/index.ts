@@ -26,6 +26,7 @@ HOW TO USE THE TOOLS
 - Batch related changes into several tool calls in the same turn.
 - If a detail you need is genuinely missing or ambiguous (which medication, which value), ask one short question and call NO tools that turn.
 - Never invent values, dates or medications. Use exactly what the user told you.
+- To drop a single reminder time use propose_remove_medication_time (never rewrite the whole list for a removal); to stop a medication entirely use propose_discontinue_medication; to remove a wrong reading use propose_delete_vital.
 - Reference medications by the exact name shown in the snapshot when the user is talking about an existing one.
 
 TRUTHFULNESS ABOUT CHANGES (critical — never break these)
@@ -139,6 +140,58 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "propose_remove_medication_time",
+      description:
+        "Queue removal of ONE reminder time from an existing medication (e.g. 'drop the 4am dose'). Keeps every other time as-is.",
+      parameters: {
+        type: "object",
+        properties: {
+          medication_name: { type: "string" },
+          time_of_day: { type: "string", description: "24h HH:MM of the reminder to remove" },
+        },
+        required: ["medication_name", "time_of_day"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "propose_discontinue_medication",
+      description:
+        "Queue stopping/removing an existing medication from the user's list (marks it inactive and clears future reminders). Only when the user clearly asks to stop or remove it.",
+      parameters: {
+        type: "object",
+        properties: {
+          medication_name: { type: "string" },
+          reason: { type: "string" },
+        },
+        required: ["medication_name"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "propose_delete_vital",
+      description:
+        "Queue deletion of a mistaken vital reading the user asks to remove. Use the vital type plus the reading value or its timestamp from the snapshot.",
+      parameters: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: VITAL_TYPES },
+          value: { type: "number", description: "Primary value of the entry to delete" },
+          recorded_at: { type: "string", description: "ISO timestamp of the entry, if known" },
+        },
+        required: ["type"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 const ACTION_BY_TOOL: Record<string, string> = {
@@ -146,6 +199,9 @@ const ACTION_BY_TOOL: Record<string, string> = {
   propose_add_medication: "add_medication",
   propose_mark_dose_taken: "mark_dose_taken",
   propose_update_medication_times: "update_medication_times",
+  propose_remove_medication_time: "remove_medication_time",
+  propose_discontinue_medication: "discontinue_medication",
+  propose_delete_vital: "delete_vital",
 };
 
 async function callGateway(apiKey: string, messages: unknown[], withTools: boolean) {
