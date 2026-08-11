@@ -73,17 +73,32 @@ export function useMessages(otherPartyUserId: string | null, role: 'patient' | '
   }, [patientId, clinicianId, enabled]);
 
   const send = useMutation({
-    mutationFn: async (body: string) => {
+    mutationFn: async (input: string | { body: string; file?: File | null }) => {
       if (!user?.id || !patientId || !clinicianId) throw new Error('Missing thread participants');
+      const body = typeof input === 'string' ? input : input.body;
+      const file = typeof input === 'string' ? null : input.file ?? null;
       const trimmed = body.trim();
-      if (!trimmed) throw new Error('Message is empty');
+      if (!trimmed && !file) throw new Error('Message is empty');
+
+      let attachmentPath: string | null = null;
+      if (file) {
+        if (file.size > 15 * 1024 * 1024) throw new Error('Attachments must be under 15MB');
+        const safeName = file.name.replace(/[^\w.\-]/g, '_').slice(-80);
+        attachmentPath = `${patientId}/${clinicianId}/${crypto.randomUUID()}-${safeName}`;
+        const { error: upErr } = await supabase.storage
+          .from('message-attachments')
+          .upload(attachmentPath, file, { contentType: file.type || 'application/octet-stream' });
+        if (upErr) throw new Error(upErr.message || 'Failed to upload attachment');
+      }
+
       const { data, error } = await supabase
         .from('messages')
         .insert({
           patient_user_id: patientId,
           clinician_user_id: clinicianId,
           sender_user_id: user.id,
-          body: trimmed,
+          body: trimmed || (file ? file.name : ''),
+          attachment_path: attachmentPath,
         })
         .select()
         .single();
