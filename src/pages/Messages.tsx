@@ -18,7 +18,9 @@ import { cn } from '@/lib/utils';
 interface Counterparty {
   clinicianUserId: string;
   name: string;
+  isPast: boolean;
 }
+
 
 const Messages = () => {
   const { user } = useAuth();
