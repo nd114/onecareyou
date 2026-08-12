@@ -24,31 +24,62 @@ const Messages = () => {
   const { user } = useAuth();
   const [selected, setSelected] = useState<Counterparty | null>(null);
 
-  // Patient's connected clinicians (active shares with a linked clinician_user_id)
+  // Patient's clinicians — active shares plus past connections, whose history is preserved.
   const { data: clinicians = [], isLoading } = useQuery({
-    queryKey: ['patient-clinicians', user?.id],
+    queryKey: ['patient-clinicians-v2', user?.id],
     queryFn: async () => {
       if (!user?.id) return [] as Counterparty[];
       const { data, error } = await supabase
         .from('provider_shares')
-        .select('clinician_user_id, provider_name')
+        .select('clinician_user_id, provider_name, is_active, created_at')
         .eq('user_id', user.id)
-        .eq('is_active', true)
-        .not('clinician_user_id', 'is', null);
+        .not('clinician_user_id', 'is', null)
+        .order('created_at', { ascending: false });
       if (error) throw error;
-      const seen = new Map<string, Counterparty>();
-      for (const row of data || []) {
-        if (row.clinician_user_id && !seen.has(row.clinician_user_id)) {
-          seen.set(row.clinician_user_id, {
-            clinicianUserId: row.clinician_user_id,
-            name: row.provider_name || 'Clinician',
-          });
+
+      const rows = data || [];
+      const ids = Array.from(new Set(rows.map((r) => r.clinician_user_id).filter(Boolean))) as string[];
+
+      const nameById = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: infos } = await (supabase as any).rpc('get_clinician_basic_info', { clinician_ids: ids });
+        for (const i of (infos || []) as {
+          user_id: string;
+          first_name: string | null;
+          last_name: string | null;
+          title: string | null;
+        }[]) {
+          const full = [i.first_name, i.last_name].filter(Boolean).join(' ').trim();
+          if (!full) continue;
+          const title = i.title?.trim();
+          nameById.set(
+            i.user_id,
+            title && !full.toLowerCase().startsWith(title.toLowerCase()) ? `${title} ${full}` : full,
+          );
         }
       }
-      return Array.from(seen.values());
+
+      const seen = new Map<string, Counterparty>();
+      for (const row of rows) {
+        const id = row.clinician_user_id;
+        if (!id) continue;
+        const existing = seen.get(id);
+        if (existing) {
+          // An active share anywhere wins over a past one.
+          if (row.is_active) existing.isPast = false;
+          continue;
+        }
+        seen.set(id, {
+          clinicianUserId: id,
+          name: nameById.get(id) || row.provider_name || 'Clinician',
+          isPast: !row.is_active,
+        });
+      }
+      return Array.from(seen.values()).sort((a, b) => Number(a.isPast) - Number(b.isPast));
     },
     enabled: !!user?.id,
   });
+
 
   const { data: threadSummaries = [] } = useMessageThreads('patient');
   const unreadByClinician = useMemo(() => {
