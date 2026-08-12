@@ -177,7 +177,10 @@ const Messages = () => {
                   otherPartyName={selected?.name || ''}
                   role="patient"
                   className="h-full"
+                  readOnly={!!selected?.isPast}
+                  readOnlyNotice={`You no longer share data with ${selected?.name ?? 'this clinician'}. The conversation is kept for your records. Resume sharing from Care Circle to message again.`}
                 />
+
               </CardContent>
             </Card>
           </div>
