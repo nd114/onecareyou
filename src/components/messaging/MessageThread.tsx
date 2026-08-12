@@ -104,7 +104,7 @@ function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
   );
 }
 
-export function MessageThread({ otherPartyUserId, otherPartyName, role, className }: Props) {
+export function MessageThread({ otherPartyUserId, otherPartyName, role, className, readOnly = false, readOnlyNotice }: Props) {
   const { user } = useAuth();
   const { messages, isLoading, send, markRead } = useMessages(otherPartyUserId, role);
   const [draft, setDraft] = useState('');
