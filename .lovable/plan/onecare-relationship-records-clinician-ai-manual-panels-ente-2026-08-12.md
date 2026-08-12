@@ -19,9 +19,9 @@ Plan — treat disconnection as an event, not a delete:
 1. **Relationship ledger.** Every share gets a lifecycle record: connected, permission changes, paused, revoked (by whom, when, reason optional), re-shared. Never hard-deleted. Patient sees a plain-language history in Care Circle; clinician sees it on the patient record.
 2. **Preserve, don't discard.** On revocation we keep: messages, clinician guidance and its acknowledgements, alerts raised, shared documents, prescriptions/actions. The clinician loses forward access; the patient keeps everything permanently.
 3. **Vault becomes the system of record.** Extend the Health Vault with three record classes:
-   - a. Medical tests & results (exists today)
-   - b. Doctor prognosis, prescriptions and healthcare actions — auto-filed when a clinician marks content patient-facing (matches the reference doc's "Add to Vault" default-add behaviour, with internal notes staying private)
-   - c. Patient–doctor conversation records — a signed, read-only transcript snapshot generated per relationship on a rolling schedule (recommend quarterly rather than 4-monthly, plus one immediately on disconnection) so an ended relationship always closes with a complete record.
+  - a. Medical tests & results (exists today)
+  - b. Doctor prognosis, prescriptions and healthcare actions — auto-filed when a clinician marks content patient-facing (matches the reference doc's "Add to Vault" default-add behaviour, with internal notes staying private)
+  - c. Patient–doctor conversation records — a signed, read-only transcript snapshot generated per relationship on a rolling schedule (recommend quarterly rather than 4-monthly, plus one immediately on disconnection) so an ended relationship always closes with a complete record.
 4. Snapshots are immutable, watermarked with clinician identity and date range, downloadable by the patient, and never editable by either party.
 
 ## 3. Clinician AI assistant (approval-gated, mirroring the patient pattern)
@@ -65,25 +65,42 @@ Delivered as a phased build, documented in `docs/enterprise-hospital-tenancy-pla
 ## 7. Contradictions, omissions and additions I want your call on
 
 **Contradictions with the attached docs**
-- The reference doc says hospital-level assignment is done by sub-admins, not patient choice — but our existing consent model is patient-permissioned per clinician. This is a genuine widening of consent scope and needs explicit patient-facing wording at share time.
-- "Nothing should be omitted" (default-add to vault) vs. the patient's ability to remove/hide items: if the patient hides a doctor's message, the legal record must still exist. Proposal: hidden ≠ deleted; hidden items stay in a "record archive" view.
+
+- The reference doc says hospital-level assignment is done by sub-admins, not patient choice — but our existing consent model is patient-permissioned per clinician. This is a genuine widening of consent scope and needs explicit patient-facing wording at share time. --> So the hospital-level assignment is when a patient with their app come into the hospital, they share their info with the hospital and upon admission, the hospital then 'gives them' their doctor. That 'institutional' relationship must be preserved because that is the patient engaging the institution for whom the doctor represents, not the doctor as an individual though that could become a case later, in the immediate relationship, it is to the hospital. Secondly, if they decide to share with the doctor as an individual, the power is still in their hand as it is with the hospital as an institution - power to engage in a relationship or to terminate, and either way the sharing principles would hold for legal reasons also. The data flow after it gets to the hospital may be different though from a doctor depending on their internal processes and structures. 
+- "Nothing should be omitted" (default-add to vault) vs. the patient's ability to remove/hide items: if the patient hides a doctor's message, the legal record must still exist. Proposal: hidden ≠ deleted; hidden items stay in a "record archive" view. ----> Agreed. Essential for legal reasons - all data and their integrity must be preserved, and all data kept maybe 3 times redundant. 
 
 **Omissions not covered anywhere yet**
-- Clinician death/licence loss/practice closure — who inherits access, how the patient is told.
-- Patient death and estate access; minors ageing into their own account.
-- Data export on account closure, and jurisdiction (Nigeria vs Canada vs US) governing retention.
-- Break-glass emergency access, and whether hospital staff can ever read without a share.
-- Who owns a managed record's data if the clinician leaves the platform.
+
+- Clinician death/licence loss/practice closure — who inherits access, how the patient is told. --->Patient keeps their records from that clinician regardless. No material impact to the patient. If patient seeks to engage the clinician via the platform and there is no response, they may try other ways like phoning or the like. 
+- Patient death and estate access; minors ageing into their own account. ----> In the event of such, the details can be preserved and perhaps we should also collect details on 1 or 2 next of kin (name, dob, email, type of relationship) so that in such a case they can make a request and providing that info, receive all pertinent data to their email for download, and we offer to permanently delete that user profile unless we have to retain it for legal reasons. 
+- Data export on account closure, and jurisdiction (Nigeria vs Canada vs US) governing retention. ---> I think maybe we should follow either US or EU since satisfying their policies often means satisfying the rest also, but I think we can deliberate on that later as we implement in multiple locations and actually have a legal personnel to handle that also. 
+- Break-glass emergency access, and whether hospital staff can ever read without a share. ---> No they cannot, unless a next of kin or those in the care circle provide such access. 
+- Who owns a managed record's data if the clinician leaves the platform. ---> Clinician is sent the copy of their data, and the patient as well can request a download of their data. The ability to download the data and how it would all be structured is something we need to work out because that could end up being quite a lot since it includes pdfs, images, chats, voice recordings and transcripts, etc. 
 
 **Open questions**
-1. Conversation snapshots: quarterly + on-disconnect (my recommendation), or your 4-month cadence?
-2. Should a revoked clinician keep read-only access to the historical record they participated in, or lose it entirely (current behaviour)?
-3. Storage overage: pass through as a per-GB line item, or bundle into higher plan prices?
-4. For the hospital client specifically — do they need hospital-level sharing live at launch, or is affiliation + admin + whitelabel enough for phase one?
 
-## 8. Docs to update alongside the build
+1. Conversation snapshots: quarterly + on-disconnect (my recommendation), or your 4-month cadence? ---> Go with your recommendation for now. 
+2. Should a revoked clinician keep read-only access to the historical record they participated in, or lose it entirely (current behaviour)? ---> Keep access most definitely since it informed their decision and counsel and needed for legal purposes as well - it is what the patient reported. 
+3. Storage overage: pass through as a per-GB line item, or bundle into higher plan prices? --->I think we can bundle it into higher prices and they can pay for extra storage space, but we need to provide reasonable storage for them. So for example, instead of keeping the voice recording, keeping the transcript is better and a smaller size. 
+4. For the hospital client specifically — do they need hospital-level sharing live at launch, or is affiliation + admin + whitelabel enough for phase one? Yes, hospital-level sharing needs to be live at launch, not deferred to phase one-lite. This isn't an enhancement on top of the pilot; it's the core of what the hospital client is actually buying — a patient portal where the hospital is the institutional relationship holder, not a collection of individual doctor shares. The revenue-share model depends on it too: patients have to be attributable to the hospital as a tenant for the revenue split to mean anything. That said, launch scope can still be cut sensibly. MUST be live at launch:   
+- Registration via the hospital's subdomain (e.g. [oclmc.onecare.you](http://oclmc.onecare.you)) for both patients and clinicians   
+- Patient sharing with the hospital as an institution (not a named doctor)   
+- Sub-Admin assignment of a doctor to a hospital-shared patient   
+- Clinician panel distinguishing hospital-assigned patients from private ones   
+- Basic revocation: patient can disconnect, status changes, hospital/clinician can filter by status   
+  
+Reasonable to treat as fast-follow, not launch-blocking:   
+- Granular "restrict what's shared" UI — ship with a working share-everything default plus a simple toggle first, refine the granular picker after   
+- Reassignment workflow polish and the permanent-authorship audit trail — important, but a natural extension of audit logging already planned, not a separate build   
+- Multi-hospital affiliation labeling on the clinician panel — irrelevant until a doctor actually has more than one hospital affiliation, which won't be true with only OC-LMC live
+
+## 8A. Docs to update alongside the build
 
 `docs/clinician-strategic-roadmap.md`, `docs/clinician-gaps-implementation-plan.md`, `docs/future-roadmap.md`, `docs/pricing-roadmap.md`, `docs/qhin-integration-plan.md`, plus new `docs/enterprise-hospital-tenancy-plan.md` and `docs/sharing-access-consent-model.md` (our canonical version of the attached reference).
+
+## 8B: Documentation 
+
+We also need to create a full comprehensive documentation of the entire platform because certain nuances need to be easily visible and accessible. I think it is necessary, right? May need its own pass. 
 
 ## 9. Suggested sequencing
 
@@ -93,3 +110,4 @@ Delivered as a phased build, documented in `docs/enterprise-hospital-tenancy-pla
 4. Managed-record upgrade + reconciliation
 5. Storage metering and pricing
 6. Enterprise tenancy phases A–D
+7. Documentation
