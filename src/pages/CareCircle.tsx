@@ -44,7 +44,10 @@ import {
 
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { shares, isLoading, createShare, revokeShare } = useProviderShares();
+  const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
+  const activeShares = shares.filter((s) => s.is_active);
+  const pastShares = shares.filter((s) => !s.is_active);
+
   const [newShare, setNewShare] = useState({
     providerName: '',
     providerEmail: '',
