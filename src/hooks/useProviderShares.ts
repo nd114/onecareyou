@@ -10,9 +10,10 @@ interface SharePermissions {
   profile: boolean;
 }
 
-interface ProviderShare {
+export interface ProviderShare {
   id: string;
   user_id: string;
+  /** Label the patient typed when creating the invite. */
   provider_name: string;
   provider_email: string | null;
   invite_code: string;
@@ -21,6 +22,34 @@ interface ProviderShare {
   created_at: string;
   last_accessed_at: string | null;
   expires_at: string | null;
+  clinician_user_id: string | null;
+  revoked_at: string | null;
+  revoke_reason: string | null;
+  reconnected_at: string | null;
+  /** Resolved from the clinician's own profile once they claim the share. */
+  display_name: string;
+  display_subtitle: string | null;
+  is_claimed: boolean;
+}
+
+export interface ShareEvent {
+  id: string;
+  share_id: string;
+  event_type: string;
+  actor_role: string;
+  reason: string | null;
+  provider_label: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+interface ClinicianBasicInfo {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  title: string | null;
+  practice_name: string | null;
+  avatar_url: string | null;
 }
 
 interface CreateShareData {
@@ -42,6 +71,15 @@ const generateInviteCode = (): string => {
   return code;
 };
 
+function formatClinicianName(info: ClinicianBasicInfo): string {
+  const parts = [info.first_name, info.last_name].filter(Boolean).join(' ').trim();
+  if (!parts) return '';
+  const title = info.title?.trim();
+  if (!title) return parts;
+  // Avoid "Dr. Dr. Ada" when the stored title already prefixes the name.
+  return parts.toLowerCase().startsWith(title.toLowerCase()) ? parts : `${title} ${parts}`;
+}
+
 export function useProviderShares() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -51,7 +89,8 @@ export function useProviderShares() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['provider-shares', user?.id],
+    // v2: display identity now resolves from the clinician profile, not the typed label.
+    queryKey: ['provider-shares-v2', user?.id],
     queryFn: async () => {
       if (!user) return [];
 
@@ -62,15 +101,71 @@ export function useProviderShares() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Type assertion since permissions is JSONB
-      return (data || []).map(share => ({
-        ...share,
-        permissions: share.permissions as unknown as SharePermissions,
-      })) as ProviderShare[];
+
+      const rows = data || [];
+      const clinicianIds = Array.from(
+        new Set(rows.map((r) => (r as { clinician_user_id: string | null }).clinician_user_id).filter(Boolean)),
+      ) as string[];
+
+      const infoMap = new Map<string, ClinicianBasicInfo>();
+      if (clinicianIds.length > 0) {
+        const { data: infos, error: infoError } = await (supabase as any).rpc('get_clinician_basic_info', {
+          clinician_ids: clinicianIds,
+        });
+        if (infoError) console.error('Failed to resolve clinician names', infoError);
+        for (const row of (infos || []) as ClinicianBasicInfo[]) infoMap.set(row.user_id, row);
+      }
+
+      return rows.map((share) => {
+        const raw = share as Record<string, unknown>;
+        const clinicianId = (raw.clinician_user_id as string | null) ?? null;
+        const info = clinicianId ? infoMap.get(clinicianId) : undefined;
+        const resolved = info ? formatClinicianName(info) : '';
+        const isClaimed = !!clinicianId && !!resolved;
+
+        return {
+          ...(share as unknown as ProviderShare),
+          permissions: share.permissions as unknown as SharePermissions,
+          revoked_at: (raw.revoked_at as string | null) ?? null,
+          revoke_reason: (raw.revoke_reason as string | null) ?? null,
+          reconnected_at: (raw.reconnected_at as string | null) ?? null,
+          clinician_user_id: clinicianId,
+          display_name: resolved || share.provider_name,
+          display_subtitle: info?.practice_name || null,
+          is_claimed: isClaimed,
+        } as ProviderShare;
+      });
     },
     enabled: !!user,
   });
+
+  /** Append to the permanent relationship ledger. Never blocks the caller. */
+  const logShareEvent = async (input: {
+    shareId: string;
+    eventType: string;
+    reason?: string | null;
+    providerLabel?: string | null;
+    clinicianUserId?: string | null;
+    details?: Record<string, unknown>;
+  }) => {
+    if (!user) return;
+    try {
+      const { error } = await (supabase as any).from('share_events').insert({
+        share_id: input.shareId,
+        patient_user_id: user.id,
+        clinician_user_id: input.clinicianUserId ?? null,
+        provider_label: input.providerLabel ?? null,
+        event_type: input.eventType,
+        actor_user_id: user.id,
+        actor_role: 'patient',
+        reason: input.reason ?? null,
+        details: input.details ?? {},
+      });
+      if (error) console.error('share_events insert failed', error);
+    } catch (err) {
+      console.error('share_events insert threw', err);
+    }
+  };
 
   const createShare = useMutation({
     mutationFn: async (data: CreateShareData) => {
@@ -95,15 +190,23 @@ export function useProviderShares() {
         .single();
 
       if (error) throw error;
-      return { ...newShare, permissions: newShare.permissions as unknown as SharePermissions } as ProviderShare;
+
+      await logShareEvent({
+        shareId: newShare.id,
+        eventType: 'connected',
+        providerLabel: data.providerName,
+        details: { permissions: data.permissions, expires_at: expiresAt },
+      });
+
+      return { ...newShare, permissions: newShare.permissions as unknown as SharePermissions } as unknown as ProviderShare;
     },
     onSuccess: (newShare) => {
-      queryClient.invalidateQueries({ queryKey: ['provider-shares'] });
-      
-      // Copy link to clipboard
+      queryClient.invalidateQueries({ queryKey: ['provider-shares-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['share-events'] });
+
       const shareLink = `${window.location.origin}/clinician/patient/${newShare.invite_code}`;
       navigator.clipboard.writeText(shareLink);
-      
+
       toast.success('Share link created and copied to clipboard!');
     },
     onError: (error) => {
@@ -112,27 +215,49 @@ export function useProviderShares() {
     },
   });
 
+  /**
+   * Ending a relationship is an event, not a delete.
+   *
+   * The share row, the message history, the guidance and the documents that
+   * were already shared all stay on record — the patient keeps them forever
+   * and the clinician keeps read-only sight of the conversation they took
+   * part in. What stops is the flow of any new health data.
+   */
   const revokeShare = useMutation({
-    mutationFn: async (shareId: string) => {
+    mutationFn: async (input: string | { shareId: string; reason?: string }) => {
       if (!user) throw new Error('Not authenticated');
+      const shareId = typeof input === 'string' ? input : input.shareId;
+      const reason = typeof input === 'string' ? undefined : input.reason;
 
-      // Capture share details first so we can log who lost access
       const { data: existing } = await supabase
         .from('provider_shares')
-        .select('provider_name, provider_email')
+        .select('provider_name, provider_email, clinician_user_id, permissions')
         .eq('id', shareId)
         .eq('user_id', user.id)
         .maybeSingle();
 
       const { error } = await supabase
         .from('provider_shares')
-        .delete()
+        .update({
+          is_active: false,
+          revoked_at: new Date().toISOString(),
+          revoked_by: user.id,
+          revoke_reason: reason || null,
+        } as never)
         .eq('id', shareId)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      // Best-effort HIPAA audit log entry for the revoke event
+      await logShareEvent({
+        shareId,
+        eventType: 'revoked',
+        reason: reason || null,
+        providerLabel: existing?.provider_name ?? null,
+        clinicianUserId: (existing as { clinician_user_id?: string | null } | null)?.clinician_user_id ?? null,
+        details: { permissions_at_revocation: existing?.permissions ?? null },
+      });
+
       try {
         await (supabase.from('hipaa_audit_logs' as any).insert({
           user_id: user.id,
@@ -143,6 +268,7 @@ export function useProviderShares() {
           details: {
             provider_name: existing?.provider_name ?? null,
             provider_email: existing?.provider_email ?? null,
+            reason: reason ?? null,
           },
           user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
         }) as any);
@@ -153,15 +279,57 @@ export function useProviderShares() {
       return existing;
     },
     onSuccess: (existing) => {
-      queryClient.invalidateQueries({ queryKey: ['provider-shares'] });
+      queryClient.invalidateQueries({ queryKey: ['provider-shares-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['share-events'] });
       const name = existing?.provider_name ? `${existing.provider_name}'s` : 'Provider';
-      toast.success(`${name} access revoked`, {
-        description: 'They can no longer view your data. We recorded this in your audit log.',
+      toast.success(`${name} access ended`, {
+        description: 'No new data will be shared. Your past messages and records are kept in your Health Vault.',
       });
     },
     onError: (error) => {
       console.error('Error revoking share:', error);
-      toast.error('Failed to revoke access');
+      toast.error('Failed to end access');
+    },
+  });
+
+  /** Re-share with a provider the patient previously disconnected. */
+  const reshare = useMutation({
+    mutationFn: async ({ shareId, permissions }: { shareId: string; permissions?: SharePermissions }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const updates: Record<string, unknown> = {
+        is_active: true,
+        revoked_at: null,
+        revoked_by: null,
+        revoke_reason: null,
+        reconnected_at: new Date().toISOString(),
+      };
+      if (permissions) updates.permissions = permissions;
+
+      const { error } = await supabase
+        .from('provider_shares')
+        .update(updates as never)
+        .eq('id', shareId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await logShareEvent({
+        shareId,
+        eventType: 'reshared',
+        details: permissions ? { permissions } : {},
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['provider-shares-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['share-events'] });
+      toast.success('Sharing resumed', {
+        description: 'Your provider has been reconnected and can see new data again.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error resuming share:', error);
+      toast.error('Failed to resume sharing');
     },
   });
 
@@ -184,9 +352,17 @@ export function useProviderShares() {
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      if (permissions !== undefined) {
+        await logShareEvent({ shareId, eventType: 'permissions_changed', details: { permissions } });
+      }
+      if (isActive !== undefined) {
+        await logShareEvent({ shareId, eventType: isActive ? 'resumed' : 'paused' });
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['provider-shares'] });
+      queryClient.invalidateQueries({ queryKey: ['provider-shares-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['share-events'] });
       toast.success('Share updated successfully');
     },
     onError: (error) => {
@@ -201,6 +377,27 @@ export function useProviderShares() {
     error,
     createShare,
     revokeShare,
+    reshare,
     updateShare,
   };
+}
+
+/** Permanent, append-only relationship history for one share (or all of them). */
+export function useShareEvents(shareId?: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['share-events', user?.id, shareId ?? 'all'],
+    enabled: !!user,
+    queryFn: async () => {
+      let q = (supabase as any)
+        .from('share_events')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (shareId) q = q.eq('share_id', shareId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as ShareEvent[];
+    },
+  });
 }
