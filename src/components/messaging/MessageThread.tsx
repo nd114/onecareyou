@@ -353,8 +353,9 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
             <kbd className="px-1 py-0.5 rounded bg-muted text-[9px]">Enter</kbd> to send ·{' '}
             <kbd className="px-1 py-0.5 rounded bg-muted text-[9px]">Shift+Enter</kbd> for newline
           </p>
-        </div>
       </div>
+      )}
+
     </div>
   );
 }
