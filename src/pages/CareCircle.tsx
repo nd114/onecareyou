@@ -409,6 +409,45 @@ const CareCircle = () => {
           </Card>
         </motion.div>
 
+        {/* Sharing history — permanent, append-only record */}
+        {shareEvents.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-8"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Shield className="h-4 w-4 text-primary" />
+                  Sharing history
+                </CardTitle>
+                <CardDescription>
+                  A permanent record of every time access was granted, changed or ended. This can’t be edited or deleted.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {shareEvents.slice(0, 12).map((ev) => (
+                    <li key={ev.id} className="flex items-start justify-between gap-3 text-xs sm:text-sm border-b last:border-0 pb-2 last:pb-0">
+                      <span className="min-w-0">
+                        <span className="font-medium">{SHARE_EVENT_LABELS[ev.event_type] ?? ev.event_type}</span>
+                        {ev.provider_label && <span className="text-muted-foreground"> · {ev.provider_label}</span>}
+                        {ev.reason && <span className="text-muted-foreground"> · {ev.reason}</span>}
+                      </span>
+                      <span className="text-muted-foreground whitespace-nowrap">
+                        {new Date(ev.created_at).toLocaleDateString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+
         {/* How It Works */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
