@@ -13,7 +13,11 @@ interface Props {
   otherPartyName: string;
   role: 'patient' | 'clinician';
   className?: string;
+  /** Past connection: history stays visible, but no new messages can be sent. */
+  readOnly?: boolean;
+  readOnlyNotice?: string;
 }
+
 
 function formatStamp(iso: string) {
   return format(new Date(iso), 'h:mm a');
