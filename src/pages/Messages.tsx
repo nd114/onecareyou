@@ -150,7 +150,10 @@ const Messages = () => {
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{c.name}</div>
-                        <div className="text-[11px] text-muted-foreground">Clinician</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {c.isPast ? 'Past connection' : 'Clinician'}
+                        </div>
+
                       </div>
                       {unread > 0 && (
                         <Badge variant="default" className="h-5 px-1.5 text-[10px]">
