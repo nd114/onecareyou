@@ -20,7 +20,7 @@ import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useProviderShares } from '@/hooks/useProviderShares';
+import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
