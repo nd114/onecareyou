@@ -42,11 +42,24 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+const SHARE_EVENT_LABELS: Record<string, string> = {
+  connected: 'Access granted',
+  claimed: 'Provider joined',
+  permissions_changed: 'What you share changed',
+  paused: 'Sharing paused',
+  resumed: 'Sharing resumed',
+  revoked: 'Access ended',
+  reshared: 'Sharing resumed',
+  expired: 'Access expired',
+};
+
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
+  const { data: shareEvents = [] } = useShareEvents();
   const activeShares = shares.filter((s) => s.is_active);
   const pastShares = shares.filter((s) => !s.is_active);
+
 
   const [newShare, setNewShare] = useState({
     providerName: '',
