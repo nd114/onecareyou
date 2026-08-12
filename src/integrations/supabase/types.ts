@@ -2687,6 +2687,10 @@ export type Database = {
           permissions: Json
           provider_email: string | null
           provider_name: string
+          reconnected_at: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
           user_id: string
         }
         Insert: {
@@ -2701,6 +2705,10 @@ export type Database = {
           permissions?: Json
           provider_email?: string | null
           provider_name: string
+          reconnected_at?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           user_id: string
         }
         Update: {
@@ -2715,6 +2723,10 @@ export type Database = {
           permissions?: Json
           provider_email?: string | null
           provider_name?: string
+          reconnected_at?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           user_id?: string
         }
         Relationships: []
@@ -2928,6 +2940,56 @@ export type Database = {
           },
         ]
       }
+      share_events: {
+        Row: {
+          actor_role: string
+          actor_user_id: string | null
+          clinician_user_id: string | null
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          patient_user_id: string
+          provider_label: string | null
+          reason: string | null
+          share_id: string
+        }
+        Insert: {
+          actor_role?: string
+          actor_user_id?: string | null
+          clinician_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          patient_user_id: string
+          provider_label?: string | null
+          reason?: string | null
+          share_id: string
+        }
+        Update: {
+          actor_role?: string
+          actor_user_id?: string | null
+          clinician_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          patient_user_id?: string
+          provider_label?: string | null
+          reason?: string | null
+          share_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_events_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "provider_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3071,6 +3133,10 @@ export type Database = {
     }
     Functions: {
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
+      clinician_had_patient_access: {
+        Args: { patient_user_id: string }
+        Returns: boolean
+      }
       clinician_has_patient_access: {
         Args: { patient_user_id: string }
         Returns: boolean

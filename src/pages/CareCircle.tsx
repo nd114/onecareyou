@@ -20,7 +20,7 @@ import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useProviderShares } from '@/hooks/useProviderShares';
+import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -42,9 +42,25 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+const SHARE_EVENT_LABELS: Record<string, string> = {
+  connected: 'Access granted',
+  claimed: 'Provider joined',
+  permissions_changed: 'What you share changed',
+  paused: 'Sharing paused',
+  resumed: 'Sharing resumed',
+  revoked: 'Access ended',
+  reshared: 'Sharing resumed',
+  expired: 'Access expired',
+};
+
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { shares, isLoading, createShare, revokeShare } = useProviderShares();
+  const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
+  const { data: shareEvents = [] } = useShareEvents();
+  const activeShares = shares.filter((s) => s.is_active);
+  const pastShares = shares.filter((s) => !s.is_active);
+
+
   const [newShare, setNewShare] = useState({
     providerName: '',
     providerEmail: '',
@@ -237,7 +253,7 @@ const CareCircle = () => {
                 <div className="flex justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : shares.length === 0 ? (
+              ) : activeShares.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="h-16 w-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
                     <Users className="h-8 w-8 text-muted-foreground" />
@@ -253,7 +269,7 @@ const CareCircle = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {shares.map((share) => (
+                  {activeShares.map((share) => (
                     <div
                       key={share.id}
                       className="p-3 sm:p-4 rounded-xl border border-border bg-card hover:shadow-sm transition-shadow"
@@ -262,11 +278,14 @@ const CareCircle = () => {
                         <div className="flex items-start gap-3 min-w-0">
                           <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                             <span className="text-base sm:text-lg font-semibold text-primary">
-                              {share.provider_name.charAt(0)}
+                              {share.display_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm sm:text-base truncate">{share.provider_name}</p>
+                            <p className="font-semibold text-sm sm:text-base truncate">{share.display_name}</p>
+                            {share.display_subtitle && (
+                              <p className="text-xs sm:text-sm text-muted-foreground truncate">{share.display_subtitle}</p>
+                            )}
                             {share.provider_email && (
                               <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 truncate">
                                 <Mail className="h-3 w-3 flex-shrink-0" />
@@ -274,6 +293,9 @@ const CareCircle = () => {
                               </p>
                             )}
                             <div className="flex flex-wrap gap-1 mt-2">
+                              {!share.is_claimed && (
+                                <Badge variant="outline" className="text-[10px] sm:text-xs">Invite pending</Badge>
+                              )}
                               {share.permissions.vitals && <Badge variant="secondary" className="text-[10px] sm:text-xs">Vitals</Badge>}
                               {share.permissions.meds && <Badge variant="secondary" className="text-[10px] sm:text-xs">Meds</Badge>}
                               {share.permissions.adherence && <Badge variant="secondary" className="text-[10px] sm:text-xs">Adherence</Badge>}
@@ -298,7 +320,7 @@ const CareCircle = () => {
                             onClick={() => {
                               const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
                               const subject = `Secure access to my OneCare health record`;
-                              const body = `Hi ${share.provider_name},\n\nI'm sharing my health record with you on OneCare. Use the secure link below to view it:\n\n${link}\n\nThanks.`;
+                              const body = `Hi ${share.display_name},\n\nI'm sharing my health record with you on OneCare. Use the secure link below to view it:\n\n${link}\n\nThanks.`;
                               const to = share.provider_email ? encodeURIComponent(share.provider_email) : '';
                               window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                             }}
@@ -312,7 +334,7 @@ const CareCircle = () => {
                             className="h-8 px-2 sm:px-3 text-xs sm:text-sm text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
                             onClick={() => {
                               const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
-                              const text = `Hi ${share.provider_name}, I've shared my health data with you on OneCare. View it here: ${link}`;
+                              const text = `Hi ${share.display_name}, I've shared my health data with you on OneCare. View it here: ${link}`;
                               window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                             }}
                           >
@@ -327,9 +349,11 @@ const CareCircle = () => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Revoke Access</AlertDialogTitle>
+                                <AlertDialogTitle>End sharing with {share.display_name}?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will immediately remove {share.provider_name}'s access to your health data. They will no longer be able to view any of your information.
+                                  They stop seeing any new health data straight away. Everything already exchanged — messages,
+                                  guidance and shared documents — stays on your record in the Health Vault, so you always have
+                                  proof of what was advised and when. You can resume sharing later.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -338,7 +362,7 @@ const CareCircle = () => {
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   onClick={() => handleRevokeAccess(share.id)}
                                 >
-                                  Revoke Access
+                                  End sharing
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -361,9 +385,81 @@ const CareCircle = () => {
                   ))}
                 </div>
               )}
+
+              {pastShares.length > 0 && (
+                <div className="mt-8 pt-6 border-t">
+                  <h3 className="text-sm font-semibold mb-1">Past connections</h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Kept for your records. These providers see no new data, but the history you built together is preserved.
+                  </p>
+                  <div className="space-y-3">
+                    {pastShares.map((share) => (
+                      <div key={share.id} className="p-3 rounded-xl border border-dashed border-border bg-muted/30">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{share.display_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Ended {share.revoked_at ? new Date(share.revoked_at).toLocaleDateString() : '—'}
+                              {share.revoke_reason ? ` · ${share.revoke_reason}` : ''}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs self-start sm:self-auto"
+                            onClick={() => reshare.mutate({ shareId: share.id })}
+                          >
+                            Resume sharing
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Sharing history — permanent, append-only record */}
+        {shareEvents.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-8"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Shield className="h-4 w-4 text-primary" />
+                  Sharing history
+                </CardTitle>
+                <CardDescription>
+                  A permanent record of every time access was granted, changed or ended. This can’t be edited or deleted.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {shareEvents.slice(0, 12).map((ev) => (
+                    <li key={ev.id} className="flex items-start justify-between gap-3 text-xs sm:text-sm border-b last:border-0 pb-2 last:pb-0">
+                      <span className="min-w-0">
+                        <span className="font-medium">{SHARE_EVENT_LABELS[ev.event_type] ?? ev.event_type}</span>
+                        {ev.provider_label && <span className="text-muted-foreground"> · {ev.provider_label}</span>}
+                        {ev.reason && <span className="text-muted-foreground"> · {ev.reason}</span>}
+                      </span>
+                      <span className="text-muted-foreground whitespace-nowrap">
+                        {new Date(ev.created_at).toLocaleDateString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
 
         {/* How It Works */}
         <motion.div
