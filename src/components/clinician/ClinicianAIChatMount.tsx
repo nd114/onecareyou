@@ -18,10 +18,10 @@ const EXCLUDED = [
 export function ClinicianAIChatMount() {
   const { user } = useAuth();
   const { pathname } = useLocation();
-  const { profile } = useClinicianProfile();
+  const { isClinician } = useClinicianProfile();
   const [open, setOpen] = useState(false);
 
-  if (!user || !profile) return null;
+  if (!user || !isClinician) return null;
   if (!pathname.startsWith('/clinician')) return null;
   if (EXCLUDED.some(p => pathname === p || pathname.startsWith(p + '/'))) return null;
 
