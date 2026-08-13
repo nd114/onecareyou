@@ -9,6 +9,7 @@ import {
   Clock,
   Mail,
   MessageCircle,
+  FolderDown,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
+import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -57,6 +59,7 @@ const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
   const { data: shareEvents = [] } = useShareEvents();
+  const { generate: generateCareRecord } = useCareRecordSnapshot();
   const activeShares = shares.filter((s) => s.is_active);
   const pastShares = shares.filter((s) => !s.is_active);
 
@@ -92,7 +95,21 @@ const CareCircle = () => {
     });
   };
 
-  const handleRevokeAccess = (id: string) => {
+  const handleRevokeAccess = async (id: string) => {
+    const share = shares.find((s) => s.id === id);
+    // Close the relationship with a complete, immutable record before access ends.
+    if (share?.clinician_user_id) {
+      try {
+        await generateCareRecord.mutateAsync({
+          clinicianUserId: share.clinician_user_id,
+          clinicianLabel: share.display_name,
+          reason: 'connection_ended',
+          silent: true,
+        });
+      } catch {
+        /* snapshotting must never block ending access */
+      }
+    }
     revokeShare.mutate(id);
   };
 

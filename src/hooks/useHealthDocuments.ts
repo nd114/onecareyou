@@ -13,6 +13,7 @@ export type DocumentCategory =
   | 'vaccination'
   | 'referral'
   | 'visit_note'
+  | 'care_record'
   | 'other';
 
 export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; color: string }[] = [
@@ -24,6 +25,7 @@ export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; colo
   { value: 'vaccination', label: 'Vaccination', color: 'bg-teal-500/10 text-teal-700 dark:text-teal-300' },
   { value: 'referral', label: 'Referral', color: 'bg-pink-500/10 text-pink-700 dark:text-pink-300' },
   { value: 'visit_note', label: 'Visit Note', color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' },
+  { value: 'care_record', label: 'Care Record', color: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' },
   { value: 'other', label: 'Other', color: 'bg-muted text-muted-foreground' },
 ];
 
