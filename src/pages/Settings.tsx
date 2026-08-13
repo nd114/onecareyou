@@ -58,6 +58,7 @@ import { AIHistorySection } from '@/components/settings/AIHistorySection';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
 import { StorageUsageCard } from '@/components/StorageUsageCard';
 import { formatDateOnly } from '@/lib/date-only';
+import { useAdminRole } from '@/hooks/useAdminRole';
 
 
 interface ConsentLogEntry {
@@ -239,6 +240,8 @@ const Settings = () => {
     setShowRevokeDialog(false);
   };
 
+  const { isAdmin } = useAdminRole();
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -259,6 +262,29 @@ const Settings = () => {
         </motion.div>
 
         <div className="space-y-6">
+          {/* Platform admin shortcut */}
+          {isAdmin && (
+            <Card className="border-primary/40">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Platform admin
+                </CardTitle>
+                <CardDescription>
+                  Manage tenants, access and platform tools.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline">
+                  <Link to="/admin">
+                    Open admin console
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Profile Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -97,7 +97,7 @@ export default function AdminConsole() {
         </div>
 
         <Tabs defaultValue="overview">
-          <TabsList className="mb-6 flex w-full overflow-x-auto sm:w-auto">
+          <TabsList className="mb-6 flex w-full max-w-full overflow-x-auto justify-start scrollbar-none sm:w-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="tenants">Tenants</TabsTrigger>
             <TabsTrigger value="access">Access</TabsTrigger>
@@ -153,7 +153,9 @@ export default function AdminConsole() {
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm truncate">{t.name}</p>
+                            <Link to={`/admin/tenants/${t.id}`} className="font-medium text-sm truncate hover:underline">
+                              {t.name}
+                            </Link>
                             <Badge variant="secondary" className="capitalize">
                               {t.tenant_type ?? 'practice'}
                             </Badge>
