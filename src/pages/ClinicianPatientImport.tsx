@@ -16,6 +16,7 @@ import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { toast } from 'sonner';
+import { findDuplicateCandidates, dedupReasonLabel } from '@/lib/patient-dedup';
 
 interface ParsedRow {
   patient_name: string;
