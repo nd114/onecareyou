@@ -21,6 +21,9 @@ import { CreateTenantDialog } from '@/components/admin/CreateTenantDialog';
 import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions';
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
 import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
+import { AdminOverviewPanel } from '@/components/admin/AdminOverviewPanel';
+import { AdminAuditSearchPanel } from '@/components/admin/AdminAuditSearchPanel';
+
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 
