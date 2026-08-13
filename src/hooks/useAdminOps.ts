@@ -30,11 +30,20 @@ export interface AdminActionRow {
   created_at: string;
 }
 
-export interface CreateTenantInput {
+export interface TenantContactInput {
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  npi?: string;
+}
+
+export interface CreateTenantInput extends TenantContactInput {
   name: string;
   tenant_type: 'practice' | 'hospital';
-  city?: string;
-  country?: string;
   subscription_tier?: string;
   storage_limit_gb?: number;
   revenue_share_pct?: number;
@@ -56,6 +65,7 @@ export interface UpdateTenantInput {
   member_limit?: number;
   is_active?: boolean;
 }
+
 
 /** Platform-admin operations: tenant lifecycle, owner invitations, admin delegation, action log. */
 export function useAdminOps() {
@@ -111,8 +121,15 @@ export function useAdminOps() {
         _slug: input.slug || undefined,
         _patient_limit: input.patient_limit ?? undefined,
         _member_limit: input.member_limit ?? undefined,
-      });
+        _address: input.address || undefined,
+        _state: input.state || undefined,
+        _zip_code: input.zip_code || undefined,
+        _phone: input.phone || undefined,
+        _email: input.email || undefined,
+        _npi: input.npi || undefined,
+      } as never);
       if (error) throw error;
+
       return data as string;
     },
     onSuccess: () => {
@@ -146,7 +163,35 @@ export function useAdminOps() {
     onError: (e: Error) => toast.error(e.message || 'Could not update the tenant'),
   });
   /** Set or change a tenant's hospital code; reuses the availability-checked setter. */
+  /** Contact and address details — set once by us at onboarding, editable later. */
+  const setTenantContact = useMutation({
+    mutationFn: async ({
+      practiceId,
+      ...contact
+    }: TenantContactInput & { practiceId: string }) => {
+      const { error } = await supabase.rpc('admin_set_tenant_contact' as never, {
+        _practice_id: practiceId,
+        _address: contact.address || undefined,
+        _city: contact.city || undefined,
+        _state: contact.state || undefined,
+        _zip_code: contact.zip_code || undefined,
+        _country: contact.country || undefined,
+        _phone: contact.phone || undefined,
+        _email: contact.email || undefined,
+        _npi: contact.npi || undefined,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success('Tenant details saved');
+      invalidateTenants();
+      queryClient.invalidateQueries({ queryKey: ['admin-tenant-detail', vars.practiceId] });
+    },
+    onError: (e: Error) => toast.error(e.message || 'Could not save the tenant details'),
+  });
+
   const setTenantSlug = useMutation({
+
     mutationFn: async ({ practiceId, slug }: { practiceId: string; slug: string }) => {
       const { data, error } = await supabase.rpc('set_institution_slug', {
         _practice_id: practiceId,
@@ -242,6 +287,9 @@ export function useAdminOps() {
     isUpdating: updateTenant.isPending,
     setTenantSlug: setTenantSlug.mutateAsync,
     isSavingSlug: setTenantSlug.isPending,
+    setTenantContact: setTenantContact.mutateAsync,
+    isSavingContact: setTenantContact.isPending,
+
 
     inviteOwner: inviteOwner.mutateAsync,
     isInviting: inviteOwner.isPending,

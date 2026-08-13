@@ -28,6 +28,8 @@ import { useVitals } from '@/hooks/useVitals';
 import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
 import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
+import { InstitutionIntakeCard } from '@/components/patient/InstitutionIntakeCard';
+
 import { PendingClinicianRecordsBanner } from '@/components/consent/PendingClinicianRecordsBanner';
 
 
@@ -104,8 +106,14 @@ const Dashboard = () => {
           </p>
         </motion.div>
 
+        {/* Finish intake for someone who signed up at a hospital's own address */}
+        <div className="mb-4">
+          <InstitutionIntakeCard />
+        </div>
+
         {/* Pending Invitations from Clinicians */}
         <PendingInvitationsCard />
+
 
         {/* Pending Clinician-Imported Records Consent */}
         <PendingClinicianRecordsBanner />

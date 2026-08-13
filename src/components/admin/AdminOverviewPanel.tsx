@@ -23,8 +23,51 @@ export function AdminOverviewPanel() {
 
   const nearing = storageRows.filter((r) => r.pct >= 75).length;
 
+  const all = tenants;
+  const hospitals = all.filter((t) => t.tenant_type === 'hospital').length;
+  const branded = all.filter((t) => !!t.slug).length;
+  const connectedPatients = all.reduce((sum, t) => sum + Number(t.active_share_count ?? 0), 0);
+  const emptyTenants = all.filter((t) => Number(t.member_count ?? 0) === 0).length;
+  const revenueShared = all.filter((t) => Number(t.revenue_share_pct ?? 0) > 0).length;
+  const trials = all.filter((t) => (t.subscription_tier ?? 'trial') === 'trial').length;
+
+  const signals: Array<[string, string, string]> = [
+    ['Hospitals', String(hospitals), `${all.length - hospitals} practices`],
+    ['Own address live', String(branded), 'tenants with a hospital code'],
+    ['Patients connected', String(connectedPatients), 'active consents across tenants'],
+    ['Awaiting first member', String(emptyTenants), 'invited but not yet onboarded'],
+    ['On trial', String(trials), 'not yet on a paid tier'],
+    ['Revenue share set', String(revenueShared), 'tenants with a share agreed'],
+  ];
+
   return (
-    <div className="grid gap-4 lg:grid-cols-2 items-start">
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Platform at a glance</CardTitle>
+          <CardDescription>Where tenants stand right now.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {signals.map(([label, value, hint]) => (
+                <div key={label}>
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="text-xl font-semibold mt-0.5">{value}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2 items-start">
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -68,7 +111,9 @@ export function AdminOverviewPanel() {
         </CardContent>
       </Card>
 
-      <AdminSignupsPanel />
+        <AdminSignupsPanel />
+      </div>
     </div>
+
   );
 }

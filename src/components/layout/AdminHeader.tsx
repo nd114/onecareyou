@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Console" },
@@ -94,7 +96,9 @@ export function AdminHeader() {
 
 
         <div className="ml-auto flex items-center gap-2 shrink-0">
+          <ThemeToggle />
           <DropdownMenu>
+
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">

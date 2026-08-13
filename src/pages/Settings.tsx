@@ -52,6 +52,8 @@ import {
 import { GlucoseUnit, WeightUnit, TemperatureUnit } from '@/types/health';
 import { CareAlertSettings } from '@/components/care/CareAlertSettings';
 import { PatientAvatarUpload } from '@/components/settings/PatientAvatarUpload';
+import { EditProfileDialog } from '@/components/patient/EditProfileDialog';
+
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
@@ -444,12 +446,14 @@ const Settings = () => {
                   </div>
                 )}
 
-                {/* Edit Profile Link */}
+                {/* Edit profile */}
+                <EditProfileDialog />
                 <Link to="/onboarding">
-                  <Button variant="outline" className="w-full mt-2">
-                    Edit Health Profile
+                  <Button variant="ghost" className="w-full">
+                    Guided health review
                   </Button>
                 </Link>
+
               </CardContent>
             </Card>
           </motion.div>

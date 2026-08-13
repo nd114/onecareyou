@@ -33,6 +33,12 @@ export function CreateTenantDialog() {
     slug: '',
     city: '',
     country: '',
+    address: '',
+    state: '',
+    zip_code: '',
+    phone: '',
+    email: '',
+    npi: '',
     subscription_tier: 'enterprise',
     storage_limit_gb: '250',
     revenue_share_pct: '0',
@@ -51,6 +57,12 @@ export function CreateTenantDialog() {
       slug: form.slug.trim() || undefined,
       city: form.city.trim() || undefined,
       country: form.country.trim() || undefined,
+      address: form.address.trim() || undefined,
+      state: form.state.trim() || undefined,
+      zip_code: form.zip_code.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      email: form.email.trim() || undefined,
+      npi: form.npi.trim() || undefined,
       subscription_tier: form.subscription_tier,
       storage_limit_gb: Number(form.storage_limit_gb) || 25,
       revenue_share_pct: Number(form.revenue_share_pct) || 0,
@@ -63,8 +75,21 @@ export function CreateTenantDialog() {
     }
 
     setOpen(false);
-    setForm((f) => ({ ...f, name: '', slug: '', city: '', owner_email: '' }));
+    setForm((f) => ({
+      ...f,
+      name: '',
+      slug: '',
+      city: '',
+      address: '',
+      state: '',
+      zip_code: '',
+      phone: '',
+      email: '',
+      npi: '',
+      owner_email: '',
+    }));
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -158,6 +183,68 @@ export function CreateTenantDialog() {
               />
             </div>
           </div>
+
+          <div className="rounded-lg border p-3 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              Contact and address — this is the record of truth the tenant sees in their own
+              settings.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="tenant-address">Street address</Label>
+              <Input
+                id="tenant-address"
+                value={form.address}
+                onChange={(e) => set('address', e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="tenant-state">State / region</Label>
+                <Input
+                  id="tenant-state"
+                  value={form.state}
+                  onChange={(e) => set('state', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tenant-zip">Postcode</Label>
+                <Input
+                  id="tenant-zip"
+                  value={form.zip_code}
+                  onChange={(e) => set('zip_code', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="tenant-phone">Phone</Label>
+                <Input
+                  id="tenant-phone"
+                  value={form.phone}
+                  onChange={(e) => set('phone', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tenant-email">Contact email</Label>
+                <Input
+                  id="tenant-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set('email', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tenant-npi">NPI / licence number</Label>
+              <Input
+                id="tenant-npi"
+                value={form.npi}
+                onChange={(e) => set('npi', e.target.value)}
+              />
+            </div>
+          </div>
+
+
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
