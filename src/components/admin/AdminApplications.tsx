@@ -69,6 +69,8 @@ export function AdminApplications() {
     });
   }, [data, search, statusFilter]);
 
+  const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(filtered, 15);
+
   const openApplication = (application: JobApplication) => {
     setSelected(application);
     setNotes(application.admin_notes ?? '');
