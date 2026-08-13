@@ -358,6 +358,22 @@ const CareCircle = () => {
                             <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
                             <span className="hidden sm:inline">WhatsApp</span>
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                            disabled={generateCareRecord.isPending || !share.clinician_user_id}
+                            onClick={() =>
+                              generateCareRecord.mutate({
+                                clinicianUserId: share.clinician_user_id,
+                                clinicianLabel: share.display_name,
+                              })
+                            }
+                            title="Save messages and guidance from this provider to your Health Vault"
+                          >
+                            <FolderDown className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Save record</span>
+                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
@@ -420,14 +436,31 @@ const CareCircle = () => {
                               {share.revoke_reason ? ` · ${share.revoke_reason}` : ''}
                             </p>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs self-start sm:self-auto"
-                            onClick={() => reshare.mutate({ shareId: share.id })}
-                          >
-                            Resume sharing
-                          </Button>
+                          <div className="flex items-center gap-2 self-start sm:self-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs"
+                              disabled={generateCareRecord.isPending || !share.clinician_user_id}
+                              onClick={() =>
+                                generateCareRecord.mutate({
+                                  clinicianUserId: share.clinician_user_id,
+                                  clinicianLabel: share.display_name,
+                                })
+                              }
+                            >
+                              <FolderDown className="h-3 w-3 mr-1" />
+                              Save record
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs"
+                              onClick={() => reshare.mutate({ shareId: share.id })}
+                            >
+                              Resume sharing
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
