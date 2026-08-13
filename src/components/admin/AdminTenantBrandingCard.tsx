@@ -62,7 +62,52 @@ export function AdminTenantBrandingCard({ tenant, onSave, isSaving }: Props) {
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor={`logo-${tenant.id}`}>Logo URL</Label>
+          <Label>Logo</Label>
+          <div className="flex flex-wrap items-center gap-3">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Current logo"
+                className="h-12 w-12 rounded-lg border object-contain p-1"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-lg border" style={{ background: primary }} />
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFile}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={isUploading || isSaving}
+            >
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Upload logo
+            </Button>
+            {logoUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setLogoUrl('')}
+                disabled={isUploading || isSaving}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">PNG, JPG or SVG up to 2MB.</p>
+          <Label htmlFor={`logo-${tenant.id}`} className="pt-2 block">
+            Or paste a logo URL
+          </Label>
           <Input
             id={`logo-${tenant.id}`}
             value={logoUrl}
@@ -70,6 +115,7 @@ export function AdminTenantBrandingCard({ tenant, onSave, isSaving }: Props) {
             placeholder="https://…/logo.png"
           />
         </div>
+
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
