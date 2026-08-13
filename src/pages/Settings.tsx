@@ -52,6 +52,8 @@ import {
 import { GlucoseUnit, WeightUnit, TemperatureUnit } from '@/types/health';
 import { CareAlertSettings } from '@/components/care/CareAlertSettings';
 import { PatientAvatarUpload } from '@/components/settings/PatientAvatarUpload';
+import { EditProfileDialog } from '@/components/patient/EditProfileDialog';
+
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
