@@ -1,6 +1,6 @@
 # Enterprise / Hospital Tenancy Plan
 
-Status: Phase A + core of Phase B/D shipped (Aug 2026). Phases C and E outstanding.
+Status: Phases A, B, C (core) and D shipped (Aug 2026). Phase E outstanding.
 Owner: platform team. Canonical companion doc: `docs/sharing-access-consent-model.md`.
 
 ## 1. Why tenancy exists
@@ -54,11 +54,15 @@ overlay only (no re-theme of the emerald/cream/gold system).
 - Disconnection is a status change; history and records are preserved permanently.
 - Fast-follow: the granular per-category picker, reassignment polish, multi-hospital labelling.
 
-**Phase C — admin surfaces (outstanding)**
-- Tenant admin: whitelist, CSV bulk onboarding/offboarding, sub-admin management, tenant audit log,
-  branding, revenue-share summary.
-- OneCare platform admin: create/manage tenants (including slug assignment, currently ops-provisioned),
-  cross-tenant clinician and audit oversight, careers admin folded in at `/admin`.
+**Phase C — admin surfaces (core shipped)**
+- Tenant admin (Practice page): hospital code self-service (`set_institution_slug`, with live
+  availability check), team/RBAC management, institution-shared patient assignment, pooled storage,
+  branding, and a read-only revenue-share summary.
+- OneCare platform admin at `/admin` (`AdminRoute`, server-verified `has_role(admin)`): tenant
+  overview via `admin_tenant_overview()` — team size, active patient connections, storage against
+  allowance, revenue-share rate — plus links to careers, import and changelog tools.
+- Fast-follow: tenant creation from the console (still ops-provisioned), cross-tenant audit search,
+  revenue-share statements and payouts.
 
 **Phase D — delegation & assignment (shipped, basic)**
 Sub-admins and admins assign hospital-shared patients to clinicians from Practice → Institution-shared
@@ -74,12 +78,14 @@ formulary checks only if confirmed needed.
 - [x] Assignment of a clinician to a hospital-shared patient
 - [x] Patient-initiated disconnection with preserved history
 - [x] Pooled tenant storage metering
-- [ ] Tenant subdomain registration flow (`<slug>.onecare.you`) for patients and clinicians
-- [ ] Tenant admin console (Phase C)
-- [ ] Revenue-share reporting view
+- [x] Hospital code self-service (reserves `<slug>.onecare.you`; DNS routing still to do)
+- [x] Tenant admin surfaces + platform admin console at `/admin`
+- [x] Revenue-share reporting view (estimate; statements/payouts coming soon)
+- [ ] Subdomain DNS routing for `<slug>.onecare.you`
 
 ## 5. Open items
 
-- Slug/tenant creation is ops-provisioned until the platform admin console lands.
-- Granular share picker ships after launch; the boolean toggle is the interim.
+- Tenant *creation* is still ops-provisioned; codes are now self-service for owners/admins.
+- Granular share picker shipped: patients choose vitals / medications / documents / conditions /
+  allergies per hospital and can adjust an existing connection at any time.
 - Jurisdictional retention (US/EU baseline) to be confirmed with legal counsel.
