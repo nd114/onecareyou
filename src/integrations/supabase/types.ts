@@ -842,6 +842,7 @@ export type Database = {
           provider_share_id: string | null
           tags: Json | null
           updated_at: string
+          visits: Json
           vitals_history: Json | null
         }
         Insert: {
@@ -868,6 +869,7 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
+          visits?: Json
           vitals_history?: Json | null
         }
         Update: {
@@ -894,6 +896,7 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
+          visits?: Json
           vitals_history?: Json | null
         }
         Relationships: [
