@@ -344,6 +344,14 @@ const ClinicianPatientImport = () => {
                   <span>{parsedRows.length} records parsed.</span>
                   <Badge variant="default">{validRows.length} valid</Badge>
                   {errorRows.length > 0 && <Badge variant="destructive">{errorRows.length} errors</Badge>}
+                  {duplicateInfo.size > 0 && (
+                    <>
+                      <Badge variant="secondary">{duplicateInfo.size} possible duplicate{duplicateInfo.size !== 1 ? 's' : ''}</Badge>
+                      <Button variant="outline" size="sm" className="h-7" onClick={removeDuplicateRows}>
+                        Remove duplicates
+                      </Button>
+                    </>
+                  )}
                   {errorRows.length > 0 && (
                     <Button
                       variant="outline"
