@@ -14,6 +14,8 @@ import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCar
 import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
+import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
+import { PracticeRevenueShareCard } from '@/components/clinician/PracticeRevenueShareCard';
 import { PracticeStorageCard } from '@/components/clinician/PracticeStorageCard';
 import { Loader2 } from 'lucide-react';
 
