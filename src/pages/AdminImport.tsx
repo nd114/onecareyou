@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { AdminHeader } from '@/components/layout/AdminHeader';
 
 // Parse CSV line handling quoted fields
 function parseCSVLine(line: string): string[] {

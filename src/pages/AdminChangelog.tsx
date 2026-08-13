@@ -3,6 +3,7 @@ import { CHANGELOG, type ChangelogTag } from '@/lib/changelog-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles } from 'lucide-react';
+import { AdminHeader } from '@/components/layout/AdminHeader';
 
 const TAG_LABELS: Record<ChangelogTag, string> = {
   patient: 'Patient',
@@ -20,6 +21,8 @@ export default function AdminChangelog() {
         <title>OneCare Changelog (internal)</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
+
+      <AdminHeader />
 
       <main className="container max-w-3xl py-12 px-4">
         <div className="mb-10">
