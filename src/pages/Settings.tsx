@@ -444,12 +444,14 @@ const Settings = () => {
                   </div>
                 )}
 
-                {/* Edit Profile Link */}
+                {/* Edit profile */}
+                <EditProfileDialog />
                 <Link to="/onboarding">
-                  <Button variant="outline" className="w-full mt-2">
-                    Edit Health Profile
+                  <Button variant="ghost" className="w-full">
+                    Guided health review
                   </Button>
                 </Link>
+
               </CardContent>
             </Card>
           </motion.div>
