@@ -41,6 +41,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import { usePatientGuidance } from "@/hooks/usePatientGuidance";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
 import { toast } from "sonner";
