@@ -20,8 +20,20 @@
 
 ## Now (in flight)
 
-1. **Mobile-first sweep (patient + clinician).** Scripted 390x844 / 768x1024 passes over every pillar and sub-tab; fix P0 broken flows first, then overlap between bottom nav, FAB stack and sticky sub-tabs, then polish. Latest sweep: no horizontal overflow on the audited routes, admin isolation confirmed, admin header overflow fixed.
+1. **Mobile-first sweep (patient + clinician).** Scripted 390x844 / 768x1024 passes over every pillar and sub-tab; fix P0 broken flows first, then overlap between bottom nav, FAB stack and sticky sub-tabs, then polish.
 2. **Surface budget discipline.** Every new feature must replace a surface or justify itself against the four pillars per side.
+
+### Mobile sweep findings (13 August 2026, 390x844 + 768x1024)
+
+| Route / surface | Severity | Symptom | Status |
+| --- | --- | --- | --- |
+| All audited public + admin routes | — | No horizontal overflow at either viewport | Pass |
+| Patient + clinician routes as an admin | — | Correctly redirect to `/admin`; no cross-role leakage | Pass |
+| `/admin` header nav | P1 | Five links did not wrap or collapse below `md`; destinations were cut off | Fixed — collapses into one labelled menu |
+| `/for-clinicians` | P2 | Console error `Error checking subscription: FunctionsFetchError` | Sandbox-only (edge function unreachable locally); handled gracefully, no user-facing break |
+| Authenticated patient/clinician pillars | — | Not reachable by the audit browser without a signed-in preview session | Outstanding — rerun with a signed-in preview session |
+
+
 
 ## Shipped log (newest first)
 
