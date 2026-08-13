@@ -353,17 +353,20 @@ const ClinicianPatients = () => {
                 <div>
                   <CardTitle className="text-base sm:text-lg">Clinician-Managed Records</CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
-                    {managedRecords.length} patient{managedRecords.length !== 1 ? 's' : ''} imported
+                    {managedRecords.length} patient{managedRecords.length !== 1 ? 's' : ''} on file
                   </CardDescription>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => navigate('/clinician/patients/import')}
-                  className="gap-1.5"
-                >
-                  <Upload className="h-4 w-4" />
-                  Import More
-                </Button>
+                <div className="flex items-center gap-2">
+                  <AddManagedPatientDialog />
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/clinician/patients/import')}
+                    className="gap-1.5"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Import More
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {managedRecords.length > 0 && (
