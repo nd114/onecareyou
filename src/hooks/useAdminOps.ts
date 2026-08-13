@@ -240,6 +240,9 @@ export function useAdminOps() {
     isCreating: createTenant.isPending,
     updateTenant: updateTenant.mutateAsync,
     isUpdating: updateTenant.isPending,
+    setTenantSlug: setTenantSlug.mutateAsync,
+    isSavingSlug: setTenantSlug.isPending,
+
     inviteOwner: inviteOwner.mutateAsync,
     isInviting: inviteOwner.isPending,
     cancelInvitation: cancelInvitation.mutateAsync,
