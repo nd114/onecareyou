@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { tenantSlugFromHost } from '@/lib/tenant-host';
 
 export interface PublicInstitution {
   id: string;
@@ -13,14 +14,13 @@ export interface PublicInstitution {
   accent_color: string | null;
 }
 
-/** Institution slug taken from the host (e.g. lmc.onecare.you -> "lmc"). */
-export function institutionSlugFromHost(host = window.location.hostname): string | null {
-  const reserved = new Set(['www', 'app', 'onecare', 'localhost', 'preview', 'id-preview']);
-  const parts = host.split('.');
-  if (parts.length < 3) return null;
-  const sub = parts[0].toLowerCase();
-  if (reserved.has(sub) || sub.includes('-preview') || sub.endsWith('lovable')) return null;
-  return sub;
+/**
+ * Institution slug taken from the host (e.g. lmc.onecare.you -> "lmc").
+ * Thin re-export so existing call sites keep working; the resolution rules
+ * live in src/lib/tenant-host.ts.
+ */
+export function institutionSlugFromHost(host?: string): string | null {
+  return tenantSlugFromHost(host);
 }
 
 /** Public, pre-auth branding for an institution's own sign-up address. */
