@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Loader2, Palette } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Loader2, Palette, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { uploadTenantLogo } from '@/lib/tenant-logo';
 import type { AdminTenantDetail, TenantBrandingInput } from '@/hooks/useAdminTenantDetail';
 
 interface Props {
@@ -20,12 +22,31 @@ export function AdminTenantBrandingCard({ tenant, onSave, isSaving }: Props) {
   const [logoUrl, setLogoUrl] = useState('');
   const [primary, setPrimary] = useState('#0d9488');
   const [accent, setAccent] = useState('#0284c7');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setLogoUrl(tenant.brand_logo_url || tenant.logo_url || '');
     setPrimary(tenant.primary_color || '#0d9488');
     setAccent(tenant.brand_accent_color || '#0284c7');
   }, [tenant.id, tenant.brand_logo_url, tenant.logo_url, tenant.primary_color, tenant.brand_accent_color]);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadTenantLogo(tenant.id, file);
+      setLogoUrl(url);
+      await onSave({ logo_url: url, primary_color: primary, accent_color: accent });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not upload the logo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
 
   return (
     <Card>
