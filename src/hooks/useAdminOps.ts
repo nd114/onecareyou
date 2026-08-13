@@ -30,11 +30,20 @@ export interface AdminActionRow {
   created_at: string;
 }
 
-export interface CreateTenantInput {
+export interface TenantContactInput {
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  npi?: string;
+}
+
+export interface CreateTenantInput extends TenantContactInput {
   name: string;
   tenant_type: 'practice' | 'hospital';
-  city?: string;
-  country?: string;
   subscription_tier?: string;
   storage_limit_gb?: number;
   revenue_share_pct?: number;
@@ -56,6 +65,7 @@ export interface UpdateTenantInput {
   member_limit?: number;
   is_active?: boolean;
 }
+
 
 /** Platform-admin operations: tenant lifecycle, owner invitations, admin delegation, action log. */
 export function useAdminOps() {
