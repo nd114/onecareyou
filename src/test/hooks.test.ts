@@ -106,7 +106,7 @@ describe('useDashboardStats', () => {
     const { result } = renderHook(() => useDashboardStats());
     
     expect(result.current.stats).toEqual({
-      adherenceRate: 0,
+      adherenceRate: null,
       dailyDoses: 0,
       healthMarkers: 0,
       activeProviders: 0,
