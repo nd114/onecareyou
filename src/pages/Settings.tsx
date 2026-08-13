@@ -572,6 +572,10 @@ const Settings = () => {
             <AIHistorySection />
 
             <AuditTrailSection />
+
+            <div className="mt-6">
+              <StorageUsageCard />
+            </div>
           </motion.div>
 
 
