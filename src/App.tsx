@@ -302,6 +302,12 @@ const App = () => (
                 <AdminCareers />
               </AdminRoute>
             } />
+            <Route path="/admin/docs" element={
+              <AdminRoute>
+                <AdminDocs />
+              </AdminRoute>
+            } />
+
             <Route path="/admin/changelog" element={
               <ProtectedRoute>
                 <AdminChangelog />
