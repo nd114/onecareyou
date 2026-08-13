@@ -23,6 +23,7 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
+import { AddManagedPatientDialog } from '@/components/clinician/AddManagedPatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
