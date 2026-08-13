@@ -22,6 +22,8 @@ export const HospitalPatientsCard = () => {
   const { shares, isLoading, assign, isAssigning } = usePracticeSharedPatients(
     currentPractice?.id,
   );
+  const { tenant } = usePracticeTenant(currentPractice?.id);
+
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<Record<string, string>>({});
 
