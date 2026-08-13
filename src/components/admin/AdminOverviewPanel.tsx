@@ -111,7 +111,9 @@ export function AdminOverviewPanel() {
         </CardContent>
       </Card>
 
-      <AdminSignupsPanel />
+        <AdminSignupsPanel />
+      </div>
     </div>
+
   );
 }
