@@ -244,11 +244,29 @@ export const HospitalShareCard = () => {
                     <div>
                       <p className="text-sm font-medium">Share my full record</p>
                       <p className="text-xs text-muted-foreground">
-                        Turn off to share only vitals and medications.
+                        Turn off to choose exactly what they can see.
                       </p>
                     </div>
                     <Switch checked={shareAll} onCheckedChange={setShareAll} />
                   </div>
+                  {!shareAll && (
+                    <div className="space-y-2 rounded-lg border bg-background p-3">
+                      {SHARE_CATEGORIES.map((c) => (
+                        <label
+                          key={c.key}
+                          className="flex items-center gap-2 text-sm cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={!!permissions[c.key]}
+                            onCheckedChange={(v) =>
+                              setPermissions((prev) => ({ ...prev, [c.key]: v === true }))
+                            }
+                          />
+                          {c.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                   <Button className="w-full" onClick={handleConnect} disabled={isConnecting}>
                     {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Share with {found.name}
