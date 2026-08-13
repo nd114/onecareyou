@@ -125,7 +125,6 @@ Unbuilt features are labelled "(coming soon)". Never expose the underlying vendo
 
 - `docs/sharing-access-consent-model.md` — consent and preservation
 - `docs/enterprise-hospital-tenancy-plan.md` — hospital tenancy phases
-- `docs/clinician-strategic-roadmap.md`, `docs/clinician-gaps-implementation-plan.md`
+- `docs/roadmap.md` — single living tracker (shipped, in flight, next, deferred)
 - `docs/pricing-roadmap.md` — commercial model including storage
 - `docs/qhin-integration-plan.md` — interoperability
-- `docs/comprehensive-platform-review.md`, `docs/qa-report-jul-2026.md`
