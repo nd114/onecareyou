@@ -37,7 +37,12 @@ export const HospitalPatientsCard = () => {
     );
   });
 
+  // Institution-shared patients only exist for hospital tenants or once shares arrive.
   if (!currentPractice) return null;
+  if (!isLoading && shares.length === 0 && (tenant?.tenant_type ?? 'practice') !== 'hospital') {
+    return null;
+  }
+
 
   return (
     <Card>
