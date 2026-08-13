@@ -3640,9 +3640,38 @@ export type Database = {
           tenant_type: string
         }[]
       }
+      practice_contact_details: {
+        Args: { _practice_id: string }
+        Returns: {
+          address: string
+          city: string
+          country: string
+          email: string
+          id: string
+          name: string
+          npi: string
+          phone: string
+          state: string
+          zip_code: string
+        }[]
+      }
       practice_has_patient_access: {
         Args: { patient_uuid: string }
         Returns: boolean
+      }
+      practice_set_contact: {
+        Args: {
+          _address?: string
+          _city?: string
+          _country?: string
+          _email?: string
+          _npi?: string
+          _phone?: string
+          _practice_id: string
+          _state?: string
+          _zip_code?: string
+        }
+        Returns: undefined
       }
       public_institution_by_slug: {
         Args: { _slug: string }
