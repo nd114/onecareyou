@@ -29,6 +29,7 @@ export const FREE_FEATURES = [
   'Drug interaction warnings',
   'Daily medication schedule',
   'Health profile storage',
+  '500 MB document storage',
   'Mobile-friendly access',
   'Vitals & lab tracking',
   'Care Circle – share with providers',
@@ -39,6 +40,7 @@ export const FREE_FEATURES = [
 
 export const PREMIUM_FEATURES = [
   'Unlimited medications',
+  '10 GB document storage',
   'Family member profiles',
   'AI lab report parsing',
   'Health reports export',
