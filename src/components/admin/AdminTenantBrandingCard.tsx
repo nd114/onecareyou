@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Loader2, Palette } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Loader2, Palette, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { uploadTenantLogo } from '@/lib/tenant-logo';
 import type { AdminTenantDetail, TenantBrandingInput } from '@/hooks/useAdminTenantDetail';
 
 interface Props {
@@ -20,12 +22,31 @@ export function AdminTenantBrandingCard({ tenant, onSave, isSaving }: Props) {
   const [logoUrl, setLogoUrl] = useState('');
   const [primary, setPrimary] = useState('#0d9488');
   const [accent, setAccent] = useState('#0284c7');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setLogoUrl(tenant.brand_logo_url || tenant.logo_url || '');
     setPrimary(tenant.primary_color || '#0d9488');
     setAccent(tenant.brand_accent_color || '#0284c7');
   }, [tenant.id, tenant.brand_logo_url, tenant.logo_url, tenant.primary_color, tenant.brand_accent_color]);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadTenantLogo(tenant.id, file);
+      setLogoUrl(url);
+      await onSave({ logo_url: url, primary_color: primary, accent_color: accent });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not upload the logo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
 
   return (
     <Card>
@@ -41,7 +62,52 @@ export function AdminTenantBrandingCard({ tenant, onSave, isSaving }: Props) {
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor={`logo-${tenant.id}`}>Logo URL</Label>
+          <Label>Logo</Label>
+          <div className="flex flex-wrap items-center gap-3">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Current logo"
+                className="h-12 w-12 rounded-lg border object-contain p-1"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-lg border" style={{ background: primary }} />
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFile}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={isUploading || isSaving}
+            >
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              Upload logo
+            </Button>
+            {logoUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setLogoUrl('')}
+                disabled={isUploading || isSaving}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">PNG, JPG or SVG up to 2MB.</p>
+          <Label htmlFor={`logo-${tenant.id}`} className="pt-2 block">
+            Or paste a logo URL
+          </Label>
           <Input
             id={`logo-${tenant.id}`}
             value={logoUrl}
@@ -49,6 +115,7 @@ export function AdminTenantBrandingCard({ tenant, onSave, isSaving }: Props) {
             placeholder="https://…/logo.png"
           />
         </div>
+
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
