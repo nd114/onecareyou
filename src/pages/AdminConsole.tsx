@@ -22,6 +22,7 @@ import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions'
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
 import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
 import { AdminHeader } from '@/components/layout/AdminHeader';
+import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 
 const TOOLS = [
   {
@@ -53,6 +54,8 @@ export default function AdminConsole() {
     if (!q) return true;
     return [t.name, t.slug, t.city, t.country].some((v) => v?.toLowerCase().includes(q));
   });
+
+  const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(filtered, 10);
 
   return (
     <div className="min-h-screen bg-background">
