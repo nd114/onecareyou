@@ -121,8 +121,15 @@ export function useAdminOps() {
         _slug: input.slug || undefined,
         _patient_limit: input.patient_limit ?? undefined,
         _member_limit: input.member_limit ?? undefined,
-      });
+        _address: input.address || undefined,
+        _state: input.state || undefined,
+        _zip_code: input.zip_code || undefined,
+        _phone: input.phone || undefined,
+        _email: input.email || undefined,
+        _npi: input.npi || undefined,
+      } as never);
       if (error) throw error;
+
       return data as string;
     },
     onSuccess: () => {
