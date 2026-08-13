@@ -59,7 +59,7 @@ const DATA_MODELS = [
 
 const ClinicianPatientImport = () => {
   const navigate = useNavigate();
-  const { importRecords } = useClinicianPatientRecords();
+  const { importRecords, records: existingRecords } = useClinicianPatientRecords();
   const [step, setStep] = useState(1);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [dataModel, setDataModel] = useState('clinician_managed');
