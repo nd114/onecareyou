@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePractice } from '@/hooks/usePractice';
+import { uploadTenantLogo } from '@/lib/tenant-logo';
+
 
 export function PracticeBrandingCard() {
   const { user } = useAuth();
