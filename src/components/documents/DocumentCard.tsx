@@ -148,7 +148,7 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  )
+                  )}
                 </div>
               </div>
 
