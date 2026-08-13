@@ -451,11 +451,20 @@ const ClinicianPatients = () => {
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 mt-2 pt-2 border-t">
+                            <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="text-xs"
+                                onClick={() => navigate(`/clinician/records/${record.id}`)}
+                              >
+                                Open chart
+                              </Button>
                               <InviteToOneCareButton record={record} />
                               <PatientTagManager record={record} />
                               <EditManagedRecordDialog record={record} />
                             </div>
+
                           </div>
                         </div>
                       </div>
