@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPagination, usePagination } from "@/components/admin/AdminPagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ const fromLines = (value: string) =>
 
 export function AdminJobs() {
   const { data: jobs, isLoading } = useAllJobs();
+  const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(jobs ?? [], 10);
   const { createJob, updateJob, deleteJob } = useJobMutations();
 
   const [editing, setEditing] = useState<JobPosting | null>(null);
@@ -144,7 +146,7 @@ export function AdminJobs() {
         {(jobs ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground py-10 text-center">No jobs yet. Create your first opening.</p>
         )}
-        {(jobs ?? []).map((job) => (
+        {pageItems.map((job) => (
           <div key={job.id} className="rounded-xl border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -176,6 +178,14 @@ export function AdminJobs() {
             </div>
           </div>
         ))}
+        <AdminPagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          label="jobs"
+        />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

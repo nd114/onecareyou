@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminOps } from '@/hooks/useAdminOps';
 import { useAuth } from '@/contexts/AuthContext';
+import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 
 /** Delegate OneCare platform-admin access and review pending tenant owner invitations. */
 export function AdminAccessPanel() {
@@ -21,6 +22,8 @@ export function AdminAccessPanel() {
     cancelInvitation,
   } = useAdminOps();
   const [email, setEmail] = useState('');
+  const adminPage = usePagination(admins, 10);
+  const invitePage = usePagination(invitations, 10);
 
   const handleGrant = async () => {
     await grantAdmin(email.trim());
@@ -64,7 +67,7 @@ export function AdminAccessPanel() {
             </div>
           ) : (
             <div className="space-y-2">
-              {admins.map((a) => (
+              {adminPage.pageItems.map((a) => (
                 <div
                   key={a.user_id}
                   className="flex items-center justify-between rounded-lg border p-3 gap-3"
@@ -90,6 +93,14 @@ export function AdminAccessPanel() {
                   )}
                 </div>
               ))}
+              <AdminPagination
+                page={adminPage.page}
+                pageCount={adminPage.pageCount}
+                total={adminPage.total}
+                pageSize={adminPage.pageSize}
+                onPageChange={adminPage.setPage}
+                label="admins"
+              />
             </div>
           )}
         </CardContent>
@@ -111,7 +122,7 @@ export function AdminAccessPanel() {
             <p className="text-sm text-muted-foreground py-2">No invitations yet.</p>
           ) : (
             <div className="space-y-2">
-              {invitations.map((inv) => (
+              {invitePage.pageItems.map((inv) => (
                 <div
                   key={inv.id}
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border p-3"
@@ -142,6 +153,14 @@ export function AdminAccessPanel() {
                   </div>
                 </div>
               ))}
+              <AdminPagination
+                page={invitePage.page}
+                pageCount={invitePage.pageCount}
+                total={invitePage.total}
+                pageSize={invitePage.pageSize}
+                onPageChange={invitePage.setPage}
+                label="invitations"
+              />
             </div>
           )}
         </CardContent>

@@ -22,6 +22,7 @@ import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions'
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
 import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
 import { AdminHeader } from '@/components/layout/AdminHeader';
+import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 
 const TOOLS = [
   {
@@ -53,6 +54,8 @@ export default function AdminConsole() {
     if (!q) return true;
     return [t.name, t.slug, t.city, t.country].some((v) => v?.toLowerCase().includes(q));
   });
+
+  const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(filtered, 10);
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,8 +134,9 @@ export default function AdminConsole() {
                     {tenants.length === 0 ? 'No tenants yet.' : 'No tenants match that search.'}
                   </p>
                 ) : (
+                  <>
                   <div className="space-y-2">
-                    {filtered.map((t) => (
+                    {pageItems.map((t) => (
                       <div
                         key={t.id}
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-3"
@@ -173,6 +177,15 @@ export default function AdminConsole() {
                       </div>
                     ))}
                   </div>
+                  <AdminPagination
+                    page={page}
+                    pageCount={pageCount}
+                    total={total}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    label="tenants"
+                  />
+                  </>
                 )}
               </CardContent>
             </Card>

@@ -123,8 +123,11 @@ Unbuilt features are labelled "(coming soon)". Never expose the underlying vendo
 
 ## 10. Related documents
 
+- `docs/handbook/` — the internal handbook (patient, clinician, admin, data model, runbook), rendered
+  in-app for platform admins at `/admin/docs`
 - `docs/sharing-access-consent-model.md` — consent and preservation
 - `docs/enterprise-hospital-tenancy-plan.md` — hospital tenancy phases
 - `docs/roadmap.md` — single living tracker (shipped, in flight, next, deferred)
 - `docs/pricing-roadmap.md` — commercial model including storage
+
 - `docs/qhin-integration-plan.md` — interoperability

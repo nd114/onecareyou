@@ -16,9 +16,11 @@ import { cn } from "@/lib/utils";
 const ADMIN_LINKS = [
   { href: "/admin", label: "Console" },
   { href: "/admin/careers", label: "Careers" },
+  { href: "/admin/docs", label: "Docs" },
   { href: "/admin/changelog", label: "Changelog" },
   { href: "/admin/import", label: "Import" },
 ];
+
 
 /** Dedicated header for the platform admin console. No patient or clinician surfaces. */
 export function AdminHeader() {

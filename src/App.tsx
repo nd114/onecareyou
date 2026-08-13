@@ -60,6 +60,8 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import EHRComparison from "./pages/EHRComparison";
 import AdminImport from "./pages/AdminImport";
 import AdminChangelog from "./pages/AdminChangelog";
+import AdminDocs from "./pages/AdminDocs";
+
 import AdminCareers from "./pages/AdminCareers";
 import AdminConsole from "./pages/AdminConsole";
 import { AdminRoute } from "./components/auth/AdminRoute";
@@ -302,6 +304,12 @@ const App = () => (
                 <AdminCareers />
               </AdminRoute>
             } />
+            <Route path="/admin/docs" element={
+              <AdminRoute>
+                <AdminDocs />
+              </AdminRoute>
+            } />
+
             <Route path="/admin/changelog" element={
               <ProtectedRoute>
                 <AdminChangelog />

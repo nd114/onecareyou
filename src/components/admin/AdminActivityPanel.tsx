@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminOps } from '@/hooks/useAdminOps';
+import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 
 const ACTION_LABELS: Record<string, string> = {
   create_tenant: 'Created tenant',
@@ -14,6 +15,7 @@ const ACTION_LABELS: Record<string, string> = {
 /** Read-only log of every platform-admin action, for internal accountability. */
 export function AdminActivityPanel() {
   const { actions, isLoadingActions } = useAdminOps();
+  const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(actions, 15);
 
   return (
     <Card>
@@ -32,7 +34,7 @@ export function AdminActivityPanel() {
           <p className="text-sm text-muted-foreground py-2">No admin activity recorded yet.</p>
         ) : (
           <div className="space-y-2">
-            {actions.map((a) => {
+            {pageItems.map((a) => {
               const details = a.details ?? {};
               const summary = [details.name, details.email, details.slug, details.tier]
                 .filter(Boolean)
@@ -56,6 +58,14 @@ export function AdminActivityPanel() {
                 </div>
               );
             })}
+            <AdminPagination
+              page={page}
+              pageCount={pageCount}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              label="actions"
+            />
           </div>
         )}
       </CardContent>

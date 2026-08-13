@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { AdminHeader } from '@/components/layout/AdminHeader';
 
 // Parse CSV line handling quoted fields
 function parseCSVLine(line: string): string[] {
@@ -133,7 +134,9 @@ export default function AdminImport() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-background">
+      <AdminHeader />
+      <div className="container px-4 py-8">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Import IDD Drug Mappings</CardTitle>
@@ -181,6 +184,7 @@ export default function AdminImport() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
