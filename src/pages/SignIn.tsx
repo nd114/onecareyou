@@ -11,6 +11,8 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
+import { useAdminRole } from '@/hooks/useAdminRole';
+
 import { z } from 'zod';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
@@ -24,6 +26,8 @@ const SignIn = () => {
   const location = useLocation();
   const { signIn, user, loading: authLoading } = useAuth();
   const { isClinician, isLoading: clinicianLoading } = useClinicianProfile();
+  const { isAdmin, isLoading: adminLoading } = useAdminRole();
+
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -34,18 +38,21 @@ const SignIn = () => {
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
-  // Redirect if already logged in - clinicians go to clinician dashboard
+  // Redirect if already logged in - admins land on the console, clinicians on their dashboard
   useEffect(() => {
-    if (user && !authLoading && !clinicianLoading) {
+    if (user && !authLoading && !clinicianLoading && !adminLoading) {
       if (from) {
         navigate(from, { replace: true });
+      } else if (isAdmin) {
+        navigate('/admin', { replace: true });
       } else if (isClinician) {
         navigate('/clinician/dashboard', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [user, authLoading, clinicianLoading, isClinician, navigate, from]);
+  }, [user, authLoading, clinicianLoading, adminLoading, isAdmin, isClinician, navigate, from]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

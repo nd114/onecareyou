@@ -344,7 +344,16 @@ export function ClinicianHeader() {
                     Why OneCare?
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                      <ShieldCheck className="h-4 w-4" />
+                      Platform Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   onClick={handleSignOut}
                   className="flex items-center gap-2 cursor-pointer text-destructive"

@@ -362,7 +362,16 @@ export function Header() {
                       </DropdownMenuItem>
                     </>
                   )}
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        Platform Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
