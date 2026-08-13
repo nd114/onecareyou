@@ -13,6 +13,8 @@ import {
 import { Hospital, Loader2 } from 'lucide-react';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeSharedPatients } from '@/hooks/usePracticeShares';
+import { usePracticeTenant } from '@/hooks/usePracticeTenant';
+
 
 export const HospitalPatientsCard = () => {
   const { currentPractice, currentMembership, usePracticeMembers } = usePractice();
