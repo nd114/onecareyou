@@ -11,7 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { institutionSlugFromHost, useInstitutionBranding } from '@/hooks/useInstitutionBranding';
+import { institutionSlugFromHost, useInstitutionBranding, type PublicInstitution } from '@/hooks/useInstitutionBranding';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
+
 
 const schema = z
   .object({
@@ -33,12 +35,22 @@ const HIGHLIGHTS = [
 
 /**
  * Branded sign-up page served at an institution's own address
- * (e.g. lmc.onecare.you) or at /i/:slug.
+ * (e.g. lmc.onecare.you). The tenant is resolved from the hostname and
+ * rendered in place — no redirect to a /i/:slug path.
  */
-export default function InstitutionSignUp() {
+export default function InstitutionSignUp({
+  institution: institutionProp,
+  slug: slugProp,
+}: {
+  institution?: PublicInstitution | null;
+  slug?: string | null;
+} = {}) {
   const params = useParams<{ slug?: string }>();
-  const slug = params.slug ?? institutionSlugFromHost();
-  const { institution, isLoading } = useInstitutionBranding(slug);
+  const slug = slugProp ?? institutionSlugFromHost() ?? params.slug ?? null;
+  const branding = useInstitutionBranding(institutionProp ? null : slug);
+  const institution = institutionProp ?? branding.institution;
+  const isLoading = institutionProp ? false : branding.isLoading;
+
   const { signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
