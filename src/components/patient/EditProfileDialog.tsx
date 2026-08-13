@@ -29,7 +29,7 @@ const GENDERS = ['Female', 'Male', 'Other', 'Prefer not to say'];
 /** Lets the patient correct their own biodata without redoing onboarding. */
 export function EditProfileDialog() {
   const { user, profile, refreshProfile } = useAuth();
-  const p = profile as Record<string, unknown> | null;
+  const p = profile as unknown as Record<string, unknown> | null;
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
