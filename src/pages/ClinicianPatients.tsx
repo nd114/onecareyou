@@ -396,11 +396,14 @@ const ClinicianPatients = () => {
                     <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="font-semibold mb-2">No managed records</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Import patient records from CSV to manage patients who aren't on OneCare yet.
+                      Add a patient by hand, or import records from CSV, to manage patients who aren't on OneCare yet.
                     </p>
-                    <Button onClick={() => navigate('/clinician/patients/import')}>
-                      <Upload className="h-4 w-4 mr-2" /> Import Patients
-                    </Button>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <AddManagedPatientDialog />
+                      <Button onClick={() => navigate('/clinician/patients/import')}>
+                        <Upload className="h-4 w-4 mr-2" /> Import Patients
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
