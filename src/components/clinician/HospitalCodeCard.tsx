@@ -64,7 +64,10 @@ export const HospitalCodeCard = () => {
     toast.success('Hospital code copied');
   };
 
+  // Hospital-only surface: solo practices never see a hospital code.
   if (!currentPractice) return null;
+  if (!isLoading && (tenant?.tenant_type ?? 'practice') !== 'hospital' && !tenant?.slug) return null;
+
 
   return (
     <Card>
