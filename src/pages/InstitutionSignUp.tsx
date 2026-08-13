@@ -52,8 +52,13 @@ export default function InstitutionSignUp() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (slug) sessionStorage.setItem('onecare.institution_slug', slug);
+    // localStorage so intake survives email confirmation and a fresh tab.
+    if (slug) {
+      localStorage.setItem('onecare.institution_slug', slug);
+      sessionStorage.setItem('onecare.institution_slug', slug);
+    }
   }, [slug]);
+
 
   const primary = institution?.primary_color || undefined;
   const accent = institution?.accent_color || undefined;
