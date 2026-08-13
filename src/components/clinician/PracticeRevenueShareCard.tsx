@@ -20,7 +20,7 @@ export const PracticeRevenueShareCard = () => {
   const pct = Number(tenant?.revenue_share_pct ?? 0);
   if (!currentPractice || (!isLoading && pct <= 0)) return null;
 
-  const premiumMonthly = PRICE_INFO?.monthly?.price ?? 0;
+  const premiumMonthly = PRICE_INFO.premium_monthly.price;
   const connected = activeShares.length;
   const estimate = (premiumMonthly * pct * connected) / 100;
 
