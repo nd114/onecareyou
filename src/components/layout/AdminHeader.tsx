@@ -44,8 +44,8 @@ export function AdminHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container max-w-screen-2xl flex h-16 items-center gap-4">
-        <Link to="/admin" className="flex items-center gap-2 shrink-0">
+      <div className="container max-w-screen-2xl flex h-16 items-center gap-3 sm:gap-4 min-w-0">
+        <Link to="/admin" className="flex items-center gap-2 min-w-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
             <Heart className="h-5 w-5 text-primary-foreground" />
           </div>

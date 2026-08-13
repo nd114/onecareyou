@@ -97,7 +97,7 @@ export default function AdminConsole() {
         </div>
 
         <Tabs defaultValue="overview">
-          <TabsList className="mb-6 flex w-full overflow-x-auto sm:w-auto">
+          <TabsList className="mb-6 flex w-full max-w-full overflow-x-auto justify-start scrollbar-none sm:w-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="tenants">Tenants</TabsTrigger>
             <TabsTrigger value="access">Access</TabsTrigger>
