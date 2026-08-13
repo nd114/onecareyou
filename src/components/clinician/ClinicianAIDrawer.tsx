@@ -4,7 +4,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Send, Loader2, Trash2, ArrowRight, Stethoscope, User, ShieldCheck,
   Check, X, CheckCircle2, AlertCircle,
@@ -146,7 +145,7 @@ export function ClinicianAIDrawer({
           </p>
         </SheetHeader>
 
-        <ScrollArea className="flex-1" viewportRef={scrollRef as any}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-4">
             {messages.length === 0 && (
               <div className="space-y-3">
@@ -216,7 +215,7 @@ export function ClinicianAIDrawer({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="border-t p-3">
           <div className="flex items-end gap-2">
