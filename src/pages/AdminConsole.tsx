@@ -131,8 +131,9 @@ export default function AdminConsole() {
                     {tenants.length === 0 ? 'No tenants yet.' : 'No tenants match that search.'}
                   </p>
                 ) : (
+                  <>
                   <div className="space-y-2">
-                    {filtered.map((t) => (
+                    {pageItems.map((t) => (
                       <div
                         key={t.id}
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-3"
@@ -173,6 +174,15 @@ export default function AdminConsole() {
                       </div>
                     ))}
                   </div>
+                  <AdminPagination
+                    page={page}
+                    pageCount={pageCount}
+                    total={total}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    label="tenants"
+                  />
+                  </>
                 )}
               </CardContent>
             </Card>
