@@ -23,6 +23,7 @@ import {
   Sparkles,
   ChevronRight,
   Monitor,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import { usePatientGuidance } from "@/hooks/usePatientGuidance";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
 import { toast } from "sonner";
@@ -54,6 +56,7 @@ export function Header() {
   const { user, profile, signOut, loading } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const { isClinician, clinicianProfile } = useClinicianProfile();
+  const { isAdmin } = useAdminRole();
   const { guidance } = usePatientGuidance();
   const {
     unreadNotifications: clinicianNotifications,
@@ -362,7 +365,16 @@ export function Header() {
                       </DropdownMenuItem>
                     </>
                   )}
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        Platform Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out

@@ -42,6 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
 import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ export function ClinicianHeader() {
   const { user, signOut } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { clinicianProfile } = useClinicianProfile();
+  const { isAdmin } = useAdminRole();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
   const { myInvitations, acceptInvitation, declineInvitation } = usePractice();
   const pendingInviteCount = myInvitations?.length || 0;
@@ -344,7 +346,16 @@ export function ClinicianHeader() {
                     Why OneCare?
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                      <ShieldCheck className="h-4 w-4" />
+                      Platform Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   onClick={handleSignOut}
                   className="flex items-center gap-2 cursor-pointer text-destructive"
