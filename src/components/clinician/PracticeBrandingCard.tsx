@@ -22,38 +22,21 @@ export function PracticeBrandingCard() {
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !user) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Logo must be less than 2MB');
-      return;
-    }
 
     setIsUploading(true);
     try {
-      const ext = file.name.split('.').pop();
-      const path = `${currentPractice.id}/logo.${ext}`;
-      const { error } = await supabase.storage
-        .from('clinician-avatars')
-        .upload(path, file, { upsert: true });
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('clinician-avatars')
-        .getPublicUrl(path);
-      setLogoUrl(`${publicUrl}?t=${Date.now()}`);
+      const url = await uploadTenantLogo(currentPractice.id, file);
+      setLogoUrl(url);
       toast.success('Logo uploaded');
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to upload logo');
+      toast.error(err instanceof Error ? err.message : 'Failed to upload logo');
     } finally {
       setIsUploading(false);
     }
   };
+
 
   const handleSave = async () => {
     setIsSaving(true);
