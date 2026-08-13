@@ -4,13 +4,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Loader2, Search } from 'lucide-react';
+import { Building2, Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useMyInstitutionShares,
   type InstitutionInfo,
+  type PracticeShare,
 } from '@/hooks/usePracticeShares';
+
+const SHARE_CATEGORIES = [
+  { key: 'vitals', label: 'Vitals & readings' },
+  { key: 'medications', label: 'Medications' },
+  { key: 'documents', label: 'Documents & results' },
+  { key: 'conditions', label: 'Health conditions' },
+  { key: 'allergies', label: 'Allergies' },
+] as const;
+
+const ALL_ON = SHARE_CATEGORIES.reduce<Record<string, boolean>>(
+  (acc, c) => ({ ...acc, [c.key]: true }),
+  {},
+);
+
+const describePermissions = (share: PracticeShare) => {
+  if (share.share_all) return 'Sharing everything';
+  const on = SHARE_CATEGORIES.filter((c) => share.permissions?.[c.key]);
+  if (on.length === 0) return 'Nothing shared';
+  return `Sharing ${on.map((c) => c.label.toLowerCase()).join(', ')}`;
+};
 
 export const HospitalShareCard = () => {
   const {
@@ -28,6 +50,9 @@ export const HospitalShareCard = () => {
   const [found, setFound] = useState<InstitutionInfo | null>(null);
   const [looking, setLooking] = useState(false);
   const [shareAll, setShareAll] = useState(true);
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPermissions, setEditPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
 
   const handleLookup = async () => {
     if (!code.trim()) return;
@@ -49,9 +74,43 @@ export const HospitalShareCard = () => {
 
   const handleConnect = async () => {
     if (!found) return;
-    await connect({ practiceId: found.id, shareAll });
+    if (!shareAll && !Object.values(permissions).some(Boolean)) {
+      toast.error('Choose at least one thing to share');
+      return;
+    }
+    await connect({
+      practiceId: found.id,
+      shareAll,
+      permissions: shareAll ? { ...ALL_ON } : permissions,
+    });
     setFound(null);
     setCode('');
+    setShareAll(true);
+    setPermissions({ ...ALL_ON });
+  };
+
+  const startEditing = (share: PracticeShare) => {
+    setEditingId(share.id);
+    setEditPermissions(
+      SHARE_CATEGORIES.reduce<Record<string, boolean>>(
+        (acc, c) => ({ ...acc, [c.key]: share.share_all || !!share.permissions?.[c.key] }),
+        {},
+      ),
+    );
+  };
+
+  const saveEditing = async (share: PracticeShare) => {
+    if (!Object.values(editPermissions).some(Boolean)) {
+      toast.error('Choose at least one thing to share, or disconnect instead');
+      return;
+    }
+    const allOn = SHARE_CATEGORIES.every((c) => editPermissions[c.key]);
+    await connect({
+      practiceId: share.practice_id,
+      shareAll: allOn,
+      permissions: editPermissions,
+    });
+    setEditingId(null);
   };
 
   return (
