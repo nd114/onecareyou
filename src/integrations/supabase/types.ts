@@ -3320,6 +3320,17 @@ export type Database = {
         Args: { _practice_id: string }
         Returns: number
       }
+      get_practice_tenant_info: {
+        Args: { _practice_id: string }
+        Returns: {
+          id: string
+          revenue_share_pct: number
+          slug: string
+          storage_limit_gb: number
+          subscription_tier: string
+          tenant_type: string
+        }[]
+      }
       get_user_storage_bytes: { Args: { _user_id: string }; Returns: number }
       has_practice_capability: {
         Args: { _capability: string; _user_id: string }
@@ -3355,6 +3366,10 @@ export type Database = {
       practice_has_patient_access: {
         Args: { patient_uuid: string }
         Returns: boolean
+      }
+      set_institution_slug: {
+        Args: { _practice_id: string; _slug: string }
+        Returns: string
       }
     }
     Enums: {
