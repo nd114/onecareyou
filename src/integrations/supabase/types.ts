@@ -2167,6 +2167,36 @@ export type Database = {
           },
         ]
       }
+      platform_admin_actions: {
+        Row: {
+          action: string
+          actor_user_id: string
+          created_at: string
+          details: Json
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       practice_invitations: {
         Row: {
           accepted_at: string | null
@@ -3099,6 +3129,56 @@ export type Database = {
           },
         ]
       }
+      tenant_owner_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          practice_id: string
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          practice_id: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          practice_id?: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_owner_invitations_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3241,6 +3321,71 @@ export type Database = {
       }
     }
     Functions: {
+      accept_tenant_owner_invitation: {
+        Args: { _invitation_id: string }
+        Returns: string
+      }
+      admin_cancel_tenant_invitation: {
+        Args: { _invitation_id: string }
+        Returns: undefined
+      }
+      admin_create_tenant: {
+        Args: {
+          _city?: string
+          _country?: string
+          _member_limit?: number
+          _name: string
+          _patient_limit?: number
+          _revenue_share_pct?: number
+          _slug?: string
+          _storage_limit_gb?: number
+          _subscription_tier?: string
+          _tenant_type?: string
+        }
+        Returns: string
+      }
+      admin_grant_platform_admin: { Args: { _email: string }; Returns: string }
+      admin_invite_tenant_owner: {
+        Args: { _email: string; _practice_id: string }
+        Returns: string
+      }
+      admin_list_platform_admins: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          user_id: string
+        }[]
+      }
+      admin_list_tenant_invitations: {
+        Args: never
+        Returns: {
+          accepted_at: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          practice_id: string
+          practice_name: string
+          status: string
+        }[]
+      }
+      admin_recent_actions: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          actor_email: string
+          created_at: string
+          details: Json
+          id: string
+          target_id: string
+          target_type: string
+        }[]
+      }
+      admin_revoke_platform_admin: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       admin_tenant_overview: {
         Args: never
         Returns: {
@@ -3258,6 +3403,22 @@ export type Database = {
           subscription_tier: string
           tenant_type: string
         }[]
+      }
+      admin_update_tenant: {
+        Args: {
+          _city?: string
+          _country?: string
+          _is_active?: boolean
+          _member_limit?: number
+          _name?: string
+          _patient_limit?: number
+          _practice_id: string
+          _revenue_share_pct?: number
+          _storage_limit_gb?: number
+          _subscription_tier?: string
+          _tenant_type?: string
+        }
+        Returns: undefined
       }
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
       clinician_had_patient_access: {
@@ -3363,6 +3524,25 @@ export type Database = {
         Returns: boolean
       }
       is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
+      log_platform_admin_action: {
+        Args: {
+          _action: string
+          _details?: Json
+          _target_id: string
+          _target_type: string
+        }
+        Returns: undefined
+      }
+      my_tenant_owner_invitations: {
+        Args: never
+        Returns: {
+          expires_at: string
+          id: string
+          practice_id: string
+          practice_name: string
+          tenant_type: string
+        }[]
+      }
       practice_has_patient_access: {
         Args: { patient_uuid: string }
         Returns: boolean
