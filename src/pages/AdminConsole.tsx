@@ -93,13 +93,20 @@ export default function AdminConsole() {
           ))}
         </div>
 
-        <Tabs defaultValue="tenants">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="overview">
+          <TabsList className="mb-6 flex w-full overflow-x-auto sm:w-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="tenants">Tenants</TabsTrigger>
             <TabsTrigger value="access">Access</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
             <TabsTrigger value="tools">Tools</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview">
+            <AdminOverviewPanel />
+          </TabsContent>
+
 
           <TabsContent value="tenants">
             <Card>
