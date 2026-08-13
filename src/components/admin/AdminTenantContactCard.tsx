@@ -1,55 +1,24 @@
-import { useEffect, useState } from 'react';
-import { Loader2, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { MapPin } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AdminTenantDetail } from '@/hooks/useAdminTenantDetail';
-import { useAdminOps } from '@/hooks/useAdminOps';
 
 /**
- * Contact and address details for a tenant. We set these up front so the record
- * of truth exists from day one; the tenant's own settings read the same row.
+ * Read-only view of the tenant's contact and address details. The tenant enters
+ * these themselves during set-up and can update them later, so we only observe.
  */
 export function AdminTenantContactCard({ tenant }: { tenant: AdminTenantDetail }) {
-  const { setTenantContact, isSavingContact } = useAdminOps();
-  const [form, setForm] = useState({
-    address: '',
-    city: '',
-    state: '',
-    zip_code: '',
-    country: '',
-    phone: '',
-    email: '',
-    npi: '',
-  });
-
-  useEffect(() => {
-    setForm({
-      address: tenant.address ?? '',
-      city: tenant.city ?? '',
-      state: tenant.state ?? '',
-      zip_code: tenant.zip_code ?? '',
-      country: tenant.country ?? '',
-      phone: tenant.phone ?? '',
-      email: tenant.email ?? '',
-      npi: tenant.npi ?? '',
-    });
-  }, [tenant]);
-
-  const set = (key: keyof typeof form, value: string) =>
-    setForm((f) => ({ ...f, [key]: value }));
-
-  const fields: Array<[keyof typeof form, string, string?]> = [
-    ['address', 'Street address'],
-    ['city', 'City'],
-    ['state', 'State / region'],
-    ['zip_code', 'Postcode'],
-    ['country', 'Country'],
-    ['phone', 'Phone'],
-    ['email', 'Contact email', 'email'],
-    ['npi', 'NPI / licence number'],
+  const rows: Array<[string, string | null]> = [
+    ['Street address', tenant.address],
+    ['City', tenant.city],
+    ['State / region', tenant.state],
+    ['Postcode', tenant.zip_code],
+    ['Country', tenant.country],
+    ['Phone', tenant.phone],
+    ['Contact email', tenant.email],
+    ['NPI / licence number', tenant.npi],
   ];
+
+  const isEmpty = rows.every(([, value]) => !value);
 
   return (
     <Card>
@@ -59,32 +28,21 @@ export function AdminTenantContactCard({ tenant }: { tenant: AdminTenantDetail }
           Contact and address
         </CardTitle>
         <CardDescription>
-          Single record of truth. Blank fields leave the current value untouched, and the tenant
-          sees exactly what is saved here.
+          Provided by the tenant when they set up their practice, and editable by them at any time.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          {fields.map(([key, label, type]) => (
-            <div key={key} className="space-y-2">
-              <Label htmlFor={`tenant-${key}`}>{label}</Label>
-              <Input
-                id={`tenant-${key}`}
-                type={type ?? 'text'}
-                value={form[key]}
-                onChange={(e) => set(key, e.target.value)}
-              />
-            </div>
-          ))}
-        </div>
-        <Button
-          size="sm"
-          disabled={isSavingContact}
-          onClick={() => setTenantContact({ practiceId: tenant.id, ...form })}
-        >
-          {isSavingContact && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Save details
-        </Button>
+      <CardContent className="space-y-3 text-sm">
+        {isEmpty && (
+          <p className="text-sm text-muted-foreground">
+            The tenant hasn't submitted these details yet.
+          </p>
+        )}
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-3">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="font-medium text-right break-all">{value || '—'}</span>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
