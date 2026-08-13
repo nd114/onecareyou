@@ -184,6 +184,7 @@ export default function AdminImport() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
