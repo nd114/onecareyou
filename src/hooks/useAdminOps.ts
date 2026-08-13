@@ -287,6 +287,9 @@ export function useAdminOps() {
     isUpdating: updateTenant.isPending,
     setTenantSlug: setTenantSlug.mutateAsync,
     isSavingSlug: setTenantSlug.isPending,
+    setTenantContact: setTenantContact.mutateAsync,
+    isSavingContact: setTenantContact.isPending,
+
 
     inviteOwner: inviteOwner.mutateAsync,
     isInviting: inviteOwner.isPending,
