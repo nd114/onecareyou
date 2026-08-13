@@ -1,17 +1,15 @@
-import { AlertTriangle, HardDrive, Loader2, UserPlus } from 'lucide-react';
+import { AlertTriangle, HardDrive, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAdminTenants } from '@/hooks/useAdminTenants';
-import { useAdminSignups } from '@/hooks/useAdminInsights';
 import { formatBytes } from '@/lib/storage-constants';
+import { AdminSignupsPanel } from '@/components/admin/AdminSignupsPanel';
 
 const GB = 1024 ** 3;
 
 /** Console overview: tenants approaching their storage allowance, plus the newest accounts. */
 export function AdminOverviewPanel() {
   const { tenants, isLoading } = useAdminTenants();
-  const { signups, isLoading: isLoadingSignups } = useAdminSignups(12);
 
   const storageRows = tenants
     .map((t) => {
@@ -26,7 +24,7 @@ export function AdminOverviewPanel() {
   const nearing = storageRows.filter((r) => r.pct >= 75).length;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2 items-start">
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -70,46 +68,7 @@ export function AdminOverviewPanel() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <UserPlus className="h-4 w-4 text-primary" />
-            Recent sign-ups
-          </CardTitle>
-          <CardDescription>The newest accounts on the platform, newest first.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingSignups ? (
-            <div className="flex justify-center py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : signups.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">No accounts yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {signups.map((s) => (
-                <div
-                  key={s.user_id}
-                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{s.name || s.email || 'Account'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{s.email}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant={s.is_clinician ? 'default' : 'secondary'}>
-                      {s.is_clinician ? 'Clinician' : 'Patient'}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
-                      {new Date(s.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <AdminSignupsPanel />
     </div>
   );
 }

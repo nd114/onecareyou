@@ -98,6 +98,11 @@ import ClinicianTemplates from "./pages/ClinicianTemplates";
 import ClinicianAudit from "./pages/ClinicianAudit";
 import ClinicianReports from "./pages/ClinicianReports";
 import ClinicianCompliance from "./pages/ClinicianCompliance";
+import AdminTenantDetail from "./pages/AdminTenantDetail";
+import InstitutionSignUp from "./pages/InstitutionSignUp";
+import { institutionSlugFromHost } from "@/hooks/useInstitutionBranding";
+
+
 
 
 const App = () => (
@@ -112,7 +117,12 @@ const App = () => (
           <ScrollToTop />
           <StandaloneLaunchRedirect />
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route
+              path="/"
+              element={institutionSlugFromHost() ? <InstitutionSignUp /> : <Landing />}
+            />
+            <Route path="/i/:slug" element={<InstitutionSignUp />} />
+
             <Route path="/beta" element={<BetaLanding />} />
             <Route path="/beta/book" element={<BetaBooking />} />
             <Route path="/beta/nda" element={<BetaNDA />} />
@@ -294,6 +304,12 @@ const App = () => (
                 <AdminConsole />
               </AdminRoute>
             } />
+            <Route path="/admin/tenants/:id" element={
+              <AdminRoute>
+                <AdminTenantDetail />
+              </AdminRoute>
+            } />
+
             <Route path="/admin/import" element={
               <ProtectedRoute>
                 <AdminImport />

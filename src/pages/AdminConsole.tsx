@@ -153,7 +153,9 @@ export default function AdminConsole() {
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-sm truncate">{t.name}</p>
+                            <Link to={`/admin/tenants/${t.id}`} className="font-medium text-sm truncate hover:underline">
+                              {t.name}
+                            </Link>
                             <Badge variant="secondary" className="capitalize">
                               {t.tenant_type ?? 'practice'}
                             </Badge>

@@ -3408,6 +3408,61 @@ export type Database = {
         Args: { _user_id: string }
         Returns: undefined
       }
+      admin_set_tenant_branding: {
+        Args: {
+          _accent_color?: string
+          _logo_url?: string
+          _practice_id: string
+          _primary_color?: string
+        }
+        Returns: undefined
+      }
+      admin_tenant_detail: {
+        Args: { _practice_id: string }
+        Returns: {
+          active_share_count: number
+          address: string
+          brand_accent_color: string
+          brand_logo_url: string
+          city: string
+          country: string
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          logo_url: string
+          member_count: number
+          member_limit: number
+          name: string
+          npi: string
+          patient_limit: number
+          phone: string
+          primary_color: string
+          revenue_share_pct: number
+          slug: string
+          state: string
+          storage_bytes: number
+          storage_limit_gb: number
+          subscription_ends_at: string
+          subscription_status: string
+          subscription_tier: string
+          tenant_type: string
+          updated_at: string
+          zip_code: string
+        }[]
+      }
+      admin_tenant_members: {
+        Args: { _practice_id: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          email: string
+          name: string
+          role: Database["public"]["Enums"]["practice_role"]
+          status: string
+          user_id: string
+        }[]
+      }
       admin_tenant_overview: {
         Args: never
         Returns: {
@@ -3568,6 +3623,20 @@ export type Database = {
       practice_has_patient_access: {
         Args: { patient_uuid: string }
         Returns: boolean
+      }
+      public_institution_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          accent_color: string
+          city: string
+          country: string
+          id: string
+          logo_url: string
+          name: string
+          primary_color: string
+          slug: string
+          tenant_type: string
+        }[]
       }
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }

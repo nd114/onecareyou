@@ -4,6 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 import { useAdminOps } from '@/hooks/useAdminOps';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
@@ -22,8 +30,17 @@ export function AdminAccessPanel() {
     cancelInvitation,
   } = useAdminOps();
   const [email, setEmail] = useState('');
+  const [inviteSearch, setInviteSearch] = useState('');
+  const [inviteStatus, setInviteStatus] = useState('all');
+  const filteredInvitations = invitations.filter((inv) => {
+    if (inviteStatus !== 'all' && inv.status !== inviteStatus) return false;
+    const q = inviteSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [inv.email, inv.practice_name].some((v) => v?.toLowerCase().includes(q));
+  });
   const adminPage = usePagination(admins, 10);
-  const invitePage = usePagination(invitations, 10);
+  const invitePage = usePagination(filteredInvitations, 10);
+
 
   const handleGrant = async () => {
     await grantAdmin(email.trim());
@@ -107,20 +124,55 @@ export function AdminAccessPanel() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Tenant owner invitations</CardTitle>
-          <CardDescription>
-            People invited to run a hospital or practice on OneCare.
-          </CardDescription>
+        <CardHeader className="gap-4">
+          <div>
+            <CardTitle className="text-base">Tenant owner invitations</CardTitle>
+            <CardDescription>
+              People invited to run a hospital or practice on OneCare.
+            </CardDescription>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={inviteSearch}
+              onChange={(e) => {
+                setInviteSearch(e.target.value);
+                invitePage.setPage(1);
+              }}
+              placeholder="Search by email or tenant"
+              aria-label="Search invitations"
+            />
+            <Select
+              value={inviteStatus}
+              onValueChange={(v) => {
+                setInviteStatus(v);
+                invitePage.setPage(1);
+              }}
+            >
+              <SelectTrigger className="sm:w-40" aria-label="Filter by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoadingInvitations ? (
             <div className="flex justify-center py-4">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : invitations.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">No invitations yet.</p>
+          ) : filteredInvitations.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">
+              {invitations.length === 0
+                ? 'No invitations yet.'
+                : 'No invitations match those filters.'}
+            </p>
           ) : (
+
             <div className="space-y-2">
               {invitePage.pageItems.map((inv) => (
                 <div
