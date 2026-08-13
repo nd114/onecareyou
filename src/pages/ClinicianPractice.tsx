@@ -13,6 +13,8 @@ import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection'
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
+import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
+import { PracticeStorageCard } from '@/components/clinician/PracticeStorageCard';
 import { Loader2 } from 'lucide-react';
 
 const ClinicianPractice = () => {
