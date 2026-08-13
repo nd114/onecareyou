@@ -209,6 +209,12 @@ export default function AdminConsole() {
             <AdminActivityPanel />
           </TabsContent>
 
+          <TabsContent value="audit">
+            <AdminAuditSearchPanel />
+          </TabsContent>
+
+
+
           <TabsContent value="tools">
             <div className="grid gap-4 sm:grid-cols-3">
               {TOOLS.map(({ to, title, description, icon: Icon }) => (
