@@ -33,6 +33,12 @@ export function CreateTenantDialog() {
     slug: '',
     city: '',
     country: '',
+    address: '',
+    state: '',
+    zip_code: '',
+    phone: '',
+    email: '',
+    npi: '',
     subscription_tier: 'enterprise',
     storage_limit_gb: '250',
     revenue_share_pct: '0',
@@ -51,6 +57,12 @@ export function CreateTenantDialog() {
       slug: form.slug.trim() || undefined,
       city: form.city.trim() || undefined,
       country: form.country.trim() || undefined,
+      address: form.address.trim() || undefined,
+      state: form.state.trim() || undefined,
+      zip_code: form.zip_code.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      email: form.email.trim() || undefined,
+      npi: form.npi.trim() || undefined,
       subscription_tier: form.subscription_tier,
       storage_limit_gb: Number(form.storage_limit_gb) || 25,
       revenue_share_pct: Number(form.revenue_share_pct) || 0,
@@ -63,8 +75,21 @@ export function CreateTenantDialog() {
     }
 
     setOpen(false);
-    setForm((f) => ({ ...f, name: '', slug: '', city: '', owner_email: '' }));
+    setForm((f) => ({
+      ...f,
+      name: '',
+      slug: '',
+      city: '',
+      address: '',
+      state: '',
+      zip_code: '',
+      phone: '',
+      email: '',
+      npi: '',
+      owner_email: '',
+    }));
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
