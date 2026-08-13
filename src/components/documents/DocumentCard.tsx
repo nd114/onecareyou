@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake } from 'lucide-react';
+import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,8 @@ interface DocumentCardProps {
 
 export function DocumentCard({ document: doc, isPremium = false }: DocumentCardProps) {
   const { deleteDocument, getDownloadUrl, triggerSummarize } = useHealthDocuments();
+  // Care records are legal artefacts: preserved, never deletable by either party.
+  const isCareRecord = doc.source_context === CARE_RECORD_SOURCE || doc.category === 'care_record';
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
   const { allShareCounts } = useDocumentShares();
   const [downloading, setDownloading] = useState(false);
@@ -77,6 +80,12 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                     <Badge variant="secondary" className={`text-xs ${categoryInfo.color}`}>
                       {categoryInfo.label}
                     </Badge>
+                    {isCareRecord && (
+                      <Badge variant="outline" className="text-[10px] h-5 gap-1">
+                        <Lock className="h-2.5 w-2.5" />
+                        Permanent record
+                      </Badge>
+                    )}
                     {doc.source_context === 'vitals_upload' && (
                       <Badge variant="outline" className="text-[10px] h-5 gap-1">
                         <Upload className="h-2.5 w-2.5" />
@@ -107,6 +116,17 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDownload} disabled={downloading}>
                     <Download className="h-4 w-4" />
                   </Button>
+                  {isCareRecord ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground"
+                      disabled
+                      title="Care records are preserved permanently and can't be deleted"
+                    >
+                      <Lock className="h-4 w-4" />
+                    </Button>
+                  ) : (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
@@ -128,6 +148,7 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  )}
                 </div>
               </div>
 

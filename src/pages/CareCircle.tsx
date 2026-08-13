@@ -9,6 +9,7 @@ import {
   Clock,
   Mail,
   MessageCircle,
+  FolderDown,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
+import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -57,6 +59,7 @@ const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
   const { data: shareEvents = [] } = useShareEvents();
+  const { generate: generateCareRecord } = useCareRecordSnapshot();
   const activeShares = shares.filter((s) => s.is_active);
   const pastShares = shares.filter((s) => !s.is_active);
 
@@ -92,7 +95,21 @@ const CareCircle = () => {
     });
   };
 
-  const handleRevokeAccess = (id: string) => {
+  const handleRevokeAccess = async (id: string) => {
+    const share = shares.find((s) => s.id === id);
+    // Close the relationship with a complete, immutable record before access ends.
+    if (share?.clinician_user_id) {
+      try {
+        await generateCareRecord.mutateAsync({
+          clinicianUserId: share.clinician_user_id,
+          clinicianLabel: share.display_name,
+          reason: 'connection_ended',
+          silent: true,
+        });
+      } catch {
+        /* snapshotting must never block ending access */
+      }
+    }
     revokeShare.mutate(id);
   };
 
@@ -341,6 +358,22 @@ const CareCircle = () => {
                             <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
                             <span className="hidden sm:inline">WhatsApp</span>
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
+                            disabled={generateCareRecord.isPending || !share.clinician_user_id}
+                            onClick={() =>
+                              generateCareRecord.mutate({
+                                clinicianUserId: share.clinician_user_id,
+                                clinicianLabel: share.display_name,
+                              })
+                            }
+                            title="Save messages and guidance from this provider to your Health Vault"
+                          >
+                            <FolderDown className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Save record</span>
+                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
@@ -403,14 +436,31 @@ const CareCircle = () => {
                               {share.revoke_reason ? ` · ${share.revoke_reason}` : ''}
                             </p>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs self-start sm:self-auto"
-                            onClick={() => reshare.mutate({ shareId: share.id })}
-                          >
-                            Resume sharing
-                          </Button>
+                          <div className="flex items-center gap-2 self-start sm:self-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs"
+                              disabled={generateCareRecord.isPending || !share.clinician_user_id}
+                              onClick={() =>
+                                generateCareRecord.mutate({
+                                  clinicianUserId: share.clinician_user_id,
+                                  clinicianLabel: share.display_name,
+                                })
+                              }
+                            >
+                              <FolderDown className="h-3 w-3 mr-1" />
+                              Save record
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs"
+                              onClick={() => reshare.mutate({ shareId: share.id })}
+                            >
+                              Resume sharing
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
