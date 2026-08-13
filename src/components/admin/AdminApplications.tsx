@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 import {
   Select,
   SelectContent,
@@ -172,7 +173,7 @@ export function AdminApplications() {
                 </TableCell>
               </TableRow>
             )}
-            {filtered.map((a) => (
+            {pageItems.map((a) => (
               <TableRow key={a.id}>
                 <TableCell>
                   <div className="font-medium">{a.full_name}</div>
@@ -211,6 +212,16 @@ export function AdminApplications() {
             ))}
           </TableBody>
         </Table>
+        <div className="px-4 pb-4">
+          <AdminPagination
+            page={page}
+            pageCount={pageCount}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            label="applications"
+          />
+        </div>
       </div>
 
       <Sheet open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
