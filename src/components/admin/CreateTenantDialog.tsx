@@ -184,6 +184,68 @@ export function CreateTenantDialog() {
             </div>
           </div>
 
+          <div className="rounded-lg border p-3 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              Contact and address — this is the record of truth the tenant sees in their own
+              settings.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="tenant-address">Street address</Label>
+              <Input
+                id="tenant-address"
+                value={form.address}
+                onChange={(e) => set('address', e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="tenant-state">State / region</Label>
+                <Input
+                  id="tenant-state"
+                  value={form.state}
+                  onChange={(e) => set('state', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tenant-zip">Postcode</Label>
+                <Input
+                  id="tenant-zip"
+                  value={form.zip_code}
+                  onChange={(e) => set('zip_code', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="tenant-phone">Phone</Label>
+                <Input
+                  id="tenant-phone"
+                  value={form.phone}
+                  onChange={(e) => set('phone', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tenant-email">Contact email</Label>
+                <Input
+                  id="tenant-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set('email', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tenant-npi">NPI / licence number</Label>
+              <Input
+                id="tenant-npi"
+                value={form.npi}
+                onChange={(e) => set('npi', e.target.value)}
+              />
+            </div>
+          </div>
+
+
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="tenant-storage">Storage (GB)</Label>
