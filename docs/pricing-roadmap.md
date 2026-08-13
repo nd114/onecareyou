@@ -318,3 +318,46 @@ The existing pricing structure has several issues:
 - Family tier has highest ARPU potential
 - Free tier serves as funnel, not destination
 - Enterprise displayed as "From $399/month" to signal custom pricing availability
+
+---
+
+## Storage as a priced dimension (Aug 2026)
+
+Medical records are storage-heavy — PDFs, images, dictation transcripts, chat archives, snapshots.
+Storage is metered per account and pooled per tenant (`storage_ledger`), and priced as **bundled
+allowance + add-on packs**, never as a surprise per-GB line item.
+
+### Included allowances
+
+| Plan | Included storage |
+| --- | --- |
+| Patient Free | 500 MB |
+| Patient Premium | 10 GB |
+| Clinician Trial | 2 GB |
+| Clinician Solo | 25 GB |
+| Clinician Pro | 100 GB |
+| Enterprise / Hospital | 1 TB pooled across the tenant |
+
+### Add-on packs (monthly)
+
+| Pack | Price |
+| --- | --- |
+| 50 GB | $9 |
+| 250 GB | $39 |
+| 1 TB | $129 |
+
+Self-serve pack purchase is coming soon; packs are added manually today.
+
+### Cost-control policy
+
+- Audio is transcribed and the recording discarded by default — transcripts cost a fraction of audio.
+- Documents keep one canonical copy; shares are signed URLs, not duplicates.
+- Snapshots are HTML, not re-rendered PDFs.
+
+### Durability we sell on
+
+Multi-zone replication, point-in-time recovery, weekly independent export to separate storage, and
+documented restore drills. This is a trust feature for clinicians as much as a cost line — it is
+surfaced in Practice → Storage & durability and in patient Settings.
+
+Source of truth: `src/lib/storage-constants.ts`.

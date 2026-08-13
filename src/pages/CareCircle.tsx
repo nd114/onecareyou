@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
 import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
+import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -471,6 +472,18 @@ const CareCircle = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Hospital / institution sharing */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mt-8"
+        >
+          <HospitalShareCard />
+        </motion.div>
+
+
 
         {/* Sharing history — permanent, append-only record */}
         {shareEvents.length > 0 && (

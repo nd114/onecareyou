@@ -13,6 +13,8 @@ import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection'
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
+import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
+import { PracticeStorageCard } from '@/components/clinician/PracticeStorageCard';
 import { Loader2 } from 'lucide-react';
 
 const ClinicianPractice = () => {
@@ -84,8 +86,19 @@ const ClinicianPractice = () => {
             </div>
           )}
 
+          {/* Institution-shared patients (hospital tenancy) */}
+          <div id="institution-patients" className="mt-6 scroll-mt-20">
+            <HospitalPatientsCard />
+          </div>
+
+          {/* Storage & durability */}
+          <div id="storage" className="mt-6 scroll-mt-20">
+            <PracticeStorageCard />
+          </div>
+
           {/* Subscription */}
           <div id="subscription" className="mt-6 scroll-mt-20">
+
             <SubscriptionManagementCard patientCount={patients.length} />
           </div>
 

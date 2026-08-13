@@ -2408,6 +2408,59 @@ export type Database = {
           },
         ]
       }
+      practice_shares: {
+        Row: {
+          connected_at: string
+          created_at: string
+          id: string
+          is_active: boolean
+          permissions: Json
+          practice_id: string
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          share_all: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          permissions?: Json
+          practice_id: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          share_all?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          permissions?: Json
+          practice_id?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          share_all?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_shares_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_tasks: {
         Row: {
           assignee_user_id: string
@@ -2495,13 +2548,17 @@ export type Database = {
           patient_limit: number | null
           phone: string | null
           primary_color: string | null
+          revenue_share_pct: number
+          slug: string | null
           state: string | null
+          storage_limit_gb: number
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_ends_at: string | null
           subscription_status: string | null
           subscription_tier: string | null
           tax_id: string | null
+          tenant_type: string
           updated_at: string
           zip_code: string | null
         }
@@ -2523,13 +2580,17 @@ export type Database = {
           patient_limit?: number | null
           phone?: string | null
           primary_color?: string | null
+          revenue_share_pct?: number
+          slug?: string | null
           state?: string | null
+          storage_limit_gb?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_ends_at?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
           tax_id?: string | null
+          tenant_type?: string
           updated_at?: string
           zip_code?: string | null
         }
@@ -2551,13 +2612,17 @@ export type Database = {
           patient_limit?: number | null
           phone?: string | null
           primary_color?: string | null
+          revenue_share_pct?: number
+          slug?: string | null
           state?: string | null
+          storage_limit_gb?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_ends_at?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
           tax_id?: string | null
+          tenant_type?: string
           updated_at?: string
           zip_code?: string | null
         }
@@ -2993,6 +3058,47 @@ export type Database = {
           },
         ]
       }
+      storage_ledger: {
+        Row: {
+          bytes: number
+          created_at: string
+          id: string
+          practice_id: string | null
+          resource_id: string
+          resource_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          bytes?: number
+          created_at?: string
+          id?: string
+          practice_id?: string | null
+          resource_id: string
+          resource_type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          bytes?: number
+          created_at?: string
+          id?: string
+          practice_id?: string | null
+          resource_id?: string
+          resource_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_ledger_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3148,6 +3254,17 @@ export type Database = {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
+      find_institution_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          city: string
+          country: string
+          id: string
+          logo_url: string
+          name: string
+          tenant_type: string
+        }[]
+      }
       get_clinician_basic_info: {
         Args: { clinician_ids: string[] }
         Returns: {
@@ -3160,6 +3277,18 @@ export type Database = {
         }[]
       }
       get_current_user_email: { Args: never; Returns: string }
+      get_institution_basic_info: {
+        Args: { _practice_ids: string[] }
+        Returns: {
+          city: string
+          country: string
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+          tenant_type: string
+        }[]
+      }
       get_patient_identity: {
         Args: { patient_ids: string[] }
         Returns: {
@@ -3169,6 +3298,11 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_practice_storage_bytes: {
+        Args: { _practice_id: string }
+        Returns: number
+      }
+      get_user_storage_bytes: { Args: { _user_id: string }; Returns: number }
       has_practice_capability: {
         Args: { _capability: string; _user_id: string }
         Returns: boolean
@@ -3185,6 +3319,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      institution_has_patient_access: {
+        Args: { patient_user_id: string }
         Returns: boolean
       }
       is_assigned_to_patient: {
