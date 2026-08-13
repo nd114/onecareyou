@@ -167,6 +167,12 @@ const App = () => (
                 <ClinicianPatientImport />
               </ClinicianRoute>
             } />
+            <Route path="/clinician/records/:recordId" element={
+              <ClinicianRoute>
+                <ClinicianManagedRecord />
+              </ClinicianRoute>
+            } />
+
             <Route path="/clinician/settings" element={
               <ClinicianRoute>
                 <ClinicianSettings />
