@@ -26,10 +26,13 @@ const TIERS = ['trial', 'solo', 'pro', 'enterprise'];
 
 /** Per-tenant admin controls: edit plan and limits, or invite the tenant owner. */
 export function AdminTenantRowActions({ tenant }: { tenant: AdminTenantRow }) {
-  const { updateTenant, isUpdating, inviteOwner, isInviting } = useAdminOps();
+  const { updateTenant, isUpdating, inviteOwner, isInviting, setTenantSlug, isSavingSlug } =
+    useAdminOps();
   const [editOpen, setEditOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [slug, setSlug] = useState(tenant.slug ?? '');
+
   const [form, setForm] = useState({
     name: tenant.name,
     tenant_type: (tenant.tenant_type ?? 'practice') as 'practice' | 'hospital',
@@ -148,6 +151,36 @@ export function AdminTenantRowActions({ tenant }: { tenant: AdminTenantRow }) {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor={`slug-${tenant.id}`}>Hospital code</Label>
+              <div className="flex gap-2">
+                <Input
+                  id={`slug-${tenant.id}`}
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase())}
+                  placeholder="e.g. st-marys"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => setTenantSlug({ practiceId: tenant.id, slug: slug.trim() })}
+                  disabled={isSavingSlug || slug.trim().length < 3 || slug.trim() === (tenant.slug ?? '')}
+                >
+                  {isSavingSlug && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Save code
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Patients connect with this code.{' '}
+                {slug.trim().length >= 3 && (
+                  <>
+                    Reserved address:{' '}
+                    <span className="font-mono">{slug.trim()}.onecare.you</span> (live once the
+                    wildcard DNS record is in place).
+                  </>
+                )}
+              </p>
+            </div>
+
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
                 <p className="text-sm font-medium">Active</p>
@@ -160,6 +193,7 @@ export function AdminTenantRowActions({ tenant }: { tenant: AdminTenantRow }) {
                 onCheckedChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
               />
             </div>
+
           </div>
 
           <DialogFooter>

@@ -145,6 +145,23 @@ export function useAdminOps() {
     },
     onError: (e: Error) => toast.error(e.message || 'Could not update the tenant'),
   });
+  /** Set or change a tenant's hospital code; reuses the availability-checked setter. */
+  const setTenantSlug = useMutation({
+    mutationFn: async ({ practiceId, slug }: { practiceId: string; slug: string }) => {
+      const { data, error } = await supabase.rpc('set_institution_slug', {
+        _practice_id: practiceId,
+        _slug: slug,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      toast.success('Hospital code saved');
+      invalidateTenants();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Could not save the hospital code'),
+  });
+
 
   const inviteOwner = useMutation({
     mutationFn: async ({ practiceId, email }: { practiceId: string; email: string }) => {
@@ -223,6 +240,9 @@ export function useAdminOps() {
     isCreating: createTenant.isPending,
     updateTenant: updateTenant.mutateAsync,
     isUpdating: updateTenant.isPending,
+    setTenantSlug: setTenantSlug.mutateAsync,
+    isSavingSlug: setTenantSlug.isPending,
+
     inviteOwner: inviteOwner.mutateAsync,
     isInviting: inviteOwner.isPending,
     cancelInvitation: cancelInvitation.mutateAsync,

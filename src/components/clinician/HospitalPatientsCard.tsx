@@ -13,6 +13,8 @@ import {
 import { Hospital, Loader2 } from 'lucide-react';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeSharedPatients } from '@/hooks/usePracticeShares';
+import { usePracticeTenant } from '@/hooks/usePracticeTenant';
+
 
 export const HospitalPatientsCard = () => {
   const { currentPractice, currentMembership, usePracticeMembers } = usePractice();
@@ -20,6 +22,8 @@ export const HospitalPatientsCard = () => {
   const { shares, isLoading, assign, isAssigning } = usePracticeSharedPatients(
     currentPractice?.id,
   );
+  const { tenant } = usePracticeTenant(currentPractice?.id);
+
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<Record<string, string>>({});
 
@@ -37,7 +41,12 @@ export const HospitalPatientsCard = () => {
     );
   });
 
+  // Institution-shared patients only exist for hospital tenants or once shares arrive.
   if (!currentPractice) return null;
+  if (!isLoading && shares.length === 0 && (tenant?.tenant_type ?? 'practice') !== 'hospital') {
+    return null;
+  }
+
 
   return (
     <Card>
