@@ -9,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { formatBytes } from '@/lib/storage-constants';
 import { useAdminTenantDetail } from '@/hooks/useAdminTenantDetail';
 import { AdminTenantBrandingCard } from '@/components/admin/AdminTenantBrandingCard';
+import { AdminTenantContactCard } from '@/components/admin/AdminTenantContactCard';
+
 
 const GB = 1024 ** 3;
 
@@ -151,28 +153,9 @@ export default function AdminTenantDetail() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Contact and address</CardTitle>
-                  <CardDescription>As entered by the tenant.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  {[
-                    ['Email', tenant.email ?? '—'],
-                    ['Phone', tenant.phone ?? '—'],
-                    ['Address', tenant.address ?? '—'],
-                    ['State / region', tenant.state ?? '—'],
-                    ['Postcode', tenant.zip_code ?? '—'],
-                    ['NPI', tenant.npi ?? '—'],
-                  ].map(([label, value]) => (
-                    <div key={String(label)} className="flex justify-between gap-3">
-                      <span className="text-muted-foreground">{label}</span>
-                      <span className="font-medium text-right break-all">{String(value)}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+              <AdminTenantContactCard tenant={tenant} />
             </div>
+
 
             <AdminTenantBrandingCard
               tenant={tenant}
