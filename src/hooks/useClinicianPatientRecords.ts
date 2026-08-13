@@ -3,6 +3,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+export interface ManagedVital {
+  recorded_at: string;
+  type: string;
+  value: string;
+  unit?: string;
+  note?: string;
+}
+
+export interface ManagedVisit {
+  id: string;
+  visit_date: string;
+  reason: string;
+  findings?: string;
+  plan?: string;
+  recorded_at: string;
+}
+
 export interface ClinicianPatientRecord {
   id: string;
   clinician_user_id: string;
@@ -16,7 +33,8 @@ export interface ClinicianPatientRecord {
   health_conditions: string[];
   blood_type: string | null;
   medications: { name: string; dosage?: string; frequency?: string }[];
-  vitals_history: any[];
+  vitals_history: ManagedVital[];
+  visits: ManagedVisit[];
   notes: string | null;
   tags: string[];
   linked_user_id: string | null;
@@ -27,6 +45,7 @@ export interface ClinicianPatientRecord {
   created_at: string;
   updated_at: string;
 }
+
 
 export function useClinicianPatientRecords() {
   const { user } = useAuth();
@@ -55,8 +74,10 @@ export function useClinicianPatientRecords() {
         health_conditions: (record.health_conditions as any) || [],
         medications: (record.medications as any) || [],
         vitals_history: (record.vitals_history as any) || [],
+        visits: ((record as any).visits as any) || [],
         tags: (record.tags as any) || [],
-      })) as ClinicianPatientRecord[];
+      })) as unknown as ClinicianPatientRecord[];
+
     },
     enabled: !!user?.id,
   });
