@@ -16,6 +16,7 @@ import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { toast } from 'sonner';
+import { findDuplicateCandidates, dedupReasonLabel } from '@/lib/patient-dedup';
 
 interface ParsedRow {
   patient_name: string;
@@ -59,7 +60,7 @@ const DATA_MODELS = [
 
 const ClinicianPatientImport = () => {
   const navigate = useNavigate();
-  const { importRecords } = useClinicianPatientRecords();
+  const { importRecords, records: existingRecords } = useClinicianPatientRecords();
   const [step, setStep] = useState(1);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [dataModel, setDataModel] = useState('clinician_managed');
@@ -190,6 +191,48 @@ const ClinicianPatientImport = () => {
   const validRows = useMemo(() => parsedRows.filter(r => r.errors.length === 0), [parsedRows]);
   const errorRows = useMemo(() => parsedRows.filter(r => r.errors.length > 0), [parsedRows]);
 
+  /** Rows that look like a patient the clinician already has, or a repeat inside the file. */
+  const duplicateInfo = useMemo(() => {
+    const map = new Map<number, string>();
+    const seen: { id: string; patient_name: string; patient_email: string | null; patient_phone: string | null; date_of_birth: string | null }[] =
+      existingRecords.map(r => ({
+        id: r.id,
+        patient_name: r.patient_name,
+        patient_email: r.patient_email,
+        patient_phone: r.patient_phone,
+        date_of_birth: r.date_of_birth,
+      }));
+
+    parsedRows.forEach((row, index) => {
+      const matches = findDuplicateCandidates(
+        {
+          patient_name: row.patient_name,
+          patient_email: row.patient_email,
+          patient_phone: row.patient_phone,
+          date_of_birth: row.date_of_birth,
+        },
+        seen,
+      );
+      if (matches.length > 0) {
+        map.set(index, dedupReasonLabel(matches[0].reason));
+      }
+      seen.push({
+        id: `row-${index}`,
+        patient_name: row.patient_name,
+        patient_email: row.patient_email || null,
+        patient_phone: row.patient_phone || null,
+        date_of_birth: row.date_of_birth || null,
+      });
+    });
+
+    return map;
+  }, [parsedRows, existingRecords]);
+
+  const removeDuplicateRows = () => {
+    setParsedRows(prev => prev.filter((_, i) => !duplicateInfo.has(i)));
+    toast.success('Possible duplicates removed from this import');
+  };
+
   const handleImport = async () => {
     const records = validRows.map(row => ({
       patient_name: row.patient_name,
@@ -301,6 +344,14 @@ const ClinicianPatientImport = () => {
                   <span>{parsedRows.length} records parsed.</span>
                   <Badge variant="default">{validRows.length} valid</Badge>
                   {errorRows.length > 0 && <Badge variant="destructive">{errorRows.length} errors</Badge>}
+                  {duplicateInfo.size > 0 && (
+                    <>
+                      <Badge variant="secondary">{duplicateInfo.size} possible duplicate{duplicateInfo.size !== 1 ? 's' : ''}</Badge>
+                      <Button variant="outline" size="sm" className="h-7" onClick={removeDuplicateRows}>
+                        Remove duplicates
+                      </Button>
+                    </>
+                  )}
                   {errorRows.length > 0 && (
                     <Button
                       variant="outline"
@@ -375,6 +426,13 @@ const ClinicianPatientImport = () => {
                               <div className="flex items-center gap-1">
                                 <AlertCircle className="h-4 w-4 text-destructive" />
                                 <span className="text-xs text-destructive">{row.errors.join(', ')}</span>
+                              </div>
+                            ) : duplicateInfo.has(i) ? (
+                              <div className="flex items-center gap-1">
+                                <AlertCircle className="h-4 w-4 text-amber-500" />
+                                <span className="text-xs text-muted-foreground">
+                                  Possible duplicate · {duplicateInfo.get(i)}
+                                </span>
                               </div>
                             ) : (
                               <CheckCircle2 className="h-4 w-4 text-green-500" />
