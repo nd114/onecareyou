@@ -153,7 +153,17 @@ export function useAdminOps() {
         _email: email,
       });
       if (error) throw error;
-      return data as string;
+      const invitationId = data as string;
+
+      // Deliver the invitation email; the record already exists if this fails.
+      const { error: mailError } = await supabase.functions.invoke(
+        'notify-tenant-owner-invite',
+        { body: { invitation_id: invitationId } },
+      );
+      if (mailError) {
+        toast.warning('Invitation created, but the email could not be sent');
+      }
+      return invitationId;
     },
     onSuccess: () => {
       toast.success('Owner invitation sent');
