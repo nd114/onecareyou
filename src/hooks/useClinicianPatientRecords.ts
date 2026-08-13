@@ -74,8 +74,10 @@ export function useClinicianPatientRecords() {
         health_conditions: (record.health_conditions as any) || [],
         medications: (record.medications as any) || [],
         vitals_history: (record.vitals_history as any) || [],
+        visits: ((record as any).visits as any) || [],
         tags: (record.tags as any) || [],
-      })) as ClinicianPatientRecord[];
+      })) as unknown as ClinicianPatientRecord[];
+
     },
     enabled: !!user?.id,
   });
