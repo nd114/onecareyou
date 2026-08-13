@@ -61,6 +61,7 @@ import EHRComparison from "./pages/EHRComparison";
 import AdminImport from "./pages/AdminImport";
 import AdminChangelog from "./pages/AdminChangelog";
 import AdminCareers from "./pages/AdminCareers";
+import AdminConsole from "./pages/AdminConsole";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import ClinicianPricing from "./pages/ClinicianPricing";
 import EnterpriseInquiry from "./pages/EnterpriseInquiry";
@@ -285,6 +286,11 @@ const App = () => (
               <ProtectedRoute>
                 <EHRComparison />
               </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminConsole />
+              </AdminRoute>
             } />
             <Route path="/admin/import" element={
               <ProtectedRoute>

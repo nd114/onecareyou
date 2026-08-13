@@ -4,13 +4,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Loader2, Search } from 'lucide-react';
+import { Building2, Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useMyInstitutionShares,
   type InstitutionInfo,
+  type PracticeShare,
 } from '@/hooks/usePracticeShares';
+
+const SHARE_CATEGORIES = [
+  { key: 'vitals', label: 'Vitals & readings' },
+  { key: 'medications', label: 'Medications' },
+  { key: 'documents', label: 'Documents & results' },
+  { key: 'conditions', label: 'Health conditions' },
+  { key: 'allergies', label: 'Allergies' },
+] as const;
+
+const ALL_ON = SHARE_CATEGORIES.reduce<Record<string, boolean>>(
+  (acc, c) => ({ ...acc, [c.key]: true }),
+  {},
+);
+
+const describePermissions = (share: PracticeShare) => {
+  if (share.share_all) return 'Sharing everything';
+  const on = SHARE_CATEGORIES.filter((c) => share.permissions?.[c.key]);
+  if (on.length === 0) return 'Nothing shared';
+  return `Sharing ${on.map((c) => c.label.toLowerCase()).join(', ')}`;
+};
 
 export const HospitalShareCard = () => {
   const {
@@ -28,6 +50,9 @@ export const HospitalShareCard = () => {
   const [found, setFound] = useState<InstitutionInfo | null>(null);
   const [looking, setLooking] = useState(false);
   const [shareAll, setShareAll] = useState(true);
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPermissions, setEditPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
 
   const handleLookup = async () => {
     if (!code.trim()) return;
@@ -49,9 +74,43 @@ export const HospitalShareCard = () => {
 
   const handleConnect = async () => {
     if (!found) return;
-    await connect({ practiceId: found.id, shareAll });
+    if (!shareAll && !Object.values(permissions).some(Boolean)) {
+      toast.error('Choose at least one thing to share');
+      return;
+    }
+    await connect({
+      practiceId: found.id,
+      shareAll,
+      permissions: shareAll ? { ...ALL_ON } : permissions,
+    });
     setFound(null);
     setCode('');
+    setShareAll(true);
+    setPermissions({ ...ALL_ON });
+  };
+
+  const startEditing = (share: PracticeShare) => {
+    setEditingId(share.id);
+    setEditPermissions(
+      SHARE_CATEGORIES.reduce<Record<string, boolean>>(
+        (acc, c) => ({ ...acc, [c.key]: share.share_all || !!share.permissions?.[c.key] }),
+        {},
+      ),
+    );
+  };
+
+  const saveEditing = async (share: PracticeShare) => {
+    if (!Object.values(editPermissions).some(Boolean)) {
+      toast.error('Choose at least one thing to share, or disconnect instead');
+      return;
+    }
+    const allOn = SHARE_CATEGORIES.every((c) => editPermissions[c.key]);
+    await connect({
+      practiceId: share.practice_id,
+      shareAll: allOn,
+      permissions: editPermissions,
+    });
+    setEditingId(null);
   };
 
   return (
@@ -76,30 +135,73 @@ export const HospitalShareCard = () => {
             {activeShares.length > 0 && (
               <div className="space-y-2">
                 {activeShares.map((share) => (
-                  <div
-                    key={share.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border p-3"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">
-                        {share.institution?.name ?? 'Hospital'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {[share.institution?.city, share.institution?.country]
-                          .filter(Boolean)
-                          .join(', ') || 'Connected'}
-                        {' · '}
-                        {share.share_all ? 'Sharing everything' : 'Limited sharing'}
-                      </p>
+                  <div key={share.id} className="rounded-lg border p-3 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-sm">
+                          {share.institution?.name ?? 'Hospital'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {[share.institution?.city, share.institution?.country]
+                            .filter(Boolean)
+                            .join(', ') || 'Connected'}
+                          {' · '}
+                          {describePermissions(share)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            editingId === share.id ? setEditingId(null) : startEditing(share)
+                          }
+                        >
+                          <SlidersHorizontal className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">
+                            {editingId === share.id ? 'Close' : 'Adjust'}
+                          </span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isDisconnecting}
+                          onClick={() => disconnect({ shareId: share.id })}
+                        >
+                          Disconnect
+                        </Button>
+                      </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isDisconnecting}
-                      onClick={() => disconnect({ shareId: share.id })}
-                    >
-                      Disconnect
-                    </Button>
+
+                    {editingId === share.id && (
+                      <div className="space-y-3 rounded-lg bg-muted/40 p-3">
+                        <p className="text-sm font-medium">What this hospital can see</p>
+                        <div className="space-y-2">
+                          {SHARE_CATEGORIES.map((c) => (
+                            <label
+                              key={c.key}
+                              className="flex items-center gap-2 text-sm cursor-pointer"
+                            >
+                              <Checkbox
+                                checked={!!editPermissions[c.key]}
+                                onCheckedChange={(v) =>
+                                  setEditPermissions((prev) => ({ ...prev, [c.key]: v === true }))
+                                }
+                              />
+                              {c.label}
+                            </label>
+                          ))}
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => saveEditing(share)}
+                          disabled={isConnecting}
+                        >
+                          {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Save sharing settings
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -142,11 +244,29 @@ export const HospitalShareCard = () => {
                     <div>
                       <p className="text-sm font-medium">Share my full record</p>
                       <p className="text-xs text-muted-foreground">
-                        Turn off to share only vitals and medications.
+                        Turn off to choose exactly what they can see.
                       </p>
                     </div>
                     <Switch checked={shareAll} onCheckedChange={setShareAll} />
                   </div>
+                  {!shareAll && (
+                    <div className="space-y-2 rounded-lg border bg-background p-3">
+                      {SHARE_CATEGORIES.map((c) => (
+                        <label
+                          key={c.key}
+                          className="flex items-center gap-2 text-sm cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={!!permissions[c.key]}
+                            onCheckedChange={(v) =>
+                              setPermissions((prev) => ({ ...prev, [c.key]: v === true }))
+                            }
+                          />
+                          {c.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                   <Button className="w-full" onClick={handleConnect} disabled={isConnecting}>
                     {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Share with {found.name}

@@ -27,7 +27,9 @@ record informed their clinical decisions and both sides may need it legally.
 
 ### B. Institution share (`practice_shares`)
 Patient shares with a hospital as an institution, usually on admission or registration, using the
-hospital's code. The hospital assigns the treating clinician. Consent is to the institution; the
+hospital's code (set by the hospital's owner/admin in Practice → Hospital code). The patient either
+shares their full record or picks categories — vitals, medications, documents, conditions, allergies
+— and can adjust those categories on an existing connection at any time. The hospital assigns the treating clinician. Consent is to the institution; the
 clinician's access derives from their assignment (or a practice-wide viewing right for admins).
 The patient can disconnect from the institution at any time, independently of any private share.
 
