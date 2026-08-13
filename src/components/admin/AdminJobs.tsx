@@ -53,6 +53,7 @@ const fromLines = (value: string) =>
 
 export function AdminJobs() {
   const { data: jobs, isLoading } = useAllJobs();
+  const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(jobs ?? [], 10);
   const { createJob, updateJob, deleteJob } = useJobMutations();
 
   const [editing, setEditing] = useState<JobPosting | null>(null);
@@ -177,6 +178,14 @@ export function AdminJobs() {
             </div>
           </div>
         ))}
+        <AdminPagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          label="jobs"
+        />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
