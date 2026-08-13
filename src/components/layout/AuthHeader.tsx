@@ -1,16 +1,13 @@
 import { Link } from "react-router-dom";
-import { Heart, Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/contexts/ThemeContext";
+import { Heart } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 /**
  * Minimal header for auth + error pages.
- * Just OneCare logo (home link) + theme toggle. No nav, no menu.
+ * Just OneCare logo (home link) + light/dark/system theme switcher.
  */
 export function AuthHeader() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const toggleTheme = () =>
-    setTheme(resolvedTheme === "light" ? "dark" : "light");
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
