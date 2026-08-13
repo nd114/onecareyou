@@ -83,6 +83,7 @@ import ForClinicians from "./pages/ForClinicians";
 import { Navigate } from "react-router-dom";
 import { BugReportButton } from "./components/beta/BugReportButton";
 import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
+import { ClinicianAIChatMount } from "./components/clinician/ClinicianAIChatMount";
 import { FabStack } from "./components/beta/FabStack";
 import { MobileBottomNav } from "./components/layout/MobileBottomNav";
 import { StandaloneLaunchRedirect } from "@/components/auth/StandaloneLaunchRedirect";
@@ -354,6 +355,7 @@ const App = () => (
           <CookieConsentBanner />
           <FabStack>
             <PatientAIChatMount />
+            <ClinicianAIChatMount />
             <BugReportButton />
           </FabStack>
           <MobileBottomNav />
