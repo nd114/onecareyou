@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
 import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
+import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
