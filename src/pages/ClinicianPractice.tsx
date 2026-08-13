@@ -9,6 +9,7 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
+import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection';
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
@@ -76,10 +77,16 @@ const ClinicianPractice = () => {
             </div>
           </div>
 
+          {/* Ownership invitation from OneCare (if any) */}
+          <div className="mt-2">
+            <TenantOwnerInvitationCard />
+          </div>
+
           {/* Practice Invitations (if any) */}
           <div className="mt-2">
             <PracticeInvitationsCard />
           </div>
+
 
           {/* Team Management - Pro+ */}
           {hasFeatureAccess(tier, 'team_management') && (
