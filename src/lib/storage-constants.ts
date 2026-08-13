@@ -10,12 +10,13 @@ export const PATIENT_STORAGE_GB = {
 } as const;
 
 /** Clinician / practice plan allowances. Enterprise is a pooled tenant allowance. */
-export const CLINICIAN_STORAGE_GB = {
-  starter: 5,
-  pro: 50,
-  practice: 250,
+export const CLINICIAN_STORAGE_GB: Record<string, number> = {
+  trial: 2,
+  solo: 25,
+  pro: 100,
   enterprise: 1000,
-} as const;
+  expired: 2,
+};
 
 /** Extra storage packs, billed on top of the plan (bundled, not per-GB metered). */
 export const STORAGE_PACKS = [
