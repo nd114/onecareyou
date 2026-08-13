@@ -88,9 +88,19 @@ const ClinicianPractice = () => {
             </div>
           )}
 
+          {/* Hospital code (tenant slug) */}
+          <div id="hospital-code" className="mt-6 scroll-mt-20">
+            <HospitalCodeCard />
+          </div>
+
           {/* Institution-shared patients (hospital tenancy) */}
           <div id="institution-patients" className="mt-6 scroll-mt-20">
             <HospitalPatientsCard />
+          </div>
+
+          {/* Revenue share (institutional partners only) */}
+          <div id="revenue-share" className="mt-6 scroll-mt-20">
+            <PracticeRevenueShareCard />
           </div>
 
           {/* Storage & durability */}
