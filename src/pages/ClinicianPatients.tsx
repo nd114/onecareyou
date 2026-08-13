@@ -23,6 +23,7 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
 import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
+import { AddManagedPatientDialog } from '@/components/clinician/AddManagedPatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -353,17 +354,20 @@ const ClinicianPatients = () => {
                 <div>
                   <CardTitle className="text-base sm:text-lg">Clinician-Managed Records</CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
-                    {managedRecords.length} patient{managedRecords.length !== 1 ? 's' : ''} imported
+                    {managedRecords.length} patient{managedRecords.length !== 1 ? 's' : ''} on file
                   </CardDescription>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => navigate('/clinician/patients/import')}
-                  className="gap-1.5"
-                >
-                  <Upload className="h-4 w-4" />
-                  Import More
-                </Button>
+                <div className="flex items-center gap-2">
+                  <AddManagedPatientDialog />
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/clinician/patients/import')}
+                    className="gap-1.5"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Import More
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {managedRecords.length > 0 && (
@@ -392,11 +396,14 @@ const ClinicianPatients = () => {
                     <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="font-semibold mb-2">No managed records</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Import patient records from CSV to manage patients who aren't on OneCare yet.
+                      Add a patient by hand, or import records from CSV, to manage patients who aren't on OneCare yet.
                     </p>
-                    <Button onClick={() => navigate('/clinician/patients/import')}>
-                      <Upload className="h-4 w-4 mr-2" /> Import Patients
-                    </Button>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <AddManagedPatientDialog />
+                      <Button onClick={() => navigate('/clinician/patients/import')}>
+                        <Upload className="h-4 w-4 mr-2" /> Import Patients
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
