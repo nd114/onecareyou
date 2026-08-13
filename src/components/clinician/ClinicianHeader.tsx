@@ -54,6 +54,7 @@ export function ClinicianHeader() {
   const { user, signOut } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { clinicianProfile } = useClinicianProfile();
+  const { isAdmin } = useAdminRole();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
   const { myInvitations, acceptInvitation, declineInvitation } = usePractice();
   const pendingInviteCount = myInvitations?.length || 0;

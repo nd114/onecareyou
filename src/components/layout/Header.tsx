@@ -23,6 +23,7 @@ import {
   Sparkles,
   ChevronRight,
   Monitor,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +55,7 @@ export function Header() {
   const { user, profile, signOut, loading } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const { isClinician, clinicianProfile } = useClinicianProfile();
+  const { isAdmin } = useAdminRole();
   const { guidance } = usePatientGuidance();
   const {
     unreadNotifications: clinicianNotifications,
