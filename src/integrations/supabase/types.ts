@@ -3254,6 +3254,17 @@ export type Database = {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
+      find_institution_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          city: string
+          country: string
+          id: string
+          logo_url: string
+          name: string
+          tenant_type: string
+        }[]
+      }
       get_clinician_basic_info: {
         Args: { clinician_ids: string[] }
         Returns: {
@@ -3266,6 +3277,18 @@ export type Database = {
         }[]
       }
       get_current_user_email: { Args: never; Returns: string }
+      get_institution_basic_info: {
+        Args: { _practice_ids: string[] }
+        Returns: {
+          city: string
+          country: string
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+          tenant_type: string
+        }[]
+      }
       get_patient_identity: {
         Args: { patient_ids: string[] }
         Returns: {
