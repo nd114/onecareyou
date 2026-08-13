@@ -419,6 +419,13 @@ const ClinicianPatientImport = () => {
                                 <AlertCircle className="h-4 w-4 text-destructive" />
                                 <span className="text-xs text-destructive">{row.errors.join(', ')}</span>
                               </div>
+                            ) : duplicateInfo.has(i) ? (
+                              <div className="flex items-center gap-1">
+                                <AlertCircle className="h-4 w-4 text-amber-500" />
+                                <span className="text-xs text-muted-foreground">
+                                  Possible duplicate · {duplicateInfo.get(i)}
+                                </span>
+                              </div>
                             ) : (
                               <CheckCircle2 className="h-4 w-4 text-green-500" />
                             )}
