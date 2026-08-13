@@ -56,6 +56,7 @@ import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
+import { StorageUsageCard } from '@/components/StorageUsageCard';
 import { formatDateOnly } from '@/lib/date-only';
 
 
