@@ -287,6 +287,11 @@ const App = () => (
                 <EHRComparison />
               </ProtectedRoute>
             } />
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminConsole />
+              </AdminRoute>
+            } />
             <Route path="/admin/import" element={
               <ProtectedRoute>
                 <AdminImport />
