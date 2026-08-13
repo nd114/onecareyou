@@ -3325,6 +3325,18 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: string
       }
+      admin_access_log_search: {
+        Args: { _limit?: number; _search?: string }
+        Returns: {
+          action: string
+          actor_email: string
+          created_at: string
+          id: string
+          resource_id: string
+          resource_type: string
+          target_email: string
+        }[]
+      }
       admin_cancel_tenant_invitation: {
         Args: { _invitation_id: string }
         Returns: undefined
@@ -3380,6 +3392,16 @@ export type Database = {
           id: string
           target_id: string
           target_type: string
+        }[]
+      }
+      admin_recent_signups: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          email: string
+          is_clinician: boolean
+          name: string
+          user_id: string
         }[]
       }
       admin_revoke_platform_admin: {

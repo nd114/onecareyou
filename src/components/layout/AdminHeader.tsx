@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, LogOut, ShieldCheck, User } from "lucide-react";
+import { Heart, LogOut, Menu, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,6 +28,13 @@ export function AdminHeader() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const email = user?.email || "Admin";
+  const activeLabel =
+    [...ADMIN_LINKS]
+      .sort((a, b) => b.href.length - a.href.length)
+      .find((l) => (l.href === "/admin" ? pathname === "/admin" : pathname.startsWith(l.href)))
+      ?.label ?? "Menu";
+
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -48,7 +55,7 @@ export function AdminHeader() {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-3 sm:gap-5 min-w-0 overflow-x-auto scrollbar-none">
+        <nav className="hidden md:flex items-center gap-3 sm:gap-5 min-w-0 overflow-x-auto scrollbar-none">
           {ADMIN_LINKS.map((link) => {
             const isActive =
               link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
@@ -66,6 +73,25 @@ export function AdminHeader() {
             );
           })}
         </nav>
+
+        {/* Mobile: every admin destination behind one menu, so nothing is cut off */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild className="md:hidden">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Menu className="h-4 w-4" />
+              {activeLabel}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            {ADMIN_LINKS.map((link) => (
+              <DropdownMenuItem key={link.href} asChild>
+                <Link to={link.href}>{link.label}</Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+
 
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <DropdownMenu>

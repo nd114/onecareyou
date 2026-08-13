@@ -21,6 +21,9 @@ import { CreateTenantDialog } from '@/components/admin/CreateTenantDialog';
 import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions';
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
 import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
+import { AdminOverviewPanel } from '@/components/admin/AdminOverviewPanel';
+import { AdminAuditSearchPanel } from '@/components/admin/AdminAuditSearchPanel';
+
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 
@@ -93,13 +96,20 @@ export default function AdminConsole() {
           ))}
         </div>
 
-        <Tabs defaultValue="tenants">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="overview">
+          <TabsList className="mb-6 flex w-full overflow-x-auto sm:w-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="tenants">Tenants</TabsTrigger>
             <TabsTrigger value="access">Access</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
             <TabsTrigger value="tools">Tools</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview">
+            <AdminOverviewPanel />
+          </TabsContent>
+
 
           <TabsContent value="tenants">
             <Card>
@@ -198,6 +208,12 @@ export default function AdminConsole() {
           <TabsContent value="activity">
             <AdminActivityPanel />
           </TabsContent>
+
+          <TabsContent value="audit">
+            <AdminAuditSearchPanel />
+          </TabsContent>
+
+
 
           <TabsContent value="tools">
             <div className="grid gap-4 sm:grid-cols-3">
