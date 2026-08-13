@@ -3343,16 +3343,22 @@ export type Database = {
       }
       admin_create_tenant: {
         Args: {
+          _address?: string
           _city?: string
           _country?: string
+          _email?: string
           _member_limit?: number
           _name: string
+          _npi?: string
           _patient_limit?: number
+          _phone?: string
           _revenue_share_pct?: number
           _slug?: string
+          _state?: string
           _storage_limit_gb?: number
           _subscription_tier?: string
           _tenant_type?: string
+          _zip_code?: string
         }
         Returns: string
       }
@@ -3414,6 +3420,20 @@ export type Database = {
           _logo_url?: string
           _practice_id: string
           _primary_color?: string
+        }
+        Returns: undefined
+      }
+      admin_set_tenant_contact: {
+        Args: {
+          _address?: string
+          _city?: string
+          _country?: string
+          _email?: string
+          _npi?: string
+          _phone?: string
+          _practice_id: string
+          _state?: string
+          _zip_code?: string
         }
         Returns: undefined
       }
