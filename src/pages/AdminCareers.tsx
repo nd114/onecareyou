@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Briefcase, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { Button } from '@/components/ui/button';
 import { AdminApplications } from '@/components/admin/AdminApplications';
 import { AdminJobs } from '@/components/admin/AdminJobs';
 import { useJobApplications } from '@/hooks/useJobApplications';
