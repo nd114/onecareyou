@@ -28,6 +28,13 @@ export function AdminHeader() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const email = user?.email || "Admin";
+  const activeLabel =
+    [...ADMIN_LINKS]
+      .sort((a, b) => b.href.length - a.href.length)
+      .find((l) => (l.href === "/admin" ? pathname === "/admin" : pathname.startsWith(l.href)))
+      ?.label ?? "Menu";
+
+
 
   const handleSignOut = async () => {
     await signOut();
