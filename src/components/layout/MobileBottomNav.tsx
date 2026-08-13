@@ -19,6 +19,7 @@ import {
 } from "@/lib/nav-ia";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import { cn } from "@/lib/utils";
 
 const PATIENT_ICONS: Record<PatientPillarKey, React.ElementType> = {
@@ -43,8 +44,11 @@ export function MobileBottomNav() {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { isClinician } = useClinicianProfile();
+  const { isAdmin } = useAdminRole();
 
   if (!user) return null;
+  // Platform admins use the dedicated admin console shell.
+  if (isAdmin || pathname.startsWith("/admin")) return null;
 
   // Hide on auth + marketing + onboarding shells
   const HIDE_PREFIXES = [

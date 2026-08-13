@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowLeft,
   Briefcase,
   Building2,
   FileText,
@@ -12,7 +11,6 @@ import {
   Users,
 } from 'lucide-react';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +21,7 @@ import { CreateTenantDialog } from '@/components/admin/CreateTenantDialog';
 import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions';
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
 import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
+import { AdminHeader } from '@/components/layout/AdminHeader';
 
 const TOOLS = [
   {
@@ -59,13 +58,9 @@ export default function AdminConsole() {
     <div className="min-h-screen bg-background">
       <SEOHead title="Platform Admin" description="OneCare platform administration." noIndex />
 
+      <AdminHeader />
+
       <div className="container px-4 py-8 max-w-6xl">
-        <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
-          <Link to="/dashboard">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to app
-          </Link>
-        </Button>
 
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold tracking-tight">Platform admin</h1>

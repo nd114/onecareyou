@@ -128,7 +128,9 @@ export function Header() {
   // Navigation IA v2 — 4 pillars for authenticated patients.
   // Clinicians use ClinicianHeader exclusively.
   const activePillar = isAuthenticated ? getPatientPillarForRoute(location.pathname) : null;
-  const navLinks = isAuthenticated
+  const navLinks = isAuthenticated && isAdmin
+    ? [{ href: "/admin", label: "Admin console", pillarKey: undefined as string | undefined }]
+    : isAuthenticated
     ? PATIENT_PILLARS.map((p) => ({ href: p.primary, label: p.label, pillarKey: p.key }))
     : [
         { href: "/", label: "Home", pillarKey: undefined as string | undefined },

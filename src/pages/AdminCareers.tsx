@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Briefcase, Users } from 'lucide-react';
+import { Briefcase, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdminHeader } from '@/components/layout/AdminHeader';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { Button } from '@/components/ui/button';
 import { AdminApplications } from '@/components/admin/AdminApplications';
 import { AdminJobs } from '@/components/admin/AdminJobs';
 import { useJobApplications } from '@/hooks/useJobApplications';
@@ -27,13 +26,9 @@ export default function AdminCareers() {
     <div className="min-h-screen bg-background">
       <SEOHead title="Careers Admin" description="Manage job postings and applications." noIndex />
 
+      <AdminHeader />
+
       <div className="container px-4 py-8 max-w-6xl">
-        <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
-          <Link to="/dashboard">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to app
-          </Link>
-        </Button>
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Careers admin</h1>

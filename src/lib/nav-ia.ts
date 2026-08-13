@@ -1,5 +1,5 @@
 // Navigation IA v2 — single source of truth for pillar/sub-tab structure.
-// See docs/ui-redesign-plan.md and .lovable/plan.md.
+// See docs/roadmap.md and .lovable/plan.md.
 
 export type PatientPillarKey = "today" | "health" | "team" | "learn";
 export type ClinicianPillarKey = "today" | "patients" | "communicate" | "practice";
