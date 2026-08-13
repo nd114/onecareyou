@@ -26,10 +26,13 @@ const TIERS = ['trial', 'solo', 'pro', 'enterprise'];
 
 /** Per-tenant admin controls: edit plan and limits, or invite the tenant owner. */
 export function AdminTenantRowActions({ tenant }: { tenant: AdminTenantRow }) {
-  const { updateTenant, isUpdating, inviteOwner, isInviting } = useAdminOps();
+  const { updateTenant, isUpdating, inviteOwner, isInviting, setTenantSlug, isSavingSlug } =
+    useAdminOps();
   const [editOpen, setEditOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [slug, setSlug] = useState(tenant.slug ?? '');
+
   const [form, setForm] = useState({
     name: tenant.name,
     tenant_type: (tenant.tenant_type ?? 'practice') as 'practice' | 'hospital',
