@@ -16,6 +16,7 @@ import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSect
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
 import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
+import { PracticeContactCard } from '@/components/clinician/PracticeContactCard';
 import { PracticeRevenueShareCard } from '@/components/clinician/PracticeRevenueShareCard';
 import { PracticeStorageCard } from '@/components/clinician/PracticeStorageCard';
 import { Loader2 } from 'lucide-react';
@@ -94,6 +95,11 @@ const ClinicianPractice = () => {
               <PracticeTeamSection />
             </div>
           )}
+
+          {/* Contact and address - owned by the tenant */}
+          <div id="practice-contact" className="mt-6 scroll-mt-20">
+            <PracticeContactCard />
+          </div>
 
           {/* Hospital code (tenant slug) */}
           <div id="hospital-code" className="mt-6 scroll-mt-20">
