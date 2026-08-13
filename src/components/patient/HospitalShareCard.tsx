@@ -135,30 +135,73 @@ export const HospitalShareCard = () => {
             {activeShares.length > 0 && (
               <div className="space-y-2">
                 {activeShares.map((share) => (
-                  <div
-                    key={share.id}
-                    className="flex items-start justify-between gap-3 rounded-lg border p-3"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">
-                        {share.institution?.name ?? 'Hospital'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {[share.institution?.city, share.institution?.country]
-                          .filter(Boolean)
-                          .join(', ') || 'Connected'}
-                        {' · '}
-                        {share.share_all ? 'Sharing everything' : 'Limited sharing'}
-                      </p>
+                  <div key={share.id} className="rounded-lg border p-3 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-sm">
+                          {share.institution?.name ?? 'Hospital'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {[share.institution?.city, share.institution?.country]
+                            .filter(Boolean)
+                            .join(', ') || 'Connected'}
+                          {' · '}
+                          {describePermissions(share)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            editingId === share.id ? setEditingId(null) : startEditing(share)
+                          }
+                        >
+                          <SlidersHorizontal className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">
+                            {editingId === share.id ? 'Close' : 'Adjust'}
+                          </span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isDisconnecting}
+                          onClick={() => disconnect({ shareId: share.id })}
+                        >
+                          Disconnect
+                        </Button>
+                      </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isDisconnecting}
-                      onClick={() => disconnect({ shareId: share.id })}
-                    >
-                      Disconnect
-                    </Button>
+
+                    {editingId === share.id && (
+                      <div className="space-y-3 rounded-lg bg-muted/40 p-3">
+                        <p className="text-sm font-medium">What this hospital can see</p>
+                        <div className="space-y-2">
+                          {SHARE_CATEGORIES.map((c) => (
+                            <label
+                              key={c.key}
+                              className="flex items-center gap-2 text-sm cursor-pointer"
+                            >
+                              <Checkbox
+                                checked={!!editPermissions[c.key]}
+                                onCheckedChange={(v) =>
+                                  setEditPermissions((prev) => ({ ...prev, [c.key]: v === true }))
+                                }
+                              />
+                              {c.label}
+                            </label>
+                          ))}
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => saveEditing(share)}
+                          disabled={isConnecting}
+                        >
+                          {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Save sharing settings
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
