@@ -21,6 +21,8 @@ interface SnapshotInput {
   clinicianLabel: string;
   /** Why the snapshot was generated. */
   reason?: 'manual' | 'connection_ended';
+  /** Suppress toasts (used for automatic snapshots taken during another action). */
+  silent?: boolean;
 }
 
 const esc = (v: unknown) =>
@@ -185,11 +187,12 @@ export function useCareRecordSnapshot() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['health-documents'] });
-      toast.success('Care record saved to your Health Vault');
+      if (!vars.silent) toast.success('Care record saved to your Health Vault');
     },
-    onError: (error: Error) => {
+    onError: (error: Error, vars) => {
+      if (vars?.silent) return;
       if (error.message === 'empty') {
         toast.info('Nothing to file yet — no messages or guidance from this provider.');
       } else if (error.message === 'unclaimed') {
