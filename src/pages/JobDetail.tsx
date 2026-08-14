@@ -159,7 +159,7 @@ const JobDetail = () => {
 
 
       // Insert application into database
-      const { error: insertError } = await supabase
+      const { data: insertedApplication, error: insertError } = await supabase
         .from('job_applications')
         .insert({
           job_id: job.id,
@@ -173,7 +173,9 @@ const JobDetail = () => {
           cover_letter: formData.coverLetter || null,
           years_experience: formData.yearsExperience || null,
           how_heard: formData.howHeard || null
-        });
+        })
+        .select('id')
+        .single();
 
       if (insertError) {
         throw insertError;
@@ -182,11 +184,7 @@ const JobDetail = () => {
       // Send notification email via edge function
       try {
         await supabase.functions.invoke('notify-job-application', {
-          body: {
-            jobTitle: job.title,
-            applicantName: formData.fullName,
-            applicantEmail: formData.email
-          }
+          body: { applicationId: insertedApplication?.id }
         });
       } catch (emailError) {
         // Don't fail the application if email fails
