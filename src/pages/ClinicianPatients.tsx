@@ -51,7 +51,14 @@ const ClinicianPatients = () => {
 
   const navigate = useNavigate();
   const { clinicianProfile, isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
-  const { patients, isLoading: isLoadingPatients, autoClaimShares, updatePatientNotes } = useClinicianPatients();
+  const {
+    patients,
+    privatePatients,
+    institutionPatients,
+    isLoading: isLoadingPatients,
+    autoClaimShares,
+    updatePatientNotes,
+  } = useClinicianPatients();
   const { records: managedRecords, isLoading: isLoadingRecords } = useClinicianPatientRecords();
   const { patientLimit } = useClinicianSubscription();
   
@@ -115,6 +122,14 @@ const ClinicianPatients = () => {
   }, [isClinician, isLoading]);
 
   const patientCount = patients.length;
+  // Plan limits are about the clinician's own patient connections. Hospital
+  // assignments belong to the hospital's enterprise seat, so they must not
+  // consume a Solo/Pro allowance.
+  const billablePatientCount = privatePatients.length;
+  const hospitalNames = useMemo(
+    () => [...new Set(institutionPatients.map((p) => p.hospital_name).filter(Boolean))],
+    [institutionPatients],
+  );
 
   if (isLoading) {
     return (
@@ -185,7 +200,7 @@ const ClinicianPatients = () => {
           </p>
         </motion.div>
 
-        <PatientLimitBanner patientCount={patientCount} />
+        <PatientLimitBanner patientCount={billablePatientCount} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -221,7 +236,7 @@ const ClinicianPatients = () => {
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
                 <InvitePatientDialog 
-                  disabled={patientCount >= patientLimit}
+                  disabled={billablePatientCount >= patientLimit}
                   disabledReason={`You've reached your limit of ${patientLimit} patients. Upgrade to add more.`}
                 />
                 <Button 
@@ -261,7 +276,7 @@ const ClinicianPatients = () => {
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <InvitePatientDialog
-                      disabled={patientCount >= patientLimit}
+                      disabled={billablePatientCount >= patientLimit}
                       disabledReason={`You've reached your limit of ${patientLimit} patients.`}
                     />
                     <Button variant="outline" size="sm" onClick={() => navigate('/clinician/patients/import')}>
@@ -302,10 +317,28 @@ const ClinicianPatients = () => {
                             {patient.patient_email || 'No email on file'}
                           </p>
                         </div>
-                        <div className="hidden sm:block text-right">
-                          <Badge variant={patient.clinician_user_id ? 'secondary' : 'outline'} className="text-xs">
-                            {patient.clinician_user_id ? 'Connected' : 'Pending'}
+                        <div className="hidden sm:flex items-center gap-2 text-right">
+                          {/* Relationship source. With more than one hospital
+                              affiliation these are named, not lumped together. */}
+                          <Badge variant="outline" className="text-xs">
+                            {patient.source === 'hospital'
+                              ? hospitalNames.length > 1
+                                ? patient.hospital_name
+                                : 'Hospital'
+                              : 'Private'}
                           </Badge>
+                          {patient.source === 'hospital' && !patient.share_active ? (
+                            <Badge variant="secondary" className="text-xs">
+                              Disconnected
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant={patient.clinician_user_id ? 'secondary' : 'outline'}
+                              className="text-xs"
+                            >
+                              {patient.clinician_user_id ? 'Connected' : 'Pending'}
+                            </Badge>
+                          )}
                         </div>
                         <div className="w-28 sm:w-36 text-right text-xs text-muted-foreground">
                           {lastActivityLabel(patient.last_accessed_at || patient.created_at)}

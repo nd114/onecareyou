@@ -141,6 +141,124 @@ export function useMyInstitutionShares() {
   };
 }
 
+export interface InstitutionAssignedPatient {
+  /** The assignment row — one clinician's link to one patient at one hospital. */
+  assignmentId: string;
+  practiceId: string;
+  practiceName: string;
+  patientUserId: string;
+  patientName: string | null;
+  patientEmail: string | null;
+  patientPhone: string | null;
+  /** Categories the patient shared with this hospital. */
+  permissions: Record<string, boolean>;
+  shareAll: boolean;
+  /** False once the patient disconnects — the row stays so history can be filtered. */
+  shareActive: boolean;
+  connectedAt: string;
+  assignedAt: string;
+}
+
+/**
+ * Clinician-side: patients this clinician has been assigned to through a
+ * hospital's own delegation, as opposed to a private Care Circle share.
+ *
+ * These two pathways are independent by design (consent model §2), so this
+ * deliberately reads the assignment table rather than provider_shares.
+ */
+export function useInstitutionAssignedPatients() {
+  const { user } = useAuth();
+
+  const query = useQuery({
+    queryKey: ['institution-assigned-patients', user?.id],
+    enabled: !!user,
+    queryFn: async (): Promise<InstitutionAssignedPatient[]> => {
+      if (!user) return [];
+
+      const nowIso = new Date().toISOString();
+      const { data: assignments, error } = await supabase
+        .from('practice_patient_assignments')
+        .select('id, practice_id, patient_user_id, effective_from, effective_to, created_at')
+        .eq('clinician_user_id', user.id)
+        .lte('effective_from', nowIso)
+        .or(`effective_to.is.null,effective_to.gt.${nowIso}`);
+      if (error) throw error;
+
+      const rows = (assignments || []) as {
+        id: string;
+        practice_id: string;
+        patient_user_id: string;
+        created_at: string;
+      }[];
+      if (rows.length === 0) return [];
+
+      const patientIds = [...new Set(rows.map((a) => a.patient_user_id))];
+      const practiceIds = [...new Set(rows.map((a) => a.practice_id))];
+
+      const [{ data: shares }, { data: identities }, { data: institutions }] = await Promise.all([
+        supabase
+          .from('practice_shares')
+          .select('practice_id, user_id, share_all, permissions, is_active, connected_at')
+          .in('practice_id', practiceIds)
+          .in('user_id', patientIds),
+        supabase.rpc('get_patient_identity', { patient_ids: patientIds }),
+        supabase.rpc('get_institution_basic_info', { _practice_ids: practiceIds }),
+      ]);
+
+      const shareByKey = new Map(
+        ((shares || []) as {
+          practice_id: string;
+          user_id: string;
+          share_all: boolean;
+          permissions: Record<string, boolean>;
+          is_active: boolean;
+          connected_at: string;
+        }[]).map((s) => [`${s.practice_id}:${s.user_id}`, s]),
+      );
+      const identityById = new Map(
+        ((identities || []) as {
+          user_id: string;
+          name: string | null;
+          email: string | null;
+          phone_number: string | null;
+        }[]).map((p) => [p.user_id, p]),
+      );
+      const institutionById = new Map(
+        ((institutions || []) as InstitutionInfo[]).map((i) => [i.id, i]),
+      );
+
+      return rows
+        .map((a) => {
+          const share = shareByKey.get(`${a.practice_id}:${a.patient_user_id}`);
+          // No share row means the assignment outlived the consent that created
+          // it; there is nothing to show and nothing readable behind it.
+          if (!share) return null;
+          const identity = identityById.get(a.patient_user_id);
+          return {
+            assignmentId: a.id,
+            practiceId: a.practice_id,
+            practiceName: institutionById.get(a.practice_id)?.name ?? 'Hospital',
+            patientUserId: a.patient_user_id,
+            patientName: identity?.name ?? null,
+            patientEmail: identity?.email ?? null,
+            patientPhone: identity?.phone_number ?? null,
+            permissions: share.permissions ?? {},
+            shareAll: share.share_all,
+            shareActive: share.is_active,
+            connectedAt: share.connected_at,
+            assignedAt: a.created_at,
+          } satisfies InstitutionAssignedPatient;
+        })
+        .filter((p): p is InstitutionAssignedPatient => p !== null);
+    },
+  });
+
+  return {
+    assignedPatients: query.data ?? [],
+    isLoading: query.isLoading,
+  };
+}
+
 export interface HospitalPatientShare extends PracticeShare {
   patient?: { user_id: string; name: string | null; email: string | null };
   assignedClinicianIds: string[];
