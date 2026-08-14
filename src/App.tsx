@@ -100,7 +100,7 @@ import ClinicianReports from "./pages/ClinicianReports";
 import ClinicianCompliance from "./pages/ClinicianCompliance";
 import AdminTenantDetail from "./pages/AdminTenantDetail";
 import InstitutionSignUp from "./pages/InstitutionSignUp";
-import { institutionSlugFromHost } from "@/hooks/useInstitutionBranding";
+import TenantHome from "@/components/tenant/TenantHome";
 
 
 
@@ -117,10 +117,7 @@ const App = () => (
           <ScrollToTop />
           <StandaloneLaunchRedirect />
           <Routes>
-            <Route
-              path="/"
-              element={institutionSlugFromHost() ? <InstitutionSignUp /> : <Landing />}
-            />
+            <Route path="/" element={<TenantHome />} />
             <Route path="/i/:slug" element={<InstitutionSignUp />} />
 
             <Route path="/beta" element={<BetaLanding />} />
