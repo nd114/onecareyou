@@ -117,10 +117,7 @@ const App = () => (
           <ScrollToTop />
           <StandaloneLaunchRedirect />
           <Routes>
-            <Route
-              path="/"
-              element={institutionSlugFromHost() ? <InstitutionSignUp /> : <Landing />}
-            />
+            <Route path="/" element={<TenantHome />} />
             <Route path="/i/:slug" element={<InstitutionSignUp />} />
 
             <Route path="/beta" element={<BetaLanding />} />
