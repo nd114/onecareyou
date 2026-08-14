@@ -118,7 +118,9 @@ const App = () => (
           <StandaloneLaunchRedirect />
           <Routes>
             <Route path="/" element={<TenantHome />} />
-            <Route path="/i/:slug" element={<InstitutionSignUp />} />
+            {/* Deprecated: forwards to <slug>.onecare.you */}
+            <Route path="/i/:slug" element={<LegacyInstitutionRedirect />} />
+
 
             <Route path="/beta" element={<BetaLanding />} />
             <Route path="/beta/book" element={<BetaBooking />} />
