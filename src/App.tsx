@@ -100,7 +100,7 @@ import ClinicianReports from "./pages/ClinicianReports";
 import ClinicianCompliance from "./pages/ClinicianCompliance";
 import AdminTenantDetail from "./pages/AdminTenantDetail";
 import InstitutionSignUp from "./pages/InstitutionSignUp";
-import { institutionSlugFromHost } from "@/hooks/useInstitutionBranding";
+import TenantHome from "@/components/tenant/TenantHome";
 
 
 
