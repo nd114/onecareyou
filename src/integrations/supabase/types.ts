@@ -3591,7 +3591,9 @@ export type Database = {
       }
       get_user_storage_bytes: { Args: { _user_id: string }; Returns: number }
       has_practice_capability: {
-        Args: { _capability: string; _user_id: string }
+        Args:
+          | { _capability: string; _user_id: string }
+          | { _capability: string; _practice_id: string; _user_id: string }
         Returns: boolean
       }
       has_practice_role: {
@@ -3612,8 +3614,20 @@ export type Database = {
         Args: { patient_user_id: string }
         Returns: boolean
       }
+      institution_has_patient_permission: {
+        Args: { patient_user_id: string; permission_key: string }
+        Returns: boolean
+      }
       is_assigned_to_patient: {
         Args: { _patient_user_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_assigned_to_patient_in_practice: {
+        Args: {
+          _patient_user_id: string
+          _practice_id: string
+          _user_id: string
+        }
         Returns: boolean
       }
       is_institution_slug_available: {
@@ -3638,6 +3652,22 @@ export type Database = {
           practice_id: string
           practice_name: string
           tenant_type: string
+        }[]
+      }
+      practice_audit_log: {
+        Args: { _limit?: number; _practice_id: string; _search?: string }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_name: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          ip_address: string
+          patient_name: string
+          patient_user_id: string
+          resource_id: string
+          resource_type: string
         }[]
       }
       practice_contact_details: {
