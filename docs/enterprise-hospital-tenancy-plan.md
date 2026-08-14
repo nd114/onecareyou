@@ -31,8 +31,16 @@ A private doctor share remains completely separate and is never overridden by a 
 Access helpers (all `SECURITY DEFINER`, `EXECUTE` revoked from `PUBLIC`):
 
 - `institution_has_patient_access(patient)` — true when an active `practice_shares` row exists for
-  the caller's tenant **and** the caller is either assigned to the patient or holds
-  `can_view_all_patients`.
+  the caller's tenant **and** the caller is either assigned to the patient *in that same tenant* or
+  holds `can_view_all_patients`.
+- `institution_has_patient_permission(patient, key)` — the same test plus the patient's category
+  choice (`share_all`, or `permissions->>key`). The read policies on `vitals`, `medications` and
+  `health_documents` use this one; until August 2026 they used the access helper alone, so the
+  granular picker had no effect on what the hospital could read.
+- `practice_audit_log(practice, search, limit)` — a tenant admin's view of their own tenant's access
+  log. Reading `hipaa_audit_logs` directly returns only the caller's own rows.
+- `practice_revenue_share_summary(practice)` — connected and paying patient counts for the
+  revenue-share card.
 - `find_institution_by_slug(slug)` — patient-facing lookup returning name/city/country/logo only.
 - `get_institution_basic_info(ids)` — resolves names for tenants the caller is a member of or has
   shared with.
@@ -65,8 +73,18 @@ overlay only (no re-theme of the emerald/cream/gold system).
   revenue-share statements and payouts.
 
 **Phase D — delegation & assignment (shipped, basic)**
-Sub-admins and admins assign hospital-shared patients to clinicians from Practice → Institution-shared
-patients. Clinician panels distinguish hospital-assigned from private patients via the assignment table.
+Admins assign hospital-shared patients to clinicians from Practice → Institution-shared patients,
+filterable by connection status. Clinician panels list hospital-assigned patients alongside private
+ones, tagged by source and named per hospital where a clinician holds several affiliations.
+
+Two corrections from the August 2026 review (`docs/reviews/oc-lmc-review-aug-2026.md`):
+
+- There is no `sub_admin` role. Assignment is gated on `can_manage_practice`, i.e. owner or admin
+  only, so delegating assignment today means granting full tenant admin. The delegated middle layer
+  the build prompt describes is still outstanding.
+- Clinician panels did not read the assignment table at all until the review; a patient assigned to
+  a doctor never appeared in that doctor's own list. Fixed, but it means Phase D was not usable
+  end-to-end before then.
 
 **Phase E — deferred**
 Enterprise SSO (SAML/OIDC), persistent per-tenant demo environment exempt from the daily reset,

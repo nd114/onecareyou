@@ -9,6 +9,7 @@
 - [`qhin-integration-plan.md`](./qhin-integration-plan.md) — national network records (Particle Health first)
 - [`whatsapp-integration-plan.md`](./whatsapp-integration-plan.md) — messaging transport plan
 - [`enterprise-hospital-tenancy-plan.md`](./enterprise-hospital-tenancy-plan.md) — hospital tenancy phases
+- [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md) — codebase review findings and open decisions
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — consent + access matrix
 - [`pricing-roadmap.md`](./pricing-roadmap.md) — tiers, packs, storage economics
 - [`platform-documentation.md`](./platform-documentation.md) — system reference
@@ -20,6 +21,10 @@
 
 ## Now (in flight)
 
+0. **OC-LMC review follow-ups.** Findings and the prioritised fix list are in
+   [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md). Two decisions are
+   blocking: hospital-wide visibility by default (C2) and the entry-channel sharing posture (C3).
+   Each has a branch per option, ready to review side by side.
 1. **Mobile-first sweep (patient + clinician).** Scripted 390x844 / 768x1024 passes over every pillar and sub-tab; fix P0 broken flows first, then overlap between bottom nav, FAB stack and sticky sub-tabs, then polish.
 2. **Surface budget discipline.** Every new feature must replace a surface or justify itself against the four pillars per side.
 
