@@ -14,8 +14,6 @@ import { uploadTenantLogo } from '@/lib/tenant-logo';
 export function PracticeBrandingCard() {
   const { user } = useAuth();
   const { currentPractice, updatePractice, canManagePractice } = usePractice();
-  const [primaryColor, setPrimaryColor] = useState(currentPractice?.primary_color || '#0d9488');
-  const [accentColor, setAccentColor] = useState((currentPractice as any)?.brand_accent_color || '#0284c7');
   const [logoUrl, setLogoUrl] = useState((currentPractice as any)?.brand_logo_url || currentPractice?.logo_url || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,14 +43,10 @@ export function PracticeBrandingCard() {
     try {
       await updatePractice.mutateAsync({
         practiceId: currentPractice.id,
-        updates: {
-          primary_color: primaryColor,
-          logo_url: logoUrl || null,
-        } as any,
+        updates: { logo_url: logoUrl || null } as any,
       });
-      // Also update brand-specific columns
+      // brand_logo_url is what the branded sign-up address reads.
       await (supabase.from('practices' as any).update({
-        brand_accent_color: accentColor,
         brand_logo_url: logoUrl || null,
       }).eq('id', currentPractice.id) as any);
       toast.success('Branding saved');
@@ -109,63 +103,28 @@ export function PracticeBrandingCard() {
           </div>
         </div>
 
-        {/* Colors */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="primary-color">Primary Color</Label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                id="primary-color"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="h-10 w-10 rounded border cursor-pointer"
-              />
-              <Input
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                placeholder="#0d9488"
-                className="font-mono text-sm"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="accent-color">Accent Color</Label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                id="accent-color"
-                value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
-                className="h-10 w-10 rounded border cursor-pointer"
-              />
-              <Input
-                value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
-                placeholder="#0284c7"
-                className="font-mono text-sm"
-              />
-            </div>
-          </div>
-        </div>
+        {/* Branding is a name and logo overlay only — the OneCare palette,
+            typography and layout stay as they are, so there is no colour to
+            pick here. See docs/enterprise-hospital-tenancy-plan.md §3. */}
+        <p className="text-xs text-muted-foreground">
+          Your name and logo appear on your hospital's sign-up address and
+          alongside the OneCare mark. Colours, type and layout stay consistent
+          across OneCare so patients recognise the app they already trust.
+        </p>
 
-        {/* Preview */}
+        {/* Preview — the lockup exactly as a patient meets it. */}
         <div className="space-y-2">
           <Label>Preview</Label>
-          <div className="p-4 rounded-lg border" style={{ borderColor: primaryColor }}>
+          <div className="p-4 rounded-lg border bg-muted/30">
             <div className="flex items-center gap-3">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo preview" className="h-8 w-8 object-contain" />
               ) : (
-                <div className="h-8 w-8 rounded-lg" style={{ background: primaryColor }} />
+                <div className="h-8 w-8 rounded-lg gradient-primary" />
               )}
-              <span className="font-semibold" style={{ color: primaryColor }}>
-                {currentPractice.name}
+              <span className="font-display font-semibold">
+                {currentPractice.name} by OneCare
               </span>
-            </div>
-            <div className="flex gap-2 mt-3">
-              <div className="h-2 w-20 rounded-full" style={{ background: primaryColor }} />
-              <div className="h-2 w-12 rounded-full" style={{ background: accentColor }} />
             </div>
           </div>
         </div>
