@@ -1,24 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
-
-interface EnterpriseInquiryPayload {
-  contact_name: string;
-  contact_email: string;
-  practice_name: string;
-  practice_size?: string | null;
-  specialty?: string | null;
-  country?: string | null;
-  ehr_system?: string | null;
-  requirements?: string | null;
-  contact_phone?: string | null;
-}
 
 async function sendEmail(to: string[], subject: string, html: string, replyTo?: string) {
   const res = await fetch("https://api.resend.com/emails", {
@@ -43,7 +34,9 @@ async function sendEmail(to: string[], subject: string, html: string, replyTo?: 
 }
 
 const esc = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -51,48 +44,66 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not configured");
-    }
-    const body = (await req.json().catch(() => null)) as EnterpriseInquiryPayload | null;
-    if (!body || typeof body !== "object") {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
+
+    const body = await req.json().catch(() => null);
+    const inquiryId = body && typeof body === "object" ? (body as any).inquiryId : null;
+
+    // Emails are only sent for inquiries that actually exist in the database.
+    if (typeof inquiryId !== "string" || !UUID_RE.test(inquiryId)) {
+      return new Response(JSON.stringify({ error: "Valid inquiryId is required" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const isStr = (v: unknown, max: number) =>
-      typeof v === "string" && v.trim().length > 0 && v.length <= max;
-    const noCRLF = (v: unknown) => typeof v === "string" && !/[\r\n]/.test(v);
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    });
 
-    if (
-      !isStr(body.contact_name, 200) || !noCRLF(body.contact_name) ||
-      !isStr(body.contact_email, 320) || !emailRegex.test(body.contact_email) ||
-      !isStr(body.practice_name, 200) || !noCRLF(body.practice_name)
-    ) {
-      return new Response(JSON.stringify({ error: "Invalid input" }), {
-        status: 400,
+    const { data: inquiry, error } = await admin
+      .from("enterprise_inquiries")
+      .select(
+        "contact_name, contact_email, contact_phone, practice_name, practice_size, specialty, country, ehr_system, requirements, created_at"
+      )
+      .eq("id", inquiryId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!inquiry) {
+      return new Response(JSON.stringify({ error: "Inquiry not found" }), {
+        status: 404,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    const ageMs = Date.now() - new Date(inquiry.created_at as string).getTime();
+    if (ageMs > 15 * 60 * 1000) {
+      return new Response(JSON.stringify({ error: "Inquiry is not recent" }), {
+        status: 409,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const contactEmail = String(inquiry.contact_email ?? "");
+    const practiceName = String(inquiry.practice_name ?? "");
+    if (!contactEmail) throw new Error("Inquiry has no contact email on record");
 
     const safe = {
-      name: esc(body.contact_name),
-      email: esc(body.contact_email),
-      practice: esc(body.practice_name),
-      size: body.practice_size ? esc(body.practice_size) : "—",
-      specialty: body.specialty ? esc(body.specialty) : "—",
-      country: body.country ? esc(body.country) : "—",
-      ehr: body.ehr_system ? esc(body.ehr_system) : "—",
-      phone: body.contact_phone ? esc(body.contact_phone) : "—",
-      requirements: body.requirements ? esc(body.requirements).replace(/\n/g, "<br/>") : "—",
+      name: esc(inquiry.contact_name ?? "there"),
+      email: esc(contactEmail),
+      practice: esc(practiceName),
+      size: inquiry.practice_size ? esc(inquiry.practice_size) : "—",
+      specialty: inquiry.specialty ? esc(inquiry.specialty) : "—",
+      country: inquiry.country ? esc(inquiry.country) : "—",
+      ehr: inquiry.ehr_system ? esc(inquiry.ehr_system) : "—",
+      phone: inquiry.contact_phone ? esc(inquiry.contact_phone) : "—",
+      requirements: inquiry.requirements ? esc(inquiry.requirements).replace(/\n/g, "<br/>") : "—",
     };
 
-    // Applicant confirmation
+    // Contact confirmation
     await sendEmail(
-      [body.contact_email],
+      [contactEmail],
       "We received your OneCare Enterprise inquiry",
       `
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;color:#0f172a;">
@@ -116,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Internal notification
     await sendEmail(
       ["sales@onecare.you", "hello@onecare.you"],
-      `New Enterprise Inquiry: ${body.practice_name}`,
+      `New Enterprise Inquiry: ${practiceName.replace(/[\r\n]/g, " ")}`,
       `
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:640px;margin:0 auto;color:#0f172a;">
         <h2 style="color:#14b8a6;margin:0 0 16px;">New Enterprise Inquiry</h2>
@@ -132,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
         <h3 style="margin-top:24px;">Requirements</h3>
         <div style="background:#f8fafc;border-radius:8px;padding:16px;">${safe.requirements}</div>
       </div>`,
-      body.contact_email
+      contactEmail
     );
 
     return new Response(JSON.stringify({ success: true }), {
@@ -141,7 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("notify-enterprise-inquiry error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Failed to send notification" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

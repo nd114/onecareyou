@@ -78,9 +78,11 @@ const EnterpriseInquiry = () => {
 
     setIsSubmitting(true);
     try {
+      const inquiryId = crypto.randomUUID();
       const { error } = await supabase
         .from('enterprise_inquiries' as any)
         .insert({
+          id: inquiryId,
           clinician_user_id: user?.id || null,
           contact_name: formData.contact_name,
           contact_email: formData.contact_email,
@@ -98,17 +100,7 @@ const EnterpriseInquiry = () => {
       // Fire-and-forget confirmation email (don't block UX on email delivery)
       supabase.functions
         .invoke('notify-enterprise-inquiry', {
-          body: {
-            contact_name: formData.contact_name,
-            contact_email: formData.contact_email,
-            contact_phone: formData.contact_phone || null,
-            practice_name: formData.practice_name,
-            practice_size: formData.practice_size || null,
-            specialty: formData.specialty || null,
-            country: formData.country || null,
-            ehr_system: formData.ehr_system || null,
-            requirements: formData.requirements || null,
-          },
+          body: { inquiryId },
         })
         .catch((err) => console.warn('Enterprise confirmation email failed:', err));
 

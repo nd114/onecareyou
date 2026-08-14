@@ -308,9 +308,9 @@ const App = () => (
             } />
 
             <Route path="/admin/import" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminImport />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             <Route path="/admin/careers" element={
               <AdminRoute>
@@ -324,9 +324,9 @@ const App = () => (
             } />
 
             <Route path="/admin/changelog" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminChangelog />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             {/* Public marketing + install routes */}
             <Route path="/for-clinicians" element={<ForClinicians />} />

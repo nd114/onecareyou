@@ -158,10 +158,13 @@ const JobDetail = () => {
       }
 
 
-      // Insert application into database
+      // Insert application into database (id generated client-side so the
+      // notification function can look the stored row up server-side)
+      const applicationId = crypto.randomUUID();
       const { error: insertError } = await supabase
         .from('job_applications')
         .insert({
+          id: applicationId,
           job_id: job.id,
           job_title: job.title,
           full_name: formData.fullName,
@@ -182,11 +185,7 @@ const JobDetail = () => {
       // Send notification email via edge function
       try {
         await supabase.functions.invoke('notify-job-application', {
-          body: {
-            jobTitle: job.title,
-            applicantName: formData.fullName,
-            applicantEmail: formData.email
-          }
+          body: { applicationId }
         });
       } catch (emailError) {
         // Don't fail the application if email fails
