@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Coins, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
-import { usePracticeSharedPatients } from '@/hooks/usePracticeShares';
 import { PRICE_INFO } from '@/lib/pricing-constants';
 
 /**
@@ -13,16 +14,28 @@ import { PRICE_INFO } from '@/lib/pricing-constants';
 export const PracticeRevenueShareCard = () => {
   const { currentPractice } = usePractice();
   const { tenant, isLoading } = usePracticeTenant(currentPractice?.id);
-  const { activeShares, isLoading: loadingShares } = usePracticeSharedPatients(
-    currentPractice?.id,
-  );
+
+  // Counts come from the database because a tenant admin cannot read patients'
+  // subscription rows directly, and "paying" is the number the share is owed on.
+  const { data: summary, isLoading: loadingSummary } = useQuery({
+    queryKey: ['practice-revenue-share', currentPractice?.id],
+    enabled: !!currentPractice?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('practice_revenue_share_summary', {
+        _practice_id: currentPractice!.id,
+      });
+      if (error) throw error;
+      return (data ?? [])[0] ?? null;
+    },
+  });
 
   const pct = Number(tenant?.revenue_share_pct ?? 0);
   if (!currentPractice || (!isLoading && pct <= 0)) return null;
 
   const premiumMonthly = PRICE_INFO.premium_monthly.price;
-  const connected = activeShares.length;
-  const estimate = (premiumMonthly * pct * connected) / 100;
+  const connected = Number(summary?.connected_patients ?? 0);
+  const paying = Number(summary?.paying_patients ?? 0);
+  const estimate = (premiumMonthly * pct * paying) / 100;
 
   return (
     <Card>
@@ -42,7 +55,7 @@ export const PracticeRevenueShareCard = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading || loadingShares ? (
+        {isLoading || loadingSummary ? (
           <div className="flex justify-center py-3">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
@@ -51,7 +64,7 @@ export const PracticeRevenueShareCard = () => {
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: 'Connected patients', value: String(connected) },
-                { label: 'Share rate', value: `${pct}%` },
+                { label: 'On a paid plan', value: String(paying) },
                 {
                   label: 'Est. monthly',
                   value: `$${estimate.toFixed(2)}`,
@@ -64,8 +77,8 @@ export const PracticeRevenueShareCard = () => {
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Estimate assumes every connected patient holds a premium plan. Statements and
-              payouts are issued monthly (coming soon).
+              Your {pct}% share is counted on connected patients who hold a paid plan, at the
+              monthly premium price. Statements and payouts are issued monthly (coming soon).
             </p>
           </>
         )}
