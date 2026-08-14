@@ -324,9 +324,9 @@ const App = () => (
             } />
 
             <Route path="/admin/changelog" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminChangelog />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             {/* Public marketing + install routes */}
             <Route path="/for-clinicians" element={<ForClinicians />} />
