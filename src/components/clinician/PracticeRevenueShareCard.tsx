@@ -7,6 +7,12 @@ import { usePractice } from '@/hooks/usePractice';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { PRICE_INFO } from '@/lib/pricing-constants';
 
+interface RevenueShareSummary {
+  connected_patients: number;
+  paying_patients: number;
+  revenue_share_pct: number;
+}
+
 /**
  * Read-only revenue-share summary for institutional partners. Numbers are an
  * estimate from currently connected patients — the invoice is the source of truth.
@@ -21,11 +27,13 @@ export const PracticeRevenueShareCard = () => {
     queryKey: ['practice-revenue-share', currentPractice?.id],
     enabled: !!currentPractice?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('practice_revenue_share_summary', {
-        _practice_id: currentPractice!.id,
-      });
+      // Cast: newer than the generated types file (see useAuditLog).
+      const { data, error } = await (supabase as any).rpc(
+        'practice_revenue_share_summary',
+        { _practice_id: currentPractice!.id },
+      );
       if (error) throw error;
-      return (data ?? [])[0] ?? null;
+      return ((data ?? []) as RevenueShareSummary[])[0] ?? null;
     },
   });
 
