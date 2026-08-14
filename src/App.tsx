@@ -99,8 +99,9 @@ import ClinicianAudit from "./pages/ClinicianAudit";
 import ClinicianReports from "./pages/ClinicianReports";
 import ClinicianCompliance from "./pages/ClinicianCompliance";
 import AdminTenantDetail from "./pages/AdminTenantDetail";
-import InstitutionSignUp from "./pages/InstitutionSignUp";
 import TenantHome from "@/components/tenant/TenantHome";
+import LegacyInstitutionRedirect from "@/components/tenant/LegacyInstitutionRedirect";
+
 
 
 
@@ -118,7 +119,9 @@ const App = () => (
           <StandaloneLaunchRedirect />
           <Routes>
             <Route path="/" element={<TenantHome />} />
-            <Route path="/i/:slug" element={<InstitutionSignUp />} />
+            {/* Deprecated: forwards to <slug>.onecare.you */}
+            <Route path="/i/:slug" element={<LegacyInstitutionRedirect />} />
+
 
             <Route path="/beta" element={<BetaLanding />} />
             <Route path="/beta/book" element={<BetaBooking />} />

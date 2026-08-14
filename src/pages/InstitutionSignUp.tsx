@@ -111,7 +111,7 @@ export default function InstitutionSignUp({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background">
       <SEOHead
         title={institution ? `${institution.name} — Join on OneCare` : 'Join on OneCare'}
         description={
@@ -122,7 +122,13 @@ export default function InstitutionSignUp({
         noIndex
       />
 
+      {/* Global theme control (light / dark / system) */}
+      <div className="absolute right-4 top-4 z-20">
+        <ThemeToggle />
+      </div>
+
       <div className="grid lg:grid-cols-2 min-h-screen">
+
         {/* Branded panel */}
         <div
           className="relative hidden lg:flex flex-col justify-between p-12 text-primary-foreground"
