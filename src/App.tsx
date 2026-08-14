@@ -308,9 +308,9 @@ const App = () => (
             } />
 
             <Route path="/admin/import" element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminImport />
-              </ProtectedRoute>
+              </AdminRoute>
             } />
             <Route path="/admin/careers" element={
               <AdminRoute>
