@@ -99,7 +99,6 @@ import ClinicianAudit from "./pages/ClinicianAudit";
 import ClinicianReports from "./pages/ClinicianReports";
 import ClinicianCompliance from "./pages/ClinicianCompliance";
 import AdminTenantDetail from "./pages/AdminTenantDetail";
-import InstitutionSignUp from "./pages/InstitutionSignUp";
 import TenantHome from "@/components/tenant/TenantHome";
 import LegacyInstitutionRedirect from "@/components/tenant/LegacyInstitutionRedirect";
 
