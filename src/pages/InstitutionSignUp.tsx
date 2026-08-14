@@ -111,7 +111,7 @@ export default function InstitutionSignUp({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background">
       <SEOHead
         title={institution ? `${institution.name} — Join on OneCare` : 'Join on OneCare'}
         description={
