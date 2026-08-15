@@ -2,7 +2,7 @@
 
 **What this is.** The single living tracker for OneCare product work: what has shipped and when, what is in flight, what is next, and what is deliberately deferred. Update this file as work lands — do not start new roadmap or tracking documents.
 
-**Last updated:** 13 August 2026
+**Last updated:** 15 August 2026
 
 **Companion docs** (deep dives kept separate on purpose):
 
