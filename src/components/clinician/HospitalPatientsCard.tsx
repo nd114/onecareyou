@@ -26,13 +26,19 @@ export const HospitalPatientsCard = () => {
 
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<Record<string, string>>({});
+  // A patient who disconnects is not removed, and the hospital is not notified —
+  // the status changes and these views filter on it (consent model §3).
+  const [status, setStatus] = useState<'all' | 'active' | 'ended'>('active');
 
+  // Must match the RLS policy on practice_patient_assignments
+  // (can_manage_practice), or the control is offered to people whose write the
+  // database will refuse. can_view_all_patients is a read right, not a delegation.
   const canAssign =
-    currentMembership?.role === 'owner' ||
-    currentMembership?.role === 'admin' ||
-    currentMembership?.can_view_all_patients === true;
+    currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
 
   const filtered = shares.filter((s) => {
+    if (status === 'active' && !s.is_active) return false;
+    if (status === 'ended' && s.is_active) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -66,13 +72,26 @@ export const HospitalPatientsCard = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {shares.length > 3 && (
-          <Input
-            placeholder="Search by name or email"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        )}
+        <div className="flex flex-col sm:flex-row gap-2">
+          {shares.length > 3 && (
+            <Input
+              placeholder="Search by name or email"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="sm:flex-1"
+            />
+          )}
+          <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+            <SelectTrigger className="sm:w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="ended">Disconnected</SelectItem>
+              <SelectItem value="all">All statuses</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {isLoading ? (
           <div className="flex justify-center py-6">
@@ -80,7 +99,9 @@ export const HospitalPatientsCard = () => {
           </div>
         ) : filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
-            No institution shares yet. Patients connect using your hospital code.
+            {shares.length === 0
+              ? 'No institution shares yet. Patients connect using your hospital code.'
+              : 'No patients match this filter.'}
           </p>
         ) : (
           <div className="space-y-2">

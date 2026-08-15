@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useAuditLog } from "@/hooks/useAuditLog";
+import { useAuditLog, usePracticeAuditLog } from "@/hooks/useAuditLog";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { SEOHead } from "@/components/seo/SEOHead";
 import { format } from "date-fns";
@@ -15,7 +15,7 @@ import { Navigate } from "react-router-dom";
 
 function toCsv(rows: any[]): string {
   if (rows.length === 0) return "";
-  const headers = ["created_at", "user_id", "action", "resource_type", "resource_id", "patient_user_id", "ip_address"];
+  const headers = ["created_at", "actor_label", "user_id", "action", "resource_type", "resource_id", "patient_user_id", "ip_address"];
   const lines = [headers.join(",")];
   for (const r of rows) {
     lines.push(headers.map((h) => JSON.stringify((r as any)[h] ?? "")).join(","));
@@ -24,12 +24,53 @@ function toCsv(rows: any[]): string {
 }
 
 export default function ClinicianAudit() {
-  const { can, loading: capsLoading } = useClinicianCapabilities();
-  const { data: entries = [], isLoading } = useAuditLog({ limit: 500 });
+  const { can, practiceId, loading: capsLoading } = useClinicianCapabilities();
   const [query, setQuery] = useState("");
 
+  // Inside a tenant this is the hospital's own access log — every member's
+  // actions, not just the viewer's. A solo clinician with no tenant keeps the
+  // personal view, which is all their own activity anyway.
+  const isTenantView = !!practiceId;
+  const { data: tenantEntries = [], isLoading: loadingTenant } = usePracticeAuditLog(
+    practiceId,
+    { search: query, limit: 500 },
+  );
+  const { data: ownEntries = [], isLoading: loadingOwn } = useAuditLog({ limit: 500 });
+  const isLoading = isTenantView ? loadingTenant : loadingOwn;
+
+  const entries = useMemo(
+    () =>
+      isTenantView
+        ? tenantEntries.map((e) => ({
+            id: e.id,
+            created_at: e.created_at,
+            user_id: e.actor_user_id,
+            actor_label: e.actor_name || e.actor_email || `${e.actor_user_id.slice(0, 8)}…`,
+            action: e.action,
+            resource_type: e.resource_type,
+            resource_id: e.resource_id,
+            patient_user_id: e.patient_user_id,
+            patient_label: e.patient_name || (e.patient_user_id ? `${e.patient_user_id.slice(0, 8)}…` : null),
+            ip_address: e.ip_address,
+          }))
+        : ownEntries.map((e) => ({
+            id: e.id,
+            created_at: e.created_at,
+            user_id: e.user_id,
+            actor_label: "You",
+            action: e.action,
+            resource_type: e.resource_type,
+            resource_id: e.resource_id,
+            patient_user_id: e.patient_user_id,
+            patient_label: e.patient_user_id ? `${e.patient_user_id.slice(0, 8)}…` : null,
+            ip_address: e.ip_address,
+          })),
+    [isTenantView, tenantEntries, ownEntries],
+  );
+
+  // The tenant query filters server-side; the personal one filters here.
   const filtered = useMemo(() => {
-    if (!query.trim()) return entries;
+    if (isTenantView || !query.trim()) return entries;
     const q = query.toLowerCase();
     return entries.filter(
       (e) =>
@@ -38,7 +79,7 @@ export default function ClinicianAudit() {
         (e.resource_id ?? "").toLowerCase().includes(q) ||
         (e.patient_user_id ?? "").toLowerCase().includes(q),
     );
-  }, [entries, query]);
+  }, [isTenantView, entries, query]);
 
   const exportCsv = () => {
     const csv = toCsv(filtered);
@@ -88,7 +129,11 @@ export default function ClinicianAudit() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-base">Recent activity</CardTitle>
-                <CardDescription>Last 500 events</CardDescription>
+                <CardDescription>
+                  {isTenantView
+                    ? "Last 500 events across your team"
+                    : "Last 500 of your own events"}
+                </CardDescription>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-none">
@@ -118,6 +163,7 @@ export default function ClinicianAudit() {
                   <thead className="text-xs uppercase text-muted-foreground border-b border-border">
                     <tr>
                       <th className="text-left py-2 pr-3">When</th>
+                      <th className="text-left py-2 pr-3">Who</th>
                       <th className="text-left py-2 pr-3">Action</th>
                       <th className="text-left py-2 pr-3">Resource</th>
                       <th className="text-left py-2 pr-3">Patient</th>
@@ -130,6 +176,7 @@ export default function ClinicianAudit() {
                         <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
                           {format(new Date(e.created_at), "MMM d, HH:mm")}
                         </td>
+                        <td className="py-2 pr-3 truncate max-w-[14rem]">{e.actor_label}</td>
                         <td className="py-2 pr-3">
                           <Badge variant="outline" className="text-xs">{e.action}</Badge>
                         </td>
@@ -137,8 +184,8 @@ export default function ClinicianAudit() {
                           <span className="font-mono text-xs">{e.resource_type}</span>
                           {e.resource_id && <span className="text-xs text-muted-foreground"> / {e.resource_id.slice(0, 8)}…</span>}
                         </td>
-                        <td className="py-2 pr-3 font-mono text-xs text-muted-foreground">
-                          {e.patient_user_id ? `${e.patient_user_id.slice(0, 8)}…` : "—"}
+                        <td className="py-2 pr-3 text-xs text-muted-foreground truncate max-w-[12rem]">
+                          {e.patient_label ?? "—"}
                         </td>
                         <td className="py-2 pr-3 font-mono text-xs text-muted-foreground">{e.ip_address ?? "—"}</td>
                       </tr>

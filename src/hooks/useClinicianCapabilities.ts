@@ -58,18 +58,21 @@ const ALL_CAPABILITIES: PracticeCapability[] = [
 interface MembershipRow {
   practice_id: string;
   role: PracticeRole;
+  created_at?: string;
 }
 
 export function useClinicianCapabilities() {
   const { user } = useAuth();
   const { isClinician } = useClinicianProfile();
   const [membership, setMembership] = useState<MembershipRow | null>(null);
+  const [memberships, setMemberships] = useState<MembershipRow[]>([]);
   const [grants, setGrants] = useState<Set<PracticeCapability>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!user) {
       setMembership(null);
+      setMemberships([]);
       setGrants(new Set());
       setLoading(false);
       return;
@@ -77,16 +80,25 @@ export function useClinicianCapabilities() {
 
     setLoading(true);
 
-    // 1. Look up the active practice membership (if any).
-    const { data: memberRow } = await supabase
+    // 1. Look up active practice memberships.
+    //    A clinician can be affiliated with several hospitals at once (sharing
+    //    model §6), so this reads the full set. maybeSingle() used to error on
+    //    exactly that case, dropping the user through to the solo branch below
+    //    and handing them every capability.
+    const { data: memberRows } = await supabase
       .from("practice_members")
-      .select("practice_id, role")
+      .select("practice_id, role, created_at")
       .eq("user_id", user.id)
       .eq("status", "active")
-      .maybeSingle();
+      .order("created_at", { ascending: true });
+
+    // Until there is a tenant switcher, the earliest affiliation is the active
+    // one — deterministic, and the same row the database-side default resolves.
+    const memberRow = (memberRows ?? [])[0] as MembershipRow | undefined;
 
     if (!memberRow) {
       setMembership(null);
+      setMemberships([]);
       // Solo clinician (verified clinician profile, no practice yet) is the
       // owner of their own workspace — grant all capabilities so audit,
       // reports, compliance, templates, etc. are accessible without forcing
@@ -96,15 +108,18 @@ export function useClinicianCapabilities() {
       return;
     }
 
-    setMembership(memberRow as MembershipRow);
+    setMembership(memberRow);
+    setMemberships((memberRows ?? []) as MembershipRow[]);
 
-    // 2. Resolve every capability via the SECURITY DEFINER RPC.
-    //    Parallel calls — one row each, server is the source of truth.
+    // 2. Resolve every capability via the SECURITY DEFINER RPC, scoped to the
+    //    tenant in hand so a role at one hospital cannot answer for another.
     const results = await Promise.all(
       ALL_CAPABILITIES.map(async (cap) => {
-        const { data, error } = await supabase.rpc("has_practice_capability", {
+        // Cast: the practice-scoped overload is newer than the generated types.
+        const { data, error } = await (supabase as any).rpc("has_practice_capability", {
           _user_id: user.id,
           _capability: cap,
+          _practice_id: memberRow.practice_id,
         });
         return [cap, !error && data === true] as const;
       }),
@@ -130,10 +145,12 @@ export function useClinicianCapabilities() {
       loading,
       role: membership?.role ?? null,
       practiceId: membership?.practice_id ?? null,
+      /** Every active affiliation — a clinician may work across hospitals. */
+      memberships,
       isInPractice: membership !== null,
       can,
       refresh: load,
     }),
-    [loading, membership, can, load],
+    [loading, membership, memberships, can, load],
   );
 }

@@ -47,10 +47,17 @@ Written for engineers and for technical reviewers at partner institutions.
 | --- | --- |
 | `clinician_has_patient_access(patient)` | active private share |
 | `clinician_has_patient_permission(patient, key)` | that share includes a specific category |
-| `institution_has_patient_access(patient)` | active institution share **and** assignment/practice view right |
+| `institution_has_patient_access(patient)` | active institution share **and** assignment in that same tenant / practice view right |
+| `institution_has_patient_permission(patient, key)` | the above **and** the patient shared that category |
 | `clinician_had_patient_access(patient)` | historical read-only access after revocation |
-| `is_assigned_to_patient(user, patient)` | direct assignment inside a tenant |
+| `is_assigned_to_patient(user, patient)` | direct assignment (any tenant — prefer the scoped form below) |
+| `is_assigned_to_patient_in_practice(user, patient, practice)` | assignment inside one specific tenant |
 | `practice_has_patient_access(practice)` | tenant-level check for pooled views |
+| `practice_audit_log(practice, search, limit)` | a tenant admin's view of their own tenant's access log |
+
+Institution reads go through `institution_has_patient_permission`, not the access helper — the
+patient's category choices are an access control, not a label. `share_events` covers both pathways:
+private rows carry `share_id`, institution rows carry `practice_share_id` and are written by trigger.
 
 Patient-side helpers: `get_patient_identity(ids[])` returns names/contact for patients a clinician may
 see (used to avoid "Unknown Patient"); `get_clinician_basic_info(ids[])` and

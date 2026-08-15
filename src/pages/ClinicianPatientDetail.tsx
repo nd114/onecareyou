@@ -714,7 +714,9 @@ const ClinicianPatientDetail = () => {
                     Clinical Notes
                   </CardTitle>
                   <CardDescription>
-                    Private notes about this patient (only visible to you)
+                    {patient.source === 'hospital'
+                      ? 'These notes belong to a private Care Circle share. For a hospital-assigned patient, use the Internal notes tab — those stay private to the care team and never reach the patient’s Health Vault.'
+                      : 'Private notes about this patient (only visible to you)'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -723,6 +725,7 @@ const ClinicianPatientDetail = () => {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={8}
+                    disabled={patient.source === 'hospital'}
                   />
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs text-muted-foreground">
@@ -732,9 +735,9 @@ const ClinicianPatientDetail = () => {
                           ? `Last saved ${formatDistanceToNow(lastSavedAt, { addSuffix: true })}`
                           : 'Not saved yet — your edits are local until you click Save.'}
                     </p>
-                    <Button 
+                    <Button
                       onClick={handleSaveNotes}
-                      disabled={savingNotes}
+                      disabled={savingNotes || patient.source === 'hospital'}
                       className="gradient-primary border-0"
                     >
                       {savingNotes ? (

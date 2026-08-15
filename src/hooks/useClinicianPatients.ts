@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInstitutionAssignedPatients } from '@/hooks/usePracticeShares';
 import { toast } from 'sonner';
 
 interface SharePermissions {
@@ -18,6 +20,13 @@ interface PatientIdentity {
 }
 
 
+/**
+ * Where this relationship came from. Private is the patient's own Care Circle
+ * share; hospital is a tenant's assignment. They are parallel and independent —
+ * one never implies the other (consent model §2).
+ */
+export type PatientSource = 'private' | 'hospital';
+
 interface PatientShare {
   id: string;
   user_id: string;
@@ -34,6 +43,12 @@ interface PatientShare {
   patient_name: string;
   patient_email: string | null;
   patient_phone: string | null;
+  source: PatientSource;
+  /** Set for hospital-assigned patients so panels can label which hospital. */
+  hospital_id: string | null;
+  hospital_name: string | null;
+  /** Hospital relationships stay listed after a patient disconnects, marked. */
+  share_active: boolean;
 }
 
 export function useClinicianPatients() {
@@ -91,6 +106,10 @@ export function useClinicianPatients() {
           patient_name: identity?.name || identity?.email || 'Patient (name pending)',
           patient_email: identity?.email || null,
           patient_phone: identity?.phone_number || null,
+          source: 'private' as const,
+          hospital_id: null,
+          hospital_name: null,
+          share_active: true,
         };
       }) as PatientShare[];
     },
@@ -159,13 +178,22 @@ export function useClinicianPatients() {
     mutationFn: async ({ shareId, notes }: { shareId: string; notes: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('provider_shares')
         .update({ clinician_notes: notes })
         .eq('id', shareId)
-        .eq('clinician_user_id', user.id);
+        .eq('clinician_user_id', user.id)
+        .select('id');
 
       if (error) throw error;
+      // These notes live on the private share row. A hospital-assigned patient
+      // has no such row, so an empty result means nothing was written — report
+      // that rather than showing a success toast for a no-op.
+      if (!data || data.length === 0) {
+        throw new Error(
+          'These notes are part of a private Care Circle share. Use Internal notes for a hospital-assigned patient.',
+        );
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
@@ -177,9 +205,57 @@ export function useClinicianPatients() {
     },
   });
 
+  // Hospital-assigned patients are a second, independent pathway into the same
+  // panel. They carry no provider_shares row, so they are shaped to match and
+  // tagged by source rather than being folded in invisibly.
+  const { assignedPatients, isLoading: isLoadingAssigned } = useInstitutionAssignedPatients();
+
+  const institutionPatients: PatientShare[] = useMemo(
+    () =>
+      assignedPatients.map((a) => ({
+        id: a.assignmentId,
+        user_id: a.patientUserId,
+        provider_name: a.practiceName,
+        provider_email: null,
+        // Synthetic, stable routing key — the detail page resolves patients out
+        // of this same list, and an assignment has no invite code of its own.
+        invite_code: `inst-${a.assignmentId}`,
+        permissions: {
+          vitals: a.shareAll || a.permissions.vitals === true,
+          meds: a.shareAll || a.permissions.medications === true,
+          // Schedule/adherence data has no institution read path, so claiming
+          // it here would render an adherence panel that is empty by design.
+          adherence: false,
+          profile: true,
+        },
+        is_active: a.shareActive,
+        created_at: a.assignedAt,
+        last_accessed_at: null,
+        expires_at: null,
+        clinician_user_id: user?.id ?? null,
+        clinician_notes: null,
+        patient_name: a.patientName || a.patientEmail || 'Patient (name pending)',
+        patient_email: a.patientEmail,
+        patient_phone: a.patientPhone,
+        source: 'hospital' as const,
+        hospital_id: a.practiceId,
+        hospital_name: a.practiceName,
+        share_active: a.shareActive,
+      })),
+    [assignedPatients, user?.id],
+  );
+
+  const allPatients = useMemo(() => {
+    // A patient may hold a private share AND be assigned at a hospital. Both
+    // rows are kept: they are separate relationships with separate scopes.
+    return [...patients, ...institutionPatients];
+  }, [patients, institutionPatients]);
+
   return {
-    patients,
-    isLoading,
+    patients: allPatients,
+    privatePatients: patients,
+    institutionPatients,
+    isLoading: isLoading || isLoadingAssigned,
     error,
     claimShare,
     autoClaimShares,

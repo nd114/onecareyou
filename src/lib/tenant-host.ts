@@ -14,8 +14,11 @@
  *   onecare.you / www.onecare.you / *.lovable.app -> null (marketing site)
  */
 
+/** The live product domain. Tenant subdomains here are real, not simulated. */
+const PRODUCTION_DOMAIN = 'onecare.you';
+
 /** Apex domains that host tenant subdomains. */
-const TENANT_BASE_DOMAINS = ['onecare.you', 'localhost'];
+const TENANT_BASE_DOMAINS = [PRODUCTION_DOMAIN, 'localhost'];
 
 /** Subdomains that are never tenants. */
 const RESERVED_SUBDOMAINS = new Set([
@@ -36,6 +39,11 @@ function isValidSlug(slug: string): boolean {
   return /^[a-z0-9][a-z0-9-]{1,31}$/.test(slug);
 }
 
+/** The live product domain, as opposed to a local or preview host. */
+function isProductionHost(hostname: string): boolean {
+  return hostname === PRODUCTION_DOMAIN || hostname.endsWith(`.${PRODUCTION_DOMAIN}`);
+}
+
 /**
  * Extracts the tenant slug from a hostname, or null when the host is the
  * marketing site / a preview host.
@@ -44,15 +52,19 @@ export function tenantSlugFromHost(
   host: string = typeof window !== 'undefined' ? window.location.hostname : '',
   search: string = typeof window !== 'undefined' ? window.location.search : '',
 ): string | null {
+  const hostname = (host || '').toLowerCase().split(':')[0].replace(/\.$/, '');
+  if (!hostname) return null;
+
   // Dev/preview override: ?tenant=lmc — lets us exercise branded intake on
   // hosts that can't carry a wildcard subdomain (e.g. Lovable previews).
-  if (search) {
+  //
+  // Never honoured in production. Which address a patient arrives at decides
+  // the sharing posture they are offered (consent model §3), so a query
+  // parameter must not be able to put someone through a hospital's intake.
+  if (search && !isProductionHost(hostname)) {
     const override = new URLSearchParams(search).get('tenant');
     if (override && isValidSlug(override.toLowerCase())) return override.toLowerCase();
   }
-
-  const hostname = (host || '').toLowerCase().split(':')[0].replace(/\.$/, '');
-  if (!hostname) return null;
 
   const base = TENANT_BASE_DOMAINS.find(
     (domain) => hostname === domain || hostname.endsWith(`.${domain}`),

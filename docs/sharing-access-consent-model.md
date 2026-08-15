@@ -29,7 +29,18 @@ record informed their clinical decisions and both sides may need it legally.
 Patient shares with a hospital as an institution, usually on admission or registration, using the
 hospital's code (set by the hospital's owner/admin in Practice → Hospital code). The patient either
 shares their full record or picks categories — vitals, medications, documents, conditions, allergies
-— and can adjust those categories on an existing connection at any time. The hospital assigns the treating clinician. Consent is to the institution; the
+— and can adjust those categories on an existing connection at any time.
+
+> **Open conflict (August 2026 review).** This document states one default posture for institution
+> sharing: share the full record, with a toggle to narrow it. The external
+> `OneCare_Sharing_Access_Consent_Model.md` instead makes the default depend on the entry channel —
+> share-everything through the hospital's own subdomain, granular-by-default when the patient starts
+> from inside OneCare. The shipped code follows this document. The decision, and a branch per option,
+> are in `docs/reviews/oc-lmc-review-aug-2026.md` (C3). The two documents should be reconciled into
+> one once it is made; a consent default is not a safe thing to have two versions of.
+>
+> Note also that conditions and allergies can be selected in the picker but have no institution read
+> path yet, so consenting to them currently shares nothing. The hospital assigns the treating clinician. Consent is to the institution; the
 clinician's access derives from their assignment (or a practice-wide viewing right for admins).
 The patient can disconnect from the institution at any time, independently of any private share.
 
