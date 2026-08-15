@@ -70,12 +70,12 @@ nothing here required a product decision.
 
 ---
 
-## 3. Conflicts awaiting a decision
+## 3. Conflicts — all now decided
 
-Two of these have a branch per option so they can be reviewed side by side.
-**Neither pair should be merged as-is — pick one and close the other.**
+All five were put to the product owner and answered in August 2026. Each entry
+keeps the original finding and records the decision and what was done.
 
-### C1. Multi-department scoping — the brief describes a feature that does not exist
+### C1. Multi-department scoping — **decided: build departments**
 
 The review brief makes "department-scoped clinician access" and "multi-department
 readiness (adding a second department should be config, not code)" the top
@@ -88,18 +88,22 @@ overseeing "a group of affiliated clinicians (grouped however the hospital finds
 useful, informally)" — deliberately informal grouping, not departments. The repo's
 tenancy plan matches the prompt.
 
-So the brief conflicts with both the prompt and the code. **Needs a product call:**
-is "department" just another word for the informal Sub-Admin group (in which case
-the brief is loose language and nothing is missing), or does OC-LMC actually need
-departments as a first-class object with its own scoping? The second is a real
-build — a `departments` table, membership, assignment scoping, and an RLS pass —
-and it is not what "config, not code" implies today, because there is no config
-surface to add a department to.
+**Decision:** departments are real and first-class. The chief admin creates them
+and appoints a sub-admin to run each; sub-admins manage clinician assignment
+within their own department.
 
-Closest existing behaviour is C2, which is where per-clinician scoping actually
-gets decided.
+**Built.** `practice_departments`, `practice_department_members` (with `is_lead`
+marking the sub-admin), `practice_patient_departments` for routing, and
+`department_id` on assignments. Adding a department is now genuinely config — a
+name in a text box — rather than code. Delegation is bounded in RLS and covered
+by `supabase/tests/department_delegation.test.sql`.
 
-### C2. Hospital-wide visibility by default — **two branches**
+The chief admin also asked for oversight, which is `practice_staff_overview()`
+and `practice_patient_overview()`: every clinician with their departments,
+caseload and access basis, and every patient with their department and who holds
+them, plus the tenant audit log they already had.
+
+### C2. Hospital-wide visibility by default — **decided: keep it, for now**
 
 `practice_members.can_view_all_patients` defaults to `true`, inherited from the
 original single-practice model, and `institution_has_patient_access()` treats it as
@@ -108,17 +112,21 @@ institution-shared patient's vitals, medications, documents and guidance without
 any assignment.** The docs describe the mechanism accurately but never state the
 intended default, so this is under-specified rather than wrong.
 
-| | Branch | Approach | Trade-off |
-| --- | --- | --- | --- |
-| **A** | `claude/oclmc-panel-scope-option-a-assignment-first` | Practice-wide view becomes an admin-only right inside hospital tenants; clinicians need an assignment. | No data migration; a hospital cannot re-widen by flipping the flag. A genuine ward-wide/on-call view would need a new capability. |
-| **B** | `claude/oclmc-panel-scope-option-b-hospital-default-false` | Default the flag to `false` for new clinical members of hospital tenants and backfill existing ones; helper unchanged. | Keeps a deliberate escape hatch for on-call cover, at the cost of a default an admin can widen again per person. |
+**Decision:** leave the default broad and do not merge either branch yet. The
+sub-admins who would route access are not onboarded, so restricting access before
+that workflow has anyone running it creates friction with no working mechanism to
+route around it. Access is audited, so this is a stated trade-off rather than an
+oversight.
 
-Both are scoped to `tenant_type = 'hospital'`, so Solo and Pro are untouched, and
-both were verified against a real database. **Either way this changes what OC-LMC
-clinicians can see today** — worth telling the hospital before it ships, since
-staff who currently see the whole ward list will stop.
+**Direction:** option A (assignment-first) is the target once sub-admins are
+onboarded and trained. `claude/oclmc-panel-scope-option-a-assignment-first` stays
+open as the future state. Option B was closed — not the direction.
 
-### C3. Default sharing posture by entry channel — **two branches**
+**Done:** the reasoning and the revisit trigger are recorded as a column comment
+on `can_view_all_patients`, so anyone reading the schema finds it, and the
+roadmap carries the switch as a tracked next step.
+
+### C3. Default sharing posture by entry channel — **decided: one posture, disclosed**
 
 The attached consent model (§3) makes the default depend on how the relationship
 starts: share-everything through the hospital's own subdomain, granular-by-default
@@ -129,16 +137,30 @@ entirely, and `enterprise-hospital-tenancy-plan.md` states a single posture:
 "Default is share-everything with a single toggle for a reduced set." The shipped
 code follows the repo docs — share-all is the default on both paths.
 
-| | Branch | Approach | Trade-off |
-| --- | --- | --- | --- |
-| **A** | `claude/oclmc-share-posture-option-a-entry-channel` | Implement the attached policy: in-OneCare starts with nothing selected; subdomain intake keeps share-everything. | Matches the external policy and the private-doctor pathway's own pattern. More friction for a patient connecting from inside the app. |
-| **B** | `claude/oclmc-share-posture-option-b-uniform-with-disclosure` | Keep one share-everything default; answer the policy's actual concern with plain disclosure at the moment of connecting. | Fewer clicks during admission, which is when this is used. A patient starting inside OneCare gets a broader default than the private pathway gives them. |
+**Decision:** collapse the channel distinction. Share-everything is the default
+on both paths, because clinicians work best with the full picture and a partial
+record recreates the asymmetry the platform exists to remove. What makes it
+legitimate is disclosure at the moment it happens, plus the patient being able to
+deselect any category.
 
-Whichever wins, **the repo's canonical consent doc and the attached one should be
-reconciled into one document** — right now they disagree on a consent default,
-which is not a safe thing to have two versions of.
+Neither branch matched exactly — A implemented the split, B kept one posture but
+was framed as an alternative rather than the rule — so both were closed and the
+disclosure was applied on the main line instead.
 
-### C4. Enterprise pricing is stated three different ways
+**Done:** both entry paths now carry the disclosure on the screen where the
+patient acts, naming what is shared, that it includes data added from then on,
+and that it can be restricted or ended later. The code already defaulted to
+share-all on both paths, so behaviour did not change — disclosure and
+documentation did. The canonical consent doc now states that it supersedes the
+external one on this point.
+
+**Also fixed as a consequence:** the in-app flow exists and is mounted in Care
+Circle, so this was not new scope. It is code-entry only, though — a patient
+connects by typing the hospital's code, and there is no searchable directory of
+hospitals. If "select a hospital" is meant to mean browse-and-pick, that is a
+separate build and a listing decision (which hospitals are publicly discoverable).
+
+### C4. Enterprise pricing is stated three different ways — **decided: no change**
 
 - `docs/pricing-roadmap.md` "Proposed tiers" and every revenue table: **$249/month**
 - The same file's "Current feature gating" table and regional-pricing section: **Solo $79 / Pro $149 / Enterprise $399+**
@@ -151,68 +173,79 @@ which is not a safe thing to have two versions of.
   supplied with this review.
 
 Four figures, and the file the docs call authoritative does not carry any of them.
-**Needs the v4 model** before any gating logic is written against a number. Nothing
-in the code gates on price today, so this is a documentation and commercial
-correctness problem rather than a live defect — but it will become one the moment
-tier gating is built.
 
-### C5. "Sub-Admin" is documented as shipped but does not exist
+**Decision:** nothing public changes. "From $399/month" is a deliberate self-serve
+floor with Contact Sales beyond it, not a stale number; large-hospital rates are
+negotiated and not published. Clinician pricing and enterprise pricing are
+separate products and must not be conflated.
+
+**Done:** the v4 model is now recorded in `pricing-roadmap.md` — size and regional
+fee bands (OC-LMC at Nigeria / large hospital, $2,000–3,500), planned regional
+patient pricing against the live global rate, the 70/30 split, onboarding, storage
+and prepay terms — with the older tables marked as historical drafts. One code
+implication is flagged there: the revenue-share card derives the hospital's share
+from the global premium price, which holds only while every market pays the same
+rate.
+
+### C5. "Sub-Admin" is documented as shipped but does not exist — **decided: build it**
 
 `enterprise-hospital-tenancy-plan.md` describes Phase D as shipped, with sub-admins
 assigning hospital-shared patients, and the data-model doc repeats it. The
 `practice_role` enum has no `sub_admin` value, and assignment is gated on
 `can_manage_practice`, which is **owner or admin only**.
 
-So there is no delegated middle layer: to let a ward lead assign patients, the
-hospital must make them a full tenant admin, which also grants team management,
-billing and settings. Not fixed here because "add a role" and "add a role with
-group-scoped oversight" are materially different builds, and the second is what
-the prompt describes (a Sub-Admin oversees *a group of* clinicians — the same
-grouping question as C1).
+So there was no delegated middle layer: to let a ward lead assign patients, the
+hospital had to make them a full tenant admin, which also granted team
+management, billing and settings.
+
+**Built.** `sub_admin` is a real role, scoped by the departments it leads (C1). A
+sub-admin routes patients, assigns clinicians within their own department, and
+reads their department's roster and audit log — and cannot manage the team,
+billing, settings, branding or the hospital code. Lead status is guarded by a
+trigger as well as policy, so delegation cannot extend itself.
 
 ---
 
 ## 4. Gaps found, not fixed — need a decision or a bigger build
 
-- **Two shared categories are not actually wired.** The patient picker offers
-  vitals, medications, documents, **conditions** and **allergies**. Only the first
-  three have an institution read path; conditions and allergies live on `profiles`,
-  which hospital staff cannot read. A patient can consent to sharing them and the
-  hospital will never see them. Fixing it means deciding how to expose exactly
-  those fields (a narrow security-definer accessor) — deliberately not done here,
-  because widening PHI exposure is a product decision even when consent exists.
-- **Adherence is not shared with hospitals either.** `schedule_entries` has no
-  institution policy. The panel now reports adherence as unshared rather than
-  rendering an empty chart that reads as total non-adherence.
-- **Clinician whitelisting does not exist** (build prompt §4). No email-domain
-  match, no hospital-managed allowlist, no pending-approval state, no CSV bulk
-  onboarding, no offboarding action. Joining a tenant is invite-only via
-  `practice_invitations`, which is a reasonable substitute for an allowlist at one
-  hospital, but it does not scale to bulk staff onboarding and there is no
-  self-registration path to hold in review. Separately, `practice_name` on clinician
-  sign-up is free text and unverified — it does not grant anything, but it will
-  display as an affiliation.
+- ~~**Two shared categories are not actually wired.**~~ **Fixed.** Conditions and
+  allergies now reach clinicians through `get_patient_clinical_profile()`, which
+  releases each field only if that category was shared — so sharing allergies does
+  not disclose conditions, and the profile row itself is never exposed.
+  `blood_type` is deliberately still withheld: no category covers it, so no
+  patient has consented to it. Allergies and conditions are also now *displayed*,
+  above the tabs on the patient record, which they were not for either pathway.
+- ~~**Adherence is not shared with hospitals either.**~~ **Fixed.** Dose history
+  follows the medications category the patient already chose.
+- ~~**Clinician whitelisting does not exist.**~~ **Built.** Approved email domains
+  or a hospital-managed allowlist affiliate staff automatically; anyone else lands
+  in pending approval holding nothing. CSV bulk import, approve/reject, and
+  offboarding that ends hospital access while keeping the clinician's account,
+  private patients and authored history. Still true: `practice_name` on clinician
+  sign-up is unverified free text — it grants nothing, but it displays as an
+  affiliation, and a hospital-facing name should come from the tenant, not a
+  self-typed string.
 - **The hospital subdomain serves patients only.** The prompt has it serving both
   patient and clinician registration; `TenantHome` renders the patient intake page
-  only.
-- **Post-login branding is absent.** Hospital name/logo appear on the pre-auth
-  intake page only. The nav bar, favicon and auth screens are plain OneCare, where
-  the prompt asks for the "{hospital} by OneCare" lockup. The roadmap lists
-  whitelabelling under "Next up", so the repo is internally consistent that this
-  is unfinished — but it is worth knowing the hospital's staff and patients see
-  OneCare branding everywhere after sign-in.
-- **Subdomain DNS is still a hosting task.** The tenancy plan's launch checklist
-  has this as its one unchecked item. Resolution logic is correct and tested;
-  `<slug>.onecare.you` will not resolve until wildcard DNS and a certificate exist.
-  If the hospital has already published the link, this is the thing to confirm first.
+  only. Clinicians now have a self-serve route to affiliation
+  (`request_practice_affiliation`), but no branded entry point on the hospital's
+  own address. Worth adding.
+- ~~**Post-login branding is absent.**~~ **Decided: keep it that way for now.** The
+  branded sign-up page carries name, logo *and* brand colours — it is the
+  hospital's front door. Everything behind sign-in stays Emerald Prestige.
+  Recorded in the tenancy plan and tracked on the roadmap as a future option.
+- ~~**Subdomain DNS is still a hosting task.**~~ **Live.** `lmc.onecare.you`
+  resolves and the hospital has published the link.
 - **Per-tenant persistent demo is not built** (prompt §12, deferred as Phase E in
   the repo). The daily reset is narrow enough that it will not destroy a demo
   tenant's data, but there is no way to seed one either.
 - **Audit rows are client-written.** `hipaa_audit_logs` INSERT is
   `auth.uid() = user_id`, so the log records what the client chose to report. It is
   sound for the honest-client case and fine for a BAA conversation today, but a
-  determined user can omit their own entries. Server-side logging of PHI reads
-  belongs on the roadmap before a formal audit.
+  determined user can omit their own entries. **Carried forward deliberately** —
+  now tracked on the roadmap as "server-side audit logging", to be reviewed before
+  any formal audit. This matters more now that C2 leaves visibility broad and the
+  audit log is the compensating control.
 - **`npm ci` fails** — `package-lock.json` is out of sync with `package.json`
   (`picomatch`). The project builds with bun, so this only bites anyone using npm
   in CI. Left alone deliberately: regenerating the lockfile would produce a large
@@ -223,20 +256,22 @@ grouping question as C1).
 
 ---
 
-## 5. Recommended order of work
+## 5. What is left
 
-1. **Decide C2** (hospital-wide visibility) and ship the chosen branch. This is the
-   only finding where the live client's staff currently see more than the model says
-   they should.
-2. **Decide C3** and reconcile the two consent documents into one.
-3. Confirm **subdomain DNS** is actually live for the published link.
-4. **Get the v4 pricing model in** and make `pricing-constants.ts` genuinely single-source (C4).
-5. **Answer C1** — informal groups or real departments — before anything is built
-   against either reading.
-6. Wire **conditions/allergies** so the picker cannot promise what it does not deliver.
-7. Whitelisting and bulk onboarding, when the hospital's staff list grows past
-   what invitations handle.
-8. Sub-Admin role (C5), which lands naturally once C1 is answered.
+Everything from the original list is done or consciously deferred. What remains:
+
+1. **Onboard and train the hospital's sub-admins**, then switch to assignment-first
+   access (C2) from the branch held open for it. This is the one place where the
+   live client's staff still see more than the model describes.
+2. **Server-side audit logging**, which is the compensating control for that gap.
+3. **A clinician entry point on the hospital's subdomain**, so staff registration
+   is as branded as patient registration.
+4. **Regional pricing**, when it lands, must fix the revenue-share estimate's
+   dependence on the global premium price.
+5. **EHR integration** and **wearables**, both now planned in their own documents.
+   The wearables provenance work is worth doing before any device integration
+   exists — retrofitting the clinical/consumer distinction into charts people
+   already trust is much harder than building it in.
 
 ---
 

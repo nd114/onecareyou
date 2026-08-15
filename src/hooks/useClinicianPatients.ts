@@ -223,9 +223,9 @@ export function useClinicianPatients() {
         permissions: {
           vitals: a.shareAll || a.permissions.vitals === true,
           meds: a.shareAll || a.permissions.medications === true,
-          // Schedule/adherence data has no institution read path, so claiming
-          // it here would render an adherence panel that is empty by design.
-          adherence: false,
+          // Adherence is dose history behind the medications the patient
+          // shared, so it follows that category rather than a separate one.
+          adherence: a.shareAll || a.permissions.medications === true,
           profile: true,
         },
         is_active: a.shareActive,

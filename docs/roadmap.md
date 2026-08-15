@@ -9,7 +9,9 @@
 - [`qhin-integration-plan.md`](./qhin-integration-plan.md) — national network records (Particle Health first)
 - [`whatsapp-integration-plan.md`](./whatsapp-integration-plan.md) — messaging transport plan
 - [`enterprise-hospital-tenancy-plan.md`](./enterprise-hospital-tenancy-plan.md) — hospital tenancy phases
-- [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md) — codebase review findings and open decisions
+- [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md) — codebase review findings and decisions
+- [`ehr-integration-plan.md`](./ehr-integration-plan.md) — external EHR import, then narrow write-back
+- [`wearables-plan.md`](./wearables-plan.md) — patient device connections and provenance
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — consent + access matrix
 - [`pricing-roadmap.md`](./pricing-roadmap.md) — tiers, packs, storage economics
 - [`platform-documentation.md`](./platform-documentation.md) — system reference
@@ -21,10 +23,10 @@
 
 ## Now (in flight)
 
-0. **OC-LMC review follow-ups.** Findings and the prioritised fix list are in
-   [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md). Two decisions are
-   blocking: hospital-wide visibility by default (C2) and the entry-channel sharing posture (C3).
-   Each has a branch per option, ready to review side by side.
+0. **OC-LMC review follow-ups — decisions taken, work landed.** See
+   [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md). Departments and
+   sub-admins, clinician whitelisting, and the full set of share categories are built. What
+   remains open is listed under "Next up" and "Deferred".
 1. **Mobile-first sweep (patient + clinician).** Scripted 390x844 / 768x1024 passes over every pillar and sub-tab; fix P0 broken flows first, then overlap between bottom nav, FAB stack and sticky sub-tabs, then polish.
 2. **Surface budget discipline.** Every new feature must replace a surface or justify itself against the four pillars per side.
 
@@ -44,6 +46,17 @@
 
 ### August 2026
 
+- **Departments and sub-admins.** A hospital's chief admin creates departments, appoints
+  sub-admins to run them, and sees a roster of every clinician's departments, caseload and access
+  basis alongside every patient's department and assigned clinicians. Sub-admins route and assign
+  inside their own departments only — bounded in RLS and covered by 16 database assertions.
+- **Clinician whitelisting, bulk onboarding and offboarding.** Approved email domains or a
+  hospital-managed allowlist affiliate staff automatically; anyone else waits in pending approval
+  with no access. CSV import for bulk staff. Offboarding ends hospital access immediately while
+  keeping the clinician's account, their private patients and their authored history.
+- **Every share category now shares something.** Conditions and allergies reach the clinician
+  through a field-gated accessor, adherence follows the medications category, and allergies and
+  conditions are shown on the patient record where a clinician cannot miss them.
 - **Tenant hospital codes from the console.** Platform admins can set or change a tenant's hospital code after creation (same availability check as the practice-side card) and see the reserved `<code>.onecare.you` address; the wildcard DNS/cert for `*.onecare.you` remains a hosting task.
 - **Enterprise cards hidden for solo practices.** The hospital code and institution-shared patient cards no longer render on the Practice page unless the tenant is a hospital (or already has a code/shares), keeping the solo clinician surface small.
 - **Admin console overview + audit search.** Console opens on an Overview tab showing tenants against their storage allowance (with over-90% warnings) and the newest accounts; a new Audit tab searches the platform-wide access log by action, clinician email or patient email, paginated and read-only. Both are admin-gated security-definer lookups.
@@ -79,7 +92,16 @@
 
 1. **Mobile P0/P1 fixes** from the sweep findings table.
 2. **Cross-tenant audit search** in the admin console (admin actions + access logs).
-3. **Whitelabelling for enterprise tenants** — logo, name, accent colour per tenant; hosting-side wildcard DNS/cert for `<slug>.onecare.you` is an infrastructure task, not app work.
+3. **Post-login tenant branding** — the hospital's name and logo behind sign-in as well as on the
+   sign-up address. Deliberately deferred (Aug 2026): the branded intake page carries name, logo
+   and brand colours, and everything after sign-in stays Emerald Prestige. Revisit if a hospital
+   asks for it.
+4. **Assignment-first access** — switch `can_view_all_patients` off as the hospital default once
+   sub-admins are onboarded and trained, so a clinician sees the patients assigned to them.
+   Prepared on `claude/oclmc-panel-scope-option-a-assignment-first`; see review C2.
+5. **Server-side audit logging.** `hipaa_audit_logs` rows are written by the client, so the log
+   records what the client chose to report. Sound for the honest-client case and fine for the BAA
+   conversation today, but PHI reads should be logged server-side before a formal audit.
 4. **Enterprise management depth** — provider/patient rosters, coverage and caseload views, owner KPI reports.
 5. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
 6. **AI medication knowledge base** for the patient assistant (interactions, side effects, missed doses; no dosage changes, no diagnosis).

@@ -53,12 +53,20 @@ hospital staff can never read without an active share.
 ## 3. Phases
 
 **Phase A — tenancy core (shipped)**
-Tenant entity, roles, slug-based hospital code, storage allowance, revenue-share field, name/logo
-overlay only (no re-theme of the emerald/cream/gold system).
+Tenant entity, roles, slug-based hospital code, storage allowance, revenue-share field, and tenant
+branding.
+
+**Where tenant branding applies** (decided August 2026): the hospital's own sign-up address
+(`<slug>.onecare.you`) carries the tenant's name, logo **and** brand colours — it is the hospital's
+front door and should look like it. Everything behind sign-in keeps the Emerald Prestige system
+(cream, deep emerald, gold, Fraunces/Epilogue), so patients and clinicians move through one
+consistent app. Post-login tenant branding is deliberately not built; see the roadmap.
 
 **Phase B — hospital-level sharing (shipped, launch scope)**
 - Patient connects to a hospital by code from Care Circle → "Hospitals & clinics".
-- Default is share-everything with a single toggle for a reduced set (vitals + medications).
+- Default is share-everything, the same on both entry channels (hospital subdomain or in-app),
+  disclosed on the connect screen itself, with a per-category picker to narrow it at any time.
+  See `docs/sharing-access-consent-model.md` §2B.
 - Disconnection is a status change; history and records are preserved permanently.
 - Fast-follow: the granular per-category picker, reassignment polish, multi-hospital labelling.
 
@@ -96,10 +104,11 @@ formulary checks only if confirmed needed.
 - [x] Assignment of a clinician to a hospital-shared patient
 - [x] Patient-initiated disconnection with preserved history
 - [x] Pooled tenant storage metering
-- [x] Hospital code self-service (reserves `<slug>.onecare.you`; DNS routing still to do)
+- [x] Hospital code self-service (reserves `<slug>.onecare.you`)
 - [x] Tenant admin surfaces + platform admin console at `/admin`
 - [x] Revenue-share reporting view (estimate; statements/payouts coming soon)
-- [ ] Subdomain DNS routing for `<slug>.onecare.you`
+- [x] Subdomain DNS routing for `<slug>.onecare.you` — live; `lmc.onecare.you` resolves and the
+      hospital has published the link
 
 ## 5. Open items
 

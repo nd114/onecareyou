@@ -37,9 +37,34 @@ behind. A failed assertion raises and aborts; a clean run ends with
 | A colleague at the same hospital without an assignment reads nothing | consent model §2B |
 | An assignment made by another tenant grants nothing | tenancy plan §2 |
 | Patient identity resolves through the institution pathway, and only there | tenancy plan §2 |
+| Adherence history follows the medications category | consent model §2B |
+| Conditions and allergies are released per category, not together | consent model §2B |
 | A hospital may end a share but never restart one | consent model §3 |
 | Revocation stops forward access immediately | consent model §3 |
 | The relationship ledger records connect / revoke / re-share | consent model §3 |
 
-Please extend this file rather than starting a new one when the sharing rules
-change, and add a row above so the coverage stays legible.
+`department_delegation.test.sql` — departments and the Sub-Admin role:
+
+| Rule | Source |
+| --- | --- |
+| A lead routes and assigns inside their own department | tenancy plan §3 (Phase D) |
+| A lead cannot assign in another department, or to a clinician outside theirs | tenancy plan §3 |
+| A lead cannot appoint another lead, or create a department | tenancy plan §3 |
+| A sub_admin holds no tenant management, team or billing rights | build prompt §2 |
+| A lead's oversight covers their own departments and the unrouted queue | tenancy plan §3 |
+| The chief admin sees the full staff roster and every shared patient | build prompt §10 |
+| An ordinary clinician gets no oversight surface | build prompt §2 |
+
+`clinician_affiliation.test.sql` — whitelisting, bulk onboarding, offboarding:
+
+| Rule | Source |
+| --- | --- |
+| An approved domain or allowlist entry affiliates immediately | build prompt §4 |
+| Anyone else lands in pending approval, holding no capabilities | build prompt §4 |
+| Affiliation never creates a duplicate membership | build prompt §4 |
+| Bulk import skips duplicates and unusable rows | build prompt §4 |
+| Offboarding revokes access without deleting the person | build prompt §4 |
+| The last owner cannot be offboarded | operational safety |
+
+Please extend these files rather than starting new ones when the rules change,
+and add a row above so the coverage stays legible.

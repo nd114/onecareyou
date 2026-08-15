@@ -14,6 +14,11 @@ import { Hospital, Loader2 } from 'lucide-react';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeSharedPatients } from '@/hooks/usePracticeShares';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
+import {
+  usePracticeDepartments,
+  usePracticePatientOverview,
+} from '@/hooks/usePracticeDepartments';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 export const HospitalPatientsCard = () => {
@@ -23,18 +28,33 @@ export const HospitalPatientsCard = () => {
     currentPractice?.id,
   );
   const { tenant } = usePracticeTenant(currentPractice?.id);
+  const { user } = useAuth();
+  const { departments, members: departmentMembers } = usePracticeDepartments(currentPractice?.id);
+  const { patients: overview } = usePracticePatientOverview(currentPractice?.id);
 
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<Record<string, string>>({});
   // A patient who disconnects is not removed, and the hospital is not notified —
   // the status changes and these views filter on it (consent model §3).
   const [status, setStatus] = useState<'all' | 'active' | 'ended'>('active');
+  const [pendingDept, setPendingDept] = useState<Record<string, string>>({});
 
-  // Must match the RLS policy on practice_patient_assignments
-  // (can_manage_practice), or the control is offered to people whose write the
-  // database will refuse. can_view_all_patients is a read right, not a delegation.
-  const canAssign =
+  // Chief admins assign anywhere; a sub-admin assigns inside the departments
+  // they lead. Both are enforced in RLS — this only decides what to render.
+  const ledDepartmentIds = departmentMembers
+    .filter((m) => m.is_lead && m.user_id === user?.id)
+    .map((m) => m.department_id);
+  const isChiefAdmin =
     currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
+  const canAssign = isChiefAdmin || ledDepartmentIds.length > 0;
+
+  /** Departments this patient is currently routed to. */
+  const departmentsForPatient = (patientUserId: string) => {
+    const row = overview.find((p) => p.patient_user_id === patientUserId);
+    const routed = departments.filter((d) => row?.department_ids?.includes(d.id));
+    // A sub-admin only ever assigns within a department they lead.
+    return isChiefAdmin ? routed : routed.filter((d) => ledDepartmentIds.includes(d.id));
+  };
 
   const filtered = shares.filter((s) => {
     if (status === 'active' && !s.is_active) return false;
@@ -122,40 +142,93 @@ export const HospitalPatientsCard = () => {
                   </Badge>
                 </div>
 
-                {share.is_active && canAssign && (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Select
-                      value={pending[share.id] || ''}
-                      onValueChange={(v) => setPending((p) => ({ ...p, [share.id]: v }))}
-                    >
-                      <SelectTrigger className="sm:flex-1">
-                        <SelectValue placeholder="Assign a clinician" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {members.map((m) => (
-                          <SelectItem key={m.user_id} value={m.user_id}>
-                            {m.clinician_profile
-                              ? `${m.clinician_profile.title || 'Dr.'} ${m.clinician_profile.first_name} ${m.clinician_profile.last_name}`
-                              : m.profile?.name || m.profile?.email || 'Team member'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="sm"
-                      disabled={!pending[share.id] || isAssigning}
-                      onClick={async () => {
-                        await assign({
-                          patientUserId: share.user_id,
-                          clinicianUserId: pending[share.id],
-                        });
-                        setPending((p) => ({ ...p, [share.id]: '' }));
-                      }}
-                    >
-                      Assign
-                    </Button>
-                  </div>
-                )}
+                {share.is_active && canAssign && (() => {
+                  const patientDepartments = departmentsForPatient(share.user_id);
+                  const chosenDept =
+                    pendingDept[share.id] ||
+                    (patientDepartments.length === 1 ? patientDepartments[0].id : '');
+
+                  // Assignable clinicians are the ones who actually work in the
+                  // chosen department; RLS refuses anyone else.
+                  const assignable = chosenDept
+                    ? members.filter((m) =>
+                        departmentMembers.some(
+                          (dm) => dm.department_id === chosenDept && dm.user_id === m.user_id,
+                        ),
+                      )
+                    : isChiefAdmin
+                      ? members
+                      : [];
+
+                  if (patientDepartments.length === 0 && !isChiefAdmin) {
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        Not routed to a department you lead.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="flex flex-col gap-2">
+                      {patientDepartments.length > 0 && (
+                        <Select
+                          value={chosenDept}
+                          onValueChange={(v) => setPendingDept((p) => ({ ...p, [share.id]: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {patientDepartments.map((d) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Select
+                          value={pending[share.id] || ''}
+                          onValueChange={(v) => setPending((p) => ({ ...p, [share.id]: v }))}
+                        >
+                          <SelectTrigger className="sm:flex-1">
+                            <SelectValue
+                              placeholder={
+                                assignable.length === 0
+                                  ? 'No clinicians in this department yet'
+                                  : 'Assign a clinician'
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {assignable.map((m) => (
+                              <SelectItem key={m.user_id} value={m.user_id}>
+                                {m.clinician_profile
+                                  ? `${m.clinician_profile.title || 'Dr.'} ${m.clinician_profile.first_name} ${m.clinician_profile.last_name}`
+                                  : m.profile?.name || m.profile?.email || 'Team member'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          disabled={!pending[share.id] || isAssigning}
+                          onClick={async () => {
+                            await assign({
+                              patientUserId: share.user_id,
+                              clinicianUserId: pending[share.id],
+                              departmentId: chosenDept || null,
+                            });
+                            setPending((p) => ({ ...p, [share.id]: '' }));
+                          }}
+                        >
+                          Assign
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {share.assignedClinicianIds.length > 0 && (
                   <p className="text-xs text-muted-foreground">
