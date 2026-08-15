@@ -250,6 +250,17 @@ const CareCircle = () => {
           </Card>
         </motion.div>
 
+        {/* Hospital / institution sharing — who the patient shares with comes
+            first; the access list below is the audit view, not the headline. */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <HospitalShareCard />
+        </motion.div>
+
         {/* Active Shares */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -472,17 +483,6 @@ const CareCircle = () => {
             </CardContent>
           </Card>
         </motion.div>
-
-        {/* Hospital / institution sharing */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="mt-8"
-        >
-          <HospitalShareCard />
-        </motion.div>
-
 
 
         {/* Sharing history — permanent, append-only record */}

@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Loader2, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { Building2, Info, Loader2, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useMyInstitutionShares,
   type InstitutionInfo,
   type PracticeShare,
 } from '@/hooks/usePracticeShares';
+import { HospitalProfileSheet } from '@/components/patient/HospitalProfileSheet';
 
 const SHARE_CATEGORIES = [
   { key: 'vitals', label: 'Vitals & readings' },
@@ -55,6 +56,7 @@ export const HospitalShareCard = () => {
   const [shareAll, setShareAll] = useState(true);
   const [permissions, setPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [profileFor, setProfileFor] = useState<{ id: string; name: string } | null>(null);
   const [editPermissions, setEditPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
 
   const handleLookup = async () => {
@@ -153,6 +155,19 @@ export const HospitalShareCard = () => {
                         </p>
                       </div>
                       <div className="flex gap-2 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setProfileFor({
+                              id: share.practice_id,
+                              name: share.institution?.name ?? 'Hospital',
+                            })
+                          }
+                        >
+                          <Info className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Details</span>
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -313,6 +328,12 @@ export const HospitalShareCard = () => {
           </>
         )}
       </CardContent>
+      <HospitalProfileSheet
+        practiceId={profileFor?.id ?? null}
+        fallbackName={profileFor?.name}
+        open={!!profileFor}
+        onOpenChange={(o) => !o && setProfileFor(null)}
+      />
     </Card>
   );
 };
