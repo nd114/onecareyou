@@ -26,6 +26,7 @@ import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianSubscription, CLINICIAN_TIER_INFO, ClinicianTier } from '@/hooks/useClinicianSubscription';
+import { ENTERPRISE_TIERS, ENTERPRISE_ONBOARDING_FEE, PRICING_ROADMAP } from '@/lib/pricing-constants';
 
 const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } = {}) => {
   const navigate = useNavigate();
@@ -255,6 +256,70 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                 ))}
               </tbody>
             </table>
+          </div>
+        </motion.div>
+
+        {/* Enterprise & hospital sizes */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="max-w-5xl mx-auto mb-16"
+        >
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-2">Enterprise &amp; hospitals</h2>
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+              Hospital pricing scales with departments, clinicians and patient volume. Every
+              enterprise agreement includes a one-time onboarding fee of $
+              {ENTERPRISE_ONBOARDING_FEE.toLocaleString()}, covering multi-department setup,
+              staff onboarding and EHR integration scope.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {ENTERPRISE_TIERS.map((t) => (
+              <Card key={t.key} className="h-full border-border/60">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    {t.name}
+                  </CardTitle>
+                  <CardDescription>{t.shape}</CardDescription>
+                  <div className="pt-3">
+                    <span className="text-xs text-muted-foreground">from </span>
+                    <span className="text-2xl font-bold">${t.from.toLocaleString()}</span>
+                    <span className="text-muted-foreground text-sm">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <ul className="space-y-2 mb-6">
+                    {t.metrics.map((m) => (
+                      <li key={m} className="flex items-start gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <span>{m}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link to="/clinician/enterprise-inquiry">Talk to us</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-xl border border-dashed p-4">
+            <p className="text-sm font-medium mb-2">Coming to enterprise billing</p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+              {PRICING_ROADMAP.map((r) => (
+                <li key={r.label} className="flex items-start justify-between gap-3">
+                  <span>
+                    <span className="text-foreground font-medium">{r.label}</span> — {r.detail}
+                  </span>
+                  <Badge variant="secondary" className="shrink-0 text-[10px]">{r.when}</Badge>
+                </li>
+              ))}
+            </ul>
           </div>
         </motion.div>
 
