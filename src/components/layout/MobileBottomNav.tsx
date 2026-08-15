@@ -37,6 +37,40 @@ const CLINICIAN_ICONS: Record<ClinicianPillarKey, React.ElementType> = {
   practice: Building2,
 };
 
+// Hide on auth + marketing + onboarding shells
+const HIDE_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+  "/onboarding",
+  "/clinician/sign-up",
+  "/clinician/portal",
+  "/clinician/pricing",
+  "/clinician/subscription-success",
+  "/subscription-success",
+  "/install",
+  "/assist", // Simple Mode is full-screen
+];
+
+// Hide on the landing/public marketing pages
+const PUBLIC_EXACT = new Set([
+  "/",
+  "/about",
+  "/features",
+  "/pricing",
+  "/contact",
+  "/help",
+  "/careers",
+  "/for-clinicians",
+  "/ehr-comparison",
+  "/privacy",
+  "/terms",
+  "/data-processing",
+  "/medical-disclaimer",
+  "/sitemap",
+]);
+
 /**
  * Bottom tab bar shown on mobile only.
  * Hidden on auth/marketing routes and when the user is not signed in.
