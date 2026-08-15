@@ -67,7 +67,7 @@ const PUBLIC_EXACT = new Set([
   "/privacy",
   "/terms",
   "/data-processing",
-  "/medical-disclaimer",
+  "/disclaimer",
   "/sitemap",
 ]);
 
