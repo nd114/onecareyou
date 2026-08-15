@@ -3585,6 +3585,14 @@ export type Database = {
           tenant_type: string
         }[]
       }
+      get_patient_clinical_profile: {
+        Args: { patient_ids: string[] }
+        Returns: {
+          allergies: Json
+          health_conditions: Json
+          user_id: string
+        }[]
+      }
       get_patient_identity: {
         Args: { patient_ids: string[] }
         Returns: {
