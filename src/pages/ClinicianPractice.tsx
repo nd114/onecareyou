@@ -15,6 +15,8 @@ import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCar
 import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
+import { DepartmentsCard } from '@/components/clinician/DepartmentsCard';
+import { PracticeAccessOverviewCard } from '@/components/clinician/PracticeAccessOverviewCard';
 import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
 import { PracticeContactCard } from '@/components/clinician/PracticeContactCard';
 import { PracticeRevenueShareCard } from '@/components/clinician/PracticeRevenueShareCard';
@@ -106,9 +108,19 @@ const ClinicianPractice = () => {
             <HospitalCodeCard />
           </div>
 
+          {/* Departments and their sub-admins (hospital tenancy) */}
+          <div id="departments" className="mt-6 scroll-mt-20">
+            <DepartmentsCard />
+          </div>
+
           {/* Institution-shared patients (hospital tenancy) */}
           <div id="institution-patients" className="mt-6 scroll-mt-20">
             <HospitalPatientsCard />
+          </div>
+
+          {/* Who works here, and where each patient sits */}
+          <div id="access-overview" className="mt-6 scroll-mt-20">
+            <PracticeAccessOverviewCard />
           </div>
 
           {/* Revenue share (institutional partners only) */}

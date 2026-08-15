@@ -321,15 +321,19 @@ export function usePracticeSharedPatients(practiceId?: string | null) {
     mutationFn: async ({
       patientUserId,
       clinicianUserId,
+      departmentId,
     }: {
       patientUserId: string;
       clinicianUserId: string;
+      /** Required for a sub-admin: their authority is per-department. */
+      departmentId?: string | null;
     }) => {
       if (!practiceId || !user) throw new Error('No practice');
       const { error } = await supabase.from('practice_patient_assignments').insert({
         practice_id: practiceId,
         patient_user_id: patientUserId,
         clinician_user_id: clinicianUserId,
+        department_id: departmentId ?? null,
         assigned_by: user.id,
       } as never);
       if (error) throw error;
