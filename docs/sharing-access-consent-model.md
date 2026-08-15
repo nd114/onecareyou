@@ -51,8 +51,8 @@ entry-channel split in the external `OneCare_Sharing_Access_Consent_Model.md`):
 Delegated access is the model here: consent is given to the institution, the institution assigns the
 treating clinician, and that clinician's access derives from the assignment (or a practice-wide
 viewing right — see the note on `can_view_all_patients` in the tenancy plan). The patient's
-relationship remains with the hospital, not with whichever clinician currently holds the case. The hospital assigns the treating clinician. Consent is to the institution; the
-clinician's access derives from their assignment (or a practice-wide viewing right for admins).
+relationship remains with the hospital, not with whichever clinician currently holds the case.
+
 The patient can disconnect from the institution at any time, independently of any private share.
 
 An institution share never overrides, replaces or weakens a private share, and vice versa.

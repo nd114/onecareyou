@@ -1,5 +1,22 @@
 # Pricing & Monetization Roadmap
 
+> **Read this first (August 2026).** This file grew in layers and the older tables below no longer
+> match what is live or what is planned. The current position:
+>
+> - **Live and unchanged.** `/pricing` shows Enterprise as **"From $399/month"** with Contact Sales
+>   beyond it. That is a deliberate public self-serve floor, not a stale number — large-hospital
+>   deals are negotiated, and their rates are not published. No code change is pending here;
+>   `src/lib/pricing-constants.ts` stays the source of truth for patient pricing.
+> - **Do not conflate clinician pricing with enterprise pricing.** Solo/Pro are per-clinician
+>   products. The hospital fee is an institutional contract. They move independently.
+> - **Enterprise hospital pricing follows the v4 model** in §"Enterprise pricing model (v4)" below.
+> - **Regional pricing is planned, not live.** Every patient market is on the global $9.99/$99.90
+>   today.
+>
+> The 2026 tables further down that show Enterprise at **$249/month**, and the feature-gating table
+> showing **Solo $79 / Pro $149**, are historical drafts. They are kept for the reasoning, not as
+> current prices.
+
 ## Current Analysis
 
 The existing pricing structure has several issues:
@@ -361,3 +378,64 @@ documented restore drills. This is a trust feature for clinicians as much as a c
 surfaced in Practice → Storage & durability and in patient Settings.
 
 Source of truth: `src/lib/storage-constants.ts`.
+
+---
+
+## Enterprise pricing model (v4) — hospital contracts
+
+Source: `OneCare_Enterprise_Pricing_Scenarios.xlsx` (v4). Summarised here so the repo does not
+depend on a spreadsheet nobody can find later. **None of this is published or enforced in code** —
+it is the basis for negotiated hospital contracts.
+
+### Why the published floor is not the hospital price
+
+At Year-3 maturity a large hospital's patient population alone is worth roughly $93,600/year in
+subscriptions. A $399/month base is $4,788/year — about 5% of that, and the same price a 25-patient
+solo practice pays. The floor is a small-practice entry point; hospital deals need their own range.
+
+### B2B hospital fee, by size and region (monthly)
+
+| Size tier | Range |
+| --- | --- |
+| Small practice / clinic (published floor) | $399 – $799 |
+| Mid-size hospital | $1,500 – $3,500 |
+| Large hospital | $2,000 – $8,000, by region |
+
+| Large hospital by region | Low | Mid (modelled) | High |
+| --- | --- | --- | --- |
+| Nigeria / emerging Africa — **OC-LMC's tier** | $2,000 | **$2,750** | $3,500 |
+| Europe | $3,000 | $4,250 | $5,500 |
+| North America | $4,000 | $6,000 | $8,000 |
+
+Europe and North America are illustrative and need real validation before external use.
+
+### Patient subscription, by region (planned)
+
+| Region | Monthly | Annual |
+| --- | --- | --- |
+| Nigeria / emerging Africa | $6 | $59.90 |
+| Europe | $12 | $119.90 |
+| North America | $12 | $119.90 |
+| **Global default — live today** | **$9.99** | **$99.90** |
+
+Nigeria's rate is benchmarked against local subscription norms (Netflix ~$6, DStv Confam ~$7.86).
+
+### Other terms
+
+- **Revenue split:** OneCare 70% / institution 30% of patient subscription revenue. Institutional,
+  not per-clinician; solo and small practices stay on a flat fee with no split.
+- **Onboarding:** $2,500 one-time at hospital scale, scaled by complexity (departments, integration
+  scope) rather than region — it costs the same to onboard wherever the hospital is.
+- **Storage overage:** ~$150/month typical, usage-based.
+- **Seats:** unlimited and included. A clinician affiliated with several hospitals costs each of
+  them nothing extra.
+- **Prepay:** 20% discount, 2–3 year term. A 10-year prepay locks today's price against a decade of
+  rising cost-to-serve — modelled and not recommended.
+
+### What this implies for code, when regional pricing lands
+
+The revenue-share card computes the hospital's share from `PRICE_INFO.premium_monthly.price`, which
+is correct while every market pays the global rate. Once a patient's price varies by region, that
+figure has to come from the patient's own subscription rather than a constant, or hospitals in
+lower-priced regions will be shown inflated estimates. Flagged now so it is not discovered by a
+hospital reading its own statement.
