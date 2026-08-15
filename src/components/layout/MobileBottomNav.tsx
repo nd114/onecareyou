@@ -47,9 +47,31 @@ export function MobileBottomNav() {
   const { isClinician } = useClinicianProfile();
   const { isAdmin } = useAdminRole();
 
-  if (!user) return null;
-  // Platform admins use the dedicated admin console shell.
-  if (isAdmin || pathname.startsWith("/admin")) return null;
+  // Hooks must run on every render, before any early return: the visibility
+  // conditions below depend on async auth/role state, so a hook placed after
+  // them changes the hook count between renders and crashes the shell.
+  const hidden =
+    !user ||
+    isAdmin ||
+    pathname.startsWith("/admin") ||
+    HIDE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/")) ||
+    PUBLIC_EXACT.has(pathname);
+
+  // Tell the document the tab bar is present so the shell reserves room for it;
+  // pages then cannot forget their own bottom padding.
+  useEffect(() => {
+    if (hidden) {
+      delete document.body.dataset.appChrome;
+      return;
+    }
+    document.body.dataset.appChrome = "mobile-nav";
+    return () => {
+      delete document.body.dataset.appChrome;
+    };
+  }, [hidden]);
+
+  if (hidden) return null;
+
 
   // Hide on auth + marketing + onboarding shells
   const HIDE_PREFIXES = [
