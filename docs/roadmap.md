@@ -2,7 +2,7 @@
 
 **What this is.** The single living tracker for OneCare product work: what has shipped and when, what is in flight, what is next, and what is deliberately deferred. Update this file as work lands — do not start new roadmap or tracking documents.
 
-**Last updated:** 13 August 2026
+**Last updated:** 15 August 2026
 
 **Companion docs** (deep dives kept separate on purpose):
 
@@ -39,7 +39,25 @@
 | Patient + clinician routes as an admin | — | Correctly redirect to `/admin`; no cross-role leakage | Pass |
 | `/admin` header nav | P1 | Five links did not wrap or collapse below `md`; destinations were cut off | Fixed — collapses into one labelled menu |
 | `/for-clinicians` | P2 | Console error `Error checking subscription: FunctionsFetchError` | Sandbox-only (edge function unreachable locally); handled gracefully, no user-facing break |
-| Authenticated patient/clinician pillars | — | Not reachable by the audit browser without a signed-in preview session | Outstanding — rerun with a signed-in preview session |
+| Authenticated patient/clinician pillars | — | Not reachable by the audit browser without a signed-in preview session | Closed — rerun signed-in on 15 August, see below |
+
+### Signed-in bug sweep (15 August 2026, patient / clinician / admin / guest / tenant)
+
+Every route in `App.tsx` was walked with a real session per role, at 1280x1800 and 390x844, watching
+console errors, failed requests, HTTP >=400 and horizontal overflow.
+
+| Route / surface | Severity | Symptom | Status |
+| --- | --- | --- | --- |
+| Every authenticated route, all roles | P0 | White screen: `MobileBottomNav` ran a `useEffect` after an early return, so the hook count changed between renders and the shell crashed | Fixed — visibility computed before the effect |
+| `/clinician/reports` | P1 | 400 from the Data API: unhandled-alert tile filtered `alert_logs.acknowledged`, a column that does not exist (the table uses `acknowledged_at`) | Fixed — filters `acknowledged_at is null` |
+| `MobileBottomNav` public routes | P2 | Marketing exception listed `/medical-disclaimer`; the real route is `/disclaimer`, so the tab bar showed over that page | Fixed |
+| All in-app `<Link to>` / `navigate()` / nav-IA targets | — | Cross-checked against the route table: no broken destinations | Pass |
+| Cross-role redirects | — | Clinician and admin sessions are bounced off patient surfaces and each other's consoles; guests are sent to `/sign-in` | Pass |
+| Tenant intake (`?tenant=lmc`, `/staff`, legacy `/i/lmc`) | — | Branded patient and staff intake render; legacy path redirects to the tenant host | Pass |
+| Horizontal overflow, all roles, both viewports | — | None; wide audit/admin tables already scroll inside their own container | Pass |
+| Radix `Function components cannot be given refs` warning | P3 | Dev-only warning raised inside Radix's own portal internals (Dialog/Popover/Dropdown), not app code | Won't fix |
+| `/clinician/dictations` demo row | P3 | Signed-URL request 404s for one seeded dictation whose audio object was never uploaded; page still renders | Demo data, not code |
+
 
 
 
