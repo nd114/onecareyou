@@ -2197,6 +2197,95 @@ export type Database = {
         }
         Relationships: []
       }
+      practice_department_members: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          department_id: string
+          id: string
+          is_lead: boolean
+          practice_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          department_id: string
+          id?: string
+          is_lead?: boolean
+          practice_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          department_id?: string
+          id?: string
+          is_lead?: boolean
+          practice_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_department_members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "practice_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_department_members_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_departments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          practice_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          practice_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          practice_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_departments_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_invitations: {
         Row: {
           accepted_at: string | null
@@ -2356,6 +2445,7 @@ export type Database = {
           assignment_role: string
           clinician_user_id: string
           created_at: string
+          department_id: string | null
           effective_from: string
           effective_to: string | null
           id: string
@@ -2369,6 +2459,7 @@ export type Database = {
           assignment_role?: string
           clinician_user_id: string
           created_at?: string
+          department_id?: string | null
           effective_from?: string
           effective_to?: string | null
           id?: string
@@ -2382,6 +2473,7 @@ export type Database = {
           assignment_role?: string
           clinician_user_id?: string
           created_at?: string
+          department_id?: string | null
           effective_from?: string
           effective_to?: string | null
           id?: string
@@ -2392,7 +2484,65 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "practice_patient_assignments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "practice_departments"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "practice_patient_assignments_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_patient_departments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          department_id: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          patient_user_id: string
+          practice_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          department_id: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          patient_user_id: string
+          practice_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          department_id?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          patient_user_id?: string
+          practice_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_patient_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "practice_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_patient_departments_practice_id_fkey"
             columns: ["practice_id"]
             isOneToOne: false
             referencedRelation: "practices"
@@ -3537,6 +3687,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_manage_department: {
+        Args: { _department_id: string }
+        Returns: boolean
+      }
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
       clinician_had_patient_access: {
         Args: { patient_user_id: string }
@@ -3662,11 +3816,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_department_lead: { Args: { _practice_id: string }; Returns: boolean }
       is_institution_slug_available: {
         Args: { _practice_id?: string; _slug: string }
         Returns: boolean
       }
       is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
+      led_department_ids: { Args: never; Returns: string[] }
       log_platform_admin_action: {
         Args: {
           _action: string
@@ -3721,6 +3877,20 @@ export type Database = {
         Args: { patient_uuid: string }
         Returns: boolean
       }
+      practice_patient_overview: {
+        Args: { _practice_id: string }
+        Returns: {
+          assigned_clinicians: string[]
+          connected_at: string
+          department_ids: string[]
+          departments: string[]
+          email: string
+          is_active: boolean
+          name: string
+          patient_user_id: string
+          share_all: boolean
+        }[]
+      }
       practice_revenue_share_summary: {
         Args: { _practice_id: string }
         Returns: {
@@ -3742,6 +3912,20 @@ export type Database = {
           _zip_code?: string
         }
         Returns: undefined
+      }
+      practice_staff_overview: {
+        Args: { _practice_id: string }
+        Returns: {
+          assigned_patient_count: number
+          departments: string[]
+          email: string
+          has_tenant_wide_view: boolean
+          leads_departments: string[]
+          name: string
+          role: Database["public"]["Enums"]["practice_role"]
+          status: string
+          user_id: string
+        }[]
       }
       public_institution_by_slug: {
         Args: { _slug: string }
