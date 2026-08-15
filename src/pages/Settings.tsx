@@ -56,6 +56,7 @@ import { EditProfileDialog } from '@/components/patient/EditProfileDialog';
 
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
+import { MyHospitalCard } from '@/components/patient/MyHospitalCard';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
 import { StorageUsageCard } from '@/components/StorageUsageCard';
@@ -896,6 +897,15 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
+
+          {/* My hospital */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <MyHospitalCard />
           </motion.div>
 
           {/* Emergency Information */}
