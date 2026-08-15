@@ -139,7 +139,7 @@ const PracticeAdmin = () => {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <SEOHead title="Administration — OneCare" noindex />
+      <SEOHead title="Administration — OneCare" noIndex />
       <PracticeAdminHeader institutionName={practice?.name} />
 
       <main className="container max-w-screen-2xl py-6 sm:py-8 space-y-6">
