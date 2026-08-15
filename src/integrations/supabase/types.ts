@@ -3774,6 +3774,7 @@ export type Database = {
         | "front_desk"
         | "billing"
         | "read_only"
+        | "sub_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3912,6 +3913,7 @@ export const Constants = {
         "front_desk",
         "billing",
         "read_only",
+        "sub_admin",
       ],
     },
   },
