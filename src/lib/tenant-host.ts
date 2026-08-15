@@ -35,8 +35,9 @@ const RESERVED_SUBDOMAINS = new Set([
   'assets',
 ]);
 
+/** The hospital code: 3-7 characters, matching set_institution_slug in the database. */
 function isValidSlug(slug: string): boolean {
-  return /^[a-z0-9][a-z0-9-]{1,31}$/.test(slug);
+  return /^[a-z0-9][a-z0-9-]{1,5}[a-z0-9]$/.test(slug);
 }
 
 /** The live product domain, as opposed to a local or preview host. */

@@ -42,6 +42,7 @@ GRANT SELECT, INSERT, UPDATE ON public.practice_departments TO authenticated;
 GRANT ALL ON public.practice_departments TO service_role;
 ALTER TABLE public.practice_departments ENABLE ROW LEVEL SECURITY;
 
+DROP TRIGGER IF EXISTS practice_departments_updated_at ON public.practice_departments;
 CREATE TRIGGER practice_departments_updated_at
 BEFORE UPDATE ON public.practice_departments
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -75,6 +76,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.practice_department_members TO au
 GRANT ALL ON public.practice_department_members TO service_role;
 ALTER TABLE public.practice_department_members ENABLE ROW LEVEL SECURITY;
 
+DROP TRIGGER IF EXISTS practice_department_members_updated_at ON public.practice_department_members;
 CREATE TRIGGER practice_department_members_updated_at
 BEFORE UPDATE ON public.practice_department_members
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -108,6 +110,7 @@ GRANT SELECT, INSERT, UPDATE ON public.practice_patient_departments TO authentic
 GRANT ALL ON public.practice_patient_departments TO service_role;
 ALTER TABLE public.practice_patient_departments ENABLE ROW LEVEL SECURITY;
 
+DROP TRIGGER IF EXISTS practice_patient_departments_updated_at ON public.practice_patient_departments;
 CREATE TRIGGER practice_patient_departments_updated_at
 BEFORE UPDATE ON public.practice_patient_departments
 FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -200,14 +203,17 @@ GRANT EXECUTE ON FUNCTION public.is_department_lead(uuid) TO authenticated;
 -- Departments: everyone in the tenant can see the structure they work in;
 -- only owners/admins create and edit it. A Sub-Admin administers a department,
 -- they do not invent one.
+DROP POLICY IF EXISTS "Members read departments in their tenant" ON public.practice_departments;
 CREATE POLICY "Members read departments in their tenant"
 ON public.practice_departments FOR SELECT TO authenticated
 USING (public.is_practice_member(practice_id) OR public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Tenant admins create departments" ON public.practice_departments;
 CREATE POLICY "Tenant admins create departments"
 ON public.practice_departments FOR INSERT TO authenticated
 WITH CHECK (public.can_manage_practice(practice_id));
 
+DROP POLICY IF EXISTS "Tenant admins update departments" ON public.practice_departments;
 CREATE POLICY "Tenant admins update departments"
 ON public.practice_departments FOR UPDATE TO authenticated
 USING (public.can_manage_practice(practice_id))
@@ -217,19 +223,23 @@ WITH CHECK (public.can_manage_practice(practice_id));
 -- which team); managed by tenant admins, or by the lead of that department for
 -- everything except lead status itself — promoting a Sub-Admin stays with the
 -- chief admin, which is enforced by the trigger below.
+DROP POLICY IF EXISTS "Members read department membership in their tenant" ON public.practice_department_members;
 CREATE POLICY "Members read department membership in their tenant"
 ON public.practice_department_members FOR SELECT TO authenticated
 USING (public.is_practice_member(practice_id) OR public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Department admins add members" ON public.practice_department_members;
 CREATE POLICY "Department admins add members"
 ON public.practice_department_members FOR INSERT TO authenticated
 WITH CHECK (public.can_manage_department(department_id));
 
+DROP POLICY IF EXISTS "Department admins update members" ON public.practice_department_members;
 CREATE POLICY "Department admins update members"
 ON public.practice_department_members FOR UPDATE TO authenticated
 USING (public.can_manage_department(department_id))
 WITH CHECK (public.can_manage_department(department_id));
 
+DROP POLICY IF EXISTS "Department admins remove members" ON public.practice_department_members;
 CREATE POLICY "Department admins remove members"
 ON public.practice_department_members FOR DELETE TO authenticated
 USING (public.can_manage_department(department_id));
@@ -276,10 +286,12 @@ FOR EACH ROW EXECUTE FUNCTION public.guard_department_lead_changes();
 
 -- Patient routing: readable tenant-wide, written by whoever administers the
 -- department the patient is being routed into.
+DROP POLICY IF EXISTS "Members read patient department routing" ON public.practice_patient_departments;
 CREATE POLICY "Members read patient department routing"
 ON public.practice_patient_departments FOR SELECT TO authenticated
 USING (public.is_practice_member(practice_id) OR public.has_role(auth.uid(), 'admin'));
 
+DROP POLICY IF EXISTS "Department admins route patients" ON public.practice_patient_departments;
 CREATE POLICY "Department admins route patients"
 ON public.practice_patient_departments FOR INSERT TO authenticated
 WITH CHECK (
@@ -294,6 +306,7 @@ WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "Department admins update patient routing" ON public.practice_patient_departments;
 CREATE POLICY "Department admins update patient routing"
 ON public.practice_patient_departments FOR UPDATE TO authenticated
 USING (public.can_manage_department(department_id))
@@ -301,6 +314,7 @@ WITH CHECK (public.can_manage_department(department_id));
 
 -- Assignments: tenant admins keep their existing rights; department leads may
 -- now assign within their own department, to a clinician who works in it.
+DROP POLICY IF EXISTS "Department leads assign within their department" ON public.practice_patient_assignments;
 CREATE POLICY "Department leads assign within their department"
 ON public.practice_patient_assignments FOR INSERT TO authenticated
 WITH CHECK (
@@ -319,6 +333,7 @@ WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "Department leads end assignments in their department" ON public.practice_patient_assignments;
 CREATE POLICY "Department leads end assignments in their department"
 ON public.practice_patient_assignments FOR UPDATE TO authenticated
 USING (department_id IS NOT NULL AND public.can_manage_department(department_id))

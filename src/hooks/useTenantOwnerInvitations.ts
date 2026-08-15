@@ -37,6 +37,9 @@ export function useTenantOwnerInvitations() {
     onSuccess: () => {
       toast.success('You now own this institution on OneCare');
       queryClient.invalidateQueries({ queryKey: ['my-tenant-owner-invitations'] });
+      // Route guards read this: without it the new owner keeps being treated as
+      // a patient until they sign out and back in.
+      queryClient.invalidateQueries({ queryKey: ['clinician-profile'] });
       queryClient.invalidateQueries({ queryKey: ['practice'] });
       queryClient.invalidateQueries({ queryKey: ['practice-members'] });
     },
