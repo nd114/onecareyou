@@ -43,5 +43,17 @@ behind. A failed assertion raises and aborts; a clean run ends with
 | Revocation stops forward access immediately | consent model §3 |
 | The relationship ledger records connect / revoke / re-share | consent model §3 |
 
-Please extend this file rather than starting a new one when the sharing rules
-change, and add a row above so the coverage stays legible.
+`department_delegation.test.sql` — departments and the Sub-Admin role:
+
+| Rule | Source |
+| --- | --- |
+| A lead routes and assigns inside their own department | tenancy plan §3 (Phase D) |
+| A lead cannot assign in another department, or to a clinician outside theirs | tenancy plan §3 |
+| A lead cannot appoint another lead, or create a department | tenancy plan §3 |
+| A sub_admin holds no tenant management, team or billing rights | build prompt §2 |
+| A lead's oversight covers their own departments and the unrouted queue | tenancy plan §3 |
+| The chief admin sees the full staff roster and every shared patient | build prompt §10 |
+| An ordinary clinician gets no oversight surface | build prompt §2 |
+
+Please extend these files rather than starting new ones when the rules change,
+and add a row above so the coverage stays legible.
