@@ -333,6 +333,15 @@ export default function InstitutionSignUp({
                     <span className="font-mono">{institution.slug}</span> in Care Circle.
                   </p>
                 )}
+                {institution && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    Work at {institution.name}?{' '}
+                    <Link to="/staff" className="text-primary hover:underline">
+                      Staff sign-up
+                    </Link>
+                    .
+                  </p>
+                )}
               </CardContent>
             </Card>
           </motion.div>
