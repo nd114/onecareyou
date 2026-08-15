@@ -82,3 +82,57 @@ export const LANDING_PREMIUM_FEATURES = [
   'Health Document Vault',
   'Health reports export',
 ] as const;
+
+// ── Enterprise / hospital tiers ────────────────────────────────────────────────
+// Single source of truth for institutional pricing. Used by the clinician
+// pricing page, the enterprise inquiry page and the comparison table.
+
+export const ENTERPRISE_ONBOARDING_FEE = 2500;
+
+export interface EnterpriseTier {
+  key: 'practice' | 'mid' | 'high' | 'enterprise_plus';
+  name: string;
+  from: number;
+  /** null = "from" pricing is a starting point, quoted after scoping. */
+  shape: string;
+  metrics: string[];
+}
+
+export const ENTERPRISE_TIERS: EnterpriseTier[] = [
+  {
+    key: 'practice',
+    name: 'Practice',
+    from: 399,
+    shape: 'Single practice or clinic',
+    metrics: ['Up to ~5 clinicians', 'Up to 1,000 patients', 'Single department'],
+  },
+  {
+    key: 'mid',
+    name: 'Mid-sized',
+    from: 1500,
+    shape: 'Multi-department clinic or small hospital',
+    metrics: ['Up to ~12 clinicians', 'Up to 5,000 patients', 'Up to 7 departments'],
+  },
+  {
+    key: 'high',
+    name: 'High',
+    from: 3000,
+    shape: 'Hospital with established departments',
+    metrics: ['Up to ~30 clinicians', 'Up to 15,000 patients', '7–10 departments'],
+  },
+  {
+    key: 'enterprise_plus',
+    name: 'Enterprise+',
+    from: 4000,
+    shape: 'Large hospital or hospital group',
+    metrics: ['31+ clinicians', '15,000+ patients', '10+ departments'],
+  },
+];
+
+/** Commercial items published as coming, not billed yet. */
+export const PRICING_ROADMAP = [
+  { label: 'Storage packs', detail: 'Base allowance per plan, extra storage purchasable', when: 'Coming' },
+  { label: 'Per-seat pricing', detail: 'Seat-based add-ons for large teams', when: 'Early 2027' },
+  { label: 'Regional pricing', detail: 'Local pricing for non-US markets', when: 'Late 2026 – early 2027' },
+  { label: 'Profit sharing', detail: 'Revenue share with institutional partners', when: '2027' },
+] as const;
