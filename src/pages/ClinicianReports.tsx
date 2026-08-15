@@ -45,7 +45,7 @@ function useOwnerReports() {
       ] = await Promise.all([
         sb.from("provider_shares").select("id", { count: "exact", head: true }).eq("is_active", true),
         sb.from("clinician_alert_rules").select("id", { count: "exact", head: true }).eq("is_active", true),
-        sb.from("alert_logs").select("id", { count: "exact", head: true }).eq("acknowledged", false),
+        sb.from("alert_logs").select("id", { count: "exact", head: true }).is("acknowledged_at", null),
         sb.from("clinician_guidance").select("id", { count: "exact", head: true }).gte("created_at", since7),
         sb.from("clinician_guidance").select("status").gte("created_at", since30),
         sb.from("encounters").select("id", { count: "exact", head: true }).gte("created_at", since30),
