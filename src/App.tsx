@@ -197,11 +197,17 @@ const App = () => (
                 <ClinicianSettings />
               </ClinicianRoute>
             } />
+            <Route path="/practice" element={
+              <PracticeAdminRoute>
+                <PracticeAdmin />
+              </PracticeAdminRoute>
+            } />
             <Route path="/clinician/practice" element={
               <ClinicianRoute>
                 <ClinicianPractice />
               </ClinicianRoute>
             } />
+
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
