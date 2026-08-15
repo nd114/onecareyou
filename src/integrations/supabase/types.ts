@@ -3713,6 +3713,14 @@ export type Database = {
         Args: { patient_uuid: string }
         Returns: boolean
       }
+      practice_revenue_share_summary: {
+        Args: { _practice_id: string }
+        Returns: {
+          connected_patients: number
+          paying_patients: number
+          revenue_share_pct: number
+        }[]
+      }
       practice_set_contact: {
         Args: {
           _address?: string
