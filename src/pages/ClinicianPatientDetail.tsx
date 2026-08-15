@@ -37,6 +37,7 @@ import { EncountersTab } from '@/components/clinician/EncountersTab';
 import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
 import { NetworkRecordsTab } from '@/components/clinician/NetworkRecordsTab';
 import { InternalNotesTab } from '@/components/clinician/InternalNotesTab';
+import { PatientSafetyStrip } from '@/components/clinician/PatientSafetyStrip';
 import { PatientActionRail } from '@/components/clinician/PatientActionRail';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
@@ -361,6 +362,10 @@ const ClinicianPatientDetail = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Allergies and conditions, above the tabs — these should never be
+            something a clinician has to go looking for. */}
+        <PatientSafetyStrip patientUserId={patient.user_id} />
 
         {/* Main Content Tabs */}
         <motion.div

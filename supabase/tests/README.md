@@ -37,6 +37,8 @@ behind. A failed assertion raises and aborts; a clean run ends with
 | A colleague at the same hospital without an assignment reads nothing | consent model §2B |
 | An assignment made by another tenant grants nothing | tenancy plan §2 |
 | Patient identity resolves through the institution pathway, and only there | tenancy plan §2 |
+| Adherence history follows the medications category | consent model §2B |
+| Conditions and allergies are released per category, not together | consent model §2B |
 | A hospital may end a share but never restart one | consent model §3 |
 | Revocation stops forward access immediately | consent model §3 |
 | The relationship ledger records connect / revoke / re-share | consent model §3 |

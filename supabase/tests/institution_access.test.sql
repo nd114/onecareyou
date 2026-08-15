@@ -90,6 +90,15 @@ BEGIN
   INSERT INTO public.medications (user_id, name, dosage, frequency)
   VALUES (_patient, 'Metformin', '500mg', 'daily');
 
+  INSERT INTO public.schedule_entries (user_id, medication_id, scheduled_time, status)
+  SELECT _patient, id, now(), 'taken'
+  FROM public.medications WHERE user_id = _patient LIMIT 1;
+
+  UPDATE public.profiles
+     SET health_conditions = '["Type 2 diabetes"]'::jsonb,
+         allergies = '["Penicillin"]'::jsonb
+   WHERE user_id = _patient;
+
   INSERT INTO public.health_documents (user_id, title, file_path, file_name)
   VALUES (_patient, 'Discharge summary', 'docs/x.pdf', 'x.pdf');
 END $$;
@@ -113,6 +122,19 @@ SELECT pg_temp.assert(
 SELECT pg_temp.assert(
   (SELECT count(*) FROM public.health_documents) = 0,
   'assigned clinician cannot read documents the patient withheld');
+
+-- 2b. Adherence rides on the medications category the patient shared.
+SELECT pg_temp.assert(
+  (SELECT count(*) FROM public.schedule_entries) = 1,
+  'assigned clinician reads adherence history under the medications share');
+
+-- 2c. Conditions and allergies are released per category, not together. This
+--     fixture shares neither, so both come back null rather than empty.
+SELECT pg_temp.assert(
+  (SELECT allergies IS NULL AND health_conditions IS NULL
+     FROM public.get_patient_clinical_profile(
+       ARRAY['11111111-1111-1111-1111-111111111111'::uuid])),
+  'withheld conditions and allergies are not disclosed');
 
 -- 3. A colleague at the same hospital without an assignment sees nothing.
 SELECT pg_temp.act_as('33333333-3333-3333-3333-333333333333');

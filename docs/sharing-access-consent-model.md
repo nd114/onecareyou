@@ -48,6 +48,12 @@ entry-channel split in the external `OneCare_Sharing_Access_Consent_Model.md`):
 - Both are implemented: the disclosure panel in `HospitalShareCard` and `InstitutionIntakeCard`, and
   the category picker on both the initial connection and any existing one.
 
+Every category in the picker now has a real read path behind it: vitals, medications (including the
+dose history the adherence view is built from), documents, conditions and allergies. Conditions and
+allergies are released field by field through `get_patient_clinical_profile()` rather than by
+exposing the profile row, so sharing one does not disclose the other. `blood_type` is deliberately
+not released — no category covers it, so no patient has consented to it.
+
 Delegated access is the model here: consent is given to the institution, the institution assigns the
 treating clinician, and that clinician's access derives from the assignment (or a practice-wide
 viewing right — see the note on `can_view_all_patients` in the tenancy plan). The patient's
