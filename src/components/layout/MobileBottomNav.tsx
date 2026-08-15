@@ -106,23 +106,13 @@ export function MobileBottomNav() {
 
   if (hidden) return null;
 
-
-
-
   const pillars = isClinician ? CLINICIAN_PILLARS : PATIENT_PILLARS;
   const activeKey = isClinician
     ? getClinicianPillarForRoute(pathname)
     : getPatientPillarForRoute(pathname);
   const icons = isClinician ? CLINICIAN_ICONS : PATIENT_ICONS;
 
-  // Tell the document the tab bar is present so the shell reserves room for it;
-  // pages then cannot forget their own bottom padding.
-  useEffect(() => {
-    document.body.dataset.appChrome = 'mobile-nav';
-    return () => {
-      delete document.body.dataset.appChrome;
-    };
-  }, []);
+
 
   return (
     <nav
