@@ -194,6 +194,7 @@ export const MEDICAL_SPECIALTIES = [
   'Physical Therapy',
   'Psychiatry',
   'Pulmonology',
+  'Radiology',
   'Rheumatology',
   'Surgery',
   'Urology',
