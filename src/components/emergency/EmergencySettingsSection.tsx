@@ -10,18 +10,30 @@ import { useEmergencyNumbers, COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+/**
+ * The country the patient already told us they are from is the right default for
+ * emergency numbers — asking a second time is a needless step. `profiles.country`
+ * stores a country name, so it is matched back to the ISO code used here.
+ */
+function defaultCountryCode(profile: any): string {
+  if (profile?.country_code) return profile.country_code;
+  const name = (profile?.country || '').trim().toLowerCase();
+  if (!name) return '';
+  return COUNTRY_LIST.find((c) => c.name.toLowerCase() === name)?.code || '';
+}
+
 export function EmergencySettingsSection() {
   const { user, profile, refreshProfile } = useAuth();
   const { getEmergencyNumber } = useEmergencyNumbers();
-  
-  const [countryCode, setCountryCode] = useState((profile as any)?.country_code || '');
+
+  const [countryCode, setCountryCode] = useState(defaultCountryCode(profile));
   const [emergencyContactName, setEmergencyContactName] = useState((profile as any)?.emergency_contact_name || '');
   const [emergencyNumber, setEmergencyNumber] = useState((profile as any)?.emergency_number || '');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (profile) {
-      setCountryCode((profile as any)?.country_code || '');
+      setCountryCode(defaultCountryCode(profile));
       setEmergencyContactName((profile as any)?.emergency_contact_name || '');
       setEmergencyNumber((profile as any)?.emergency_number || '');
     }

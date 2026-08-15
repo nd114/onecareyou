@@ -3903,6 +3903,20 @@ export type Database = {
           tenant_type: string
         }[]
       }
+      patient_institution_contact: {
+        Args: { _practice_id: string }
+        Returns: {
+          address: string
+          city: string
+          country: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          state: string
+          zip_code: string
+        }[]
+      }
       practice_audit_log: {
         Args: { _limit?: number; _practice_id: string; _search?: string }
         Returns: {

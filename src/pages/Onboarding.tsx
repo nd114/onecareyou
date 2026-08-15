@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { COMMON_ALLERGIES, COMMON_CONDITIONS, BLOOD_TYPES } from "@/types/health";
+import { COUNTRY_LIST } from "@/hooks/useEmergencyNumbers";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,6 +30,9 @@ const Onboarding = () => {
     healthConditions: [] as string[],
     customAllergy: "",
     customCondition: "",
+    countryCode: "",
+    emergencyContactName: "",
+    emergencyNumber: "",
   });
 
   // Pre-populate form if profile exists
@@ -43,6 +47,9 @@ const Onboarding = () => {
         healthConditions: (profile.health_conditions as string[]) || [],
         customAllergy: "",
         customCondition: "",
+        countryCode: (profile as any).country_code || "",
+        emergencyContactName: (profile as any).emergency_contact_name || "",
+        emergencyNumber: (profile as any).emergency_number || "",
       });
     }
   }, [profile]);
@@ -99,6 +106,9 @@ const Onboarding = () => {
         height: formData.height ? parseInt(formData.height) : null,
         allergies: formData.allergies,
         health_conditions: formData.healthConditions,
+        country_code: formData.countryCode || null,
+        emergency_contact_name: formData.emergencyContactName || null,
+        emergency_number: formData.emergencyNumber || null,
         onboarding_completed: markComplete,
       })
       .eq("user_id", user.id);
@@ -235,6 +245,54 @@ const Onboarding = () => {
                       value={formData.height}
                       onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                     />
+                  </div>
+                </div>
+
+                {/* Country & emergency contact */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Where you are &amp; who to call</Label>
+                  <p className="text-sm text-muted-foreground -mt-2">
+                    Your country sets the local emergency numbers we show you. Your emergency
+                    contact is the person we tell you to call in an emergency.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Country</Label>
+                      <Select
+                        value={formData.countryCode}
+                        onValueChange={(value) => setFormData({ ...formData, countryCode: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNTRY_LIST.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="onb-emergency-name">Emergency contact name</Label>
+                      <Input
+                        id="onb-emergency-name"
+                        placeholder="e.g., Maria Alvarez (Spouse)"
+                        value={formData.emergencyContactName}
+                        onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="onb-emergency-phone">Emergency contact phone</Label>
+                      <Input
+                        id="onb-emergency-phone"
+                        type="tel"
+                        placeholder="+1 555-123-4567"
+                        value={formData.emergencyNumber}
+                        onChange={(e) => setFormData({ ...formData, emergencyNumber: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
 
