@@ -84,8 +84,10 @@ export function InstitutionIntakeCard() {
           <p className="font-medium text-sm">Connect with {institution.name}?</p>
           <p className="text-xs text-muted-foreground mt-0.5 flex items-start gap-1">
             <ShieldCheck className="h-3.5 w-3.5 mt-px shrink-0" />
-            They can then see your vitals, medications, documents, conditions and allergies. You
-            can change what you share, or disconnect, at any time.
+            You joined through their sign-up address. Connecting shares your full record — vitals,
+            medications, documents, conditions and allergies, including what you add from now on —
+            and they assign the clinician who looks after you. You can restrict any of it, or
+            disconnect, at any time in Care Circle.
           </p>
         </div>
         <div className="flex gap-2 shrink-0">

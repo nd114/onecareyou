@@ -64,7 +64,9 @@ consistent app. Post-login tenant branding is deliberately not built; see the ro
 
 **Phase B — hospital-level sharing (shipped, launch scope)**
 - Patient connects to a hospital by code from Care Circle → "Hospitals & clinics".
-- Default is share-everything with a single toggle for a reduced set (vitals + medications).
+- Default is share-everything, the same on both entry channels (hospital subdomain or in-app),
+  disclosed on the connect screen itself, with a per-category picker to narrow it at any time.
+  See `docs/sharing-access-consent-model.md` §2B.
 - Disconnection is a status change; history and records are preserved permanently.
 - Fast-follow: the granular per-category picker, reassignment polish, multi-hospital labelling.
 

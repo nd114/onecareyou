@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Loader2, Search, SlidersHorizontal } from 'lucide-react';
+import { Building2, Loader2, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useMyInstitutionShares,
@@ -49,6 +49,9 @@ export const HospitalShareCard = () => {
   const [code, setCode] = useState('');
   const [found, setFound] = useState<InstitutionInfo | null>(null);
   const [looking, setLooking] = useState(false);
+  // One posture for both entry channels: sharing starts as the full record and
+  // the patient narrows it. What makes that fair is the disclosure below being
+  // in front of them at the moment they connect, not buried in settings.
   const [shareAll, setShareAll] = useState(true);
   const [permissions, setPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -238,6 +241,15 @@ export const HospitalShareCard = () => {
                     <p className="font-medium text-sm">{found.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {[found.city, found.country].filter(Boolean).join(', ')}
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                    <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+                    <p className="text-xs">
+                      <span className="font-medium">Before you connect:</span> {found.name} will see
+                      your vitals, medications, documents, conditions and allergies — including what
+                      you add from now on. They assign the clinician who looks after you. You can
+                      change what you share, or disconnect, at any time.
                     </p>
                   </div>
                   <div className="flex items-center justify-between gap-3">

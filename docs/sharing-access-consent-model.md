@@ -2,7 +2,10 @@
 
 This is the authoritative description of who can see a patient's data, how consent is given and
 withdrawn, and what happens to records when a relationship ends. It supersedes any external
-reference document where the two disagree.
+reference document where the two disagree — including
+`OneCare_Sharing_Access_Consent_Model.md`, whose entry-channel-dependent default was resolved
+into the single posture in §2B below. There should be exactly one statement of a consent default,
+and it is this file.
 
 ## 1. Principles
 
@@ -31,16 +34,24 @@ hospital's code (set by the hospital's owner/admin in Practice → Hospital code
 shares their full record or picks categories — vitals, medications, documents, conditions, allergies
 — and can adjust those categories on an existing connection at any time.
 
-> **Open conflict (August 2026 review).** This document states one default posture for institution
-> sharing: share the full record, with a toggle to narrow it. The external
-> `OneCare_Sharing_Access_Consent_Model.md` instead makes the default depend on the entry channel —
-> share-everything through the hospital's own subdomain, granular-by-default when the patient starts
-> from inside OneCare. The shipped code follows this document. The decision, and a branch per option,
-> are in `docs/reviews/oc-lmc-review-aug-2026.md` (C3). The two documents should be reconciled into
-> one once it is made; a consent default is not a safe thing to have two versions of.
->
-> Note also that conditions and allergies can be selected in the picker but have no institution read
-> path yet, so consenting to them currently shares nothing. The hospital assigns the treating clinician. Consent is to the institution; the
+**Default posture — one rule, both entry channels** (decided August 2026, superseding the
+entry-channel split in the external `OneCare_Sharing_Access_Consent_Model.md`):
+
+- The default is **share everything with the selected hospital**, going forward, whether the patient
+  arrived through the hospital's own subdomain or connected from inside OneCare.
+- The reasoning is clinical, not commercial: clinicians work best with the full picture, and this is
+  a patient-first platform whose purpose is removing information asymmetry — a partial record
+  recreates it.
+- What makes that legitimate is **disclosure at the moment it happens** — plainly, on the screen
+  where the patient connects (Care Circle) or joins through the hospital's address, never only in
+  settings — and the patient being able to **deselect any category** before or after connecting.
+- Both are implemented: the disclosure panel in `HospitalShareCard` and `InstitutionIntakeCard`, and
+  the category picker on both the initial connection and any existing one.
+
+Delegated access is the model here: consent is given to the institution, the institution assigns the
+treating clinician, and that clinician's access derives from the assignment (or a practice-wide
+viewing right — see the note on `can_view_all_patients` in the tenancy plan). The patient's
+relationship remains with the hospital, not with whichever clinician currently holds the case. The hospital assigns the treating clinician. Consent is to the institution; the
 clinician's access derives from their assignment (or a practice-wide viewing right for admins).
 The patient can disconnect from the institution at any time, independently of any private share.
 
