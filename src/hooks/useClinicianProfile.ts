@@ -183,6 +183,7 @@ export const MEDICAL_SPECIALTIES = [
   'Internal Medicine',
   'Nephrology',
   'Neurology',
+  'Nuclear Medicine',
   'Nursing',
   'Obstetrics & Gynecology',
   'Oncology',
