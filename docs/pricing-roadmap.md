@@ -439,3 +439,23 @@ is correct while every market pays the global rate. Once a patient's price varie
 figure has to come from the patient's own subscription rather than a constant, or hospitals in
 lower-priced regions will be shown inflated estimates. Flagged now so it is not discovered by a
 hospital reading its own statement.
+
+## Enterprise tiers (live Aug 2026)
+
+Source of truth: `ENTERPRISE_TIERS` in `src/lib/pricing-constants.ts`.
+
+| Tier | From | Shape |
+| --- | --- | --- |
+| Practice | $399/mo | Single practice or clinic |
+| Mid-sized | $1,500/mo | Multi-department clinic or small hospital |
+| High | $3,000/mo | Hospital with established departments |
+| Enterprise+ | $4,000/mo | Large hospital or hospital group |
+
+One-time onboarding fee: **$2,500** (`ENTERPRISE_ONBOARDING_FEE`) — covers multi-department
+setup, staff onboarding and EHR integration scope.
+
+### Commercial roadmap (published as "coming", not billed)
+- **Storage packs** — base allowance per plan, extra storage purchasable (`STORAGE_PACKS`).
+- **Per-seat pricing** — early 2027.
+- **Regional pricing** — late 2026 to early 2027.
+- **Profit sharing** with institutional partners — 2027.
