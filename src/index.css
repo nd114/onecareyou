@@ -166,6 +166,43 @@
     font-family: "Epilogue", system-ui, sans-serif;
   }
 
+  /* ---- Mobile viewport correctness -------------------------------------- */
+
+  /*
+   * 100vh on iOS Safari counts the address bar, so a full-height shell is
+   * always taller than the visible area and the page rocks as the bar hides.
+   * dvh tracks the visible viewport. Redefined here rather than editing 125
+   * call sites, and guarded so older browsers keep the vh behaviour.
+   */
+  @supports (height: 100dvh) {
+    .min-h-screen {
+      min-height: 100dvh;
+    }
+    .h-screen {
+      height: 100dvh;
+    }
+  }
+
+  /*
+   * The mobile tab bar is fixed, so without this the last card or button on
+   * every page sits underneath it. Applied to the app shell rather than each
+   * page, so a new page cannot forget it. 4rem is the bar; the inset is the
+   * home indicator on notched devices.
+   */
+  @media (max-width: 767px) {
+    body[data-app-chrome='mobile-nav'] {
+      padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  /*
+   * viewport-fit=cover lets the page paint under the notch, which is what we
+   * want for backgrounds and wrong for a sticky header's contents.
+   */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
   h1,
   h2,
   h3,

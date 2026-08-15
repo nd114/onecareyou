@@ -147,7 +147,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-hidden">
+    <header className="safe-top sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-hidden">
       {isAuthenticated && !isClinician && <OfflineBanner />}
       <div className="container max-w-screen-2xl grid h-16 items-center gap-3 lg:gap-5 grid-cols-[auto_1fr_auto]">
         {/* Logo - sized to content so it never gets clipped */}

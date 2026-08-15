@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const PATIENT_ICONS: Record<PatientPillarKey, React.ElementType> = {
@@ -92,6 +93,15 @@ export function MobileBottomNav() {
     ? getClinicianPillarForRoute(pathname)
     : getPatientPillarForRoute(pathname);
   const icons = isClinician ? CLINICIAN_ICONS : PATIENT_ICONS;
+
+  // Tell the document the tab bar is present so the shell reserves room for it;
+  // pages then cannot forget their own bottom padding.
+  useEffect(() => {
+    document.body.dataset.appChrome = 'mobile-nav';
+    return () => {
+      delete document.body.dataset.appChrome;
+    };
+  }, []);
 
   return (
     <nav
