@@ -14,6 +14,8 @@ import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
 import { PatientRoute } from "@/components/auth/PatientRoute";
+import { PracticeAdminRoute } from "@/components/auth/PracticeAdminRoute";
+import PracticeAdmin from "./pages/PracticeAdmin";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { queryClient } from "@/lib/query-client";
