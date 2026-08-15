@@ -3048,9 +3048,11 @@ export type Database = {
           event_type: string
           id: string
           patient_user_id: string
+          practice_id: string | null
+          practice_share_id: string | null
           provider_label: string | null
           reason: string | null
-          share_id: string
+          share_id: string | null
         }
         Insert: {
           actor_role?: string
@@ -3061,9 +3063,11 @@ export type Database = {
           event_type: string
           id?: string
           patient_user_id: string
+          practice_id?: string | null
+          practice_share_id?: string | null
           provider_label?: string | null
           reason?: string | null
-          share_id: string
+          share_id?: string | null
         }
         Update: {
           actor_role?: string
@@ -3074,11 +3078,27 @@ export type Database = {
           event_type?: string
           id?: string
           patient_user_id?: string
+          practice_id?: string | null
+          practice_share_id?: string | null
           provider_label?: string | null
           reason?: string | null
-          share_id?: string
+          share_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "share_events_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_events_practice_share_id_fkey"
+            columns: ["practice_share_id"]
+            isOneToOne: false
+            referencedRelation: "practice_shares"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "share_events_share_id_fkey"
             columns: ["share_id"]
@@ -3590,10 +3610,16 @@ export type Database = {
         }[]
       }
       get_user_storage_bytes: { Args: { _user_id: string }; Returns: number }
-      has_practice_capability: {
-        Args: { _capability: string; _user_id: string }
-        Returns: boolean
-      }
+      has_practice_capability:
+        | { Args: { _capability: string; _user_id: string }; Returns: boolean }
+        | {
+            Args: {
+              _capability: string
+              _practice_id: string
+              _user_id: string
+            }
+            Returns: boolean
+          }
       has_practice_role: {
         Args: {
           practice_uuid: string
@@ -3612,8 +3638,20 @@ export type Database = {
         Args: { patient_user_id: string }
         Returns: boolean
       }
+      institution_has_patient_permission: {
+        Args: { patient_user_id: string; permission_key: string }
+        Returns: boolean
+      }
       is_assigned_to_patient: {
         Args: { _patient_user_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_assigned_to_patient_in_practice: {
+        Args: {
+          _patient_user_id: string
+          _practice_id: string
+          _user_id: string
+        }
         Returns: boolean
       }
       is_institution_slug_available: {
@@ -3638,6 +3676,22 @@ export type Database = {
           practice_id: string
           practice_name: string
           tenant_type: string
+        }[]
+      }
+      practice_audit_log: {
+        Args: { _limit?: number; _practice_id: string; _search?: string }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_name: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          ip_address: string
+          patient_name: string
+          patient_user_id: string
+          resource_id: string
+          resource_type: string
         }[]
       }
       practice_contact_details: {
