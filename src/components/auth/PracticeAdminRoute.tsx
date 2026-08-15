@@ -1,25 +1,23 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { usePracticeAdminAccess } from '@/hooks/usePracticeAdmin';
-import { Loader2 } from 'lucide-react';
-
-interface ClinicianRouteProps {
-  children: React.ReactNode;
-}
 
 /**
- * Guards clinician-only routes. Redirects:
- *  - unauthenticated users to /sign-in
- *  - authenticated non-clinicians (patients) to /dashboard
+ * Guards the hospital administration surface.
+ *
+ * A third kind of access alongside patient and clinician: whoever manages the
+ * institution. Anyone without a management role is sent back to the surface
+ * that actually holds their data.
  */
-export function ClinicianRoute({ children }: ClinicianRouteProps) {
+export function PracticeAdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
+  const { isAdministrative, isLoading } = usePracticeAdminAccess();
   const { isClinician, isLoading: profileLoading } = useClinicianProfile();
-  const { isAdministrative, isLoading: adminLoading } = usePracticeAdminAccess();
   const location = useLocation();
 
-  if (authLoading || profileLoading || adminLoading) {
+  if (authLoading || isLoading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -31,9 +29,8 @@ export function ClinicianRoute({ children }: ClinicianRouteProps) {
     return <Navigate to="/sign-in" state={{ from: location }} replace />;
   }
 
-  if (!isClinician) {
-    // Administrative accounts have their own surface — never the patient one.
-    return <Navigate to={isAdministrative ? '/practice' : '/dashboard'} replace />;
+  if (!isAdministrative) {
+    return <Navigate to={isClinician ? '/clinician/today' : '/dashboard'} replace />;
   }
 
   return <>{children}</>;

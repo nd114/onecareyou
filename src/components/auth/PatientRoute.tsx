@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { usePracticeAdminAccess } from '@/hooks/usePracticeAdmin';
 import { Loader2 } from 'lucide-react';
 
 interface PatientRouteProps {
@@ -18,9 +19,10 @@ export function PatientRoute({ children }: PatientRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { isClinician, isLoading: profileLoading } = useClinicianProfile();
   const { isAdmin, isLoading: adminLoading } = useAdminRole();
+  const { isAdministrative, isLoading: practiceAdminLoading } = usePracticeAdminAccess();
   const location = useLocation();
 
-  if (authLoading || profileLoading || adminLoading) {
+  if (authLoading || profileLoading || adminLoading || practiceAdminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -39,6 +41,12 @@ export function PatientRoute({ children }: PatientRouteProps) {
 
   if (isClinician) {
     return <Navigate to="/clinician/today" replace />;
+  }
+
+  // Hospital owners and administrators manage the institution; they hold no
+  // patient record of their own, so the patient dashboard would render empty.
+  if (isAdministrative) {
+    return <Navigate to="/practice" replace />;
   }
 
   return <>{children}</>;

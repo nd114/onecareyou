@@ -29,6 +29,7 @@ import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
 import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
 import { InstitutionIntakeCard } from '@/components/patient/InstitutionIntakeCard';
+import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 
 import { PendingClinicianRecordsBanner } from '@/components/consent/PendingClinicianRecordsBanner';
 
@@ -106,10 +107,17 @@ const Dashboard = () => {
           </p>
         </motion.div>
 
+        {/* An institution owner invited by OneCare may land here before accepting;
+            accepting moves them to their administrative dashboard. */}
+        <div className="mb-4">
+          <TenantOwnerInvitationCard />
+        </div>
+
         {/* Finish intake for someone who signed up at a hospital's own address */}
         <div className="mb-4">
           <InstitutionIntakeCard />
         </div>
+
 
         {/* Pending Invitations from Clinicians */}
         <PendingInvitationsCard />
