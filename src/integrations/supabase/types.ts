@@ -2197,6 +2197,57 @@ export type Database = {
         }
         Relationships: []
       }
+      practice_clinician_allowlist: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          department_id: string | null
+          email: string
+          full_name: string | null
+          id: string
+          intended_role: Database["public"]["Enums"]["practice_role"]
+          note: string | null
+          practice_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          department_id?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          intended_role?: Database["public"]["Enums"]["practice_role"]
+          note?: string | null
+          practice_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          department_id?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          intended_role?: Database["public"]["Enums"]["practice_role"]
+          note?: string | null
+          practice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_clinician_allowlist_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "practice_departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_clinician_allowlist_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_department_members: {
         Row: {
           added_by: string | null
@@ -2712,6 +2763,7 @@ export type Database = {
       practices: {
         Row: {
           address: string | null
+          allowed_email_domains: string[]
           brand_accent_color: string | null
           brand_logo_url: string | null
           city: string | null
@@ -2744,6 +2796,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          allowed_email_domains?: string[]
           brand_accent_color?: string | null
           brand_logo_url?: string | null
           city?: string | null
@@ -2776,6 +2829,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          allowed_email_domains?: string[]
           brand_accent_color?: string | null
           brand_logo_url?: string | null
           city?: string | null
@@ -3687,6 +3741,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      bulk_allowlist_clinicians: {
+        Args: { _entries: Json; _practice_id: string }
+        Returns: {
+          added: number
+          skipped: number
+        }[]
+      }
       can_manage_department: {
         Args: { _department_id: string }
         Returns: boolean
@@ -3891,6 +3952,18 @@ export type Database = {
           share_all: boolean
         }[]
       }
+      practice_pending_affiliations: {
+        Args: { _practice_id: string }
+        Returns: {
+          domain_matches: boolean
+          email: string
+          name: string
+          on_allowlist: boolean
+          requested_at: string
+          role: Database["public"]["Enums"]["practice_role"]
+          user_id: string
+        }[]
+      }
       practice_revenue_share_summary: {
         Args: { _practice_id: string }
         Returns: {
@@ -3941,9 +4014,14 @@ export type Database = {
           tenant_type: string
         }[]
       }
+      request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }
         Returns: string
+      }
+      set_practice_affiliation_status: {
+        Args: { _practice_id: string; _status: string; _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
