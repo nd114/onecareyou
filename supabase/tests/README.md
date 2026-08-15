@@ -55,5 +55,16 @@ behind. A failed assertion raises and aborts; a clean run ends with
 | The chief admin sees the full staff roster and every shared patient | build prompt §10 |
 | An ordinary clinician gets no oversight surface | build prompt §2 |
 
+`clinician_affiliation.test.sql` — whitelisting, bulk onboarding, offboarding:
+
+| Rule | Source |
+| --- | --- |
+| An approved domain or allowlist entry affiliates immediately | build prompt §4 |
+| Anyone else lands in pending approval, holding no capabilities | build prompt §4 |
+| Affiliation never creates a duplicate membership | build prompt §4 |
+| Bulk import skips duplicates and unusable rows | build prompt §4 |
+| Offboarding revokes access without deleting the person | build prompt §4 |
+| The last owner cannot be offboarded | operational safety |
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

@@ -16,6 +16,7 @@ import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSect
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
 import { DepartmentsCard } from '@/components/clinician/DepartmentsCard';
+import { ClinicianAllowlistCard } from '@/components/clinician/ClinicianAllowlistCard';
 import { PracticeAccessOverviewCard } from '@/components/clinician/PracticeAccessOverviewCard';
 import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
 import { PracticeContactCard } from '@/components/clinician/PracticeContactCard';
@@ -106,6 +107,11 @@ const ClinicianPractice = () => {
           {/* Hospital code (tenant slug) */}
           <div id="hospital-code" className="mt-6 scroll-mt-20">
             <HospitalCodeCard />
+          </div>
+
+          {/* Who counts as our staff (hospital tenancy) */}
+          <div id="staff-recognition" className="mt-6 scroll-mt-20">
+            <ClinicianAllowlistCard />
           </div>
 
           {/* Departments and their sub-admins (hospital tenancy) */}
