@@ -72,10 +72,11 @@ export default function InstitutionSignUp({
   }, [slug]);
 
 
-  // Hospital branding is a name/logo overlay, not a theme. The Emerald Prestige
-  // palette, type and layout are the product's and stay put — see
-  // docs/enterprise-hospital-tenancy-plan.md §3 (Phase A) and docs/branding.md.
-  // primary_color / accent_color are deliberately not read here.
+  // Tenant branding on this page is name, logo AND brand colours — this is the
+  // hospital's own front door. The signed-in app keeps the Emerald Prestige
+  // system; see docs/enterprise-hospital-tenancy-plan.md §3.
+  const primary = institution?.primary_color || undefined;
+  const accent = institution?.accent_color || undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,8 +133,15 @@ export default function InstitutionSignUp({
       <div className="grid lg:grid-cols-2 min-h-screen">
 
         {/* Branded panel */}
-        <div className="relative hidden lg:flex flex-col justify-between p-12 text-primary-foreground">
-          <div className="absolute inset-0 gradient-primary" aria-hidden />
+        <div
+          className="relative hidden lg:flex flex-col justify-between p-12 text-primary-foreground"
+          style={{
+            background: primary
+              ? `linear-gradient(160deg, ${primary}, ${accent || primary})`
+              : undefined,
+          }}
+        >
+          {!primary && <div className="absolute inset-0 gradient-primary" aria-hidden />}
           <div className="relative">
             <div className="flex items-center gap-3">
               {institution?.logo_url ? (
@@ -302,6 +310,7 @@ export default function InstitutionSignUp({
                     type="submit"
                     className="w-full gradient-primary border-0"
                     disabled={submitting}
+                    style={primary ? { background: primary } : undefined}
                   >
                     {submitting ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
