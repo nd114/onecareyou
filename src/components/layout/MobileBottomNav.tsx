@@ -37,6 +37,40 @@ const CLINICIAN_ICONS: Record<ClinicianPillarKey, React.ElementType> = {
   practice: Building2,
 };
 
+// Hide on auth + marketing + onboarding shells
+const HIDE_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+  "/onboarding",
+  "/clinician/sign-up",
+  "/clinician/portal",
+  "/clinician/pricing",
+  "/clinician/subscription-success",
+  "/subscription-success",
+  "/install",
+  "/assist", // Simple Mode is full-screen
+];
+
+// Hide on the landing/public marketing pages
+const PUBLIC_EXACT = new Set([
+  "/",
+  "/about",
+  "/features",
+  "/pricing",
+  "/contact",
+  "/help",
+  "/careers",
+  "/for-clinicians",
+  "/ehr-comparison",
+  "/privacy",
+  "/terms",
+  "/data-processing",
+  "/medical-disclaimer",
+  "/sitemap",
+]);
+
 /**
  * Bottom tab bar shown on mobile only.
  * Hidden on auth/marketing routes and when the user is not signed in.
@@ -47,46 +81,30 @@ export function MobileBottomNav() {
   const { isClinician } = useClinicianProfile();
   const { isAdmin } = useAdminRole();
 
-  if (!user) return null;
-  // Platform admins use the dedicated admin console shell.
-  if (isAdmin || pathname.startsWith("/admin")) return null;
+  // Hooks must run on every render, before any early return: the visibility
+  // conditions below depend on async auth/role state, so a hook placed after
+  // them changes the hook count between renders and crashes the shell.
+  const hidden =
+    !user ||
+    isAdmin ||
+    pathname.startsWith("/admin") ||
+    HIDE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/")) ||
+    PUBLIC_EXACT.has(pathname);
 
-  // Hide on auth + marketing + onboarding shells
-  const HIDE_PREFIXES = [
-    "/sign-in",
-    "/sign-up",
-    "/forgot-password",
-    "/reset-password",
-    "/onboarding",
-    "/clinician/sign-up",
-    "/clinician/portal",
-    "/clinician/pricing",
-    "/clinician/subscription-success",
-    "/subscription-success",
-    "/install",
-    "/assist", // Simple Mode is full-screen
-  ];
-  if (HIDE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return null;
-  }
-  // Hide on the landing/public marketing pages
-  const PUBLIC_EXACT = new Set([
-    "/",
-    "/about",
-    "/features",
-    "/pricing",
-    "/contact",
-    "/help",
-    "/careers",
-    "/for-clinicians",
-    "/ehr-comparison",
-    "/privacy",
-    "/terms",
-    "/data-processing",
-    "/medical-disclaimer",
-    "/sitemap",
-  ]);
-  if (PUBLIC_EXACT.has(pathname)) return null;
+  // Tell the document the tab bar is present so the shell reserves room for it;
+  // pages then cannot forget their own bottom padding.
+  useEffect(() => {
+    if (hidden) {
+      delete document.body.dataset.appChrome;
+      return;
+    }
+    document.body.dataset.appChrome = "mobile-nav";
+    return () => {
+      delete document.body.dataset.appChrome;
+    };
+  }, [hidden]);
+
+  if (hidden) return null;
 
   const pillars = isClinician ? CLINICIAN_PILLARS : PATIENT_PILLARS;
   const activeKey = isClinician
@@ -94,14 +112,7 @@ export function MobileBottomNav() {
     : getPatientPillarForRoute(pathname);
   const icons = isClinician ? CLINICIAN_ICONS : PATIENT_ICONS;
 
-  // Tell the document the tab bar is present so the shell reserves room for it;
-  // pages then cannot forget their own bottom padding.
-  useEffect(() => {
-    document.body.dataset.appChrome = 'mobile-nav';
-    return () => {
-      delete document.body.dataset.appChrome;
-    };
-  }, []);
+
 
   return (
     <nav
