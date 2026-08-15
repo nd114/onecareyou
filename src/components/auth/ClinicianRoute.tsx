@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
+import { usePracticeAdminAccess } from '@/hooks/usePracticeAdmin';
 import { Loader2 } from 'lucide-react';
 
 interface ClinicianRouteProps {
@@ -15,9 +16,10 @@ interface ClinicianRouteProps {
 export function ClinicianRoute({ children }: ClinicianRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { isClinician, isLoading: profileLoading } = useClinicianProfile();
+  const { isAdministrative, isLoading: adminLoading } = usePracticeAdminAccess();
   const location = useLocation();
 
-  if (authLoading || profileLoading) {
+  if (authLoading || profileLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -30,7 +32,8 @@ export function ClinicianRoute({ children }: ClinicianRouteProps) {
   }
 
   if (!isClinician) {
-    return <Navigate to="/dashboard" replace />;
+    // Administrative accounts have their own surface — never the patient one.
+    return <Navigate to={isAdministrative ? '/practice' : '/dashboard'} replace />;
   }
 
   return <>{children}</>;

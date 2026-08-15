@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Building2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { useTenantOwnerInvitations } from '@/hooks/useTenantOwnerInvitations';
 /** Prompts a clinician invited by OneCare to take ownership of their institution. */
 export function TenantOwnerInvitationCard() {
   const { invitations, accept, isAccepting } = useTenantOwnerInvitations();
+  const navigate = useNavigate();
 
   if (invitations.length === 0) return null;
 
@@ -24,7 +26,11 @@ export function TenantOwnerInvitationCard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => accept(inv.id)} disabled={isAccepting}>
+            <Button onClick={async () => {
+                await accept(inv.id);
+                // An owner is an administrative account, not a patient one.
+                navigate('/practice');
+              }} disabled={isAccepting}>
               {isAccepting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Accept ownership
             </Button>
