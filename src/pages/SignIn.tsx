@@ -25,7 +25,7 @@ const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, user, loading: authLoading } = useAuth();
-  const { isClinician, isLoading: clinicianLoading } = useClinicianProfile();
+  const { isClinician, isTenantAdmin, isLoading: clinicianLoading } = useClinicianProfile();
   const { isAdmin, isLoading: adminLoading } = useAdminRole();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +45,10 @@ const SignIn = () => {
         navigate(from, { replace: true });
       } else if (isAdmin) {
         navigate('/admin', { replace: true });
+      } else if (isTenantAdmin) {
+        // Runs a hospital: Practice is their tenant console — team, departments,
+        // staff recognition, and any invitation still waiting to be accepted.
+        navigate('/clinician/practice', { replace: true });
       } else if (isClinician) {
         navigate('/clinician/dashboard', { replace: true });
       } else {

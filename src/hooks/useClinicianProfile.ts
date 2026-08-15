@@ -46,22 +46,52 @@ export const useClinicianProfile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: clinicianProfile, isLoading, error } = useQuery({
+  // One query for "which side of the product is this person on", so a single
+  // invalidation updates every route guard at once.
+  //
+  // Being clinician-side is not the same as holding a clinical profile. A
+  // hospital's chief admin may never treat a patient, and someone invited to own
+  // a tenant has no profile at all until they make one — yet both belong on the
+  // clinician side. Deriving this from clinician_profiles alone sent them to the
+  // patient dashboard and, worse, blocked /clinician/practice, which is the only
+  // place the invitation can be accepted.
+  const { data: staff, isLoading, error } = useQuery({
     queryKey: ['clinician-profile', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      
-      const { data, error } = await supabase
-        .from('clinician_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data as ClinicianProfile | null;
+
+      const [profileRes, membershipRes, inviteRes] = await Promise.all([
+        supabase.from('clinician_profiles').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase
+          .from('practice_members')
+          .select('practice_id, role, status, created_at')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: true }),
+        (supabase as any).rpc('my_tenant_owner_invitations'),
+      ]);
+
+      if (profileRes.error) throw profileRes.error;
+
+      const memberships = (membershipRes.data ?? []) as {
+        practice_id: string;
+        role: string;
+      }[];
+      const pendingInvites = (inviteRes?.data ?? []) as { practice_id: string }[];
+
+      return {
+        profile: profileRes.data as ClinicianProfile | null,
+        memberships,
+        pendingTenantInvites: pendingInvites,
+      };
     },
     enabled: !!user,
   });
+
+  const clinicianProfile = staff?.profile ?? null;
+  const memberships = staff?.memberships ?? [];
+  const pendingTenantInvites = staff?.pendingTenantInvites ?? [];
+  const primaryMembership = memberships[0] ?? null;
 
   const createClinicianProfile = useMutation({
     mutationFn: async (data: CreateClinicianProfileData) => {
@@ -115,13 +145,25 @@ export const useClinicianProfile = () => {
     },
   });
 
-  const isClinician = !!clinicianProfile;
+  /** Belongs on the clinician side of the product. */
+  const isClinician =
+    !!clinicianProfile || memberships.length > 0 || pendingTenantInvites.length > 0;
+
+  /** Runs a hospital rather than a caseload — lands on Practice, not the inbox. */
+  const isTenantAdmin =
+    primaryMembership?.role === 'owner' ||
+    primaryMembership?.role === 'admin' ||
+    pendingTenantInvites.length > 0;
 
   return {
     clinicianProfile,
     isLoading,
     error,
     isClinician,
+    isTenantAdmin,
+    practiceRole: primaryMembership?.role ?? null,
+    practiceId: primaryMembership?.practice_id ?? null,
+    hasPendingTenantInvite: pendingTenantInvites.length > 0,
     createClinicianProfile,
     updateClinicianProfile,
   };

@@ -1,15 +1,18 @@
 {
-  "name": "OneCare — Your Health, Connected",
+  "name": "OneCare \u2014 Your Health, Connected",
   "short_name": "OneCare",
   "description": "Track vitals, manage medications, and share health updates with your care team.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#3B82F6",
+  "background_color": "#F5F0E0",
+  "theme_color": "#064E3B",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -36,36 +39,65 @@
       "short_name": "Today",
       "description": "Open your daily overview",
       "url": "/dashboard",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Clinician Inbox",
       "short_name": "Inbox",
       "description": "Triage queue for clinicians",
       "url": "/clinician/today",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Vitals",
       "short_name": "Vitals",
       "description": "Log a vital reading",
       "url": "/vitals",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Medications",
       "short_name": "Meds",
       "description": "View your medications",
       "url": "/medications",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Messages",
       "short_name": "Messages",
       "description": "Open your messages",
       "url": "/messages",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
-  "categories": ["health", "medical", "lifestyle"]
+  "categories": [
+    "health",
+    "medical",
+    "lifestyle"
+  ]
 }

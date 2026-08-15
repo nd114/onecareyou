@@ -52,11 +52,13 @@ ALTER TABLE public.practice_clinician_allowlist ENABLE ROW LEVEL SECURITY;
 
 -- The allowlist is a staff list: tenant admins manage it, and a clinician may
 -- see their own entry so "why am I pending?" is answerable.
+DROP POLICY IF EXISTS "Tenant admins manage the clinician allowlist" ON public.practice_clinician_allowlist;
 CREATE POLICY "Tenant admins manage the clinician allowlist"
 ON public.practice_clinician_allowlist FOR ALL TO authenticated
 USING (public.can_manage_practice(practice_id))
 WITH CHECK (public.can_manage_practice(practice_id));
 
+DROP POLICY IF EXISTS "Clinicians see their own allowlist entry" ON public.practice_clinician_allowlist;
 CREATE POLICY "Clinicians see their own allowlist entry"
 ON public.practice_clinician_allowlist FOR SELECT TO authenticated
 USING (lower(email) = lower(public.get_current_user_email()));

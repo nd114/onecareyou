@@ -10,6 +10,7 @@
 - [`whatsapp-integration-plan.md`](./whatsapp-integration-plan.md) — messaging transport plan
 - [`enterprise-hospital-tenancy-plan.md`](./enterprise-hospital-tenancy-plan.md) — hospital tenancy phases
 - [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md) — codebase review findings and decisions
+- [`reviews/product-and-mobile-audit-aug-2026.md`](./reviews/product-and-mobile-audit-aug-2026.md) — feature gaps, mobile readiness, patient UX
 - [`ehr-integration-plan.md`](./ehr-integration-plan.md) — external EHR import, then narrow write-back
 - [`wearables-plan.md`](./wearables-plan.md) — patient device connections and provenance
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — consent + access matrix
@@ -90,7 +91,10 @@
 
 ## Next up (sequenced)
 
-1. **Mobile P0/P1 fixes** from the sweep findings table.
+1. **Mobile device pass on real hardware.** The structural fixes are in (tab-bar
+   clearance, dvh, iOS input zoom, notch insets, PWA colours, Capacitor build
+   config); tap targets, keyboard overlap and tablet landscape need real devices.
+   Table overflow on the four pages that render real tables is outstanding.
 2. **Cross-tenant audit search** in the admin console (admin actions + access logs).
 3. **Post-login tenant branding** — the hospital's name and logo behind sign-in as well as on the
    sign-up address. Deliberately deferred (Aug 2026): the branded intake page carries name, logo

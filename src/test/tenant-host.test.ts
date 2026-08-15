@@ -46,6 +46,16 @@ describe('tenantSlugFromHost', () => {
     expect(tenantSlugFromHost('a.onecare.you', '')).toBeNull();
     expect(tenantSlugFromHost('localhost', '?tenant=../etc')).toBeNull();
   });
+
+  it('holds the hospital code to 3-7 characters', () => {
+    // The identifier a patient reads off a card and types in. Matches
+    // set_institution_slug in the database.
+    expect(tenantSlugFromHost('ab.onecare.you', '')).toBeNull();
+    expect(tenantSlugFromHost('abc.onecare.you', '')).toBe('abc');
+    expect(tenantSlugFromHost('abcdefg.onecare.you', '')).toBe('abcdefg');
+    expect(tenantSlugFromHost('abcdefgh.onecare.you', '')).toBeNull();
+    expect(tenantSlugFromHost('st-marys-clinic.onecare.you', '')).toBeNull();
+  });
 });
 
 describe('isTenantHost / tenantHostUrl', () => {

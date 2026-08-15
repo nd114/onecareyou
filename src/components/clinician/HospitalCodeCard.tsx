@@ -30,11 +30,14 @@ export const HospitalCodeCard = () => {
     setValue(tenant?.slug ?? '');
   }, [tenant?.slug]);
 
-  const normalised = value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+  // The hospital code is an identifier people read off a card and type on a
+  // phone, so it is capped at 7 characters — matching set_institution_slug.
+  const normalised = value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 7);
+  const validLength = normalised.length >= 3 && normalised.length <= 7;
   const changed = normalised !== (tenant?.slug ?? '');
 
   useEffect(() => {
-    if (!changed || normalised.length < 3) {
+    if (!changed || !validLength) {
       setAvailable(null);
       return;
     }
@@ -100,7 +103,7 @@ export const HospitalCodeCard = () => {
                 <div>
                   <p className="font-mono text-sm font-medium">{tenant.slug}</p>
                   <p className="text-xs text-muted-foreground">
-                    Reserved for {tenant.slug}.onecare.you (coming soon)
+                    Live at {tenant.slug}.onecare.you
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={copy}>
@@ -119,7 +122,8 @@ export const HospitalCodeCard = () => {
                   <Input
                     id="hospital-slug"
                     value={value}
-                    placeholder="e.g. st-marys-clinic"
+                    placeholder="e.g. oclmc"
+                    maxLength={7}
                     onChange={(e) => setValue(e.target.value)}
                   />
                   <Button
@@ -128,14 +132,15 @@ export const HospitalCodeCard = () => {
                       setAvailable(null);
                     }}
                     disabled={
-                      isSaving || !changed || normalised.length < 3 || available === false
+                      isSaving || !changed || !validLength || available === false
                     }
                   >
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Lowercase letters, numbers and hyphens. 3–32 characters.
+                  Lowercase letters, numbers and hyphens. 3–7 characters — short enough for a
+                  patient to read off a card and type in.
                 </p>
                 {checking && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
