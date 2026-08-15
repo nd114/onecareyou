@@ -73,42 +73,7 @@ export function MobileBottomNav() {
   if (hidden) return null;
 
 
-  // Hide on auth + marketing + onboarding shells
-  const HIDE_PREFIXES = [
-    "/sign-in",
-    "/sign-up",
-    "/forgot-password",
-    "/reset-password",
-    "/onboarding",
-    "/clinician/sign-up",
-    "/clinician/portal",
-    "/clinician/pricing",
-    "/clinician/subscription-success",
-    "/subscription-success",
-    "/install",
-    "/assist", // Simple Mode is full-screen
-  ];
-  if (HIDE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return null;
-  }
-  // Hide on the landing/public marketing pages
-  const PUBLIC_EXACT = new Set([
-    "/",
-    "/about",
-    "/features",
-    "/pricing",
-    "/contact",
-    "/help",
-    "/careers",
-    "/for-clinicians",
-    "/ehr-comparison",
-    "/privacy",
-    "/terms",
-    "/data-processing",
-    "/medical-disclaimer",
-    "/sitemap",
-  ]);
-  if (PUBLIC_EXACT.has(pathname)) return null;
+
 
   const pillars = isClinician ? CLINICIAN_PILLARS : PATIENT_PILLARS;
   const activeKey = isClinician
