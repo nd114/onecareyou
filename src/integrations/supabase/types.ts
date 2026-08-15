@@ -3048,9 +3048,11 @@ export type Database = {
           event_type: string
           id: string
           patient_user_id: string
+          practice_id: string | null
+          practice_share_id: string | null
           provider_label: string | null
           reason: string | null
-          share_id: string
+          share_id: string | null
         }
         Insert: {
           actor_role?: string
@@ -3061,9 +3063,11 @@ export type Database = {
           event_type: string
           id?: string
           patient_user_id: string
+          practice_id?: string | null
+          practice_share_id?: string | null
           provider_label?: string | null
           reason?: string | null
-          share_id: string
+          share_id?: string | null
         }
         Update: {
           actor_role?: string
@@ -3074,11 +3078,27 @@ export type Database = {
           event_type?: string
           id?: string
           patient_user_id?: string
+          practice_id?: string | null
+          practice_share_id?: string | null
           provider_label?: string | null
           reason?: string | null
-          share_id?: string
+          share_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "share_events_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_events_practice_share_id_fkey"
+            columns: ["practice_share_id"]
+            isOneToOne: false
+            referencedRelation: "practice_shares"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "share_events_share_id_fkey"
             columns: ["share_id"]
@@ -3612,8 +3632,20 @@ export type Database = {
         Args: { patient_user_id: string }
         Returns: boolean
       }
+      institution_has_patient_permission: {
+        Args: { patient_user_id: string; permission_key: string }
+        Returns: boolean
+      }
       is_assigned_to_patient: {
         Args: { _patient_user_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_assigned_to_patient_in_practice: {
+        Args: {
+          _patient_user_id: string
+          _practice_id: string
+          _user_id: string
+        }
         Returns: boolean
       }
       is_institution_slug_available: {
