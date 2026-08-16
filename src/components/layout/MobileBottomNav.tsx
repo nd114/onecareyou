@@ -21,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 const PATIENT_ICONS: Record<PatientPillarKey, React.ElementType> = {
@@ -106,6 +107,7 @@ export function MobileBottomNav() {
 
   if (hidden) return null;
 
+  const { t } = useTranslation('nav');
   const pillars = isClinician ? CLINICIAN_PILLARS : PATIENT_PILLARS;
   const activeKey = isClinician
     ? getClinicianPillarForRoute(pathname)
@@ -140,7 +142,7 @@ export function MobileBottomNav() {
                 )}
               >
                 <Icon className="h-5 w-5" aria-hidden />
-                <span className="leading-none">{p.label}</span>
+                <span className="leading-none">{t(p.key, { defaultValue: p.label }) as string}</span>
               </Link>
             </li>
           );
