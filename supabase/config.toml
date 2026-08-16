@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.beta-book]
 verify_jwt = false
+
+[functions.kingschat-callback]
+verify_jwt = false
