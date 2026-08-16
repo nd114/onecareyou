@@ -11,6 +11,7 @@
 - [`enterprise-hospital-tenancy-plan.md`](./enterprise-hospital-tenancy-plan.md) — hospital tenancy phases
 - [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md) — codebase review findings and decisions
 - [`reviews/product-and-mobile-audit-aug-2026.md`](./reviews/product-and-mobile-audit-aug-2026.md) — feature gaps, mobile readiness, patient UX
+- [`reviews/language-literacy-telehealth-hospital-profile.md`](./reviews/language-literacy-telehealth-hospital-profile.md) — languages, low-literacy mode, telehealth, hospital directory
 - [`ehr-integration-plan.md`](./ehr-integration-plan.md) — external EHR import, then narrow write-back
 - [`wearables-plan.md`](./wearables-plan.md) — patient device connections and provenance
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — consent + access matrix
@@ -108,6 +109,13 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 - Emergency numbers, family health tracking + context switcher, secure patient↔clinician messaging, Health Vault + timeline, document sharing with short-lived signed URLs, vitals source tracking and export, medication scanner/interaction checks, caregiver delegated access, HIPAA audit logging, clinician BAA framework, careers + applications admin.
 
 ## Next up (sequenced)
+
+0. **Languages, stage 2.** The foundation is in (12 locales, RTL, switcher,
+   formatting, tab bar converted). Next is extracting the patient journey —
+   onboarding, dashboard, medications, vitals, Care Circle, sharing disclosure,
+   ~400 keys. Clinical and consent copy goes to a professional medical
+   translator, not into the generated bundles. Yoruba, Hausa and Igbo stay
+   `draft` until a native speaker has reviewed them.
 
 1. **Mobile device pass on real hardware.** The structural fixes are in (tab-bar
    clearance, dvh, iOS input zoom, notch insets, PWA colours, Capacitor build
