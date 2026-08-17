@@ -2,7 +2,7 @@
 
 **What this is.** The single living tracker for OneCare product work: what has shipped and when, what is in flight, what is next, and what is deliberately deferred. Update this file as work lands — do not start new roadmap or tracking documents.
 
-**Last updated:** 15 August 2026
+**Last updated:** 17 August 2026
 
 **Companion docs** (deep dives kept separate on purpose):
 
@@ -11,7 +11,12 @@
 - [`enterprise-hospital-tenancy-plan.md`](./enterprise-hospital-tenancy-plan.md) — hospital tenancy phases
 - [`reviews/oc-lmc-review-aug-2026.md`](./reviews/oc-lmc-review-aug-2026.md) — codebase review findings and decisions
 - [`reviews/product-and-mobile-audit-aug-2026.md`](./reviews/product-and-mobile-audit-aug-2026.md) — feature gaps, mobile readiness, patient UX
-- [`reviews/language-literacy-telehealth-hospital-profile.md`](./reviews/language-literacy-telehealth-hospital-profile.md) — languages, low-literacy mode, telehealth, hospital directory
+- [`reviews/security-review-aug-2026.md`](./reviews/security-review-aug-2026.md) — red-team pass, findings and accepted risks
+- [`reviews/language-literacy-telehealth-hospital-profile.md`](./reviews/language-literacy-telehealth-hospital-profile.md) — the four product questions, answered, with links to the plans below
+- [`language-support-plan.md`](./language-support-plan.md) — eleven languages, staged (plan only, not implemented)
+- [`low-literacy-support-plan.md`](./low-literacy-support-plan.md) — Simple Mode: preference shipped, depth deferred
+- [`telehealth-plan.md`](./telehealth-plan.md) — async consults first, video last (logged, not started)
+- [`hospital-profiles-plan.md`](./hospital-profiles-plan.md) — public hospital directory, published opt-in
 - [`ehr-integration-plan.md`](./ehr-integration-plan.md) — external EHR import, then narrow write-back
 - [`wearables-plan.md`](./wearables-plan.md) — patient device connections and provenance
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — consent + access matrix
@@ -66,6 +71,20 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ### August 2026
 
+- **Security review and red-team pass.** Six findings, three of them serious, each reproduced as a
+  real caller against a replay of the migration history before being fixed: any patient could set
+  their own `subscription_tier` to premium; any hospital admin could rewrite their own commercial
+  terms including `revenue_share_pct`; and any clinician could re-activate a share the patient had
+  revoked and widen their own permissions. All three were the same root cause — RLS is row-level, so
+  a policy written for one column grants every column — and all three are now pinned by BEFORE
+  UPDATE guards with 10 regression assertions. Also: `drug-lookup` now requires a caller, and four
+  secret/HMAC comparisons are constant-time. See
+  [`reviews/security-review-aug-2026.md`](./reviews/security-review-aug-2026.md).
+- **Simple Mode as a stored preference.** `profiles.simple_mode`, offered at onboarding and repeated
+  in Settings, with an information control explaining who it is for, what changes and why. Replaces
+  a mode that was four taps into the Learn pillar and did not persist. The deeper surface changes
+  (photo-led schedules, read-aloud, one question per screen) are deliberately deferred — see
+  [`low-literacy-support-plan.md`](./low-literacy-support-plan.md).
 - **Departments and sub-admins.** A hospital's chief admin creates departments, appoints
   sub-admins to run them, and sees a roster of every clinician's departments, caseload and access
   basis alongside every patient's department and assigned clinicians. Sub-admins route and assign
@@ -110,12 +129,11 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ## Next up (sequenced)
 
-0. **Languages, stage 2.** The foundation is in (12 locales, RTL, switcher,
-   formatting, tab bar converted). Next is extracting the patient journey —
-   onboarding, dashboard, medications, vitals, Care Circle, sharing disclosure,
-   ~400 keys. Clinical and consent copy goes to a professional medical
-   translator, not into the generated bundles. Yoruba, Hausa and Igbo stay
-   `draft` until a native speaker has reviewed them.
+0. **Hospital profiles.** A public, opt-in directory so patients can find a hospital by name
+   instead of only by typing its code — currently the hardest step in patient onboarding. The
+   earliest of the current forward plans to pick up; fully specified in
+   [`hospital-profiles-plan.md`](./hospital-profiles-plan.md). Open question is editorial
+   ownership, not engineering.
 
 1. **Mobile device pass on real hardware.** The structural fixes are in (tab-bar
    clearance, dvh, iOS input zoom, notch insets, PWA colours, Capacitor build
@@ -131,16 +149,38 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    Prepared on `claude/oclmc-panel-scope-option-a-assignment-first`; see review C2.
 5. **Server-side audit logging.** `hipaa_audit_logs` rows are written by the client, so the log
    records what the client chose to report. Sound for the honest-client case and fine for the BAA
-   conversation today, but PHI reads should be logged server-side before a formal audit.
-4. **Enterprise management depth** — provider/patient rosters, coverage and caseload views, owner KPI reports.
-5. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
-6. **AI medication knowledge base** for the patient assistant (interactions, side effects, missed doses; no dosage changes, no diagnosis).
-7. **Health news feed** filtered against the patient's own medications and conditions.
-8. **WhatsApp transport** behind the existing provider interface.
-9. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
+   conversation today, but PHI reads should be logged server-side before a formal audit. Raised in
+   three consecutive reviews now, and it matters more since tenant visibility was deliberately left
+   broad — the audit log is the compensating control for that decision.
+6. **Rate limiting on anonymous writes and sign-in.** There is none anywhere in the application
+   today; the only 429 handling is for responses *from* the AI gateway. Flagged in the August 2026
+   security review as an accepted risk pending a decision.
+7. **KingsChat account linking — with `state` and PKCE.** The callback exchanges a code correctly
+   but nothing binds it to the browser session that started the flow. Harmless while it does not
+   link accounts; an account-takeover path the moment it does. Requirements are written up in the
+   security review — settle them as part of the linking design, not afterwards.
+8. **Enterprise management depth** — provider/patient rosters, coverage and caseload views, owner KPI reports.
+9. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
+10. **AI medication knowledge base** for the patient assistant (interactions, side effects, missed doses; no dosage changes, no diagnosis).
+11. **Health news feed** filtered against the patient's own medications and conditions.
+12. **WhatsApp transport** behind the existing provider interface.
+13. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
 
 ## Deferred (with reasons)
 
+- **Multi-language support** — a working foundation was built in August 2026 and deliberately
+  reverted. Live translation machinery with no translations behind it invites a switcher that does
+  nothing and makes every new component a question. The code is about a week; spend it immediately
+  before the translation work is commissioned, not a year ahead of it.
+  See [`language-support-plan.md`](./language-support-plan.md).
+- **Simple Mode depth** — the preference shipped; the five surface changes behind it (photo-led
+  medication schedules, time as pictures, read-aloud, voice logging, one question per screen) are a
+  rebuild of the patient surfaces and are held for review.
+  See [`low-literacy-support-plan.md`](./low-literacy-support-plan.md).
+- **Synchronous telehealth (video)** — logged, to be revisited. Async consults as a first-class
+  object come first, then scheduling; video is last because the hard parts are bandwidth fallback,
+  remote-prescribing rules, recording retention and mid-consult billing, none of which a video
+  widget solves. See [`telehealth-plan.md`](./telehealth-plan.md).
 - **Full UI redesign Phase A–D** — deferred until functional gaps close; palette and type system already locked.
 - **Native store builds via Capacitor** — config exists; ship after the PWA sweep is clean.
 - **Connected EHR write-back** — read/import first; write-back needs partner agreements.
