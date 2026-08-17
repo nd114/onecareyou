@@ -11,8 +11,26 @@ a live database before it was fixed, and re-run after to prove the fix. The
 front end, the 37 edge functions, storage policies and the secret surface were
 reviewed by inspection.
 
-**Result: six issues found and fixed, three of them serious.** Ten regression
-assertions are committed as `supabase/tests/privilege_escalation.test.sql`.
+**A correction to the harness, which changed a conclusion.** The first version of
+the local shim did not reproduce Supabase's bootstrap line
+
+```sql
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+```
+
+so every table appeared to have no grants at all, and this review originally
+recorded "`anon` has almost no table access" as a thing that held up. That was an
+artifact of the harness, not a property of the platform. With the default
+privileges modelled, `anon` held **482 grants across 69 tables**. The shim now
+includes them, and the corrected finding is F7 below. Two independent checks
+agree: the repo contains migrations that *revoke* privileges from `anon` which no
+migration ever granted (`practices_safe`, `international_drug_mappings`), which
+only makes sense if the defaults were in play.
+
+**Result: seven issues found and fixed, three of them serious.** Fourteen
+regression assertions are committed as
+`supabase/tests/privilege_escalation.test.sql`.
 
 ---
 
@@ -20,13 +38,17 @@ assertions are committed as `supabase/tests/privilege_escalation.test.sql`.
 
 Worth stating, because it is the reason the damage was bounded:
 
-- **Every public table has RLS enabled.** No table was found unprotected.
+- **Every public table has RLS enabled.** No table was found unprotected. This
+  matters more than it first appears — see F7; RLS was carrying the whole load.
 - **Every `SECURITY DEFINER` function pins `search_path`.** This is the classic
   Postgres privilege-escalation vector and the codebase gets it right
   everywhere — 60+ functions, no exceptions.
-- **`anon` has almost no table access.** Two grants total (`beta_events` insert,
-  `job_postings` select). RLS is not the only thing standing between an
-  anonymous caller and the data; the grants are not there either.
+- **RLS genuinely holds against anonymous callers.** Verified directly: an `anon`
+  session reads zero rows from `profiles` and `vitals`, because the policies key
+  on `auth.uid()` and it is null. The policies do the job they were written for.
+- **Both public views set `security_invoker = on`.** `clinician_profiles_public`
+  and `patient_basic_info` therefore run under the caller's RLS rather than the
+  view owner's. A view missing that option is a silent RLS bypass; neither is.
 - **`user_roles` cannot be self-granted.** Platform admin is manageable only by
   an existing admin, so there is no path from a normal account to platform admin.
 - **Storage is folder-scoped by user id** on every bucket, and
@@ -151,14 +173,64 @@ against the session, reject any callback whose `state` does not match and has no
 been consumed; add PKCE if KingsChat supports it; restrict CORS to our own
 origins; and never trust the `origin` field in the request body.
 
+### F7 — `anon` held every privilege on every table · **Medium** · Confirmed · Fixed
+
+Supabase's bootstrap grants the anonymous role `SELECT, INSERT, UPDATE, DELETE`
+on everything created in `public`. Measured on a replay of this history:
+**482 grants across 69 tables**, including `profiles`, `vitals`, `medications`
+and `provider_shares`. The row policies were the *only* boundary between the open
+internet and the data.
+
+They held — anon reads nothing, as verified above. But it means **one malformed
+policy exposes an entire table with nothing behind it**, and that is not
+hypothetical here. `job_applications` shipped with:
+
+```sql
+CREATE POLICY "Applicants can view their own applications"
+  ON public.job_applications FOR SELECT USING (true);
+```
+
+No `TO` clause, so it covered `anon`, and `true` for every row: every applicant's
+name, email and phone was readable by anyone on the internet until it was
+narrowed in `20260127152048`. With the grant absent, the same slip would have
+been contained.
+
+**Fix.** `20260817110000` revokes `anon` from every relation in `public` — views
+included — sets the default privileges so tables added later inherit nothing, and
+then re-grants exactly the four anonymous surfaces the product actually has,
+checked against every unguarded route in `App.tsx`:
+
+| Surface | Grant | Why |
+| --- | --- | --- |
+| `job_postings` | SELECT | the public careers board |
+| `job_applications` | INSERT | applying without an account |
+| `beta_events` | INSERT | anonymous beta telemetry |
+| `enterprise_inquiries` | INSERT | the deliberate "anonymous visitors" policy |
+
+Anonymous reads for the branded hospital pages go through
+`public_institution_by_slug()`, a `SECURITY DEFINER` function, so tenant sign-up
+does not depend on table grants and is unaffected.
+
+`authenticated` deliberately keeps its defaults: the whole application runs as
+that role, and RLS is what scopes it.
+
+**Related, and already right:** `20260522202547` uses a column-level
+`REVOKE SELECT (tax_id, npi, stripe_*, subscription_*) ON practices FROM
+authenticated`. That is the read-side counterpart to the write-side guards in
+F1–F3 — worth knowing it exists, and worth knowing its limits: it covers
+`authenticated` only, and a column added later is exposed again by default.
+
 ---
 
 ## 3. Accepted, or needing a decision
 
 - **No application rate limiting anywhere.** The only 429 handling is for
-  responses *from* the AI gateway. `beta_events` accepts anonymous inserts (the
-  one anon write on the platform), and the auth endpoints rely on Supabase's own
-  limits. Recommend edge rate limits on anonymous writes and on sign-in.
+  responses *from* the AI gateway. There are **three** unauthenticated write
+  surfaces — `job_applications` (plus a resume upload into storage),
+  `beta_events`, and `enterprise_inquiries` — and the auth endpoints rely on
+  Supabase's own limits. This is now the most exposed thing left on the platform:
+  the writes are individually harmless and collectively a free spam and storage
+  bill. Recommend edge rate limits on all three and on sign-in.
 - **Audit rows are client-written.** `hipaa_audit_logs` INSERT is
   `auth.uid() = user_id`, so the log records what the client chose to report. A
   determined user can omit their own entries. This is now the third review to
@@ -170,10 +242,15 @@ origins; and never trust the `origin` field in the request body.
   commercially sensitive. Largely moot if the hospital directory ships, since
   that publishes the same information deliberately — worth deciding rather than
   leaving as an accident.
-- **A dead anon INSERT policy on `enterprise_inquiries`.** Harmless today: the
-  policy exists but `anon` has no INSERT grant, and the page is behind
-  `ClinicianRoute`. Left in place, but it is the kind of thing someone later
-  "fixes" by adding a grant — which would open an unauthenticated write.
+- **The anon INSERT policy on `enterprise_inquiries` is live, not dead.** An
+  earlier draft of this review called it harmless on the grounds that `anon` had
+  no INSERT grant; that was the same harness error as F7, and the insert was
+  confirmed to succeed. No unguarded page writes it — the form sits behind
+  `ClinicianRoute` — so it is reachable through the API and nothing else. The
+  grant was kept in the F7 fix because the policy was written deliberately
+  ("Anonymous visitors can submit inquiries") and a public form is presumably
+  intended. **Decide:** build the public form, or drop the policy and the grant.
+  Leaving an anonymous write nobody uses is the worst of the three.
 - **Prompt injection.** Document text and patient-entered content are fed to the
   model. Read scope is already limited to records the caller can access, so the
   blast radius is the caller's own data, but a malicious document could still
@@ -183,14 +260,33 @@ origins; and never trust the `origin` field in the request body.
 
 ---
 
-## 4. The pattern worth internalising
+## 4. Two patterns worth internalising
 
-Five of the six findings are the same mistake: **a row policy written for one
-column that silently grants every column.** "Users can update their own profile"
-was written for names and phone numbers and also gave away billing. "Clinicians
-can update their patient shares" was written for notes and also gave away
-consent.
+**A row policy written for one column silently grants every column.** The three
+serious findings are all this. "Users can update their own profile" was written
+for names and phone numbers and also gave away billing. "Clinicians can update
+their patient shares" was written for notes and also gave away consent. Nobody
+wrote a bad policy; each policy did exactly what its author intended, plus
+everything else on the row.
 
-Before adding an UPDATE policy, ask which columns on that table would be
-dangerous in the hands of the person the policy is for — and pin them. Anything
-representing money, entitlement, consent or role belongs in that category.
+> Before adding an UPDATE policy, ask which columns on that table would be
+> dangerous in the hands of the person the policy is for — and pin them. Anything
+> representing money, entitlement, consent or role belongs in that category.
+
+**RLS was the only layer, and a single policy typo therefore reached the open
+internet.** That is what F7 was about, and it is the more general lesson: the
+platform's defences were one deep everywhere. The `job_applications` policy shows
+the failure mode exactly — one missing `TO` clause, one `USING (true)`, and
+applicant records were world-readable. Depth is what turns that from a breach
+into a bug.
+
+> A control that is doing all the work on its own is worth noticing *before* it
+> fails, not after. Ask what the second layer is, and if the honest answer is
+> "there isn't one", that is the finding.
+
+**And one about method.** The most misleading moment in this review was not a
+missed vulnerability — it was a *reassuring* result produced by a harness that
+did not model production. It went into the first draft as something that "held
+up". Where a test environment is hand-built, the parts of production it does not
+reproduce are exactly where false comfort comes from, so a clean result deserves
+the same suspicion as a dirty one until the harness itself is checked.

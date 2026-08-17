@@ -27,7 +27,7 @@ DECLARE
   _owner   uuid := 'a1000000-0000-0000-0000-000000000003';
   _hosp    uuid := 'a1111111-0000-0000-0000-000000000001';
   _share   uuid;
-  _tier text; _pct numeric; _active boolean; _perms jsonb; _txt text;
+  _tier text; _pct numeric; _active boolean; _perms jsonb; _txt text; _count integer;
 BEGIN
   INSERT INTO auth.users (id, email) VALUES
     (_patient,'esc-patient@test.local'), (_doctor,'esc-doctor@test.local'),
@@ -118,6 +118,48 @@ BEGIN
   SELECT subscription_tier INTO _tier FROM public.profiles WHERE user_id = _patient;
   PERFORM pg_temp.assert(_tier = 'premium',
     'the service role can still set entitlement after payment');
+
+  -- ==========================================================================
+  -- 5. The anonymous role holds only the surfaces the product actually has
+  --
+  -- Supabase grants anon every privilege on every table in `public` by default,
+  -- which leaves RLS as the sole boundary against the open internet. These
+  -- assert the grant is gone as well, so one malformed policy is contained
+  -- rather than fatal. See 20260817110000.
+  -- ==========================================================================
+  SELECT count(*) INTO _count
+    FROM information_schema.role_table_grants
+   WHERE grantee = 'anon' AND table_schema = 'public'
+     AND table_name NOT IN ('job_postings', 'job_applications',
+                            'beta_events', 'enterprise_inquiries');
+  PERFORM pg_temp.assert(_count = 0,
+    'anon holds no privileges outside the four deliberate anonymous surfaces');
+
+  SELECT count(*) INTO _count
+    FROM information_schema.role_table_grants
+   WHERE grantee = 'anon' AND table_schema = 'public'
+     AND table_name IN ('job_applications', 'beta_events', 'enterprise_inquiries')
+     AND privilege_type <> 'INSERT';
+  PERFORM pg_temp.assert(_count = 0,
+    'the anonymous write surfaces are INSERT only — anon cannot read them back');
+
+  SELECT count(*) INTO _count
+    FROM information_schema.role_table_grants
+   WHERE grantee = 'anon' AND table_schema = 'public' AND table_name = 'job_postings';
+  PERFORM pg_temp.assert(_count = 1,
+    'the public careers board still reads without an account');
+
+  -- The reason the grants mattered: RLS alone was holding this line.
+  EXECUTE 'SET LOCAL ROLE anon';
+  BEGIN
+    PERFORM 1 FROM public.profiles LIMIT 1;
+    _txt := 'readable';
+  EXCEPTION WHEN insufficient_privilege THEN
+    _txt := 'denied';
+  END;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_txt = 'denied',
+    'an anonymous caller is refused profiles at the grant, not just by RLS');
 
   RAISE NOTICE 'ALL PRIVILEGE ESCALATION TESTS PASSED';
 END $$;
