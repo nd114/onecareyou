@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Heart, Calendar, Droplet, Ruler, X, Plus, ArrowRight, SkipForward, Loader2 } from "lucide-react";
+import { SimpleModeChoice } from "@/components/patient/SimpleModeChoice";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const Onboarding = () => {
     countryCode: "",
     emergencyContactName: "",
     emergencyNumber: "",
+    simpleMode: false,
   });
 
   // Pre-populate form if profile exists
@@ -50,6 +52,7 @@ const Onboarding = () => {
         countryCode: (profile as any).country_code || "",
         emergencyContactName: (profile as any).emergency_contact_name || "",
         emergencyNumber: (profile as any).emergency_number || "",
+        simpleMode: (profile as any).simple_mode === true,
       });
     }
   }, [profile]);
@@ -109,6 +112,7 @@ const Onboarding = () => {
         country_code: formData.countryCode || null,
         emergency_contact_name: formData.emergencyContactName || null,
         emergency_number: formData.emergencyNumber || null,
+        simple_mode: formData.simpleMode,
         onboarding_completed: markComplete,
       })
       .eq("user_id", user.id);
@@ -399,6 +403,14 @@ const Onboarding = () => {
                     </Button>
                   </div>
                 </div>
+
+                {/* How the app should look for them. Offered, with an
+                    explanation, rather than hidden in Settings. */}
+                <SimpleModeChoice
+                  value={formData.simpleMode}
+                  onChange={(next) => setFormData({ ...formData, simpleMode: next })}
+                  className="pt-2"
+                />
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">

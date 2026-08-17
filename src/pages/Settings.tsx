@@ -22,6 +22,7 @@ import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SimpleModeChoice } from '@/components/patient/SimpleModeChoice';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -625,6 +626,25 @@ const Settings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Simple mode — offered at onboarding, changeable here, as the
+                    explanation there promises. */}
+                <SimpleModeChoice
+                  value={(profile as any)?.simple_mode === true}
+                  onChange={async (next) => {
+                    if (!user) return;
+                    const { error } = await supabase
+                      .from('profiles')
+                      .update({ simple_mode: next } as never)
+                      .eq('user_id', user.id);
+                    if (error) {
+                      toast.error('Could not save that preference');
+                      return;
+                    }
+                    await refreshProfile();
+                    toast.success(next ? 'Simple version turned on' : 'Simple version turned off');
+                  }}
+                />
+
                 {/* Timezone */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
