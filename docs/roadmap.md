@@ -71,14 +71,15 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ### August 2026
 
-- **Security review and red-team pass.** Six findings, three of them serious, each reproduced as a
+- **Security review and red-team pass.** Seven findings, three of them serious, each reproduced as a
   real caller against a replay of the migration history before being fixed: any patient could set
   their own `subscription_tier` to premium; any hospital admin could rewrite their own commercial
   terms including `revenue_share_pct`; and any clinician could re-activate a share the patient had
   revoked and widen their own permissions. All three were the same root cause — RLS is row-level, so
   a policy written for one column grants every column — and all three are now pinned by BEFORE
-  UPDATE guards with 10 regression assertions. Also: `drug-lookup` now requires a caller, and four
-  secret/HMAC comparisons are constant-time. See
+  UPDATE guards. Also: `anon` no longer holds Supabase's default blanket privileges on every public
+  table (482 grants across 69 tables, now four deliberate surfaces), `drug-lookup` requires a
+  caller, and four secret/HMAC comparisons are constant-time. 14 regression assertions. See
   [`reviews/security-review-aug-2026.md`](./reviews/security-review-aug-2026.md).
 - **Simple Mode as a stored preference.** `profiles.simple_mode`, offered at onboarding and repeated
   in Settings, with an information control explaining who it is for, what changes and why. Replaces
