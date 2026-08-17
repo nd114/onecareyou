@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { timingSafeEqual } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,7 +61,12 @@ async function verifySignature(body: string, signature: string, secret: string):
     const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
-    return signature === expectedSignature || signature === `sha256=${expectedSignature}`;
+    // Constant-time: a webhook endpoint accepts unlimited attempts, which is
+    // precisely the condition a timing attack on `===` needs.
+    return (
+      timingSafeEqual(signature, expectedSignature) ||
+      timingSafeEqual(signature, `sha256=${expectedSignature}`)
+    );
   } catch (err: any) {
     logStep("Signature verification failed", { error: err.message });
     return false;
