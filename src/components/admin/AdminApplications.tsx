@@ -394,8 +394,8 @@ export function AdminApplications() {
                     </SelectTrigger>
                     <SelectContent>
                       {APPLICATION_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s} className="capitalize">
-                          {s}
+                        <SelectItem key={s} value={s}>
+                          {statusLabel(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -418,6 +418,26 @@ export function AdminApplications() {
                     Save notes
                   </Button>
                 </div>
+
+                <div className="border-t pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={setArchived.isPending}
+                    onClick={() => toggleArchive(selected)}
+                  >
+                    {selected.archived_at ? (
+                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Archive className="h-4 w-4 mr-2" />
+                    )}
+                    {selected.archived_at ? 'Restore from archive' : 'Move to archive'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Archiving hides the application from the active list. Nothing is deleted.
+                  </p>
+                </div>
+
               </div>
             </>
           )}
