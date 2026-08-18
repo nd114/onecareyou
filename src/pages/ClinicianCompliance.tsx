@@ -25,14 +25,38 @@ function toCsv(rows: any[], headers: string[]): string {
   return lines.join("\n");
 }
 
+/**
+ * Saves one file.
+ *
+ * Two details matter and both were wrong before. The anchor is added to the
+ * document — Firefox ignores a click on a detached one — and the object URL is
+ * revoked on a later tick, because revoking it synchronously after click() can
+ * cancel the download that is still starting.
+ *
+ * Call this once per user gesture. Browsers block a page that fires several
+ * downloads in a row, which is why the compliance pack is now a single file.
+ */
 function download(filename: string, content: string, mime = "text/plain") {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1000);
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 const ATTESTATION = `OneCare — Security & Compliance Attestation
@@ -67,6 +91,8 @@ export default function ClinicianCompliance() {
   const [from, setFrom] = useState(format(subDays(new Date(), 90), "yyyy-MM-dd"));
   const [to, setTo] = useState(format(new Date(), "yyyy-MM-dd"));
   const [building, setBuilding] = useState(false);
+  // Held back for a separate click: a second automatic download would be blocked.
+  const [auditCsvReady, setAuditCsvReady] = useState<string | null>(null);
 
   const { data: auditEntries = [] } = useAuditLog({ limit: 5000 });
 
@@ -130,11 +156,74 @@ Bundle contents:
 
 This bundle is a snapshot. Re-generate after material changes to your practice or team.`;
 
-      download(`compliance-pack-cover-${from}-to-${to}.txt`, cover);
-      download(`01-attestation-${from}-to-${to}.txt`, ATTESTATION);
-      download(`02-baa-${from}-to-${to}.txt`, baaText);
-      download(`03-audit-log-${from}-to-${to}.csv`, auditCsv, "text/csv");
-      toast.success("Compliance pack downloaded (4 files)");
+      // One document, not four downloads. The previous version called
+      // download() four times in a row; browsers allow the first and block the
+      // rest, so a reviewer received only the cover page listing three files
+      // that never arrived. A single self-contained HTML file also prints to
+      // PDF, which is the form a compliance reviewer actually wants.
+      const auditRows = filteredAudit
+        .map(
+          (e: any) => `<tr>
+            <td>${escapeHtml(e.created_at)}</td>
+            <td>${escapeHtml(e.action)}</td>
+            <td>${escapeHtml(e.resource_type)}</td>
+            <td>${escapeHtml(e.resource_id)}</td>
+            <td>${escapeHtml(e.patient_user_id)}</td>
+            <td>${escapeHtml(e.ip_address)}</td>
+          </tr>`,
+        )
+        .join("\n");
+
+      const packHtml = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>OneCare Compliance Pack — ${escapeHtml(from)} to ${escapeHtml(to)}</title>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; color: #1a1a1a; line-height: 1.55; }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.15rem; margin-top: 2.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.35rem; }
+  .meta { color: #555; font-size: 0.9rem; }
+  pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; margin-top: 0.75rem; }
+  th, td { border: 1px solid #ddd; padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; word-break: break-word; }
+  th { background: #f4f4f4; }
+  .empty { color: #777; font-style: italic; }
+  @media print { body { margin: 0; max-width: none; } h2 { break-after: avoid; } }
+</style>
+</head>
+<body>
+<h1>OneCare Compliance Pack</h1>
+<p class="meta">
+  Generated ${escapeHtml(new Date().toISOString())}<br />
+  Range ${escapeHtml(from)} to ${escapeHtml(to)}<br />
+  ${filteredAudit.length} audit ${filteredAudit.length === 1 ? "entry" : "entries"}
+</p>
+<p class="meta">This bundle is a snapshot. Re-generate it after material changes to your practice or team.</p>
+
+<h2>1. Security &amp; compliance attestation</h2>
+<pre>${escapeHtml(ATTESTATION)}</pre>
+
+<h2>2. Business Associate Agreement</h2>
+<pre>${escapeHtml(baaText)}</pre>
+
+<h2>3. Audit log</h2>
+${
+  filteredAudit.length === 0
+    ? '<p class="empty">No audit entries in the selected range.</p>'
+    : `<table>
+  <thead><tr><th>Time</th><th>Action</th><th>Resource</th><th>Resource ID</th><th>Patient</th><th>IP</th></tr></thead>
+  <tbody>
+${auditRows}
+  </tbody>
+</table>`
+}
+</body>
+</html>`;
+
+      download(`onecare-compliance-pack-${from}-to-${to}.html`, packHtml, "text/html");
+      setAuditCsvReady(auditCsv);
+      toast.success("Compliance pack downloaded");
     } catch (e: any) {
       toast.error(e.message ?? "Could not build compliance pack");
     } finally {
@@ -177,6 +266,15 @@ This bundle is a snapshot. Re-generate after material changes to your practice o
             <div className="text-sm text-muted-foreground">
               {filteredAudit.length} audit entries in range.
             </div>
+            {auditCsvReady !== null && (
+              <Button
+                variant="outline"
+                className="mr-2"
+                onClick={() => download(`onecare-audit-log-${from}-to-${to}.csv`, auditCsvReady, "text/csv")}
+              >
+                Download audit CSV
+              </Button>
+            )}
             <Button onClick={buildPack} disabled={building}>
               {building ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
               Download pack
