@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Download, FileText, Loader2, Mail, Phone, Search } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  Download,
+  FileText,
+  Loader2,
+  Mail,
+  Phone,
+  Search,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,6 +42,7 @@ import {
 import {
   APPLICATION_STATUSES,
   getResumeUrl,
+  statusLabel,
   useApplicationMutations,
   useJobApplications,
   type JobApplication,
@@ -44,32 +54,55 @@ const statusVariant: Record<string, string> = {
   interview: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
   offer: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
   hired: 'bg-primary/15 text-primary',
+  no_show: 'bg-orange-500/15 text-orange-700 dark:text-orange-400',
+  no_response: 'bg-muted text-muted-foreground',
   rejected: 'bg-destructive/15 text-destructive',
 };
 
 export function AdminApplications() {
   const { data, isLoading, error } = useJobApplications();
-  const { updateApplication } = useApplicationMutations();
+  const { updateApplication, setArchived } = useApplicationMutations();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [view, setView] = useState<'active' | 'archived'>('active');
   const [selected, setSelected] = useState<JobApplication | null>(null);
   const [notes, setNotes] = useState('');
   const [resumeLoading, setResumeLoading] = useState(false);
 
+  const archivedCount = useMemo(
+    () => (data ?? []).filter((a) => !!a.archived_at).length,
+    [data],
+  );
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (data ?? []).filter((a) => {
+      const matchesView = view === 'archived' ? !!a.archived_at : !a.archived_at;
       const matchesStatus = statusFilter === 'all' || a.status === statusFilter;
       const matchesTerm =
         !term ||
         a.full_name.toLowerCase().includes(term) ||
         a.email.toLowerCase().includes(term) ||
         a.job_title.toLowerCase().includes(term);
-      return matchesStatus && matchesTerm;
+      return matchesView && matchesStatus && matchesTerm;
     });
-  }, [data, search, statusFilter]);
+  }, [data, search, statusFilter, view]);
 
   const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(filtered, 15);
+
+  const toggleArchive = async (application: JobApplication) => {
+    const archiving = !application.archived_at;
+    try {
+      await setArchived.mutateAsync({ id: application.id, archived: archiving });
+      setSelected(null);
+      toast.success(archiving ? 'Application archived' : 'Application restored');
+    } catch (e) {
+      toast.error('Could not update the archive', {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  };
+
 
   const openApplication = (application: JobApplication) => {
     setSelected(application);
@@ -94,7 +127,7 @@ export function AdminApplications() {
     try {
       await updateApplication.mutateAsync({ id: application.id, status });
       setSelected((prev) => (prev && prev.id === application.id ? { ...prev, status } : prev));
-      toast.success(`Marked as ${status}`);
+      toast.success(`Marked as ${statusLabel(status)}`);
     } catch (e) {
       toast.error('Update failed', { description: e instanceof Error ? e.message : undefined });
     }
@@ -130,6 +163,30 @@ export function AdminApplications() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={view === 'active' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setView('active');
+            setPage(1);
+          }}
+        >
+          Active
+        </Button>
+        <Button
+          variant={view === 'archived' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setView('archived');
+            setPage(1);
+          }}
+        >
+          <Archive className="h-4 w-4 mr-1.5" />
+          Archive{archivedCount > 0 ? ` (${archivedCount})` : ''}
+        </Button>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -147,13 +204,14 @@ export function AdminApplications() {
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             {APPLICATION_STATUSES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">
-                {s}
+              <SelectItem key={s} value={s}>
+                {statusLabel(s)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
+
 
       <div className="rounded-xl border overflow-x-auto">
         <Table>
@@ -201,15 +259,30 @@ export function AdminApplications() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className={`capitalize ${statusVariant[a.status] ?? ''}`}>
-                    {a.status}
+                  <Badge variant="secondary" className={statusVariant[a.status] ?? ''}>
+                    {statusLabel(a.status)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   <Button variant="outline" size="sm" onClick={() => openApplication(a)}>
                     Review
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2"
+                    disabled={setArchived.isPending}
+                    onClick={() => toggleArchive(a)}
+                    aria-label={a.archived_at ? 'Restore application' : 'Archive application'}
+                  >
+                    {a.archived_at ? (
+                      <ArchiveRestore className="h-4 w-4" />
+                    ) : (
+                      <Archive className="h-4 w-4" />
+                    )}
+                  </Button>
                 </TableCell>
+
               </TableRow>
             ))}
           </TableBody>
@@ -321,8 +394,8 @@ export function AdminApplications() {
                     </SelectTrigger>
                     <SelectContent>
                       {APPLICATION_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s} className="capitalize">
-                          {s}
+                        <SelectItem key={s} value={s}>
+                          {statusLabel(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -345,6 +418,26 @@ export function AdminApplications() {
                     Save notes
                   </Button>
                 </div>
+
+                <div className="border-t pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={setArchived.isPending}
+                    onClick={() => toggleArchive(selected)}
+                  >
+                    {selected.archived_at ? (
+                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Archive className="h-4 w-4 mr-2" />
+                    )}
+                    {selected.archived_at ? 'Restore from archive' : 'Move to archive'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Archiving hides the application from the active list. Nothing is deleted.
+                  </p>
+                </div>
+
               </div>
             </>
           )}

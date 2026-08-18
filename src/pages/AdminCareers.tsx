@@ -14,7 +14,7 @@ export default function AdminCareers() {
   const { data: jobs } = useAllJobs();
 
   const stats = useMemo(() => {
-    const list = applications ?? [];
+    const list = (applications ?? []).filter((a) => !a.archived_at);
     return {
       total: list.length,
       pending: list.filter((a) => a.status === 'pending').length,

@@ -7,10 +7,28 @@ export const APPLICATION_STATUSES = [
   'interview',
   'offer',
   'hired',
+  'no_show',
+  'no_response',
   'rejected',
 ] as const;
 
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
+/** Human label for a status value (statuses are stored snake_case). */
+export const APPLICATION_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  reviewing: 'Reviewing',
+  interview: 'Interview',
+  offer: 'Offer',
+  hired: 'Hired',
+  no_show: 'No-show',
+  no_response: 'No response',
+  rejected: 'Rejected',
+};
+
+export const statusLabel = (status: string) =>
+  APPLICATION_STATUS_LABELS[status] ?? status.replace(/_/g, ' ');
+
 
 export interface JobApplication {
   id: string;
@@ -27,6 +45,7 @@ export interface JobApplication {
   how_heard: string | null
   status: string;
   admin_notes: string | null;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,13 +61,14 @@ export function useJobApplications() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data ?? []) as JobApplication[];
+      return (data ?? []) as unknown as JobApplication[];
     },
   });
 }
 
 export function useApplicationMutations() {
   const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['job-applications'] });
 
   const updateApplication = useMutation({
     mutationFn: async ({
@@ -67,11 +87,24 @@ export function useApplicationMutations() {
       const { error } = await supabase.from('job_applications').update(patch).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['job-applications'] }),
+    onSuccess: invalidate,
   });
 
-  return { updateApplication };
+  /** Archiving is reversible and never deletes the application record. */
+  const setArchived = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ archived_at: archived ? new Date().toISOString() : null } as never)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+
+  return { updateApplication, setArchived };
 }
+
 
 /** Creates a short-lived signed URL so an admin can open the applicant's resume. */
 export async function getResumeUrl(path: string) {
