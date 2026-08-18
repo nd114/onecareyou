@@ -2,6 +2,7 @@ import { Users } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useFamilyMembers } from '@/hooks/useFamilyMembers';
+import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 
 interface FamilyMemberSelectorProps {
   value: string | null;
@@ -17,6 +18,12 @@ export function FamilyMemberSelector({
   includeMyself = true,
 }: FamilyMemberSelectorProps) {
   const { familyMembers, isLoading } = useFamilyMembers();
+
+  // Gated here rather than at each call site so no future caller can reintroduce
+  // the picker by accident. With it hidden, familyMemberId stays null and every
+  // entry is recorded against the account holder — which is the only person the
+  // write is currently attributed to anyway. See FAMILY_HEALTH_ENABLED.
+  if (!FAMILY_HEALTH_ENABLED) return null;
 
   if (isLoading || familyMembers.length === 0) return null;
 

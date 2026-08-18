@@ -23,9 +23,13 @@ const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Held outside the try so a failure can be recorded against the right row.
+  let dictationId: string | null = null;
+
   try {
     if (!LOVABLE_API_KEY) throw new Error("AI gateway not configured");
-    const { dictationId } = await req.json();
+    ({ dictationId } = await req.json());
     if (!dictationId) return json({ error: "dictationId required" }, 400);
 
     const authHeader = req.headers.get("Authorization") || "";
@@ -51,7 +55,7 @@ Deno.serve(async (req) => {
     if (dlErr || !file) throw new Error(`Could not download audio: ${dlErr?.message}`);
 
     const buf = new Uint8Array(await file.arrayBuffer());
-    const b64 = btoa(String.fromCharCode(...buf));
+    const b64 = toBase64(buf);
     const format = (row.audio_path as string).endsWith(".mp4") ? "mp4" : "webm";
 
     // Transcribe
@@ -87,6 +91,22 @@ Deno.serve(async (req) => {
     return json({ transcript, summary });
   } catch (e) {
     console.error("clinician-dictation-process error", e);
+    // Leave a trace on the row itself. Without this a failed run left the
+    // dictation sitting in its previous status with nothing explaining why no
+    // transcript ever appeared.
+    try {
+      if (dictationId) {
+        await createClient(SUPABASE_URL, SERVICE_KEY)
+          .from("clinician_dictations")
+          .update({
+            status: "error",
+            error_message: e instanceof Error ? e.message : "Unknown error",
+          })
+          .eq("id", dictationId);
+      }
+    } catch {
+      /* best effort — never mask the original error */
+    }
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
@@ -106,6 +126,25 @@ async function callGateway(messages: unknown[]): Promise<string> {
   }
   const data = await res.json();
   return (data.choices?.[0]?.message?.content ?? "").trim();
+}
+
+/**
+ * Base64-encode audio without blowing the stack.
+ *
+ * This was `btoa(String.fromCharCode(...buf))`, which spreads every byte of the
+ * recording as a separate function argument. A minute of audio is hundreds of
+ * thousands of bytes, well past V8's argument limit, so the call threw
+ * RangeError: Maximum call stack size exceeded and transcription failed for
+ * every dictation longer than a second or two. Chunking keeps each spread small
+ * enough to be safe at any recording length.
+ */
+function toBase64(bytes: Uint8Array): string {
+  const CHUNK = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
 }
 
 function json(payload: unknown, status = 200) {

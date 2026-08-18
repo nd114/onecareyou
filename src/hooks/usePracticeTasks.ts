@@ -15,7 +15,8 @@ export type TaskSource = "manual" | "alert" | "guidance" | "message" | "system";
 
 export interface PracticeTask {
   id: string;
-  practice_id: string;
+  /** Null for a personal task — one the clinician keeps for themselves. */
+  practice_id: string | null;
   assignee_user_id: string;
   created_by: string;
   patient_user_id: string | null;
@@ -34,7 +35,8 @@ export interface PracticeTask {
 }
 
 export interface CreatePracticeTaskInput {
-  practice_id: string;
+  /** Omit or pass null for a personal task not tied to a practice. */
+  practice_id?: string | null;
   assignee_user_id?: string; // defaults to current user
   patient_user_id?: string | null;
   title: string;
@@ -82,7 +84,7 @@ export function usePracticeTasks(opts: UsePracticeTasksOptions = {}) {
     mutationFn: async (input: CreatePracticeTaskInput) => {
       if (!user) throw new Error("Not authenticated");
       const payload = {
-        practice_id: input.practice_id,
+        practice_id: input.practice_id ?? null,
         assignee_user_id: input.assignee_user_id ?? user.id,
         created_by: user.id,
         patient_user_id: input.patient_user_id ?? null,

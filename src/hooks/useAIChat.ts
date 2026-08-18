@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProposedAction, ActionOutcome, executeAction } from '@/lib/ai-actions';
+import { chatStorageKey } from '@/lib/chat-storage';
 
 export interface ChatMessage {
   id: string;
@@ -23,10 +24,11 @@ interface UseAIChatOptions {
   /** Set false for read-only surfaces (e.g. Simple Mode). */
   allowActions?: boolean;
   /**
-   * When set, the conversation is kept in localStorage under this key so the
-   * user can close the drawer (or the tab) and come back to it.
+   * Names the chat surface (e.g. 'assistant'). When set, the conversation is
+   * kept in localStorage under a key scoped to the signed-in account, so it
+   * survives closing the drawer without ever being shown to another account.
    */
-  persistKey?: string;
+  persistSurface?: string;
 }
 
 /** Cap what we persist so localStorage never grows unbounded. */
@@ -53,15 +55,35 @@ function loadPersisted(key: string | undefined): ChatMessage[] {
 
 export function useAIChat(options: UseAIChatOptions = {}) {
   const allowActions = options.allowActions !== false;
-  const persistKey = options.persistKey;
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [messages, setMessages] = useState<ChatMessage[]>(() => loadPersisted(persistKey));
+  const persistKey = options.persistSurface
+    ? chatStorageKey(options.persistSurface, user?.id)
+    : null;
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<AIChatError | null>(null);
 
+  // Load this account's transcript once its key is known, and clear whatever is
+  // on screen the moment the account goes away.
   useEffect(() => {
-    if (!persistKey || typeof window === 'undefined') return;
+    if (!persistKey) {
+      if (hydratedKey !== null) {
+        setHydratedKey(null);
+        setMessages([]);
+      }
+      return;
+    }
+    if (hydratedKey === persistKey) return;
+    setMessages(loadPersisted(persistKey));
+    setHydratedKey(persistKey);
+  }, [persistKey, hydratedKey]);
+
+  // Write only once the loaded transcript belongs to the current key, so the
+  // empty initial state cannot overwrite a stored conversation.
+  useEffect(() => {
+    if (!persistKey || hydratedKey !== persistKey || typeof window === 'undefined') return;
     try {
       window.localStorage.setItem(
         persistKey,
@@ -70,7 +92,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     } catch {
       /* storage full or unavailable — persistence is best-effort */
     }
-  }, [messages, persistKey]);
+  }, [messages, persistKey, hydratedKey]);
 
   const sendMessage = useCallback(async (userMessage: string): Promise<AIChatError | null> => {
     if (!userMessage.trim() || isLoading) return null;

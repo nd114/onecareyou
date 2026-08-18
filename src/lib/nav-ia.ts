@@ -54,7 +54,8 @@ export const PATIENT_PILLARS: PatientPillar[] = [
     tabs: [
       { to: "/messages", label: "Messages" },
       { to: "/care-circle", label: "Care Circle" },
-      { to: "/family", label: "Family" },
+      // Family is hidden — see FAMILY_HEALTH_ENABLED in src/lib/feature-flags.ts.
+      ...(FAMILY_HEALTH_ENABLED ? [{ to: "/family", label: "Family" }] : []),
     ],
   },
   {

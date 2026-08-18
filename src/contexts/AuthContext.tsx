@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useRef } fro
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { clearAllUserData } from '@/lib/query-client';
+import { purgeLegacyChatStorage } from '@/lib/chat-storage';
 
 interface Profile {
   id: string;
@@ -52,6 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Browsers that used the app before AI transcripts were scoped per account
+  // still hold one person's conversation under the old fixed keys. Drop them on
+  // start-up rather than waiting for a sign-out that may never come.
+  useEffect(() => {
+    purgeLegacyChatStorage();
+  }, []);
 
   const fetchProfile = async (userId: string) => {
     try {

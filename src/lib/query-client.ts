@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { clearChatStorage } from "./chat-storage";
 
 // Shared query client instance - accessible throughout the app
 export const queryClient = new QueryClient({
@@ -39,6 +40,10 @@ export function clearAllUserData(): void {
     localStorage.removeItem(key);
   });
   
+  // AI chat transcripts are keyed per account and swept wholesale — they carry
+  // health detail the person typed, and used to survive sign-out.
+  clearChatStorage();
+
   // Clear any session storage
   sessionStorage.clear();
   

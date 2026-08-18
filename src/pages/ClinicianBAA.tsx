@@ -142,17 +142,21 @@ const ClinicianBAA = () => {
   });
 
   // Query for existing BAA agreement
-  const { data: existingBAA, isLoading: isLoadingBAA, refetch } = useQuery({
+  const { data: existingBAA, isLoading: isLoadingBAA, error: baaError, refetch } = useQuery({
     queryKey: ['baa-agreement', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       
+      // .limit(1) matters: maybeSingle() throws the moment two rows match, and
+      // that error used to fall through to the unsigned branch — showing the
+      // signing form to someone who had already signed.
       const { data, error } = await supabase
         .from('baa_agreements')
         .select('*')
         .eq('clinician_user_id', user.id)
         .eq('status', 'active')
         .order('signed_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
@@ -308,6 +312,31 @@ const ClinicianBAA = () => {
         <SectionTabs section="practice" variant="clinician" />
         <main className="container py-16 px-4 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
+
+  // If we could not read the agreement, say so. Falling through to the signing
+  // form would invite someone who has already signed to sign a second time.
+  if (baaError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ClinicianHeader />
+        <SectionTabs section="practice" variant="clinician" />
+        <main className="container py-16 px-4">
+          <Card className="max-w-lg mx-auto">
+            <CardHeader>
+              <CardTitle>Could not load your agreement</CardTitle>
+              <CardDescription>
+                We could not check whether you have already signed a BAA, so we have not shown the
+                signing form. Please try again in a moment.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => refetch()}>Try again</Button>
+            </CardContent>
+          </Card>
         </main>
       </div>
     );

@@ -189,7 +189,7 @@ function MessageBubble({
 export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
   const navigate = useNavigate();
   const { messages, isLoading, sendMessage, clearChat, approveActions, discardActions } = useAIChat({
-    persistKey: 'onecare.assistant.chat.v1',
+    persistSurface: 'assistant',
   });
   const { hasConsent, grantConsent } = useAIConsent();
   const { uploadDocument } = useHealthDocuments();
