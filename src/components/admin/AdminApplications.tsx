@@ -163,6 +163,30 @@ export function AdminApplications() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={view === 'active' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setView('active');
+            setPage(1);
+          }}
+        >
+          Active
+        </Button>
+        <Button
+          variant={view === 'archived' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setView('archived');
+            setPage(1);
+          }}
+        >
+          <Archive className="h-4 w-4 mr-1.5" />
+          Archive{archivedCount > 0 ? ` (${archivedCount})` : ''}
+        </Button>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -180,13 +204,14 @@ export function AdminApplications() {
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             {APPLICATION_STATUSES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">
-                {s}
+              <SelectItem key={s} value={s}>
+                {statusLabel(s)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
+
 
       <div className="rounded-xl border overflow-x-auto">
         <Table>
