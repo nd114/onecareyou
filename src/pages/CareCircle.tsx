@@ -374,9 +374,14 @@ const CareCircle = () => {
                             variant="outline"
                             size="sm"
                             className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                            disabled={generateCareRecord.isPending || !share.clinician_user_id}
+                            disabled={
+                              (generateCareRecord.isPending &&
+                                generateCareRecord.variables?.shareId === share.id) ||
+                              !share.clinician_user_id
+                            }
                             onClick={() =>
                               generateCareRecord.mutate({
+                                shareId: share.id,
                                 clinicianUserId: share.clinician_user_id,
                                 clinicianLabel: share.display_name,
                               })
@@ -453,9 +458,14 @@ const CareCircle = () => {
                               variant="outline"
                               size="sm"
                               className="h-8 text-xs"
-                              disabled={generateCareRecord.isPending || !share.clinician_user_id}
+                              disabled={
+                                (generateCareRecord.isPending &&
+                                  generateCareRecord.variables?.shareId === share.id) ||
+                                !share.clinician_user_id
+                              }
                               onClick={() =>
                                 generateCareRecord.mutate({
+                                  shareId: share.id,
                                   clinicianUserId: share.clinician_user_id,
                                   clinicianLabel: share.display_name,
                                 })

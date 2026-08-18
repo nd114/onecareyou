@@ -15,6 +15,12 @@ import { toast } from 'sonner';
 export const CARE_RECORD_SOURCE = 'care_record_snapshot';
 
 interface SnapshotInput {
+  /**
+   * The share this record is for. Carried only so a card can tell whether it is
+   * the one currently saving — mutation state is shared across every card, so
+   * without it one click greys out every Save record button on the page.
+   */
+  shareId?: string;
   /** Clinician the record covers. Null/undefined = unclaimed share, nothing to file. */
   clinicianUserId: string | null;
   /** Display name used on the record header. */
