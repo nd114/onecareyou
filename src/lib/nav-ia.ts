@@ -3,7 +3,7 @@
 
 import { FAMILY_HEALTH_ENABLED } from "@/lib/feature-flags";
 
-export type PatientPillarKey = "today" | "health" | "team" | "learn";
+export type PatientPillarKey = "today" | "health" | "team" | "ai";
 export type ClinicianPillarKey = "today" | "patients" | "communicate" | "practice";
 
 export interface NavTab {
@@ -61,11 +61,14 @@ export const PATIENT_PILLARS: PatientPillar[] = [
     ],
   },
   {
-    key: "learn",
-    label: "Learn",
-    primary: "/assist",
+    // Was "Learn", whose "Ask AI" tab was a full-page copy of the assistant that
+    // already floats on every patient screen. The assistant stays one tap away
+    // everywhere; this pillar is now where you read back what you asked it.
+    key: "ai",
+    label: "AI",
+    primary: "/ai",
     tabs: [
-      { to: "/assist", label: "Ask AI" },
+      { to: "/ai", label: "Conversations" },
       { to: "/knowledge-base", label: "Knowledge Base", match: ["/medication-info"] },
     ],
   },
@@ -165,6 +168,7 @@ export function getPatientPillarForRoute(pathname: string): PatientPillarKey | n
     if (!best || score > best.score) best = { key: p.key, score };
   }
   if (pathname.startsWith("/family")) return "team";
+  if (pathname.startsWith("/ai")) return "ai";
   return best?.key || null;
 }
 

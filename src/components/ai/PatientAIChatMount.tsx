@@ -17,6 +17,7 @@ const ALLOWED_PREFIXES = [
   '/medication-info',
   '/messages',
   '/settings',
+  '/ai',
 ];
 
 // Routes to exclude even if a prefix matches.
@@ -25,7 +26,6 @@ const EXCLUDED_PREFIXES = [
   '/onboarding',
   '/install',
   '/subscription-success',
-  '/assist', // Simple Mode IS the assistant — no need for a floating button on top of it
 ];
 
 export function PatientAIChatMount() {

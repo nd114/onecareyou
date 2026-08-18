@@ -3,7 +3,7 @@ import {
   CalendarDays,
   HeartPulse,
   Users,
-  GraduationCap,
+  Bot,
   Inbox,
   UserSquare2,
   MessageCircle,
@@ -27,7 +27,7 @@ const PATIENT_ICONS: Record<PatientPillarKey, React.ElementType> = {
   today: CalendarDays,
   health: HeartPulse,
   team: Users,
-  learn: GraduationCap,
+  ai: Bot,
 };
 
 const CLINICIAN_ICONS: Record<ClinicianPillarKey, React.ElementType> = {
@@ -50,7 +50,6 @@ const HIDE_PREFIXES = [
   "/clinician/subscription-success",
   "/subscription-success",
   "/install",
-  "/assist", // Simple Mode is full-screen
 ];
 
 // Hide on the landing/public marketing pages
