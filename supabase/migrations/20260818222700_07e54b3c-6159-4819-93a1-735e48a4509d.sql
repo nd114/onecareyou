@@ -1,0 +1,1 @@
+DELETE FROM public.clinician_dictations WHERE id = 'dcd58058-ddcc-4be2-b03f-680d4993f81e';
