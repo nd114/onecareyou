@@ -7,10 +7,28 @@ export const APPLICATION_STATUSES = [
   'interview',
   'offer',
   'hired',
+  'no_show',
+  'no_response',
   'rejected',
 ] as const;
 
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
+/** Human label for a status value (statuses are stored snake_case). */
+export const APPLICATION_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  reviewing: 'Reviewing',
+  interview: 'Interview',
+  offer: 'Offer',
+  hired: 'Hired',
+  no_show: 'No-show',
+  no_response: 'No response',
+  rejected: 'Rejected',
+};
+
+export const statusLabel = (status: string) =>
+  APPLICATION_STATUS_LABELS[status] ?? status.replace(/_/g, ' ');
+
 
 export interface JobApplication {
   id: string;
