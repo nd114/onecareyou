@@ -103,6 +103,7 @@ import ClinicianCompliance from "./pages/ClinicianCompliance";
 import AdminTenantDetail from "./pages/AdminTenantDetail";
 import TenantHome from "@/components/tenant/TenantHome";
 import LegacyInstitutionRedirect from "@/components/tenant/LegacyInstitutionRedirect";
+import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 
 
 
@@ -258,15 +259,26 @@ const App = () => (
                 <Messages />
               </PatientRoute>
             } />
+            {/* Family health management is hidden — see FAMILY_HEALTH_ENABLED
+                in src/lib/feature-flags.ts for why and how to restore it. The
+                routes still redirect so an old bookmark lands somewhere sane. */}
             <Route path="/family" element={
-              <PatientRoute>
-                <FamilyDashboard />
-              </PatientRoute>
+              FAMILY_HEALTH_ENABLED ? (
+                <PatientRoute>
+                  <FamilyDashboard />
+                </PatientRoute>
+              ) : (
+                <Navigate to="/care-circle" replace />
+              )
             } />
             <Route path="/family/:memberId" element={
-              <PatientRoute>
-                <FamilyMemberDetail />
-              </PatientRoute>
+              FAMILY_HEALTH_ENABLED ? (
+                <PatientRoute>
+                  <FamilyMemberDetail />
+                </PatientRoute>
+              ) : (
+                <Navigate to="/care-circle" replace />
+              )
             } />
             <Route path="/settings" element={
               <ProtectedRoute>

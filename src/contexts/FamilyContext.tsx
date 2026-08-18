@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 import { useAuth } from './AuthContext';
 import { useFamilyMembers, FamilyMember } from '@/hooks/useFamilyMembers';
 
@@ -20,6 +21,13 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
   const { familyMembers, isLoading } = useFamilyMembers();
   const [activeMemberId, setActiveMemberIdState] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
+    // With family management hidden there is no switcher to get back out of a
+    // family context, so a selection left over from before would silently send
+    // this person's own entries into a relative's record. Drop it.
+    if (!FAMILY_HEALTH_ENABLED) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
     return window.localStorage.getItem(STORAGE_KEY) || null;
   });
 

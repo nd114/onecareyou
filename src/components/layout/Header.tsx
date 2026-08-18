@@ -49,6 +49,7 @@ import { format } from "date-fns";
 import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { PATIENT_PILLARS, getPatientPillarForRoute, isNavTabActive } from "@/lib/nav-ia";
+import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 
 export function Header() {
   const location = useLocation();
@@ -196,7 +197,7 @@ export function Header() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           ) : isAuthenticated ? (
             <>
-              {!isClinician && <HeaderFamilySwitcher />}
+              {!isClinician && FAMILY_HEALTH_ENABLED && <HeaderFamilySwitcher />}
               <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
@@ -399,7 +400,7 @@ export function Header() {
 
         {/* Below lg: hamburger only (auth actions live inside the drawer). */}
         <div className="lg:hidden flex items-center gap-1.5 ml-auto">
-          {isAuthenticated && !isClinician && <div className="md:hidden"><HeaderFamilySwitcher compact /></div>}
+          {isAuthenticated && !isClinician && FAMILY_HEALTH_ENABLED && <div className="md:hidden"><HeaderFamilySwitcher compact /></div>}
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle navigation">
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
