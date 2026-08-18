@@ -25,6 +25,27 @@ function json(body: unknown, status: number, headers: Record<string, string>) {
   });
 }
 
+/**
+ * Constant-time string comparison.
+ *
+ * `a === b` on a secret leaks its length and its matching prefix through
+ * response timing, and an attacker who can call an endpoint repeatedly can use
+ * that to recover the value byte by byte. Every secret and signature check in
+ * this project goes through here.
+ */
+export function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const left = enc.encode(a);
+  const right = enc.encode(b);
+  // Compare a fixed number of bytes either way so length alone reveals nothing.
+  const length = Math.max(left.length, right.length);
+  let diff = left.length ^ right.length;
+  for (let i = 0; i < length; i += 1) {
+    diff |= (left[i] ?? 0) ^ (right[i] ?? 0);
+  }
+  return diff === 0;
+}
+
 function bearer(req: Request): string | null {
   const header = req.headers.get("Authorization") ?? "";
   if (!header.startsWith("Bearer ")) return null;
@@ -35,7 +56,7 @@ function bearer(req: Request): string | null {
 /** True when the request presents the project service-role key (server-to-server caller). */
 export function isServiceRoleCall(req: Request): boolean {
   const token = bearer(req);
-  return !!token && !!SERVICE_ROLE_KEY && token === SERVICE_ROLE_KEY;
+  return !!token && !!SERVICE_ROLE_KEY && timingSafeEqual(token, SERVICE_ROLE_KEY);
 }
 
 /**
@@ -56,7 +77,7 @@ export async function isCronCall(req: Request): Promise<boolean> {
     .maybeSingle();
 
   if (error || !data?.secret) return false;
-  return provided === data.secret;
+  return timingSafeEqual(provided, data.secret);
 }
 
 /** True for either trusted internal caller: service-role key or scheduler credential. */

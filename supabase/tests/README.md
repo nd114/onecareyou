@@ -66,5 +66,15 @@ behind. A failed assertion raises and aborts; a clean run ends with
 | Offboarding revokes access without deleting the person | build prompt §4 |
 | The last owner cannot be offboarded | operational safety |
 
+`privilege_escalation.test.sql` — the red-team findings, as regressions:
+
+| Rule | Why |
+| --- | --- |
+| A patient cannot grant themselves the paid plan | RLS grants the whole profile row, including subscription_tier |
+| A tenant admin cannot change their revenue share, storage or seat limits | Those are contract terms, not tenant settings |
+| A clinician cannot re-activate a revoked share or widen their permissions | The patient creates, narrows and ends every relationship |
+| The legitimate write each policy exists for still works | Guards must not break notes, renames or profile edits |
+| Service-role callers can still set entitlement | Stripe and admin tooling run server-side |
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.
