@@ -127,7 +127,7 @@ export function AdminApplications() {
     try {
       await updateApplication.mutateAsync({ id: application.id, status });
       setSelected((prev) => (prev && prev.id === application.id ? { ...prev, status } : prev));
-      toast.success(`Marked as ${status}`);
+      toast.success(`Marked as ${statusLabel(status)}`);
     } catch (e) {
       toast.error('Update failed', { description: e instanceof Error ? e.message : undefined });
     }
