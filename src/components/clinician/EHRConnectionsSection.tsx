@@ -215,10 +215,11 @@ export function EHRConnectionsSection() {
             <div className="flex items-start gap-3">
               <Settings className="h-5 w-5 text-primary mt-0.5" />
               <div>
-                <p className="font-medium text-sm">Full EHR Integration Available</p>
+                <p className="font-medium text-sm">Full EHR Integration — Coming Soon</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  FHIR-based integrations with Veradigm, HealthBridge, and other EHR systems are available for
-                  Enterprise subscribers with a signed BAA.
+                  FHIR-based integrations with major EHR systems are in development, and will be offered to
+                  Enterprise subscribers with a signed BAA. Register your interest and we will contact you when
+                  they are ready.
                 </p>
                 <Button
                   variant="link"

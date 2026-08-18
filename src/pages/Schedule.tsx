@@ -449,20 +449,9 @@ const Schedule = () => {
                 </div>
               )}
 
-              {/* Reminder CTA */}
-              {!isGranted && entries.length > 0 && (
-                <div className="mt-8 p-4 rounded-xl bg-muted/50 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Bell className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      Get notified when it's time to take your medications
-                    </span>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleEnableReminders}>
-                    Enable Reminders
-                  </Button>
-                </div>
-              )}
+              {/* The Enable Reminders button in the header above is the only
+                  one on this page. A second copy down here asked the same thing
+                  twice on one screen. */}
             </CardContent>
           </Card>
         </motion.div>

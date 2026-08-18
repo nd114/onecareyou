@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
 import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
+import { InstitutionCareTeamCard } from '@/components/patient/InstitutionCareTeamCard';
 import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
 import { Loader2 } from 'lucide-react';
 import {
@@ -261,6 +262,17 @@ const CareCircle = () => {
           <HospitalShareCard />
         </motion.div>
 
+        {/* Who the hospital put on the record. Renders nothing until a hospital
+            has actually assigned someone. */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="mb-8"
+        >
+          <InstitutionCareTeamCard />
+        </motion.div>
+
         {/* Active Shares */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -271,10 +283,11 @@ const CareCircle = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Active Access
+                Doctors you invited
               </CardTitle>
               <CardDescription>
-                Healthcare providers who can view your health data
+                Individual clinicians you shared with directly. Staff added by a hospital are listed
+                separately above.
               </CardDescription>
             </CardHeader>
             <CardContent>

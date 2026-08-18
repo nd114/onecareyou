@@ -31,6 +31,32 @@ const TIER_LIMITS: Record<string, number> = {
   enterprise: 999999,
 };
 
+/**
+ * Demo clinician accounts are exempt from billing limits.
+ *
+ * Their trials expired long ago and they have no Stripe customer, so the logic
+ * below classified them as `expired` with a patient limit of 0 — which is
+ * correct for a real clinician and useless for a demo, where every patient list
+ * showed "Patient limit reached".
+ *
+ * This is matched here, server-side, rather than stored as a flag on
+ * clinician_profiles. A column would be the obvious choice, but a clinician can
+ * update their own profile row and RLS is row-level, so an `is_demo` boolean
+ * would be self-settable — free enterprise for anyone who noticed. That is the
+ * same defect class the August 2026 security review found three of. Keeping the
+ * rule in the function means a client cannot reach it at all.
+ *
+ * The pattern is deliberately narrow: `demo-clinician-<n>@onecare.you` and
+ * nothing else. It must never widen to the whole onecare.you domain, or every
+ * staff account would silently become an unpaid enterprise account.
+ */
+const DEMO_CLINICIAN_PATTERN = /^demo-clinician-\d+@onecare\.you$/i;
+const DEMO_TIER = 'enterprise';
+
+function isDemoClinician(email: string): boolean {
+  return DEMO_CLINICIAN_PATTERN.test(email.trim().toLowerCase());
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -87,6 +113,34 @@ serve(async (req) => {
       });
     }
     logStep("Clinician profile found", { profileId: clinicianProfile.id });
+
+    // Demo accounts short-circuit before any Stripe work. Doing it here also
+    // normalises the stored row: one demo account had a stale patient_limit of
+    // 1000 that the expiry branch would have reset to 0 on the next check.
+    if (isDemoClinician(user.email)) {
+      logStep("Demo clinician — exempt from billing limits", { email: user.email });
+
+      await supabaseClient
+        .from('clinician_profiles')
+        .update({
+          subscription_tier: DEMO_TIER,
+          subscription_status: 'active',
+          patient_limit: TIER_LIMITS[DEMO_TIER],
+        })
+        .eq('user_id', user.id);
+
+      return new Response(JSON.stringify({
+        subscribed: true,
+        tier: DEMO_TIER,
+        is_clinician: true,
+        patient_limit: TIER_LIMITS[DEMO_TIER],
+        is_in_trial: false,
+        is_demo: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     // Check if still in trial period
     const trialEndsAt = clinicianProfile.trial_ends_at ? new Date(clinicianProfile.trial_ends_at) : null;

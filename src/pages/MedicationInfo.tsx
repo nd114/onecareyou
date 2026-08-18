@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Pill, 
@@ -33,6 +33,16 @@ import { Separator } from '@/components/ui/separator';
 const MedicationInfo = () => {
   const { drugName } = useParams<{ drugName: string }>();
   const navigate = useNavigate();
+
+  /**
+   * Return to wherever the reader came from — the Knowledge Base, or their own
+   * medication list, which is the commoner route. Falls back to the Knowledge
+   * Base when this page was opened directly and there is no history to pop.
+   */
+  const goBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/knowledge-base');
+  };
   const [searchQuery, setSearchQuery] = useState(drugName || '');
   const { data: drugInfo, isLoading, error } = useMedicationInfo(drugName || null);
 
@@ -53,11 +63,12 @@ const MedicationInfo = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Button variant="ghost" asChild className="mb-6">
-            <Link to="/knowledge-base">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Knowledge Base
-            </Link>
+          {/* Reached from My Medications as often as from the Knowledge Base,
+              and sending everyone to the Knowledge Base stranded anyone who
+              arrived from their own medication list. */}
+          <Button variant="ghost" className="mb-6" onClick={goBack}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
           </Button>
 
           {/* Search Bar */}
@@ -97,8 +108,8 @@ const MedicationInfo = () => {
                 <p className="text-muted-foreground mb-4">
                   We couldn't load information for this medication. Please try again or search for a different medication.
                 </p>
-                <Button variant="outline" onClick={() => navigate('/knowledge-base')}>
-                  Return to Knowledge Base
+                <Button variant="outline" onClick={goBack}>
+                  Go back
                 </Button>
               </CardContent>
             </Card>

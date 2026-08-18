@@ -45,7 +45,7 @@ export function NetworkRecordsTab({ patientUserId }: Props) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => toast.info("Network records request coming soon — your practice will be notified when Particle Health goes live for OneCare.")}
+            onClick={() => toast.info("Network records are coming soon. Your practice will be notified when national record retrieval goes live.")}
           >
             Request records
           </Button>
