@@ -51,7 +51,9 @@ const Vitals = () => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [editingVital, setEditingVital] = useState<VitalRecord | null>(null);
   const [view, setView] = useState<'overview' | 'analytics' | 'history'>('overview');
-  const [daysRange, setDaysRange] = useState<number>(90);
+  // 14 days by default. 90 was too wide to read at a glance — recent movement is
+  // what a patient checks for, and the longer ranges are one tap away.
+  const [daysRange, setDaysRange] = useState<number>(14);
   const { vitals, loading, addVital, updateVital, deleteVital, getLatestVital, getVitalHistory, getVitalStats } = useVitals();
   const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
