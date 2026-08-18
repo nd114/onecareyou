@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePracticeTasks, type TaskPriority } from "@/hooks/usePracticeTasks";
+import { toast } from "sonner";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 
 interface CreateTaskDialogProps {
@@ -53,19 +54,28 @@ export function CreateTaskDialog({
     }
   }, [open, defaultTitle]);
 
-  const canSubmit = title.trim().length > 0 && !!practiceId && !create.isPending;
+  // A practice is not required. Tasks are a personal follow-up list first, and
+  // requiring one here is what made this button dead for solo clinicians.
+  const canSubmit = title.trim().length > 0 && !create.isPending;
 
   const handleSubmit = async () => {
-    if (!practiceId) return;
-    await create.mutateAsync({
-      practice_id: practiceId,
-      patient_user_id: patientUserId ?? null,
-      title: title.trim(),
-      notes: notes.trim() || null,
-      due_at: dueAt ? new Date(dueAt).toISOString() : null,
-      priority,
-    });
-    onOpenChange(false);
+    try {
+      await create.mutateAsync({
+        practice_id: practiceId ?? null,
+        patient_user_id: patientUserId ?? null,
+        title: title.trim(),
+        notes: notes.trim() || null,
+        due_at: dueAt ? new Date(dueAt).toISOString() : null,
+        priority,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      // Previously an unhandled rejection: the dialog stayed open saying
+      // nothing, which reads as a dead button.
+      toast.error(
+        error instanceof Error ? error.message : "Could not create the task. Please try again.",
+      );
+    }
   };
 
   return (
@@ -75,8 +85,8 @@ export function CreateTaskDialog({
           <DialogTitle>New task</DialogTitle>
           <DialogDescription>
             {practiceId
-              ? "Add a follow-up to your Today inbox."
-              : "Join or create a practice to use tasks."}
+              ? "Add a follow-up to your Today inbox. Your practice team can see it."
+              : "Add a follow-up to your Today inbox. Only you can see it."}
           </DialogDescription>
         </DialogHeader>
 
