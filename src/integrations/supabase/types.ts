@@ -1734,6 +1734,7 @@ export type Database = {
       job_applications: {
         Row: {
           admin_notes: string | null
+          archived_at: string | null
           cover_letter: string | null
           created_at: string
           email: string
@@ -1752,6 +1753,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          archived_at?: string | null
           cover_letter?: string | null
           created_at?: string
           email: string
@@ -1770,6 +1772,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          archived_at?: string | null
           cover_letter?: string | null
           created_at?: string
           email?: string
