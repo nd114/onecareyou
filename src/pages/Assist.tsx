@@ -70,7 +70,7 @@ export default function Assist() {
   // Simple Mode stays read-only — no write actions proposed here.
   const { messages, isLoading, sendMessage, clearChat } = useAIChat({
     allowActions: false,
-    persistKey: 'onecare.simple-mode.chat.v1',
+    persistSurface: 'simple-mode',
   });
   const { hasConsent, grantConsent } = useAIConsent();
   const { logMessage, reset: resetLog } = useConversationLogger('simple_mode');

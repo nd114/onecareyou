@@ -7,6 +7,7 @@ import {
   ClinicianActionOutcome,
   executeClinicianAction,
 } from '@/lib/clinician-ai-actions';
+import { chatStorageKey } from '@/lib/chat-storage';
 
 export interface ClinicianChatMessage {
   id: string;
@@ -21,13 +22,13 @@ export interface ClinicianChatMessage {
 
 export type ClinicianAIError = { kind: 'forbidden' | 'rate_limit' | 'unavailable' | 'unknown'; message: string };
 
-const PERSIST_KEY = 'onecare.clinician-assistant.v1';
+const PERSIST_SURFACE = 'clinician-assistant';
 const MAX_PERSISTED = 60;
 
-function loadPersisted(): ClinicianChatMessage[] {
+function loadPersisted(key: string): ClinicianChatMessage[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = window.localStorage.getItem(PERSIST_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -46,18 +47,35 @@ function loadPersisted(): ClinicianChatMessage[] {
 export function useClinicianAIChat() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [messages, setMessages] = useState<ClinicianChatMessage[]>(() => loadPersisted());
+  const persistKey = chatStorageKey(PERSIST_SURFACE, user?.id);
+  const [messages, setMessages] = useState<ClinicianChatMessage[]>([]);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ClinicianAIError | null>(null);
 
+  // A clinician's assistant transcript names their patients, so it is scoped to
+  // the account and cleared when that account goes away.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!persistKey) {
+      if (hydratedKey !== null) {
+        setHydratedKey(null);
+        setMessages([]);
+      }
+      return;
+    }
+    if (hydratedKey === persistKey) return;
+    setMessages(loadPersisted(persistKey));
+    setHydratedKey(persistKey);
+  }, [persistKey, hydratedKey]);
+
+  useEffect(() => {
+    if (!persistKey || hydratedKey !== persistKey || typeof window === 'undefined') return;
     try {
-      window.localStorage.setItem(PERSIST_KEY, JSON.stringify(messages.slice(-MAX_PERSISTED)));
+      window.localStorage.setItem(persistKey, JSON.stringify(messages.slice(-MAX_PERSISTED)));
     } catch {
       /* best-effort persistence */
     }
-  }, [messages]);
+  }, [messages, persistKey, hydratedKey]);
 
   const sendMessage = useCallback(async (userMessage: string) => {
     if (!userMessage.trim() || isLoading) return null;
