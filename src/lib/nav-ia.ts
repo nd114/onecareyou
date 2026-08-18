@@ -1,6 +1,8 @@
 // Navigation IA v2 — single source of truth for pillar/sub-tab structure.
 // See docs/roadmap.md and .lovable/plan.md.
 
+import { FAMILY_HEALTH_ENABLED } from "@/lib/feature-flags";
+
 export type PatientPillarKey = "today" | "health" | "team" | "learn";
 export type ClinicianPillarKey = "today" | "patients" | "communicate" | "practice";
 

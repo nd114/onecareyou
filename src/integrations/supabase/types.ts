@@ -2705,7 +2705,7 @@ export type Database = {
           id: string
           notes: string | null
           patient_user_id: string | null
-          practice_id: string
+          practice_id: string | null
           priority: string
           snoozed_until: string | null
           source: string
@@ -2724,7 +2724,7 @@ export type Database = {
           id?: string
           notes?: string | null
           patient_user_id?: string | null
-          practice_id: string
+          practice_id?: string | null
           priority?: string
           snoozed_until?: string | null
           source?: string
@@ -2743,7 +2743,7 @@ export type Database = {
           id?: string
           notes?: string | null
           patient_user_id?: string | null
-          practice_id?: string
+          practice_id?: string | null
           priority?: string
           snoozed_until?: string | null
           source?: string
