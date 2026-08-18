@@ -3896,6 +3896,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      my_institution_care_team: {
+        Args: never
+        Returns: {
+          assigned_at: string
+          assignment_role: string
+          clinician_name: string
+          clinician_user_id: string
+          practice_id: string
+          practice_name: string
+          practice_slug: string
+          specialty: string
+        }[]
+      }
       my_tenant_owner_invitations: {
         Args: never
         Returns: {
