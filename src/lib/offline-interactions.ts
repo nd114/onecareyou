@@ -1,10 +1,19 @@
-import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle, Info, Shield } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+/**
+ * Offline drug-interaction reference.
+ *
+ * A small hand-maintained table used when the NIH RxNorm lookup is unavailable,
+ * and as a second opinion alongside it. It is deliberately not authoritative —
+ * it exists so the app still says something useful with no connection.
+ *
+ * It used to render as its own panel underneath the RxNorm one, which meant the
+ * two could contradict each other on screen: "No interactions found" sitting
+ * directly above a real Lisinopril + Metformin warning. Both sources now feed a
+ * single verdict in InteractionsPanel, which never reports "safe" while any
+ * source disagrees.
+ */
 import { Medication } from '@/hooks/useMedications';
 
-interface InteractionInfo {
+export interface InteractionInfo {
   medications: [string, string];
   severity: 'high' | 'moderate' | 'low';
   description: string;
@@ -12,7 +21,7 @@ interface InteractionInfo {
 }
 
 // Common drug interactions database (simplified)
-const INTERACTION_DATABASE: InteractionInfo[] = [
+export const INTERACTION_DATABASE: InteractionInfo[] = [
   // NSAID interactions
   {
     medications: ['Ibuprofen', 'Advil'],
@@ -206,195 +215,44 @@ const medicationsMatch = (med1: string, med2: string): boolean => {
   return n1.includes(n2) || n2.includes(n1) || n1 === n2;
 };
 
-interface MedicationInteractionCheckerProps {
-  medications: Medication[];
-  compact?: boolean;
+export interface OfflineInteraction extends InteractionInfo {
+  med1Name: string;
+  med2Name: string;
 }
 
-export function MedicationInteractionChecker({ medications, compact = false }: MedicationInteractionCheckerProps) {
-  const interactions = useMemo(() => {
-    const found: (InteractionInfo & { med1Name: string; med2Name: string })[] = [];
-    
-    // Check each pair of medications
-    for (let i = 0; i < medications.length; i++) {
-      for (let j = i + 1; j < medications.length; j++) {
-        const med1 = medications[i];
-        const med2 = medications[j];
-        
-        // Check against database
-        for (const interaction of INTERACTION_DATABASE) {
-          const [dbMed1, dbMed2] = interaction.medications;
-          
-          if (
-            (medicationsMatch(med1.name, dbMed1) && medicationsMatch(med2.name, dbMed2)) ||
-            (medicationsMatch(med1.name, dbMed2) && medicationsMatch(med2.name, dbMed1))
-          ) {
-            found.push({
-              ...interaction,
-              med1Name: med1.name,
-              med2Name: med2.name,
-            });
-          }
+const SEVERITY_ORDER: Record<InteractionInfo['severity'], number> = {
+  high: 0,
+  moderate: 1,
+  low: 2,
+};
+
+/**
+ * Every pair of active medications that appears in the offline table.
+ *
+ * Only active medications are considered — the RxNorm check already works that
+ * way, and a stopped medication raising a warning the other source cannot see
+ * was part of why the two panels disagreed.
+ */
+export function findOfflineInteractions(medications: Medication[]): OfflineInteraction[] {
+  const active = medications.filter((m) => m.is_active);
+  const found: OfflineInteraction[] = [];
+
+  for (let i = 0; i < active.length; i += 1) {
+    for (let j = i + 1; j < active.length; j += 1) {
+      const med1 = active[i];
+      const med2 = active[j];
+
+      for (const interaction of INTERACTION_DATABASE) {
+        const [dbMed1, dbMed2] = interaction.medications;
+        if (
+          (medicationsMatch(med1.name, dbMed1) && medicationsMatch(med2.name, dbMed2)) ||
+          (medicationsMatch(med1.name, dbMed2) && medicationsMatch(med2.name, dbMed1))
+        ) {
+          found.push({ ...interaction, med1Name: med1.name, med2Name: med2.name });
         }
       }
     }
-    
-    // Sort by severity
-    return found.sort((a, b) => {
-      const order = { high: 0, moderate: 1, low: 2 };
-      return order[a.severity] - order[b.severity];
-    });
-  }, [medications]);
-
-  const severityCounts = useMemo(() => ({
-    high: interactions.filter(i => i.severity === 'high').length,
-    moderate: interactions.filter(i => i.severity === 'moderate').length,
-    low: interactions.filter(i => i.severity === 'low').length,
-  }), [interactions]);
-
-  const severityColors = {
-    high: 'bg-severity-high/10 text-severity-high border-severity-high/20',
-    moderate: 'bg-severity-moderate/10 text-severity-moderate border-severity-moderate/20',
-    low: 'bg-severity-low/10 text-severity-low border-severity-low/20',
-  };
-
-  const severityIcons = {
-    high: AlertTriangle,
-    moderate: Info,
-    low: Shield,
-  };
-
-  if (medications.length < 2) {
-    if (compact) return null;
-    return (
-      <Card className="border-dashed">
-        <CardContent className="p-6 text-center">
-          <Shield className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">
-            Add at least 2 medications to check for interactions
-          </p>
-        </CardContent>
-      </Card>
-    );
   }
 
-  if (interactions.length === 0) {
-    if (compact) {
-      return (
-        <div className="flex items-center gap-2 text-status-success">
-          <CheckCircle className="h-4 w-4" />
-          <span className="text-sm">No interactions detected</span>
-        </div>
-      );
-    }
-    
-    return (
-      <Card className="border-status-success/30 bg-status-success/5">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-status-success/10 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-status-success" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-status-success">No Interactions Found</h4>
-              <p className="text-sm text-muted-foreground">
-                Your {medications.length} medications appear safe to take together based on our database.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (compact) {
-    return (
-      <div className="space-y-2">
-        {severityCounts.high > 0 && (
-          <Badge variant="outline" className={severityColors.high}>
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            {severityCounts.high} high-risk
-          </Badge>
-        )}
-        {severityCounts.moderate > 0 && (
-          <Badge variant="outline" className={severityColors.moderate}>
-            <Info className="h-3 w-3 mr-1" />
-            {severityCounts.moderate} moderate
-          </Badge>
-        )}
-        {severityCounts.low > 0 && (
-          <Badge variant="outline" className={severityColors.low}>
-            <Shield className="h-3 w-3 mr-1" />
-            {severityCounts.low} low-risk
-          </Badge>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-severity-high" />
-          <CardTitle className="text-lg">Drug Interactions</CardTitle>
-        </div>
-        <CardDescription>
-          Found {interactions.length} potential interaction{interactions.length !== 1 ? 's' : ''} between your medications
-        </CardDescription>
-        <div className="flex gap-2 pt-2">
-          {severityCounts.high > 0 && (
-            <Badge variant="outline" className={severityColors.high}>
-              {severityCounts.high} High Risk
-            </Badge>
-          )}
-          {severityCounts.moderate > 0 && (
-            <Badge variant="outline" className={severityColors.moderate}>
-              {severityCounts.moderate} Moderate
-            </Badge>
-          )}
-          {severityCounts.low > 0 && (
-            <Badge variant="outline" className={severityColors.low}>
-              {severityCounts.low} Low Risk
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {interactions.map((interaction, index) => {
-            const Icon = severityIcons[interaction.severity];
-            return (
-              <div
-                key={index}
-                className={`p-4 rounded-xl border ${severityColors[interaction.severity]}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-background/80">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold">{interaction.med1Name}</span>
-                      <span className="text-muted-foreground">+</span>
-                      <span className="font-semibold">{interaction.med2Name}</span>
-                    </div>
-                    <p className="text-sm mb-2">{interaction.description}</p>
-                    <p className="text-sm font-medium">
-                      <span className="text-muted-foreground">Recommendation: </span>
-                      {interaction.recommendation}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        
-        <p className="text-xs text-muted-foreground mt-4 pt-4 border-t">
-          ⚠️ This is not a complete list of all possible interactions. Always consult your healthcare provider or pharmacist for personalized advice.
-        </p>
-      </CardContent>
-    </Card>
-  );
+  return found.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
 }
