@@ -259,15 +259,30 @@ export function AdminApplications() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className={`capitalize ${statusVariant[a.status] ?? ''}`}>
-                    {a.status}
+                  <Badge variant="secondary" className={statusVariant[a.status] ?? ''}>
+                    {statusLabel(a.status)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   <Button variant="outline" size="sm" onClick={() => openApplication(a)}>
                     Review
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2"
+                    disabled={setArchived.isPending}
+                    onClick={() => toggleArchive(a)}
+                    aria-label={a.archived_at ? 'Restore application' : 'Archive application'}
+                  >
+                    {a.archived_at ? (
+                      <ArchiveRestore className="h-4 w-4" />
+                    ) : (
+                      <Archive className="h-4 w-4" />
+                    )}
+                  </Button>
                 </TableCell>
+
               </TableRow>
             ))}
           </TableBody>
