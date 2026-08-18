@@ -60,7 +60,17 @@ const ClinicianPatients = () => {
     updatePatientNotes,
   } = useClinicianPatients();
   const { records: managedRecords, isLoading: isLoadingRecords } = useClinicianPatientRecords();
-  const { patientLimit } = useClinicianSubscription();
+  const { patientLimit, tier, isTrial } = useClinicianSubscription();
+
+  // An expired trial reports a limit of 0, which is not a limit the clinician
+  // "reached" — telling them so sends them looking for a plan upgrade when what
+  // actually happened is that their trial ended.
+  const isExpired = tier === 'expired';
+  const inviteBlockedReason = isExpired
+    ? 'Your trial has ended. Choose a plan to start adding patients again.'
+    : `You've reached your limit of ${patientLimit} patient${patientLimit === 1 ? '' : 's'}${
+        isTrial ? ' on the free trial' : ''
+      }. Upgrade to add more.`;
   
   const [notesDialog, setNotesDialog] = useState<{
     open: boolean;
@@ -237,7 +247,7 @@ const ClinicianPatients = () => {
               <div className="flex gap-2 w-full sm:w-auto">
                 <InvitePatientDialog 
                   disabled={billablePatientCount >= patientLimit}
-                  disabledReason={`You've reached your limit of ${patientLimit} patients. Upgrade to add more.`}
+                  disabledReason={inviteBlockedReason}
                 />
                 <Button 
                   variant="outline" 
