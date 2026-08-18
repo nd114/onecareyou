@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Download, FileText, Loader2, Mail, Phone, Search } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  Download,
+  FileText,
+  Loader2,
+  Mail,
+  Phone,
+  Search,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -33,6 +42,7 @@ import {
 import {
   APPLICATION_STATUSES,
   getResumeUrl,
+  statusLabel,
   useApplicationMutations,
   useJobApplications,
   type JobApplication,
@@ -44,32 +54,55 @@ const statusVariant: Record<string, string> = {
   interview: 'bg-violet-500/15 text-violet-700 dark:text-violet-400',
   offer: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
   hired: 'bg-primary/15 text-primary',
+  no_show: 'bg-orange-500/15 text-orange-700 dark:text-orange-400',
+  no_response: 'bg-muted text-muted-foreground',
   rejected: 'bg-destructive/15 text-destructive',
 };
 
 export function AdminApplications() {
   const { data, isLoading, error } = useJobApplications();
-  const { updateApplication } = useApplicationMutations();
+  const { updateApplication, setArchived } = useApplicationMutations();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [view, setView] = useState<'active' | 'archived'>('active');
   const [selected, setSelected] = useState<JobApplication | null>(null);
   const [notes, setNotes] = useState('');
   const [resumeLoading, setResumeLoading] = useState(false);
 
+  const archivedCount = useMemo(
+    () => (data ?? []).filter((a) => !!a.archived_at).length,
+    [data],
+  );
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (data ?? []).filter((a) => {
+      const matchesView = view === 'archived' ? !!a.archived_at : !a.archived_at;
       const matchesStatus = statusFilter === 'all' || a.status === statusFilter;
       const matchesTerm =
         !term ||
         a.full_name.toLowerCase().includes(term) ||
         a.email.toLowerCase().includes(term) ||
         a.job_title.toLowerCase().includes(term);
-      return matchesStatus && matchesTerm;
+      return matchesView && matchesStatus && matchesTerm;
     });
-  }, [data, search, statusFilter]);
+  }, [data, search, statusFilter, view]);
 
   const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(filtered, 15);
+
+  const toggleArchive = async (application: JobApplication) => {
+    const archiving = !application.archived_at;
+    try {
+      await setArchived.mutateAsync({ id: application.id, archived: archiving });
+      setSelected(null);
+      toast.success(archiving ? 'Application archived' : 'Application restored');
+    } catch (e) {
+      toast.error('Could not update the archive', {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    }
+  };
+
 
   const openApplication = (application: JobApplication) => {
     setSelected(application);
