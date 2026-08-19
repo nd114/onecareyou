@@ -1,0 +1,156 @@
+{
+  "id": "clinician",
+  "title": "OneCare for clinicians",
+  "subtitle": "A guided walkthrough",
+  "account": "demo-clinician-1@onecare.you",
+  "viewport": { "width": 1600, "height": 900 },
+  "beats": [
+    {
+      "id": "c-intro",
+      "chapter": "Welcome",
+      "caption": "OneCare — clinician walkthrough",
+      "narration": "This is the clinician side of OneCare: a light surface for following patients between visits, without buying another electronic record system.",
+      "steps": [{ "do": "goto", "route": "/for-clinicians" }, { "do": "wait", "ms": 1600 }, { "do": "scroll", "to": 500 }]
+    },
+    {
+      "id": "c-access",
+      "chapter": "Access",
+      "caption": "Sign-up, profile, BAA",
+      "narration": "Clinicians sign up, complete a profile with title, specialty, licence and country, and sign the business associate agreement before any patient data is exposed. Sessions time out after thirty minutes of genuine inactivity.",
+      "steps": [{ "do": "goto", "route": "/clinician/sign-up" }, { "do": "wait", "ms": 2000 }]
+    },
+    {
+      "id": "c-today",
+      "chapter": "Today",
+      "caption": "Today — one triage inbox",
+      "narration": "Today is one unified inbox, ordered by urgency: vital alerts, unread patient messages, guidance awaiting a reply, and open practice tasks. Everything is actionable in place — there is no separate alerts screen to check.",
+      "steps": [{ "do": "goto", "route": "/clinician" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 400 }]
+    },
+    {
+      "id": "c-today-scroll",
+      "chapter": "Today",
+      "caption": "Work the inbox in place",
+      "narration": "You clear the list from the top down. Each row carries enough context to decide, and opens the patient only when you actually need the chart.",
+      "steps": [{ "do": "scroll", "to": 900 }, { "do": "wait", "ms": 2000 }]
+    },
+    {
+      "id": "c-patients",
+      "chapter": "Patients",
+      "caption": "Patients — paginated and searchable",
+      "narration": "Patients is a simple paginated, searchable list. Nothing dense at list level: connected patients who granted you a private share, institution patients you've been assigned, and managed records for patients with no OneCare account.",
+      "steps": [{ "do": "goto", "route": "/clinician/patients" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 350 }]
+    },
+    {
+      "id": "c-patient-detail",
+      "chapter": "Patients",
+      "caption": "Patient detail",
+      "narration": "Open a patient and you get medications, vitals, documents, guidance, encounters and internal notes — limited strictly to the categories that patient chose to share with you.",
+      "steps": [{ "do": "clickFirstPatient" }, { "do": "wait", "ms": 2600 }]
+    },
+    {
+      "id": "c-patient-vitals",
+      "chapter": "Patients",
+      "caption": "Vitals with provenance",
+      "narration": "Vitals arrive with their source attached, so you can tell a home reading from a clinic reading from an imported one before you act on a trend.",
+      "steps": [{ "do": "clickTab", "text": "Vitals" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 350 }]
+    },
+    {
+      "id": "c-patient-meds",
+      "chapter": "Patients",
+      "caption": "Medications and documents",
+      "narration": "Medications show what the patient is actually taking, not what was prescribed at discharge. Shared documents sit alongside, with AI summaries you can skim before the consultation.",
+      "steps": [{ "do": "clickTab", "text": "Medications" }, { "do": "wait", "ms": 2200 }, { "do": "clickTab", "text": "Documents" }, { "do": "wait", "ms": 1800 }]
+    },
+    {
+      "id": "c-guidance",
+      "chapter": "Communicate",
+      "caption": "Guidance the patient can answer",
+      "narration": "Guidance is structured instruction with a status the patient can respond to, rather than a message that disappears into a thread. Templates and specialty packs make the common cases a few clicks.",
+      "steps": [{ "do": "goto", "route": "/clinician/guidance" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 350 }]
+    },
+    {
+      "id": "c-messages",
+      "chapter": "Communicate",
+      "caption": "Messages",
+      "narration": "Messages are threaded per patient with attachments, and stay preserved for the record once a relationship ends.",
+      "steps": [{ "do": "goto", "route": "/clinician/messages" }, { "do": "wait", "ms": 2200 }]
+    },
+    {
+      "id": "c-scribe",
+      "chapter": "Communicate",
+      "caption": "Dictations and scribe",
+      "narration": "Dictations and scribe take a recording or an upload, return a transcript, then draft a SOAP note against an encounter. You edit and sign it — nothing is filed unsigned.",
+      "steps": [{ "do": "goto", "route": "/clinician/dictations" }, { "do": "wait", "ms": 2600 }, { "do": "scroll", "to": 350 }]
+    },
+    {
+      "id": "c-templates",
+      "chapter": "Communicate",
+      "caption": "Clinical templates",
+      "narration": "Templates are reusable guidance and visit structures held at practice level, so a team writes the same instruction the same way every time.",
+      "steps": [{ "do": "goto", "route": "/clinician/templates" }, { "do": "wait", "ms": 2200 }]
+    },
+    {
+      "id": "c-ai",
+      "chapter": "Assistant",
+      "caption": "Propose, approve, apply",
+      "narration": "The clinician assistant reads only what you can already read, and works in one direction: it proposes, you approve, then it applies and writes the action to the log. It never writes first, never prescribes, and cannot touch a patient outside your access.",
+      "steps": [{ "do": "goto", "route": "/clinician" }, { "do": "wait", "ms": 1400 }, { "do": "openAI" }, { "do": "wait", "ms": 2600 }]
+    },
+    {
+      "id": "c-tasks",
+      "chapter": "Practice",
+      "caption": "Tasks and encounters",
+      "narration": "Practice work items carry an assignee, a due date and a status. Encounters are the clinical unit — type, time, participants, SOAP content and sign-off.",
+      "steps": [{ "do": "goto", "route": "/clinician/practice" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 380 }]
+    },
+    {
+      "id": "c-practice-team",
+      "chapter": "Practice",
+      "caption": "Team and roles",
+      "narration": "Team is where you invite members and set roles — owner, admin, provider, nurse, front desk, billing, read only — and remove people who leave. Cards appear only for the capabilities a member actually has, so a solo clinician never sees enterprise clutter.",
+      "steps": [{ "do": "scroll", "to": 800 }, { "do": "wait", "ms": 2400 }]
+    },
+    {
+      "id": "c-practice-institution",
+      "chapter": "Practice",
+      "caption": "Institution patients and hospital code",
+      "narration": "Institution patients are those who shared with the hospital rather than one clinician; consent and assignment are separate, so sharing with a hospital never exposes a chart to everyone in it. The hospital code is the short code patients type to connect.",
+      "steps": [{ "do": "scroll", "to": 1250 }, { "do": "wait", "ms": 2400 }]
+    },
+    {
+      "id": "c-practice-storage",
+      "chapter": "Practice",
+      "caption": "Storage and subscription",
+      "narration": "Storage and durability show pooled usage against the tenant allowance, with packs to upgrade, and the subscription, EHR connections and branding sit alongside. Practice is where the practice is run — Settings is only where it's configured.",
+      "steps": [{ "do": "scroll", "to": 1700 }, { "do": "wait", "ms": 2400 }]
+    },
+    {
+      "id": "c-import",
+      "chapter": "Practice",
+      "caption": "Bulk onboarding",
+      "narration": "Managed records can be created one at a time or imported from a spreadsheet, with duplicate detection and an error file back so a bad row never silently disappears.",
+      "steps": [{ "do": "goto", "route": "/clinician/patients/import" }, { "do": "wait", "ms": 2400 }]
+    },
+    {
+      "id": "c-audit",
+      "chapter": "Compliance",
+      "caption": "Audit trail",
+      "narration": "Audit records who accessed which patient and when, exportable as a one-click compliance pack. Patients see the same trail from their side — the transparency runs both ways.",
+      "steps": [{ "do": "goto", "route": "/clinician/audit" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 350 }]
+    },
+    {
+      "id": "c-enterprise",
+      "chapter": "Enterprise",
+      "caption": "Institutions",
+      "narration": "For institutions, storage is pooled and billed at tenant level, and whitelabelling with a branded subdomain is coming soon. Write-back into connected electronic records stays deliberately out of scope until partner agreements exist — import and provenance are live today.",
+      "steps": [{ "do": "goto", "route": "/clinician/practice" }, { "do": "wait", "ms": 1800 }, { "do": "scroll", "to": 1000 }]
+    },
+    {
+      "id": "c-outro",
+      "chapter": "Closing",
+      "caption": "onecare.you",
+      "narration": "One inbox, one chart per patient, and a clear record of who did what. That's OneCare for clinicians.",
+      "steps": [{ "do": "goto", "route": "/clinician" }, { "do": "wait", "ms": 2400 }]
+    }
+  ]
+}
