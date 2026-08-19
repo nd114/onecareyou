@@ -34,43 +34,89 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { documentShareId } = await req.json();
-    if (!documentShareId) {
-      return new Response(JSON.stringify({ error: "documentShareId required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Two ways in, matching the two ways a patient can share a document.
+    //
+    //   documentShareId   — the patient shared this one document (default).
+    //   documentId + providerShareId — the patient switched on whole-vault
+    //                       access for this clinician.
+    //
+    // Both end at the same checks: the share must belong to this caller, be
+    // active, and not have expired. Whole-vault additionally requires the
+    // documents permission and that the document really belongs to that
+    // patient — without that second check a clinician with vault access to one
+    // patient could name any document id at all.
+    const { documentShareId, documentId, providerShareId } = await req.json();
+
+    if (!documentShareId && !(documentId && providerShareId)) {
+      return new Response(
+        JSON.stringify({ error: "documentShareId, or documentId with providerShareId, required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    // Verify the share is active and belongs to this clinician
-    const { data: share, error: shareError } = await supabaseAuth
-      .from("document_shares")
-      .select(`
-        id,
-        document_id,
-        user_id,
-        is_active,
-        provider_share_id,
-        provider_shares!inner (
+    let ps: any = null;
+    let resolvedDocumentId: string | null = null;
+    let auditShareId: string | null = null;
+
+    if (documentShareId) {
+      const { data: share, error: shareError } = await supabaseAuth
+        .from("document_shares")
+        .select(`
           id,
-          clinician_user_id,
-          provider_email,
+          document_id,
+          user_id,
           is_active,
-          expires_at
-        )
-      `)
-      .eq("id", documentShareId)
-      .eq("is_active", true)
-      .single();
+          provider_share_id,
+          provider_shares!inner (
+            id,
+            clinician_user_id,
+            provider_email,
+            is_active,
+            expires_at,
+            user_id,
+            permissions
+          )
+        `)
+        .eq("id", documentShareId)
+        .eq("is_active", true)
+        .single();
 
-    if (shareError || !share) {
-      return new Response(JSON.stringify({ error: "Share not found or inactive" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (shareError || !share) {
+        return new Response(JSON.stringify({ error: "Share not found or inactive" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      ps = (share as any).provider_shares;
+      resolvedDocumentId = share.document_id;
+      auditShareId = share.provider_share_id;
+    } else {
+      const { data: share, error: shareError } = await supabaseAuth
+        .from("provider_shares")
+        .select("id, clinician_user_id, provider_email, is_active, expires_at, user_id, permissions")
+        .eq("id", providerShareId)
+        .single();
+
+      if (shareError || !share) {
+        return new Response(JSON.stringify({ error: "Share not found or inactive" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if ((share as any).permissions?.documents !== true) {
+        return new Response(JSON.stringify({ error: "Access denied" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      ps = share;
+      resolvedDocumentId = documentId;
+      auditShareId = share.id;
     }
 
-    const ps = (share as any).provider_shares;
     const isClinicianOwner =
       ps.clinician_user_id === user.id || ps.provider_email === user.email;
 
@@ -92,12 +138,21 @@ Deno.serve(async (req) => {
     const { data: doc, error: docError } = await supabaseAuth
       .from("health_documents")
       .select("file_path, file_name, user_id")
-      .eq("id", share.document_id)
+      .eq("id", resolvedDocumentId)
       .single();
 
     if (docError || !doc) {
       return new Response(JSON.stringify({ error: "Document not found" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // The document must belong to the patient on the share. Only reachable on
+    // the whole-vault route, where the document id came from the caller.
+    if (doc.user_id !== ps.user_id) {
+      return new Response(JSON.stringify({ error: "Access denied" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -118,11 +173,15 @@ Deno.serve(async (req) => {
     await supabaseAuth.from("access_audit_logs").insert({
       actor_user_id: user.id,
       target_user_id: doc.user_id,
-      share_id: share.provider_share_id,
-      resource_id: share.document_id,
+      share_id: auditShareId,
+      resource_id: resolvedDocumentId,
       action: "document_download",
       resource_type: "health_document",
-      metadata: { document_share_id: documentShareId, file_name: doc.file_name },
+      metadata: {
+        document_share_id: documentShareId ?? null,
+        access_route: documentShareId ? "per_document" : "whole_vault",
+        file_name: doc.file_name,
+      },
     });
 
     return new Response(

@@ -74,6 +74,9 @@ const CareCircle = () => {
       meds: true,
       adherence: true,
       profile: false,
+      // Off by default: documents stay shared one at a time unless the patient
+      // deliberately opens the whole vault.
+      documents: false,
     },
   });
 
@@ -93,7 +96,7 @@ const CareCircle = () => {
     setNewShare({
       providerName: '',
       providerEmail: '',
-      permissions: { vitals: true, meds: true, adherence: true, profile: false },
+      permissions: { vitals: true, meds: true, adherence: true, profile: false, documents: false },
     });
   };
 
@@ -183,6 +186,15 @@ const CareCircle = () => {
                       { key: 'meds', label: 'Medications', desc: 'Current medication list' },
                       { key: 'adherence', label: 'Adherence Data', desc: 'Schedule and compliance' },
                       { key: 'profile', label: 'Health Profile', desc: 'Allergies, conditions, etc.' },
+                      {
+                        key: 'documents',
+                        label: 'My whole Health Vault',
+                        // Off by default. With it off, this doctor sees only the
+                        // documents you hand them one at a time — which is why
+                        // the description says what "on" actually means rather
+                        // than describing a feature.
+                        desc: 'Every document in your Vault, including anything you add later. Leave this off to share documents one at a time instead.',
+                      },
                     ].map((perm) => (
                       <div key={perm.key} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                         <div>
@@ -342,6 +354,9 @@ const CareCircle = () => {
                               {share.permissions.meds && <Badge variant="secondary" className="text-[10px] sm:text-xs">Meds</Badge>}
                               {share.permissions.adherence && <Badge variant="secondary" className="text-[10px] sm:text-xs">Adherence</Badge>}
                               {share.permissions.profile && <Badge variant="secondary" className="text-[10px] sm:text-xs">Profile</Badge>}
+                              {share.permissions.documents && (
+                                <Badge variant="secondary" className="text-[10px] sm:text-xs">Whole Vault</Badge>
+                              )}
                             </div>
                           </div>
                         </div>
