@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock } from 'lucide-react';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,9 @@ import { HealthDocument, DOCUMENT_CATEGORIES, useHealthDocuments } from '@/hooks
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { ShareDocumentDialog } from '@/components/documents/ShareDocumentDialog';
+import { DocumentViewerDialog } from '@/components/documents/DocumentViewerDialog';
 import { useDocumentShares } from '@/hooks/useDocumentShares';
+
 
 interface DocumentCardProps {
   document: HealthDocument;
@@ -36,6 +38,8 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   const [downloading, setDownloading] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showViewer, setShowViewer] = useState(false);
+
   const shareCount = allShareCounts[doc.id] || 0;
 
   const categoryInfo = DOCUMENT_CATEGORIES.find((c) => c.value === doc.category) || DOCUMENT_CATEGORIES[DOCUMENT_CATEGORIES.length - 1];
@@ -75,7 +79,17 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="font-medium text-sm truncate">{doc.title || doc.file_name}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowViewer(true)}
+                    className="text-left w-full"
+                    title="View this document"
+                  >
+                    <h3 className="font-medium text-sm truncate hover:text-primary transition-colors">
+                      {doc.title || doc.file_name}
+                    </h3>
+                  </button>
+
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <Badge variant="secondary" className={`text-xs ${categoryInfo.color}`}>
                       {categoryInfo.label}
@@ -109,7 +123,11 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowViewer(true)} title="View">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowShareDialog(true)} title="Share">
                     <Share2 className="h-4 w-4" />
                   </Button>
@@ -232,6 +250,13 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
         documentId={doc.id}
         documentTitle={doc.title || doc.file_name}
       />
+
+      <DocumentViewerDialog
+        document={doc}
+        open={showViewer}
+        onOpenChange={setShowViewer}
+      />
+
     </>
   );
 }
