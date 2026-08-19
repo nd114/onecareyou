@@ -83,7 +83,7 @@ export function useUnitPreferences() {
     fromUnit?: string
   ): { value: number; unit: string } => {
     const config = VITAL_CONFIG[type];
-    const baseUnit = fromUnit || config.unit;
+    const baseUnit = fromUnit || config?.unit || '';
 
     switch (type) {
       case 'glucose': {
