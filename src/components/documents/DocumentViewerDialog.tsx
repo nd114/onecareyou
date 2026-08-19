@@ -127,7 +127,7 @@ export function DocumentViewerDialog({
           <DialogTitle className="truncate text-base">{doc.title || doc.file_name}</DialogTitle>
         </DialogHeader>
 
-        <div className="bg-muted/30 h-[70vh] flex items-center justify-center overflow-auto">
+        <div className="bg-muted/30 dark:bg-background h-[70vh] flex items-center justify-center overflow-auto">
           {failed ? (
             <p className="text-sm text-muted-foreground px-6 text-center">
               This document could not be opened just now. Try downloading it instead.
@@ -152,7 +152,7 @@ export function DocumentViewerDialog({
             />
           ) : isHtml ? (
             <iframe
-              srcDoc={text ?? ''}
+              srcDoc={themedHtml}
               title={doc.title || doc.file_name}
               className="w-full h-full bg-background"
               sandbox=""
@@ -165,16 +165,22 @@ export function DocumentViewerDialog({
             <iframe
               src={url!}
               title={doc.title || doc.file_name}
-              className="w-full h-full bg-background"
+              className="w-full h-full bg-background dark:invert-0"
               sandbox=""
             />
           )}
 
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t">
+        <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-3 border-t">
           {url && (
             <>
+              {(isHtml || isPlainText) && text !== null && (
+                <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Download as PDF
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Open in new tab
@@ -188,6 +194,7 @@ export function DocumentViewerDialog({
             </>
           )}
         </div>
+
       </DialogContent>
     </Dialog>
   );
