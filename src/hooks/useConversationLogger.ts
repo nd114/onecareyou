@@ -28,6 +28,7 @@ interface LogMessageInput {
 export function useConversationLogger(source: 'simple_mode' | 'drawer') {
   const { user } = useAuth();
   const conversationIdRef = useRef<string | null>(null);
+  const countRef = useRef(0);
 
   const ensureConversation = useCallback(async (): Promise<string | null> => {
     if (!user) return null;
@@ -42,6 +43,7 @@ export function useConversationLogger(source: 'simple_mode' | 'drawer') {
       return null;
     }
     conversationIdRef.current = data.id;
+    countRef.current = 0;
     return data.id;
   }, [user, source]);
 
@@ -61,15 +63,38 @@ export function useConversationLogger(source: 'simple_mode' | 'drawer') {
     }]);
     if (error) {
       console.warn('[conversation-log] failed to log message', error);
+      return;
+    }
+    // Keep the count the history lists show in step with reality.
+    countRef.current += 1;
+    const { error: countError } = await supabase
+      .from('ai_conversations')
+      .update({ message_count: countRef.current })
+      .eq('id', conversationId);
+    if (countError) {
+      console.warn('[conversation-log] failed to update message count', countError);
     }
   }, [user, ensureConversation]);
 
-
-
+  /**
+   * Continue logging into an existing conversation (the user reopened it from
+   * history), so the thread stays one record instead of splitting in two.
+   */
+  const adopt = useCallback(async (conversationId: string) => {
+    conversationIdRef.current = conversationId;
+    const { data } = await supabase
+      .from('ai_conversations')
+      .select('message_count')
+      .eq('id', conversationId)
+      .maybeSingle();
+    countRef.current = data?.message_count ?? 0;
+  }, []);
 
   const reset = useCallback(() => {
     conversationIdRef.current = null;
+    countRef.current = 0;
   }, []);
 
-  return { logMessage, reset };
+  return { logMessage, adopt, reset };
 }
+
