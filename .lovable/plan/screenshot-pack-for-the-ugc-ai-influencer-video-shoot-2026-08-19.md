@@ -5,6 +5,7 @@ Goal: a labeled library of real product screenshots, captured from the seeded de
 ## What gets captured
 
 **Mobile vertical (390x844)** — patient side, matches the phone-in-hand shots:
+
 - Today / dashboard (calm state, and one with a due dose)
 - Vitals list + a 30-day trend chart (BP, glucose, weight)
 - Log a vital / log a dose flow, including the "taken late" state
@@ -18,6 +19,7 @@ Goal: a labeled library of real product screenshots, captured from the seeded de
 - Settings: sharing consent, audit trail
 
 **Desktop wide (1440x900)** — clinician side, for Concept 7:
+
 - Today / triage inbox with a patient flagged "Pending Review" (gold, not red)
 - Patient list with search + pagination
 - Patient detail: vitals, meds, timeline, action rail
@@ -32,7 +34,8 @@ Plus a handful of desktop patient shots (dashboard, vault, AI hub) for over-the-
 ## How it runs
 
 Playwright against the local dev server, one script per persona:
-1. Restore the injected demo session; where a second role is needed, mint a session for the matching demo account (`demo-clinician-*@onecare.you`, and the seeded patient James Thompson).
+
+1. Restore the injected demo session; where a second role is needed, mint a session for the matching demo account (`demo-clinician-*@onecare.you`, and the seeded patient James Thompson and `demo-patient-2@onecare.you or maybe demo-clinician-1@onecare.you`for the clinician side).
 2. Walk each route, wait for data to settle, dismiss cookie/consent banners and FABs so frames are clean, then screenshot the viewport (never full-page).
 3. Any screen that renders empty gets noted rather than shipped as a blank frame — if a pane has no demo data, it goes on a short "needs seeding" list at the end.
 
