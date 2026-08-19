@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProposedAction, ActionOutcome, executeAction } from '@/lib/ai-actions';
 import { chatStorageKey } from '@/lib/chat-storage';
+import { useConversationLogger } from '@/hooks/useConversationLogger';
+
 
 export interface ChatMessage {
   id: string;
@@ -29,7 +31,16 @@ interface UseAIChatOptions {
    * survives closing the drawer without ever being shown to another account.
    */
   persistSurface?: string;
+  /**
+   * Which surface the saved transcript is attributed to in the patient's
+   * conversation history. Every chat is recorded so it can be read back later
+   * from the AI page, the drawer's history rail and Settings.
+   */
+  logSource?: 'simple_mode' | 'drawer';
 }
+
+
+
 
 /** Cap what we persist so localStorage never grows unbounded. */
 const MAX_PERSISTED_MESSAGES = 60;
@@ -57,6 +68,10 @@ export function useAIChat(options: UseAIChatOptions = {}) {
   const allowActions = options.allowActions !== false;
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  // Every exchange is written to the patient's conversation history, which is
+  // what the AI page, the drawer's history rail and Settings read back.
+  const { logMessage, adopt, reset: resetLog } = useConversationLogger(options.logSource ?? 'drawer');
+
   const persistKey = options.persistSurface
     ? chatStorageKey(options.persistSurface, user?.id)
     : null;
@@ -176,6 +191,12 @@ export function useAIChat(options: UseAIChatOptions = {}) {
       };
 
       setMessages(prev => [...prev, assistantMsg]);
+
+      // Record the exchange so it can be read back later. Logging failures are
+      // swallowed inside the logger — the chat must never break over it.
+      await logMessage({ role: 'user', content: userMsg.content });
+      await logMessage({ role: 'assistant', content: assistantMsg.content });
+      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
       return null;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
@@ -191,7 +212,8 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, allowActions]);
+  }, [messages, isLoading, allowActions, logMessage, queryClient]);
+
 
   /** Run the actions the assistant proposed — only ever called from an explicit user approval. */
   const approveActions = useCallback(async (messageId: string) => {
@@ -231,14 +253,21 @@ export function useAIChat(options: UseAIChatOptions = {}) {
   const clearChat = useCallback(() => {
     setMessages([]);
     setError(null);
-  }, []);
+    // The next thing asked starts a fresh record rather than appending to the
+    // conversation just cleared off screen.
+    resetLog();
+  }, [resetLog]);
 
   /**
    * Continue an earlier conversation: its transcript becomes the live context,
-   * so the next answer is grounded in what was already said.
+   * so the next answer is grounded in what was already said. When the stored
+   * conversation is known, further messages append to that same record.
    */
   const loadConversation = useCallback(
-    (history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[]) => {
+    (
+      history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[],
+      conversationId?: string,
+    ) => {
       setError(null);
       setMessages(
         history.map((m) => ({
@@ -248,9 +277,12 @@ export function useAIChat(options: UseAIChatOptions = {}) {
           timestamp: m.createdAt ? new Date(m.createdAt) : new Date(),
         })),
       );
+      if (conversationId) void adopt(conversationId);
+      else resetLog();
     },
-    [],
+    [adopt, resetLog],
   );
+
 
   return { messages, isLoading, error, sendMessage, clearChat, loadConversation, approveActions, discardActions };
 

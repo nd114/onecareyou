@@ -20,7 +20,7 @@ export function ConversationHistoryRail({
   onClose,
   className,
 }: {
-  onLoad: (history: LoadedHistory) => void;
+  onLoad: (history: LoadedHistory, conversationId: string) => void;
   onClose: () => void;
   className?: string;
 }) {
@@ -51,6 +51,7 @@ export function ConversationHistoryRail({
           content: m.content,
           createdAt: m.created_at,
         })),
+      id,
     );
   };
 
