@@ -354,10 +354,10 @@ const MedicalDisclaimer = () => {
                 <Link to="/">Return to Home</Link>
               </Button>
               <Button variant="ghost" asChild>
-                <Link to="/terms-of-service">View Terms of Service</Link>
+                <Link to="/terms">View Terms of Service</Link>
               </Button>
               <Button variant="ghost" asChild>
-                <Link to="/privacy-policy">View Privacy Policy</Link>
+                <Link to="/privacy">View Privacy Policy</Link>
               </Button>
             </div>
           </motion.div>
