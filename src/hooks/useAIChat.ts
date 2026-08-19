@@ -68,6 +68,10 @@ export function useAIChat(options: UseAIChatOptions = {}) {
   const allowActions = options.allowActions !== false;
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  // Every exchange is written to the patient's conversation history, which is
+  // what the AI page, the drawer's history rail and Settings read back.
+  const { logMessage, adopt, reset: resetLog } = useConversationLogger(options.logSource ?? 'drawer');
+
   const persistKey = options.persistSurface
     ? chatStorageKey(options.persistSurface, user?.id)
     : null;
