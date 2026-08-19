@@ -80,32 +80,44 @@ export function DocumentViewerDialog({
             <p className="text-sm text-muted-foreground px-6 text-center">
               This document could not be opened just now. Try downloading it instead.
             </p>
-          ) : !url ? (
+          ) : awaitingContent ? (
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           ) : !canPreview ? (
             <div className="text-center px-6 space-y-3">
               <p className="text-sm text-muted-foreground">
                 This file type can't be shown here. You can open or download it instead.
               </p>
-              <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
+              <Button variant="outline" size="sm" onClick={() => window.open(url!, '_blank')}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Open in a new tab
               </Button>
             </div>
           ) : isImage ? (
             <img
-              src={url}
+              src={url!}
               alt={doc.title || doc.file_name}
               className="max-h-full max-w-full object-contain"
             />
+          ) : isHtml ? (
+            <iframe
+              srcDoc={text ?? ''}
+              title={doc.title || doc.file_name}
+              className="w-full h-full bg-background"
+              sandbox=""
+            />
+          ) : isPlainText ? (
+            <pre className="w-full h-full overflow-auto bg-background p-5 text-sm whitespace-pre-wrap font-sans text-foreground">
+              {text}
+            </pre>
           ) : (
             <iframe
-              src={url}
+              src={url!}
               title={doc.title || doc.file_name}
               className="w-full h-full bg-background"
               sandbox=""
             />
           )}
+
         </div>
 
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t">
