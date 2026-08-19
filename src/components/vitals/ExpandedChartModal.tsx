@@ -16,7 +16,13 @@ interface ExpandedChartModalProps {
 }
 
 export function ExpandedChartModal({ open, onOpenChange, type, data, title }: ExpandedChartModalProps) {
-  const config = VITAL_CONFIG[type];
+  const config = VITAL_CONFIG[type] ?? {
+    label: String(type).replace(/_/g, ' '),
+    unit: '',
+    category: 'Other',
+    normalMin: 0,
+    normalMax: 0,
+  };
   const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
   const displayUnit = getDisplayUnit(type);

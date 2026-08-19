@@ -24,7 +24,13 @@ interface VitalStatsCardProps {
 
 export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProps>(
   function VitalStatsCard({ type, latestVital, stats, icon: Icon, colorClass }, ref) {
-    const config = VITAL_CONFIG[type];
+    const config = VITAL_CONFIG[type] ?? {
+      label: String(type).replace(/_/g, ' '),
+      unit: '',
+      category: 'Other',
+      normalMin: 0,
+      normalMax: 0,
+    };
     const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
     const normalRange = getNormalRange(type);
