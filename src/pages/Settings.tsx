@@ -57,7 +57,7 @@ import { EditProfileDialog } from '@/components/patient/EditProfileDialog';
 
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
-import { MyHospitalCard } from '@/components/patient/MyHospitalCard';
+import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
 import { StorageUsageCard } from '@/components/StorageUsageCard';
@@ -925,7 +925,12 @@ const Settings = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <MyHospitalCard />
+            {/* The full connect flow, not a link to it: a patient who
+                opens Settings to connect their hospital was previously
+                sent to Care Circle to do it. Same component as Care
+                Circle uses, so the disclosure before connecting is the
+                same wording in both places. */}
+            <HospitalShareCard />
           </motion.div>
 
           {/* Emergency Information */}
