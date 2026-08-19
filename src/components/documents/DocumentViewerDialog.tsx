@@ -73,6 +73,52 @@ export function DocumentViewerDialog({
 
   const awaitingContent = !url || ((isHtml || isPlainText) && text === null);
 
+  // Stored HTML carries its own light styling, so readable dark mode needs a
+  // theme layer injected into the sandboxed frame.
+  const themedHtml = useMemo(() => {
+    if (!isHtml || text === null) return '';
+    const themeCss = `
+      <style>
+        :root { color-scheme: ${isDark ? 'dark' : 'light'}; }
+        html, body {
+          background: ${isDark ? '#0f1512' : '#ffffff'} !important;
+          color: ${isDark ? '#e8ece9' : '#1a1a1a'} !important;
+          font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          line-height: 1.6;
+          margin: 0;
+          padding: 24px;
+        }
+        * { border-color: ${isDark ? '#2c3a33' : '#e5e7eb'} !important; }
+        ${isDark ? `
+        h1, h2, h3, h4, h5, h6, strong, th { color: #f4f7f5 !important; }
+        p, li, td, span, div, dt, dd, small { color: #d5dbd7 !important; }
+        a { color: #8fd3ac !important; }
+        table, th, td { background: transparent !important; }
+        thead th, tr:nth-child(even) td { background: #17211c !important; }
+        header, footer, section, article, aside, main, div[style], .card, .box, .container {
+          background-color: transparent !important;
+          box-shadow: none !important;
+        }
+        hr { border-color: #2c3a33 !important; }
+        ` : ''}
+        img { max-width: 100%; height: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 6px 8px; border: 1px solid; text-align: left; }
+      </style>`;
+    return /<\/head>/i.test(text)
+      ? text.replace(/<\/head>/i, `${themeCss}</head>`)
+      : `<!doctype html><html><head><meta charset="utf-8">${themeCss}</head><body>${text}</body></html>`;
+  }, [isHtml, text, isDark]);
+
+  const handleDownloadPdf = () => {
+    const title = doc.title || doc.file_name || 'Document';
+    const base = (doc.file_name || title).replace(/\.[^.]+$/, '');
+    const blocks = isHtml ? htmlToBlocks(text ?? '') : textToBlocks(text ?? '');
+    saveBlocksAsPdf(title, blocks, `${base}.pdf`);
+  };
+
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
