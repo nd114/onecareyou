@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, resolveVitalConfig, resolveVitalType } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { format } from 'date-fns';
@@ -27,13 +27,13 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
   };
   const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
-  const displayUnit = getDisplayUnit(type);
-  const normalRange = getNormalRange(type);
+  const displayUnit = getDisplayUnit(resolvedType);
+  const normalRange = getNormalRange(resolvedType);
 
   const chartData = useMemo(() => {
     return data.map(v => {
-      const converted = convertVitalValue(type, v.value);
-      const secondaryConverted = v.secondary_value ? convertVitalValue(type, v.secondary_value) : null;
+      const converted = convertVitalValue(resolvedType, v.value);
+      const secondaryConverted = v.secondary_value ? convertVitalValue(resolvedType, v.secondary_value) : null;
       
       return {
         date: format(new Date(v.recorded_at), 'MMM d'),
@@ -58,7 +58,7 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
   }
 
   // Special handling for blood pressure to show systolic/diastolic labels
-  const isBloodPressure = type === 'blood_pressure';
+  const isBloodPressure = resolvedType === 'blood_pressure';
 
   return (
     <>

@@ -42,7 +42,7 @@ import { PatientActionRail } from '@/components/clinician/PatientActionRail';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
-import { VITAL_CONFIG } from '@/types/health';
+import { VITAL_CONFIG, resolveVitalConfig, resolveVitalConfig } from '@/types/health';
 import { format, formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -464,7 +464,7 @@ const ClinicianPatientDetail = () => {
                   ) : (
                     <div className="space-y-8">
                       {Object.entries(vitalsByType).map(([type, typeVitals]) => {
-                        const config = VITAL_CONFIG[type as keyof typeof VITAL_CONFIG];
+                        const config = resolveVitalConfig(type);
                         return (
                           <div key={type} className="border-b border-border pb-6 last:border-0 last:pb-0">
                             <div className="flex items-center gap-2 mb-4">

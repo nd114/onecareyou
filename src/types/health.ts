@@ -271,3 +271,31 @@ export const MEDICATION_TYPE_COLORS: Record<MedicationType, string> = {
   supplement: "bg-indigo text-primary-foreground",
   herbal: "bg-status-success text-primary-foreground",
 };
+
+// Some records use legacy or imported keys that differ from VITAL_CONFIG.
+// Map them so labels and units still resolve correctly.
+export const VITAL_TYPE_ALIASES: Record<string, VitalType> = {
+  blood_glucose: "glucose",
+  blood_sugar: "glucose",
+  spo2: "oxygen_saturation",
+  body_weight: "weight",
+  bp: "blood_pressure",
+  pulse: "heart_rate",
+};
+
+export function resolveVitalType(type: string): VitalType {
+  return (VITAL_TYPE_ALIASES[type] ?? type) as VitalType;
+}
+
+export function resolveVitalConfig(type: string) {
+  const resolved = resolveVitalType(type);
+  return (
+    VITAL_CONFIG[resolved] ?? {
+      label: String(type).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      unit: "",
+      category: "Other",
+      normalMin: 0,
+      normalMax: 0,
+    }
+  );
+}
