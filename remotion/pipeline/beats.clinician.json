@@ -24,7 +24,7 @@
       "chapter": "Today",
       "caption": "Today — one triage inbox",
       "narration": "Today is one unified inbox, ordered by urgency: vital alerts, unread patient messages, guidance awaiting a reply, and open practice tasks. Everything is actionable in place — there is no separate alerts screen to check.",
-      "steps": [{ "do": "goto", "route": "/clinician" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 400 }]
+      "steps": [{ "do": "goto", "route": "/clinician/today" }, { "do": "wait", "ms": 2400 }, { "do": "scroll", "to": 400 }]
     },
     {
       "id": "c-today-scroll",
@@ -94,7 +94,7 @@
       "chapter": "Assistant",
       "caption": "Propose, approve, apply",
       "narration": "The clinician assistant reads only what you can already read, and works in one direction: it proposes, you approve, then it applies and writes the action to the log. It never writes first, never prescribes, and cannot touch a patient outside your access.",
-      "steps": [{ "do": "goto", "route": "/clinician" }, { "do": "wait", "ms": 1400 }, { "do": "openAI" }, { "do": "wait", "ms": 2600 }]
+      "steps": [{ "do": "goto", "route": "/clinician/today" }, { "do": "wait", "ms": 1400 }, { "do": "openAI" }, { "do": "wait", "ms": 2600 }]
     },
     {
       "id": "c-tasks",
@@ -150,7 +150,7 @@
       "chapter": "Closing",
       "caption": "onecare.you",
       "narration": "One inbox, one chart per patient, and a clear record of who did what. That's OneCare for clinicians.",
-      "steps": [{ "do": "goto", "route": "/clinician" }, { "do": "wait", "ms": 2400 }]
+      "steps": [{ "do": "goto", "route": "/clinician/today" }, { "do": "wait", "ms": 2400 }]
     }
   ]
 }
