@@ -193,7 +193,9 @@ interface AIChatPanelProps {
     /** Replaces the live transcript with an earlier conversation to continue it. */
     loadConversation: (
       history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[],
+      conversationId?: string,
     ) => void;
+
   }) => React.ReactNode;
   /** Called after the assistant's route suggestion is followed (e.g. close the drawer). */
   onAfterNavigate?: () => void;
