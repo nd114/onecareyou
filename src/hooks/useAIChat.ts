@@ -233,5 +233,25 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     setError(null);
   }, []);
 
-  return { messages, isLoading, error, sendMessage, clearChat, approveActions, discardActions };
+  /**
+   * Continue an earlier conversation: its transcript becomes the live context,
+   * so the next answer is grounded in what was already said.
+   */
+  const loadConversation = useCallback(
+    (history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[]) => {
+      setError(null);
+      setMessages(
+        history.map((m) => ({
+          id: crypto.randomUUID(),
+          role: m.role,
+          content: m.content,
+          timestamp: m.createdAt ? new Date(m.createdAt) : new Date(),
+        })),
+      );
+    },
+    [],
+  );
+
+  return { messages, isLoading, error, sendMessage, clearChat, loadConversation, approveActions, discardActions };
+
 }

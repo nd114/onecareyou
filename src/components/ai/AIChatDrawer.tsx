@@ -1,6 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Bot } from 'lucide-react';
 import { AIChatPanel, ClearConversationButton } from './AIChatPanel';
+import { ConversationHistoryMenu } from './ConversationHistoryMenu';
 
 interface AIChatDrawerProps {
   open: boolean;
@@ -19,13 +20,14 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
         <AIChatPanel
           className="flex-1"
           onAfterNavigate={() => onOpenChange(false)}
-          renderHeader={({ hasMessages, clearChat }) => (
+          renderHeader={({ hasMessages, clearChat, loadConversation }) => (
             <SheetHeader className="px-4 pt-4 pb-2 pr-12 border-b">
               <div className="flex items-center gap-2">
                 <SheetTitle className="flex items-center gap-2 flex-1 min-w-0">
                   <Bot className="h-5 w-5 text-primary shrink-0" />
                   <span className="truncate">OneCare Assistant</span>
                 </SheetTitle>
+                <ConversationHistoryMenu onLoad={loadConversation} />
                 {hasMessages && <ClearConversationButton onClear={clearChat} />}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -38,3 +40,4 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
     </Sheet>
   );
 }
+

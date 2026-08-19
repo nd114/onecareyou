@@ -187,7 +187,14 @@ function MessageBubble({
 
 interface AIChatPanelProps {
   /** Rendered at the top of the panel; receives a clear-conversation control. */
-  renderHeader?: (args: { hasMessages: boolean; clearChat: () => void }) => React.ReactNode;
+  renderHeader?: (args: {
+    hasMessages: boolean;
+    clearChat: () => void;
+    /** Replaces the live transcript with an earlier conversation to continue it. */
+    loadConversation: (
+      history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[],
+    ) => void;
+  }) => React.ReactNode;
   /** Called after the assistant's route suggestion is followed (e.g. close the drawer). */
   onAfterNavigate?: () => void;
   className?: string;
@@ -195,9 +202,10 @@ interface AIChatPanelProps {
 
 export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChatPanelProps) {
   const navigate = useNavigate();
-  const { messages, isLoading, sendMessage, clearChat, approveActions, discardActions } = useAIChat({
+  const { messages, isLoading, sendMessage, clearChat, loadConversation, approveActions, discardActions } = useAIChat({
     persistSurface: 'assistant',
   });
+
   const { hasConsent, grantConsent } = useAIConsent();
   const { uploadDocument } = useHealthDocuments();
   const [input, setInput] = useState('');
@@ -311,7 +319,7 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChat
 
   return (
     <div className={cn('flex flex-col min-h-0', className)}>
-      {renderHeader?.({ hasMessages: messages.length > 0, clearChat })}
+      {renderHeader?.({ hasMessages: messages.length > 0, clearChat, loadConversation })}
 
       <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
         {messages.length === 0 && (
