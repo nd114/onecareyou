@@ -35,7 +35,7 @@ import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 
-export function UploadDocumentDialog() {
+export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?: string | null } = {}) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
@@ -46,7 +46,9 @@ export function UploadDocumentDialog() {
   const [familyMemberId, setFamilyMemberId] = useState<string | null>(null);
   const [showAiConfirm, setShowAiConfirm] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
-  const { uploadDocument } = useHealthDocuments();
+  const [folder, setFolder] = useState<string>(defaultFolder ?? '__none__');
+  const [newFolder, setNewFolder] = useState('');
+  const { uploadDocument, folders } = useHealthDocuments();
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
 
   const handleAiToggle = (checked: boolean) => {
@@ -77,6 +79,7 @@ export function UploadDocumentDialog() {
       notes: notes || undefined,
       aiSummarize,
       familyMemberId,
+      folder: folder === '__new__' ? newFolder : folder === '__none__' ? null : folder,
     });
     setOpen(false);
     resetForm();
@@ -90,6 +93,8 @@ export function UploadDocumentDialog() {
     setNotes('');
     setAiSummarize(false);
     setFamilyMemberId(null);
+    setFolder(defaultFolder ?? '__none__');
+    setNewFolder('');
   };
 
   return (
@@ -166,6 +171,31 @@ export function UploadDocumentDialog() {
               </Select>
             </div>
 
+            {/* Folder */}
+            <div>
+              <Label>Folder</Label>
+              <Select value={folder} onValueChange={setFolder}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No folder</SelectItem>
+                  {folders.map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                  <SelectItem value="__new__">Create new folder…</SelectItem>
+                </SelectContent>
+              </Select>
+              {folder === '__new__' && (
+                <Input
+                  className="mt-2"
+                  placeholder="New folder name"
+                  value={newFolder}
+                  onChange={(e) => setNewFolder(e.target.value)}
+                />
+              )}
+            </div>
+
             {/* Family Member Selector */}
             <FamilyMemberSelector
               value={familyMemberId}
@@ -221,7 +251,7 @@ export function UploadDocumentDialog() {
             <Button
               className="w-full"
               onClick={handleUpload}
-              disabled={!file || uploadDocument.isPending}
+              disabled={!file || uploadDocument.isPending || (folder === '__new__' && !newFolder.trim())}
             >
               {uploadDocument.isPending ? (
                 <>

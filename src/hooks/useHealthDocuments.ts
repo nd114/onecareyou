@@ -45,6 +45,7 @@ export interface HealthDocument {
   ai_category: string | null;
   ai_tags: string[] | null;
   document_date: string | null;
+  folder: string | null;
   source_context: string;
   created_at: string;
   updated_at: string;
@@ -87,6 +88,7 @@ export function useHealthDocuments() {
       aiSummarize = false,
       sourceContext = 'direct',
       familyMemberId,
+      folder,
     }: {
       file: File;
       title: string;
@@ -96,6 +98,7 @@ export function useHealthDocuments() {
       aiSummarize?: boolean;
       sourceContext?: string;
       familyMemberId?: string | null;
+      folder?: string | null;
     }) => {
       if (!user) throw new Error('Not authenticated');
       
@@ -125,6 +128,7 @@ export function useHealthDocuments() {
           notes: notes || null,
           tags: [],
           source_context: sourceContext,
+          folder: folder?.trim() || null,
           family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
         })
         .select()
@@ -203,6 +207,7 @@ export function useHealthDocuments() {
       notes?: string;
       document_date?: string;
       tags?: string[];
+      folder?: string | null;
     }) => {
       const { error } = await supabase
         .from('health_documents')
@@ -219,6 +224,28 @@ export function useHealthDocuments() {
     },
   });
 
+  const folders = Array.from(
+    new Set(documents.map((d) => d.folder).filter((f): f is string => !!f && f.trim().length > 0)),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const moveToFolder = useMutation({
+    mutationFn: async ({ ids, folder }: { ids: string[]; folder: string | null }) => {
+      if (ids.length === 0) return;
+      const { error } = await supabase
+        .from('health_documents')
+        .update({ folder: folder?.trim() || null })
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['health-documents'] });
+      toast.success(vars.folder ? `Moved to "${vars.folder}"` : 'Moved out of folder');
+    },
+    onError: (error: Error) => {
+      toast.error('Could not move document: ' + error.message);
+    },
+  });
+
   const getDownloadUrl = async (filePath: string) => {
     const { data } = await supabase.storage
       .from('health-documents')
@@ -228,7 +255,9 @@ export function useHealthDocuments() {
 
   return {
     documents,
+    folders,
     isLoading,
+    moveToFolder,
     uploadDocument,
     deleteDocument,
     updateDocument,

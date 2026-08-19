@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Search, FolderOpen, Loader2, Crown, Lock } from 'lucide-react';
+import { FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +17,11 @@ import { FREE_DOCUMENT_LIMIT } from '@/lib/pricing-constants';
 
 const HealthVault = () => {
   const { profile } = useAuth();
-  const { documents, isLoading } = useHealthDocuments();
+  const { documents, folders, isLoading } = useHealthDocuments();
   const { checkSubscription, isPremium } = useSubscription();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory | 'all'>('all');
+  const [activeFolder, setActiveFolder] = useState<string>('all');
   const [checkedSub, setCheckedSub] = useState(false);
 
   useEffect(() => {
@@ -31,6 +32,11 @@ const HealthVault = () => {
 
   const filteredDocuments = useMemo(() => {
     let filtered = documents;
+    if (activeFolder === '__unfiled__') {
+      filtered = filtered.filter((d) => !d.folder);
+    } else if (activeFolder !== 'all') {
+      filtered = filtered.filter((d) => d.folder === activeFolder);
+    }
     if (activeCategory !== 'all') {
       filtered = filtered.filter((d) => d.category === activeCategory || d.ai_category === activeCategory);
     }
@@ -46,12 +52,27 @@ const HealthVault = () => {
       );
     }
     return filtered;
-  }, [documents, activeCategory, search]);
+  }, [documents, activeCategory, activeFolder, search]);
 
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: documents.length };
-    documents.forEach((d) => {
+    const scoped =
+      activeFolder === 'all'
+        ? documents
+        : activeFolder === '__unfiled__'
+          ? documents.filter((d) => !d.folder)
+          : documents.filter((d) => d.folder === activeFolder);
+    const counts: Record<string, number> = { all: scoped.length };
+    scoped.forEach((d) => {
       counts[d.category] = (counts[d.category] || 0) + 1;
+    });
+    return counts;
+  }, [documents, activeFolder]);
+
+  const folderCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: documents.length, __unfiled__: 0 };
+    documents.forEach((d) => {
+      if (d.folder) counts[d.folder] = (counts[d.folder] || 0) + 1;
+      else counts.__unfiled__ += 1;
     });
     return counts;
   }, [documents]);
@@ -76,7 +97,11 @@ const HealthVault = () => {
                 Store and organize all your health documents in one place
               </p>
             </div>
-            {!isOverFreeLimit && <UploadDocumentDialog />}
+            {!isOverFreeLimit && (
+              <UploadDocumentDialog
+                defaultFolder={activeFolder === 'all' || activeFolder === '__unfiled__' ? null : activeFolder}
+              />
+            )}
           </div>
 
           {/* Premium Upsell Banner for free users at limit */}
@@ -118,6 +143,45 @@ const HealthVault = () => {
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
             />
+          </div>
+
+          {/* Folders */}
+          <div className="mb-4">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Folders</p>
+            <div className="flex gap-2 flex-wrap">
+              <Badge
+                variant={activeFolder === 'all' ? 'default' : 'outline'}
+                className="cursor-pointer gap-1"
+                onClick={() => setActiveFolder('all')}
+              >
+                <Files className="h-3 w-3" />
+                All documents ({folderCounts.all || 0})
+              </Badge>
+              <Badge
+                variant={activeFolder === '__unfiled__' ? 'default' : 'outline'}
+                className="cursor-pointer gap-1"
+                onClick={() => setActiveFolder('__unfiled__')}
+              >
+                <FileText className="h-3 w-3" />
+                Unfiled ({folderCounts.__unfiled__ || 0})
+              </Badge>
+              {folders.map((f) => (
+                <Badge
+                  key={f}
+                  variant={activeFolder === f ? 'default' : 'outline'}
+                  className="cursor-pointer gap-1"
+                  onClick={() => setActiveFolder(f)}
+                >
+                  <Folder className="h-3 w-3" />
+                  {f} ({folderCounts[f] || 0})
+                </Badge>
+              ))}
+            </div>
+            {folders.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Create folders when uploading a document, or use the folder icon on any document to file it.
+              </p>
+            )}
           </div>
 
           {/* Category Filters */}
