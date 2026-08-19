@@ -102,7 +102,7 @@ export function useUnitPreferences() {
         return { value: converted, unit: targetUnit };
       }
       default:
-        return { value, unit: config.unit };
+        return { value, unit: config?.unit || '' };
     }
   }, [preferences]);
 
