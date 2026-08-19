@@ -180,15 +180,7 @@ export function EditProfileDialog() {
                 onChange={(e) => set('height', e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="profile-weight">Weight (kg)</Label>
-              <Input
-                id="profile-weight"
-                type="number"
-                value={form.weight}
-                onChange={(e) => set('weight', e.target.value)}
-              />
-            </div>
+            {/* Weight lives with vitals, not the profile — logged on the Vitals page. */}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
