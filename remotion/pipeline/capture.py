@@ -144,14 +144,18 @@ async def run_step(page, step):
     elif d == "clickTab":
         await click_text(page, step["text"], role="tab")
     elif d == "clickFirstPatient":
+        target = step.get("text", "James Thompson")
         link = page.locator('a[href^="/clinician/patients/"]').first
+        if not await link.count():
+            link = page.get_by_text(target, exact=False).first
         if await link.count():
-            box = await link.bounding_box()
+            box = await link.bounding_box(timeout=2500)
             if box:
                 await ease_move(page, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
                 await asyncio.sleep(0.25)
-            await link.click(timeout=5000)
+            await link.click(timeout=3000, force=True)
             await settle(page)
+            await page.evaluate(HIDE_CHROME_JS)
         else:
             print("  ! no patient link")
     elif d == "openAI":
