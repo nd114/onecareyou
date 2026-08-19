@@ -253,14 +253,21 @@ export function useAIChat(options: UseAIChatOptions = {}) {
   const clearChat = useCallback(() => {
     setMessages([]);
     setError(null);
-  }, []);
+    // The next thing asked starts a fresh record rather than appending to the
+    // conversation just cleared off screen.
+    resetLog();
+  }, [resetLog]);
 
   /**
    * Continue an earlier conversation: its transcript becomes the live context,
-   * so the next answer is grounded in what was already said.
+   * so the next answer is grounded in what was already said. When the stored
+   * conversation is known, further messages append to that same record.
    */
   const loadConversation = useCallback(
-    (history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[]) => {
+    (
+      history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[],
+      conversationId?: string,
+    ) => {
       setError(null);
       setMessages(
         history.map((m) => ({
@@ -270,9 +277,12 @@ export function useAIChat(options: UseAIChatOptions = {}) {
           timestamp: m.createdAt ? new Date(m.createdAt) : new Date(),
         })),
       );
+      if (conversationId) void adopt(conversationId);
+      else resetLog();
     },
-    [],
+    [adopt, resetLog],
   );
+
 
   return { messages, isLoading, error, sendMessage, clearChat, loadConversation, approveActions, discardActions };
 
