@@ -22,9 +22,12 @@ export function DocumentViewerDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { getDownloadUrl } = useHealthDocuments();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [url, setUrl] = useState<string | null>(null);
   const [text, setText] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+
 
   const mime = doc.mime_type || '';
   const isImage = mime.startsWith('image/');
