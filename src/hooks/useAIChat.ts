@@ -31,7 +31,13 @@ interface UseAIChatOptions {
    * survives closing the drawer without ever being shown to another account.
    */
   persistSurface?: string;
-}
+  /**
+   * Which surface the saved transcript is attributed to in the patient's
+   * conversation history. Every chat is recorded so it can be read back later
+   * from the AI page, the drawer's history rail and Settings.
+   */
+  logSource?: 'simple_mode' | 'drawer';
+
 
 /** Cap what we persist so localStorage never grows unbounded. */
 const MAX_PERSISTED_MESSAGES = 60;
