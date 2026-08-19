@@ -1,32 +1,64 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bot, MessageSquare, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Bot, MessageSquare, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { AIChatDrawer } from '@/components/ai/AIChatDrawer';
+import { AIChatPanel, ClearConversationButton } from '@/components/ai/AIChatPanel';
+import { StoredConversation } from '@/components/ai/StoredConversation';
 import { useAIConversations, conversationSourceLabel } from '@/hooks/useAIConversations';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 /**
  * The AI pillar.
  *
- * Replaces the Learn pillar, whose "Ask AI" tab was a full-page copy of the
- * assistant that already floats on every patient screen — the same assistant in
- * two places, one of which you had to navigate to. The assistant stays where it
- * belongs, one tap away everywhere, and this page becomes the thing that was
- * actually missing: somewhere to read back what you asked it.
- *
- * Conversations were already being stored. Until now the only place they
- * appeared was a list in Settings that could delete one but not open it.
+ * The assistant lives in the page here — a side sheet is for when you are
+ * elsewhere in the platform and want to ask something without leaving. The
+ * conversation is the same one either way (it is persisted per account), so you
+ * can start in the drawer and carry on here. Past conversations sit beside it
+ * and can be read back without losing the live chat.
  */
 export default function AIHub() {
   const navigate = useNavigate();
-  const [chatOpen, setChatOpen] = useState(false);
-  const { conversations, isLoading } = useAIConversations();
+  const { conversationId } = useParams<{ conversationId: string }>();
+  const { conversations, isLoading, remove } = useAIConversations();
+  const [selected, setSelected] = useState<string | null>(conversationId ?? null);
+
+  // Deep links to /ai/:id open that conversation in the pane.
+  useEffect(() => {
+    setSelected(conversationId ?? null);
+  }, [conversationId]);
+
+  const openLiveChat = () => {
+    setSelected(null);
+    if (conversationId) navigate('/ai');
+  };
+
+  const openStored = (id: string) => {
+    setSelected(id);
+    navigate(`/ai/${id}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await remove.mutateAsync(id);
+      toast.success('Conversation deleted');
+      openLiveChat();
+    } catch {
+      toast.error('Could not delete the conversation. Please try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,89 +66,129 @@ export default function AIHub() {
       <Header />
       <SectionTabs section="ai" variant="patient" />
 
-      <main className="container py-6 px-4 max-w-3xl">
-        <Card className="mb-6 border-primary/20 bg-primary/5">
-          <CardContent className="p-5 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-medium">Ask about your health</p>
-                <p className="text-sm text-muted-foreground">
-                  Your medicines, readings and records — in plain language.
-                </p>
-              </div>
-            </div>
-            <Button className="gradient-primary border-0 shrink-0" onClick={() => setChatOpen(true)}>
-              <Bot className="h-4 w-4 mr-2" />
-              Ask
-            </Button>
-          </CardContent>
-        </Card>
+      <main className="container py-6 px-4 max-w-6xl">
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          {/* Conversation switcher */}
+          <Card className="lg:sticky lg:top-6 h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                Conversations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Button
+                variant={selected === null ? 'default' : 'outline'}
+                className={cn('w-full justify-start mb-3', selected === null && 'gradient-primary border-0')}
+                onClick={openLiveChat}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Current chat
+              </Button>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              Your conversations
-            </CardTitle>
-            <CardDescription>
-              Everything you have asked the assistant, kept privately on your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="text-center py-10">
-                <div className="h-14 w-14 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-                  <MessageSquare className="h-6 w-6 text-muted-foreground" />
+              {isLoading ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-                <p className="font-medium mb-1">No conversations yet</p>
-                <p className="text-sm text-muted-foreground mb-5">
-                  Ask the assistant a question and it will appear here.
+              ) : conversations.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">
+                  Past conversations will appear here once you have asked something.
                 </p>
-                <Button variant="outline" onClick={() => setChatOpen(true)}>
-                  Start one
-                </Button>
-              </div>
-            ) : (
-              <ul className="divide-y">
-                {conversations.map((conversation) => (
-                  <li key={conversation.id}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/ai/${conversation.id}`)}
-                      className="w-full text-left py-3 flex items-center gap-3 hover:bg-muted/40 rounded-lg px-2 -mx-2 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">
-                          {conversation.preview ?? 'Conversation'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(conversation.startedAt), { addSuffix: true })}
-                          {' · '}
-                          {conversation.messageCount}{' '}
-                          {conversation.messageCount === 1 ? 'message' : 'messages'}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="shrink-0 text-xs">
-                        {conversationSourceLabel(conversation.source)}
-                      </Badge>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+              ) : (
+                <ScrollArea className="max-h-[420px] pr-1">
+                  <ul className="space-y-1">
+                    {conversations.map((conversation) => (
+                      <li key={conversation.id}>
+                        <button
+                          type="button"
+                          onClick={() => openStored(conversation.id)}
+                          className={cn(
+                            'w-full text-left rounded-lg px-2.5 py-2 transition-colors',
+                            selected === conversation.id ? 'bg-muted' : 'hover:bg-muted/50',
+                          )}
+                        >
+                          <p className="text-sm font-medium truncate">
+                            {conversation.preview ?? 'Conversation'}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                            <Badge variant="outline" className="text-[10px] h-4 py-0">
+                              {conversationSourceLabel(conversation.source)}
+                            </Badge>
+                            {formatDistanceToNow(new Date(conversation.startedAt), { addSuffix: true })}
+                          </p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
 
-      <AIChatDrawer open={chatOpen} onOpenChange={setChatOpen} />
+          {/* Pane: live chat, or a stored conversation read back */}
+          {selected === null ? (
+            <Card className="overflow-hidden">
+              <AIChatPanel
+                className="h-[calc(100vh-16rem)] min-h-[480px]"
+                renderHeader={({ hasMessages, clearChat }) => (
+                  <div className="flex items-center gap-2 border-b px-4 py-3">
+                    <Bot className="h-5 w-5 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium leading-tight">OneCare Assistant</p>
+                      <p className="text-xs text-muted-foreground">
+                        Your medicines, readings and records — in plain language.
+                      </p>
+                    </div>
+                    {hasMessages && <ClearConversationButton onClear={clearChat} />}
+                  </div>
+                )}
+              />
+            </Card>
+          ) : (
+            <Card>
+              <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+                <div className="min-w-0">
+                  <p className="font-medium leading-tight truncate">Past conversation</p>
+                  <p className="text-xs text-muted-foreground">Read-only record of what you asked.</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={openLiveChat}>
+                    Back to chat
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          The whole exchange is removed from your account permanently. Anything the
+                          assistant added to your record — a reading, a medicine — stays where it is.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => handleDelete(selected)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+              <CardContent className="p-5">
+                <StoredConversation conversationId={selected} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
