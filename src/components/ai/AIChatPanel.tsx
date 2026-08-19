@@ -319,7 +319,7 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChat
 
   return (
     <div className={cn('flex flex-col min-h-0', className)}>
-      {renderHeader?.({ hasMessages: messages.length > 0, clearChat })}
+      {renderHeader?.({ hasMessages: messages.length > 0, clearChat, loadConversation })}
 
       <ScrollArea className="flex-1 px-4 py-3" ref={scrollRef}>
         {messages.length === 0 && (
