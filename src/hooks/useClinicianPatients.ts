@@ -10,6 +10,8 @@ interface SharePermissions {
   meds: boolean;
   adherence: boolean;
   profile: boolean;
+  documents?: boolean;
+  guidance?: boolean;
 }
 
 interface PatientIdentity {
