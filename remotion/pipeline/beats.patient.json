@@ -1,0 +1,156 @@
+{
+  "id": "patient",
+  "title": "OneCare for patients",
+  "subtitle": "A guided walkthrough",
+  "account": "demo-patient-1@onecare.you",
+  "viewport": { "width": 1600, "height": 900 },
+  "beats": [
+    {
+      "id": "p-intro",
+      "chapter": "Welcome",
+      "caption": "OneCare — patient walkthrough",
+      "narration": "Welcome to OneCare. In the next few minutes you'll see exactly how a patient keeps their whole health record in one place, and decides who gets to see it.",
+      "steps": [{ "do": "goto", "route": "/" }, { "do": "wait", "ms": 1200 }, { "do": "scroll", "to": 500 }]
+    },
+    {
+      "id": "p-signin",
+      "chapter": "Getting started",
+      "caption": "Sign in at /sign-in",
+      "narration": "You sign in with your email and password, or with Google. New accounts confirm their email first, then onboarding asks for your name, date of birth and country, which sets your units and emergency numbers.",
+      "steps": [{ "do": "goto", "route": "/sign-in" }, { "do": "wait", "ms": 1500 }]
+    },
+    {
+      "id": "p-today",
+      "chapter": "Today",
+      "caption": "Today — your wellness routine",
+      "narration": "This is Today. Your wellness routine for the day sits at the top: medication times, appointments and tasks. Anything missed becomes a catch-up reminder, never a scolding.",
+      "steps": [{ "do": "goto", "route": "/dashboard" }, { "do": "wait", "ms": 2000 }, { "do": "scroll", "to": 380 }]
+    },
+    {
+      "id": "p-today-quick",
+      "chapter": "Today",
+      "caption": "Quick actions and alerts",
+      "narration": "Alerts raised by your own thresholds, or by a clinician's rules, appear here too. And quick actions let you log a vital, mark a dose or add a document without hunting through menus.",
+      "steps": [{ "do": "scroll", "to": 800 }, { "do": "wait", "ms": 1500 }, { "do": "scroll", "to": 1200 }]
+    },
+    {
+      "id": "p-vitals",
+      "chapter": "My Health",
+      "caption": "Vitals — 90-day view",
+      "narration": "Under My Health, Vitals covers blood pressure, heart rate, glucose, weight, temperature and oxygen saturation. The default view is your last ninety days, with trends and statistics.",
+      "steps": [{ "do": "goto", "route": "/vitals" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 420 }]
+    },
+    {
+      "id": "p-vitals-log",
+      "chapter": "My Health",
+      "caption": "Every reading shows its source",
+      "narration": "Every reading records where it came from — entered by you, recorded by a clinician, or imported from a hospital system. That provenance is what makes the record trustworthy at the next appointment.",
+      "steps": [{ "do": "scroll", "to": 900 }, { "do": "wait", "ms": 2000 }]
+    },
+    {
+      "id": "p-meds",
+      "chapter": "My Health",
+      "caption": "Medications",
+      "narration": "Medications hold the name, dose, times, dates and prescriber. You can photograph a pack and let the scanner fill the form, and OneCare resolves drug names internationally rather than assuming one country's brand names.",
+      "steps": [{ "do": "goto", "route": "/medications" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 420 }]
+    },
+    {
+      "id": "p-meds-interactions",
+      "chapter": "My Health",
+      "caption": "Interaction checking",
+      "narration": "Interactions are checked across everything on your list, and stopping a medicine asks for a reason so the history stays honest. Expired courses deactivate on their own.",
+      "steps": [{ "do": "scroll", "to": 900 }, { "do": "wait", "ms": 2000 }]
+    },
+    {
+      "id": "p-vault",
+      "chapter": "My Health",
+      "caption": "Health Vault",
+      "narration": "The Health Vault is where documents live — discharge summaries, labs, letters — each with a type, a date, tags and a plain-language AI summary. You can group them into folders, and lab reports can be parsed straight into your vitals.",
+      "steps": [{ "do": "goto", "route": "/health-vault" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 400 }]
+    },
+    {
+      "id": "p-vault-viewer",
+      "chapter": "My Health",
+      "caption": "Open and share a document",
+      "narration": "Documents open right inside the app, in light or dark mode, and download as a clean PDF. Sharing a single document creates a link that expires in five minutes, so nothing leaks quietly.",
+      "steps": [{ "do": "scroll", "to": 700 }, { "do": "wait", "ms": 2400 }]
+    },
+    {
+      "id": "p-adherence",
+      "chapter": "My Health",
+      "caption": "Adherence report",
+      "narration": "Adherence turns all of those doses into a plain-language report you can export and hand to a clinician — no percentages without context, just what was taken and when.",
+      "steps": [{ "do": "goto", "route": "/adherence" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 450 }]
+    },
+    {
+      "id": "p-messages",
+      "chapter": "Care Team",
+      "caption": "Messages",
+      "narration": "Care Team starts with Messages: a thread with each connected clinician, attachments included. If a relationship ends, the thread stays readable, but becomes read-only.",
+      "steps": [{ "do": "goto", "route": "/messages" }, { "do": "wait", "ms": 2200 }]
+    },
+    {
+      "id": "p-carecircle",
+      "chapter": "Care Team",
+      "caption": "Care Circle — who sees what",
+      "narration": "Care Circle is the heart of it. You invite an individual clinician and choose the categories they see — medications, vitals, documents, guidance — and whether they may record on your chart.",
+      "steps": [{ "do": "goto", "route": "/care-circle" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 380 }]
+    },
+    {
+      "id": "p-carecircle-hospital",
+      "chapter": "Care Team",
+      "caption": "Institution shares and history",
+      "narration": "For a hospital you type its code and pick the same categories, and only the clinicians actually assigned to you inside that hospital can open the record. Every grant, change and revocation is listed with a timestamp.",
+      "steps": [{ "do": "scroll", "to": 850 }, { "do": "wait", "ms": 2200 }]
+    },
+    {
+      "id": "p-family",
+      "chapter": "Care Team",
+      "caption": "Family and caregivers",
+      "narration": "Family profiles let you track a dependant with a switcher in the header — documents, medications and vitals follow the member you've selected. Caregivers get delegated access, scoped so they can add records on your behalf.",
+      "steps": [{ "do": "goto", "route": "/family" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 380 }]
+    },
+    {
+      "id": "p-ai",
+      "chapter": "Learn",
+      "caption": "Ask AI",
+      "narration": "Under Learn, Ask AI explains your own records in plain language, and can take you straight to a screen. It can propose a change — but nothing is written until you tap Approve.",
+      "steps": [{ "do": "goto", "route": "/ai" }, { "do": "wait", "ms": 2400 }]
+    },
+    {
+      "id": "p-ai-approve",
+      "chapter": "Learn",
+      "caption": "Propose, then approve",
+      "narration": "You can dictate a question and proofread the transcript before it sends, and upload a file mid-conversation, which is filed into your Vault. The assistant never claims it changed something it didn't.",
+      "steps": [{ "do": "wait", "ms": 1400 }, { "do": "scroll", "to": 300 }, { "do": "wait", "ms": 1600 }]
+    },
+    {
+      "id": "p-simple",
+      "chapter": "Learn",
+      "caption": "Simple Mode at /assist",
+      "narration": "Simple Mode is a full-page, text-only version of the same assistant for anyone who finds dashboards hard. It only reads and navigates — it never writes.",
+      "steps": [{ "do": "goto", "route": "/assist" }, { "do": "wait", "ms": 2400 }]
+    },
+    {
+      "id": "p-privacy",
+      "chapter": "Privacy",
+      "caption": "Settings — consent and audit trail",
+      "narration": "AI features need explicit, granular consent, and you can revoke it in Settings. Identifying details are removed before any external AI call, data is encrypted at rest and in transit, and the audit trail shows every access to your record: who, when, and what.",
+      "steps": [{ "do": "goto", "route": "/settings" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 600 }]
+    },
+    {
+      "id": "p-offline",
+      "chapter": "Everyday",
+      "caption": "Offline and installable",
+      "narration": "Vitals, doses and schedule changes made without a connection are queued and sent when you're back online, with a banner that confirms when the queue clears. And the patient app installs to your home screen from the install page.",
+      "steps": [{ "do": "goto", "route": "/install" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 400 }]
+    },
+    {
+      "id": "p-outro",
+      "chapter": "Closing",
+      "caption": "onecare.you",
+      "narration": "That's OneCare: one record you own, shared exactly as far as you choose, and a care team that can finally see what happens between visits.",
+      "steps": [{ "do": "goto", "route": "/dashboard" }, { "do": "wait", "ms": 2400 }]
+    }
+  ]
+}

@@ -17,7 +17,7 @@ Optionally a third short **60-second combined overview** cut from the same foota
 
 ## Script
 
-No script exists yet for a how-to. I'll write two narration scripts derived directly from the two handbooks (`patient-guide.md` and `clinician-guide.md`), following their pillar structure so the wording matches product vocabulary (wellness routine, catch-up reminder, care record snapshot, "coming soon" where unbuilt). Scripts are saved as `docs/video/patient-howto-script.md` and `docs/video/clinician-howto-script.md` so you can edit lines before I render audio.
+No script exists yet for a how-to. I'll write two narration scripts derived from the platform functionality and documentations starting from the two handbooks (`patient-guide.md` and `clinician-guide.md`) and going on to others for current platform functionality so the wording matches product vocabulary (wellness routine, catch-up reminder, care record snapshot, "coming soon" where unbuilt). Scripts are saved as `docs/video/patient-howto-script.md` and `docs/video/clinician-howto-script.md` so you can edit lines before I render audio.
 
 ## How it runs
 
@@ -43,6 +43,6 @@ No credentials needed — demo sessions are minted from within the sandbox. Noth
 
 ## Notes and limits
 
-- Videos stay under ~3 minutes each so each render fits comfortably inside the sandbox's 10-minute render window; longer pieces get rendered per chapter and concatenated.
+- Videos stay under ~5 minutes each so each render fits comfortably inside the sandbox's 10-minute render window; longer pieces get rendered per chapter and concatenated.
 - Audio encoding uses AAC via the system ffmpeg on the final mux step, since Remotion's bundled encoder in this sandbox can't do it directly.
 - Capture only — no product code changes. If a walkthrough exposes a real UI bug (clipped text, empty pane), I'll report it rather than quietly edit the app.
