@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
  * Each child is expected to be position-relative (not fixed). The stack
  * handles the fixed positioning.
  */
-const RAISED_PREFIXES = ['/assist', '/messages', '/clinician/messages'];
+const RAISED_PREFIXES = ['/messages', '/clinician/messages'];
 
 export function FabStack({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();

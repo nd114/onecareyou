@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, Loader2, MessageSquare } from 'lucide-react';
+import { Trash2, Loader2, MessageSquare, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
@@ -62,7 +62,7 @@ export function AIHistorySection() {
           AI Conversation History
         </CardTitle>
         <CardDescription>
-          Your Simple Mode and Assistant conversations are stored privately, encrypted at rest. We retain them so we can review for safety, debug issues, comply with healthcare record-keeping obligations, and improve the assistant — never to sell or share with third parties. Using Simple Mode constitutes agreement with our{' '}
+          Your assistant conversations are stored privately, encrypted at rest. We retain them so we can review for safety, debug issues, comply with healthcare record-keeping obligations, and improve the assistant — never to sell or share with third parties. Using the assistant constitutes agreement with our{' '}
           <a className="underline" href="/privacy">Privacy Policy</a> and{' '}
           <a className="underline" href="/data-processing">Data Processing terms</a>. You can delete any conversation below at any time.
         </CardDescription>
@@ -83,7 +83,7 @@ export function AIHistorySection() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete all AI history?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This permanently removes every Simple Mode and Assistant conversation and message from your account. Audio recordings and uploaded photos linked to these messages remain in storage and can be removed under Settings → Data &amp; Privacy.
+                      This permanently removes every assistant conversation and message from your account. Audio recordings and uploaded photos linked to these messages remain in storage and can be removed under Settings → Data &amp; Privacy.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -96,16 +96,23 @@ export function AIHistorySection() {
             <div className="divide-y border rounded-md">
               {convs.map((c) => (
                 <div key={c.id} className="flex items-center justify-between p-3">
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {c.source === 'simple_mode' ? 'Simple Mode' : 'Assistant'} conversation
+                  {/* Reading a conversation lives on the AI page; this section
+                      keeps the privacy controls. Previously you could delete a
+                      conversation here but never open it. */}
+                  <Link to={`/ai/${c.id}`} className="space-y-0.5 min-w-0 group flex-1">
+                    <p className="text-sm font-medium truncate group-hover:underline">
+                      {c.source === 'simple_mode' ? 'Simple view' : 'Assistant'} conversation
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(c.started_at), 'PPp')} · {c.message_count} message{c.message_count === 1 ? '' : 's'}
                     </p>
-                  </div>
+                  </Link>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline" className="text-[10px]">{c.source}</Badge>
+                    <Button variant="ghost" size="icon" asChild aria-label="Open conversation">
+                      <Link to={`/ai/${c.id}`}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => deleteOne(c.id)} aria-label="Delete conversation">
                       <Trash2 className="h-4 w-4" />
                     </Button>
