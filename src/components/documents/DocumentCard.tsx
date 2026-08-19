@@ -79,7 +79,17 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="font-medium text-sm truncate">{doc.title || doc.file_name}</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowViewer(true)}
+                    className="text-left w-full"
+                    title="View this document"
+                  >
+                    <h3 className="font-medium text-sm truncate hover:text-primary transition-colors">
+                      {doc.title || doc.file_name}
+                    </h3>
+                  </button>
+
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <Badge variant="secondary" className={`text-xs ${categoryInfo.color}`}>
                       {categoryInfo.label}
