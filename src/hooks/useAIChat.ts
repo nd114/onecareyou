@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProposedAction, ActionOutcome, executeAction } from '@/lib/ai-actions';
 import { chatStorageKey } from '@/lib/chat-storage';
+import { useConversationLogger } from '@/hooks/useConversationLogger';
+
 
 export interface ChatMessage {
   id: string;
