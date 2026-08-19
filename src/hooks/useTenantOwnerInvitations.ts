@@ -34,7 +34,7 @@ export function useTenantOwnerInvitations() {
       if (error) throw error;
       return data as string;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('You now own this institution on OneCare');
       queryClient.invalidateQueries({ queryKey: ['my-tenant-owner-invitations'] });
       // Route guards read this: without it the new owner keeps being treated as
@@ -42,6 +42,10 @@ export function useTenantOwnerInvitations() {
       queryClient.invalidateQueries({ queryKey: ['clinician-profile'] });
       queryClient.invalidateQueries({ queryKey: ['practice'] });
       queryClient.invalidateQueries({ queryKey: ['practice-members'] });
+      // PracticeAdminRoute reads this cache synchronously; without a refetch the
+      // stale "not an admin" answer bounces the brand new owner to /dashboard.
+      queryClient.invalidateQueries({ queryKey: ['practice-memberships'] });
+      return queryClient.refetchQueries({ queryKey: ['practice-admin-access'] });
     },
     onError: (e: Error) => toast.error(e.message || 'Could not accept the invitation'),
   });
