@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Download, ExternalLink, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Download, ExternalLink, FileDown, Loader2 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HealthDocument, useHealthDocuments } from '@/hooks/useHealthDocuments';
+import { htmlToBlocks, saveBlocksAsPdf, textToBlocks } from '@/lib/document-pdf';
+
 
 /**
  * Reads a vault document in the platform, rather than pushing the person into a
@@ -19,9 +22,12 @@ export function DocumentViewerDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { getDownloadUrl } = useHealthDocuments();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [url, setUrl] = useState<string | null>(null);
   const [text, setText] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+
 
   const mime = doc.mime_type || '';
   const isImage = mime.startsWith('image/');
@@ -67,6 +73,52 @@ export function DocumentViewerDialog({
 
   const awaitingContent = !url || ((isHtml || isPlainText) && text === null);
 
+  // Stored HTML carries its own light styling, so readable dark mode needs a
+  // theme layer injected into the sandboxed frame.
+  const themedHtml = useMemo(() => {
+    if (!isHtml || text === null) return '';
+    const themeCss = `
+      <style>
+        :root { color-scheme: ${isDark ? 'dark' : 'light'}; }
+        html, body {
+          background: ${isDark ? '#0f1512' : '#ffffff'} !important;
+          color: ${isDark ? '#e8ece9' : '#1a1a1a'} !important;
+          font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          line-height: 1.6;
+          margin: 0;
+          padding: 24px;
+        }
+        * { border-color: ${isDark ? '#2c3a33' : '#e5e7eb'} !important; }
+        ${isDark ? `
+        h1, h2, h3, h4, h5, h6, strong, th { color: #f4f7f5 !important; }
+        p, li, td, span, div, dt, dd, small { color: #d5dbd7 !important; }
+        a { color: #8fd3ac !important; }
+        table, th, td { background: transparent !important; }
+        thead th, tr:nth-child(even) td { background: #17211c !important; }
+        header, footer, section, article, aside, main, div[style], .card, .box, .container {
+          background-color: transparent !important;
+          box-shadow: none !important;
+        }
+        hr { border-color: #2c3a33 !important; }
+        ` : ''}
+        img { max-width: 100%; height: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 6px 8px; border: 1px solid; text-align: left; }
+      </style>`;
+    return /<\/head>/i.test(text)
+      ? text.replace(/<\/head>/i, `${themeCss}</head>`)
+      : `<!doctype html><html><head><meta charset="utf-8">${themeCss}</head><body>${text}</body></html>`;
+  }, [isHtml, text, isDark]);
+
+  const handleDownloadPdf = () => {
+    const title = doc.title || doc.file_name || 'Document';
+    const base = (doc.file_name || title).replace(/\.[^.]+$/, '');
+    const blocks = isHtml ? htmlToBlocks(text ?? '') : textToBlocks(text ?? '');
+    saveBlocksAsPdf(title, blocks, `${base}.pdf`);
+  };
+
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,7 +127,7 @@ export function DocumentViewerDialog({
           <DialogTitle className="truncate text-base">{doc.title || doc.file_name}</DialogTitle>
         </DialogHeader>
 
-        <div className="bg-muted/30 h-[70vh] flex items-center justify-center overflow-auto">
+        <div className="bg-muted/30 dark:bg-background h-[70vh] flex items-center justify-center overflow-auto">
           {failed ? (
             <p className="text-sm text-muted-foreground px-6 text-center">
               This document could not be opened just now. Try downloading it instead.
@@ -100,7 +152,7 @@ export function DocumentViewerDialog({
             />
           ) : isHtml ? (
             <iframe
-              srcDoc={text ?? ''}
+              srcDoc={themedHtml}
               title={doc.title || doc.file_name}
               className="w-full h-full bg-background"
               sandbox=""
@@ -113,16 +165,22 @@ export function DocumentViewerDialog({
             <iframe
               src={url!}
               title={doc.title || doc.file_name}
-              className="w-full h-full bg-background"
+              className="w-full h-full bg-background dark:invert-0"
               sandbox=""
             />
           )}
 
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t">
+        <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-3 border-t">
           {url && (
             <>
+              {(isHtml || isPlainText) && text !== null && (
+                <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Download as PDF
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Open in new tab
@@ -136,6 +194,7 @@ export function DocumentViewerDialog({
             </>
           )}
         </div>
+
       </DialogContent>
     </Dialog>
   );
