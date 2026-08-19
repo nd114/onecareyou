@@ -1,10 +1,26 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye } from 'lucide-react';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, FolderPlus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +46,7 @@ interface DocumentCardProps {
 }
 
 export function DocumentCard({ document: doc, isPremium = false }: DocumentCardProps) {
-  const { deleteDocument, getDownloadUrl, triggerSummarize } = useHealthDocuments();
+  const { deleteDocument, getDownloadUrl, triggerSummarize, folders, moveToFolder } = useHealthDocuments();
   // Care records are legal artefacts: preserved, never deletable by either party.
   const isCareRecord = doc.source_context === CARE_RECORD_SOURCE || doc.category === 'care_record';
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
@@ -39,6 +55,8 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   const shareCount = allShareCounts[doc.id] || 0;
 
@@ -100,6 +118,12 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                         Permanent record
                       </Badge>
                     )}
+                    {doc.folder && (
+                      <Badge variant="outline" className="text-[10px] h-5 gap-1">
+                        <Folder className="h-2.5 w-2.5" />
+                        {doc.folder}
+                      </Badge>
+                    )}
                     {doc.source_context === 'vitals_upload' && (
                       <Badge variant="outline" className="text-[10px] h-5 gap-1">
                         <Upload className="h-2.5 w-2.5" />
@@ -127,6 +151,42 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowViewer(true)} title="View">
                     <Eye className="h-4 w-4" />
                   </Button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Move to folder">
+                        <FolderInput className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>Move to folder</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => moveToFolder.mutate({ ids: [doc.id], folder: null })}
+                        className="gap-2"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Unfiled
+                        {!doc.folder && <Check className="h-3.5 w-3.5 ml-auto" />}
+                      </DropdownMenuItem>
+                      {folders.map((f) => (
+                        <DropdownMenuItem
+                          key={f}
+                          onClick={() => moveToFolder.mutate({ ids: [doc.id], folder: f })}
+                          className="gap-2"
+                        >
+                          <Folder className="h-3.5 w-3.5" />
+                          <span className="truncate">{f}</span>
+                          {doc.folder === f && <Check className="h-3.5 w-3.5 ml-auto" />}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => { setNewFolderName(''); setShowNewFolder(true); }} className="gap-2">
+                        <FolderPlus className="h-3.5 w-3.5" />
+                        New folder…
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowShareDialog(true)} title="Share">
                     <Share2 className="h-4 w-4" />
