@@ -265,7 +265,7 @@ export default function BetaLanding() {
           <Link to="/beta/nda" className="hover:text-primary">
             Beta NDA
           </Link>
-          <Link to="/privacy-policy" className="hover:text-primary">
+          <Link to="/privacy" className="hover:text-primary">
             Privacy
           </Link>
           <a href={`mailto:${BRAND.emails.hello}`} className="hover:text-primary">

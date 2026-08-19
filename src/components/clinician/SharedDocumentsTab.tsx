@@ -12,15 +12,48 @@ import { toast } from 'sonner';
 interface SharedDocumentsTabProps {
   patientUserId: string;
   shareId: string;
+  /**
+   * True when the patient granted access to their whole vault rather than
+   * sharing documents one at a time. Changes what is listed and which route
+   * the signed URL comes from.
+   */
+  wholeVault?: boolean;
 }
 
-export function SharedDocumentsTab({ patientUserId, shareId }: SharedDocumentsTabProps) {
+export function SharedDocumentsTab({
+  patientUserId,
+  shareId,
+  wholeVault = false,
+}: SharedDocumentsTabProps) {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // Fetch shared documents via document_shares join
   const { data: sharedDocs = [], isLoading } = useQuery({
-    queryKey: ['clinician-shared-documents', patientUserId, shareId],
+    queryKey: ['clinician-shared-documents', patientUserId, shareId, wholeVault],
     queryFn: async () => {
+      // Whole-vault access reads health_documents directly — RLS admits the
+      // clinician only while the patient's documents permission is on. The
+      // per-document route reads document_shares as it always has.
+      if (wholeVault) {
+        const { data, error } = await supabase
+          .from('health_documents')
+          .select(`
+            id, title, file_name, file_path, category, document_date,
+            ai_summary, ai_tags, mime_type, file_size, notes, created_at
+          `)
+          .eq('user_id', patientUserId)
+          .order('document_date', { ascending: false, nullsFirst: false });
+
+        if (error) throw error;
+        // Same row shape either way, so the list below does not care which
+        // route the documents arrived by.
+        return (data || []).map((doc: any) => ({
+          id: doc.id,
+          document_id: doc.id,
+          shared_at: doc.created_at,
+          health_documents: doc,
+        }));
+      }
+
       const { data, error } = await supabase
         .from('document_shares')
         .select(`
@@ -51,11 +84,13 @@ export function SharedDocumentsTab({ patientUserId, shareId }: SharedDocumentsTa
     enabled: !!patientUserId && !!shareId,
   });
 
-  const handleDownload = async (docShareId: string) => {
-    setDownloadingId(docShareId);
+  const handleDownload = async (rowId: string, documentId: string) => {
+    setDownloadingId(rowId);
     try {
       const { data, error } = await supabase.functions.invoke('get-shared-document-url', {
-        body: { documentShareId: docShareId },
+        body: wholeVault
+          ? { documentId, providerShareId: shareId }
+          : { documentShareId: rowId },
       });
       if (error) throw error;
       if (data?.signedUrl) {
@@ -76,7 +111,9 @@ export function SharedDocumentsTab({ patientUserId, shareId }: SharedDocumentsTa
           Shared Documents
         </CardTitle>
         <CardDescription>
-          Documents the patient has chosen to share with you
+          {wholeVault
+            ? 'This patient has shared their whole Health Vault with you'
+            : 'Documents the patient has chosen to share with you'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -87,8 +124,12 @@ export function SharedDocumentsTab({ patientUserId, shareId }: SharedDocumentsTa
         ) : sharedDocs.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No documents shared by this patient yet</p>
-            <p className="text-xs mt-1">Patients can share specific documents from their Health Vault</p>
+            <p>{wholeVault ? 'This patient has no documents yet' : 'No documents shared by this patient yet'}</p>
+            <p className="text-xs mt-1">
+              {wholeVault
+                ? 'Anything they add to their Health Vault will appear here'
+                : 'Patients can share specific documents from their Health Vault'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -126,7 +167,7 @@ export function SharedDocumentsTab({ patientUserId, shareId }: SharedDocumentsTa
                           variant="outline"
                           size="sm"
                           className="flex-shrink-0 h-8"
-                          onClick={() => handleDownload(share.id)}
+                          onClick={() => handleDownload(share.id, share.document_id)}
                           disabled={isDownloading}
                         >
                           {isDownloading ? (

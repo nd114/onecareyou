@@ -652,6 +652,7 @@ const ClinicianPatientDetail = () => {
               <SharedDocumentsTab
                 patientUserId={patient.user_id}
                 shareId={patient.id}
+                wholeVault={patient.permissions?.documents === true}
               />
             </TabsContent>
 

@@ -8,6 +8,12 @@ interface SharePermissions {
   meds: boolean;
   adherence: boolean;
   profile: boolean;
+  /**
+   * Whole-vault access. Absent or false means the stricter default: this
+   * clinician sees only the documents the patient shared one at a time,
+   * through document_shares.
+   */
+  documents?: boolean;
 }
 
 export interface ProviderShare {

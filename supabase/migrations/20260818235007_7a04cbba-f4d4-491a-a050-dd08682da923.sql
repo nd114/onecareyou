@@ -1,3 +1,9 @@
+-- NOTE (added on review): this was written as a one-off script to run in the
+-- SQL editor and has since been applied as a migration. Migrations run against
+-- every environment, including fresh ones with no demo accounts, so the hard
+-- failure below has been softened to a no-op. Demo data must never be able to
+-- break a deploy of the schema.
+--
 DO $$
 DECLARE
   _james uuid;
@@ -6,7 +12,8 @@ DECLARE
 BEGIN
   SELECT id INTO _james FROM auth.users WHERE email = 'demo-patient-1@onecare.you';
   IF _james IS NULL THEN
-    RAISE EXCEPTION 'demo-patient-1@onecare.you not found. Run seed-demo-data first.';
+    RAISE NOTICE 'Vault document seed skipped: demo patient not present in this database.';
+    RETURN;
   END IF;
 
   DELETE FROM public.health_documents
