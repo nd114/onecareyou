@@ -24,16 +24,24 @@ export async function trackBetaEvent(
   }
 
   try {
+    const params = new URLSearchParams(window.location.search);
+    // The database only accepts a small, well-formed payload, so normalise here.
+    const clip = (v: string | null, max = 200) => (v ? v.slice(0, max) : null);
+    let metadataPayload: Record<string, unknown> = {
+      ...metadata,
+      path: clip(window.location.pathname),
+      referrer: clip(document.referrer || null),
+      utm_source: clip(params.get('utm_source'), 80),
+      utm_campaign: clip(params.get('utm_campaign'), 80),
+    };
+    if (JSON.stringify(metadataPayload).length > 1800) {
+      metadataPayload = { path: clip(window.location.pathname) };
+    }
+
     await supabase.from('beta_events').insert({
-      event_name: eventName.slice(0, 80),
+      event_name: eventName.toLowerCase().replace(/[^a-z0-9_-]/g, '_').slice(0, 80),
       source,
-      metadata: {
-        ...metadata,
-        path: window.location.pathname,
-        referrer: document.referrer || null,
-        utm_source: new URLSearchParams(window.location.search).get('utm_source'),
-        utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign'),
-      },
+      metadata: metadataPayload as never,
     });
   } catch {
     /* ignore */
