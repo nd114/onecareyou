@@ -59,7 +59,7 @@
       "chapter": "Patients",
       "caption": "Medications and documents",
       "narration": "Medications show what the patient is actually taking, not what was prescribed at discharge. Shared documents sit alongside, with AI summaries you can skim before the consultation.",
-      "steps": [{ "do": "clickTab", "text": "Medications" }, { "do": "wait", "ms": 2200 }, { "do": "clickTab", "text": "Documents" }, { "do": "wait", "ms": 1800 }]
+      "steps": [{ "do": "clickTab", "text": "Meds" }, { "do": "wait", "ms": 2200 }, { "do": "clickTab", "text": "Documents" }, { "do": "wait", "ms": 1800 }]
     },
     {
       "id": "c-guidance",
