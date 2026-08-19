@@ -80,7 +80,7 @@
       "chapter": "My Health",
       "caption": "Adherence report",
       "narration": "Adherence turns all of those doses into a plain-language report you can export and hand to a clinician — no percentages without context, just what was taken and when.",
-      "steps": [{ "do": "goto", "route": "/adherence" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 450 }]
+      "steps": [{ "do": "goto", "route": "/adherence-report" }, { "do": "wait", "ms": 2200 }, { "do": "scroll", "to": 450 }]
     },
     {
       "id": "p-messages",
