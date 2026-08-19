@@ -39,9 +39,8 @@ export function EditProfileDialog() {
     gender: '',
     blood_type: '',
     height: '',
-    weight: '',
     emergency_contact_name: '',
-    emergency_contact_phone: '',
+    emergency_number: '',
   });
 
   useEffect(() => {
@@ -53,9 +52,8 @@ export function EditProfileDialog() {
       gender: (p.gender as string) ?? '',
       blood_type: (p.blood_type as string) ?? '',
       height: p.height != null ? String(p.height) : '',
-      weight: p.weight != null ? String(p.weight) : '',
       emergency_contact_name: (p.emergency_contact_name as string) ?? '',
-      emergency_contact_phone: (p.emergency_contact_phone as string) ?? '',
+      emergency_number: (p.emergency_number as string) ?? '',
     });
   }, [profile]);
 
@@ -78,9 +76,8 @@ export function EditProfileDialog() {
         gender: form.gender || null,
         blood_type: form.blood_type || null,
         height: form.height ? Number(form.height) : null,
-        weight: form.weight ? Number(form.weight) : null,
         emergency_contact_name: form.emergency_contact_name.trim() || null,
-        emergency_contact_phone: form.emergency_contact_phone.trim() || null,
+        emergency_number: form.emergency_number.trim() || null,
       } as never)
       .eq('user_id', user.id);
     setSaving(false);
@@ -183,15 +180,7 @@ export function EditProfileDialog() {
                 onChange={(e) => set('height', e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="profile-weight">Weight (kg)</Label>
-              <Input
-                id="profile-weight"
-                type="number"
-                value={form.weight}
-                onChange={(e) => set('weight', e.target.value)}
-              />
-            </div>
+            {/* Weight lives with vitals, not the profile — logged on the Vitals page. */}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -207,8 +196,8 @@ export function EditProfileDialog() {
               <Label htmlFor="profile-ec-phone">Their phone</Label>
               <Input
                 id="profile-ec-phone"
-                value={form.emergency_contact_phone}
-                onChange={(e) => set('emergency_contact_phone', e.target.value)}
+                value={form.emergency_number}
+                onChange={(e) => set('emergency_number', e.target.value)}
               />
             </div>
           </div>
