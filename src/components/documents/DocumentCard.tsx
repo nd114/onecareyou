@@ -250,6 +250,13 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
         documentId={doc.id}
         documentTitle={doc.title || doc.file_name}
       />
+
+      <DocumentViewerDialog
+        document={doc}
+        open={showViewer}
+        onOpenChange={setShowViewer}
+      />
+
     </>
   );
 }
