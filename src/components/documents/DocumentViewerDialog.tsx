@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Download, ExternalLink, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Download, ExternalLink, FileDown, Loader2 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HealthDocument, useHealthDocuments } from '@/hooks/useHealthDocuments';
+import { htmlToBlocks, saveBlocksAsPdf, textToBlocks } from '@/lib/document-pdf';
+
 
 /**
  * Reads a vault document in the platform, rather than pushing the person into a
