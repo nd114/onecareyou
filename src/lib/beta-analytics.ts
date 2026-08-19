@@ -41,7 +41,7 @@ export async function trackBetaEvent(
     await supabase.from('beta_events').insert({
       event_name: eventName.toLowerCase().replace(/[^a-z0-9_-]/g, '_').slice(0, 80),
       source,
-      metadata: metadataPayload,
+      metadata: metadataPayload as never,
     });
   } catch {
     /* ignore */
