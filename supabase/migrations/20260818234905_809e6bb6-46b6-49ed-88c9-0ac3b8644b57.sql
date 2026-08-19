@@ -1,3 +1,9 @@
+-- NOTE (added on review): this was written as a one-off script to run in the
+-- SQL editor and has since been applied as a migration. Migrations run against
+-- every environment, including fresh ones with no demo accounts, so the hard
+-- failure below has been softened to a no-op. Demo data must never be able to
+-- break a deploy of the schema.
+--
 DO $$
 DECLARE
   _james    uuid;
@@ -12,7 +18,8 @@ BEGIN
    WHERE email IN ('demo-patient-1@onecare.you','demo-clinician-1@onecare.you','demo-clinician-3@onecare.you')
      AND email NOT LIKE 'demo-%@onecare.you';
   IF _bad > 0 THEN
-    RAISE EXCEPTION 'Refusing to run: matched a non-demo account';
+    RAISE NOTICE 'Demo seed skipped: matched a non-demo account.';
+    RETURN;
   END IF;
 
   SELECT id INTO _james FROM auth.users WHERE email = 'demo-patient-1@onecare.you';
@@ -20,7 +27,9 @@ BEGIN
   SELECT id INTO _third FROM auth.users WHERE email = 'demo-clinician-3@onecare.you';
 
   IF _james IS NULL OR _emily IS NULL THEN
-    RAISE EXCEPTION 'Demo accounts not found. Run the seed-demo-data function first.';
+    -- No demo accounts here (a fresh or production database). Nothing to seed.
+    RAISE NOTICE 'Demo seed skipped: demo accounts not present in this database.';
+    RETURN;
   END IF;
 
   SELECT id INTO _share
