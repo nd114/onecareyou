@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock } from 'lucide-react';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,9 @@ import { HealthDocument, DOCUMENT_CATEGORIES, useHealthDocuments } from '@/hooks
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { ShareDocumentDialog } from '@/components/documents/ShareDocumentDialog';
+import { DocumentViewerDialog } from '@/components/documents/DocumentViewerDialog';
 import { useDocumentShares } from '@/hooks/useDocumentShares';
+
 
 interface DocumentCardProps {
   document: HealthDocument;
@@ -36,6 +38,8 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   const [downloading, setDownloading] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showViewer, setShowViewer] = useState(false);
+
   const shareCount = allShareCounts[doc.id] || 0;
 
   const categoryInfo = DOCUMENT_CATEGORIES.find((c) => c.value === doc.category) || DOCUMENT_CATEGORIES[DOCUMENT_CATEGORIES.length - 1];
