@@ -17,7 +17,7 @@ interface AIChatDrawerProps {
  */
 export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
   const [showHistory, setShowHistory] = useState(false);
-  const loadRef = useRef<((history: LoadedHistory) => void) | null>(null);
+  const loadRef = useRef<((history: LoadedHistory, conversationId?: string) => void) | null>(null);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -26,8 +26,8 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
           <ConversationHistoryRail
             className="absolute inset-0 z-20 w-full sm:static sm:z-auto sm:w-60 sm:shrink-0 bg-background sm:bg-muted/30"
             onClose={() => setShowHistory(false)}
-            onLoad={(history) => {
-              loadRef.current?.(history);
+            onLoad={(history, conversationId) => {
+              loadRef.current?.(history, conversationId);
               setShowHistory(false);
             }}
           />
