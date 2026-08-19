@@ -17,7 +17,7 @@ const VOICE_ID = process.env.ONECARE_VOICE_ID ?? "EXAVITQu4vr4xnSDxMaL";
 const MODEL = "eleven_multilingual_v2";
 
 const beats = JSON.parse(fs.readFileSync(path.join(dir, `beats.${key}.json`), "utf8"));
-const outDir = path.join("/tmp/howto", key, "audio");
+const outDir = path.join("/mnt/documents/howto-build", key, "audio");
 fs.mkdirSync(outDir, { recursive: true });
 
 const manifest = [];
@@ -53,7 +53,7 @@ for (let i = 0; i < beats.beats.length; i++) {
 
 const total = manifest.reduce((a, b) => a + b.duration + 0.6, 0);
 fs.writeFileSync(
-  path.join("/tmp/howto", key, "manifest.json"),
+  path.join("/mnt/documents/howto-build", key, "manifest.json"),
   JSON.stringify({ ...beats, beats: manifest, totalSeconds: total }, null, 2),
 );
 console.log(`${key}: ${manifest.length} clips, ~${Math.round(total)}s`);

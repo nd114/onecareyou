@@ -16,9 +16,9 @@ from playwright.async_api import async_playwright
 
 KEY = sys.argv[1]
 BASE = "http://localhost:8080"
-WORK = f"/tmp/howto/{KEY}"
+WORK = f"/mnt/documents/howto-build/{KEY}"
 MANIFEST = json.load(open(f"{WORK}/manifest.json"))
-SESSION = json.load(open(f"/tmp/howto/session-{KEY}.json"))
+SESSION = json.load(open(f"/mnt/documents/howto-build/session-{KEY}.json"))
 VIDEO_DIR = f"{WORK}/video"
 W, H = MANIFEST["viewport"]["width"], MANIFEST["viewport"]["height"]
 
