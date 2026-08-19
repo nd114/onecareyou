@@ -42,7 +42,7 @@ import { PatientActionRail } from '@/components/clinician/PatientActionRail';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useAlertRules } from '@/hooks/useAlertRules';
-import { VITAL_CONFIG, resolveVitalConfig, resolveVitalConfig } from '@/types/health';
+import { VITAL_CONFIG, resolveVitalConfig } from '@/types/health';
 import { format, formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
