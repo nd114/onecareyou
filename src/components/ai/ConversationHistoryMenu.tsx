@@ -55,33 +55,38 @@ export function ConversationHistoryMenu({
           <History className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-2">
-        <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-          Continue a past conversation
-        </p>
+      <PopoverContent align="start" side="bottom" sideOffset={8} className="w-[19rem] p-0 overflow-hidden">
+        <div className="px-3 py-2.5 border-b bg-muted/40">
+          <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
+            Past conversations
+          </p>
+          <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+            Pick one up where you left off
+          </p>
+        </div>
         {isLoading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : conversations.length === 0 ? (
-          <p className="px-2 py-2 text-xs text-muted-foreground">
+          <p className="px-3 py-4 text-xs text-muted-foreground">
             Nothing saved yet — ask something and it will show up here.
           </p>
         ) : (
-          <ScrollArea className="max-h-72">
-            <ul className="space-y-0.5">
+          <ScrollArea className="h-[19rem]">
+            <ul className="p-1.5 space-y-1">
               {conversations.map((conversation) => (
                 <li key={conversation.id}>
                   <button
                     type="button"
                     disabled={loadingId !== null}
                     onClick={() => resume(conversation.id)}
-                    className="w-full text-left rounded-md px-2 py-2 hover:bg-muted transition-colors disabled:opacity-60"
+                    className="w-full text-left rounded-lg border border-transparent px-2.5 py-2 hover:bg-muted hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors disabled:opacity-60"
                   >
-                    <span className="block text-sm truncate">
+                    <span className="block text-sm font-medium leading-snug line-clamp-2">
                       {conversation.preview ?? 'Conversation'}
                     </span>
-                    <span className="block text-[11px] text-muted-foreground">
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
                       {conversationSourceLabel(conversation.source)} ·{' '}
                       {formatDistanceToNow(new Date(conversation.startedAt), { addSuffix: true })}
                       {loadingId === conversation.id && ' · opening…'}
