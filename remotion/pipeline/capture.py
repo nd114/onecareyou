@@ -188,7 +188,7 @@ async def main():
 
         t0 = time.monotonic()
         timeline = []
-        for b in MANIFEST["beats"]:
+        for b in (MANIFEST["beats"][: int(os.environ.get("OC_LIMIT", "0"))] or MANIFEST["beats"]):
             start = time.monotonic() - t0
             budget = b["duration"] + 0.7
             print(f"[{start:6.1f}s] {b['id']} budget {budget:.1f}s")
