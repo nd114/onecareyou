@@ -1564,6 +1564,7 @@ export type Database = {
           file_name: string
           file_path: string
           file_size: number | null
+          folder: string | null
           id: string
           mime_type: string | null
           notes: string | null
@@ -1585,6 +1586,7 @@ export type Database = {
           file_name: string
           file_path: string
           file_size?: number | null
+          folder?: string | null
           id?: string
           mime_type?: string | null
           notes?: string | null
@@ -1606,6 +1608,7 @@ export type Database = {
           file_name?: string
           file_path?: string
           file_size?: number | null
+          folder?: string | null
           id?: string
           mime_type?: string | null
           notes?: string | null
