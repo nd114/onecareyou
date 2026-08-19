@@ -37,6 +37,9 @@ interface UseAIChatOptions {
    * from the AI page, the drawer's history rail and Settings.
    */
   logSource?: 'simple_mode' | 'drawer';
+}
+
+
 
 
 /** Cap what we persist so localStorage never grows unbounded. */
