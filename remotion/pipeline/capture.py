@@ -113,15 +113,19 @@ async def settle(page):
 
 async def click_text(page, text, role="tab"):
     try:
-        el = page.get_by_role(role, name=text, exact=False).first
+        el = page.locator('[role="tab"]').filter(has_text=text).first
         if not await el.count():
-            el = page.get_by_text(text, exact=False).first
-        box = await el.bounding_box()
+            el = page.get_by_role("tab", name=text, exact=False).first
+        if not await el.count():
+            print("  ! no tab", text)
+            return False
+        box = await el.bounding_box(timeout=2500)
         if box:
             await ease_move(page, box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
             await asyncio.sleep(0.2)
-        await el.click(timeout=4000)
-        await settle(page)
+        await el.click(timeout=2500, force=True)
+        await asyncio.sleep(0.8)
+        await page.evaluate(HIDE_CHROME_JS)
         return True
     except Exception as e:
         print("  ! click failed", text, type(e).__name__)
