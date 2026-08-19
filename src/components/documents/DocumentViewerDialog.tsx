@@ -20,20 +20,42 @@ export function DocumentViewerDialog({
 }) {
   const { getDownloadUrl } = useHealthDocuments();
   const [url, setUrl] = useState<string | null>(null);
+  const [text, setText] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+
+  const mime = doc.mime_type || '';
+  const isImage = mime.startsWith('image/');
+  const isHtml = mime === 'text/html' || /\.html?$/i.test(doc.file_name || '');
+  const isPlainText = !isHtml && (mime.startsWith('text/') || mime === 'application/json');
+  const isPdf = mime === 'application/pdf';
+  const canPreview = isImage || isPdf || isHtml || isPlainText;
 
   useEffect(() => {
     if (!open) {
       setUrl(null);
+      setText(null);
       setFailed(false);
       return;
     }
     let active = true;
     getDownloadUrl(doc.file_path)
-      .then((signed) => {
+      .then(async (signed) => {
         if (!active) return;
-        if (signed) setUrl(signed);
-        else setFailed(true);
+        if (!signed) {
+          setFailed(true);
+          return;
+        }
+        setUrl(signed);
+        // Storage may hand text back with a generic content type, which makes a
+        // plain iframe show the markup as source. Read it and render it instead.
+        if (isHtml || isPlainText) {
+          try {
+            const body = await fetch(signed).then((r) => r.text());
+            if (active) setText(body);
+          } catch {
+            if (active) setText('');
+          }
+        }
       })
       .catch(() => active && setFailed(true));
     return () => {
@@ -43,10 +65,8 @@ export function DocumentViewerDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, doc.file_path]);
 
-  const mime = doc.mime_type || '';
-  const isImage = mime.startsWith('image/');
-  const isFramable = mime === 'application/pdf' || mime.startsWith('text/') || mime === 'application/json';
-  const canPreview = isImage || isFramable;
+  const awaitingContent = !url || ((isHtml || isPlainText) && text === null);
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
