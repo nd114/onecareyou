@@ -387,9 +387,10 @@ const App = () => (
             } />
             <Route path="/ai/:conversationId" element={
               <PatientRoute>
-                <AIConversation />
+                <AIHub />
               </PatientRoute>
             } />
+
             {/* /assist was a full-page copy of the assistant that already floats
                 on every patient screen. Kept as a redirect so old links, the PWA
                 shortcut and anything bookmarked still land somewhere useful. */}
