@@ -16,15 +16,10 @@ interface VitalTrendChartProps {
 
 export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  // Some records (imported or legacy) use vital keys that have no config entry —
-  // fall back to a generic label so the chart never crashes.
-  const config = VITAL_CONFIG[type] ?? {
-    label: String(type).replace(/_/g, ' '),
-    unit: '',
-    category: 'Other',
-    normalMin: 0,
-    normalMax: 0,
-  };
+  // Some records (imported or legacy) use vital keys that differ from the config —
+  // resolve aliases and fall back to a generic label so the chart never crashes.
+  const config = resolveVitalConfig(type);
+  const resolvedType = resolveVitalType(type);
   const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
   const displayUnit = getDisplayUnit(resolvedType);
