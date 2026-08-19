@@ -3756,8 +3756,16 @@ export type Database = {
         Returns: boolean
       }
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
+      can_read_resume_object: {
+        Args: { object_name: string }
+        Returns: boolean
+      }
       clinician_had_patient_access: {
         Args: { patient_user_id: string }
+        Returns: boolean
+      }
+      clinician_had_patient_access_at: {
+        Args: { at_time: string; patient_user_id: string }
         Returns: boolean
       }
       clinician_has_patient_access: {
