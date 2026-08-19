@@ -191,6 +191,12 @@ export function useAIChat(options: UseAIChatOptions = {}) {
       };
 
       setMessages(prev => [...prev, assistantMsg]);
+
+      // Record the exchange so it can be read back later. Logging failures are
+      // swallowed inside the logger — the chat must never break over it.
+      await logMessage({ role: 'user', content: userMsg.content });
+      await logMessage({ role: 'assistant', content: assistantMsg.content });
+      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
       return null;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
@@ -206,7 +212,8 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, allowActions]);
+  }, [messages, isLoading, allowActions, logMessage, queryClient]);
+
 
   /** Run the actions the assistant proposed — only ever called from an explicit user approval. */
   const approveActions = useCallback(async (messageId: string) => {
