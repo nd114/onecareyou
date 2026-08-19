@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, resolveVitalConfig } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { format } from 'date-fns';
@@ -16,7 +16,7 @@ interface ExpandedChartModalProps {
 }
 
 export function ExpandedChartModal({ open, onOpenChange, type, data, title }: ExpandedChartModalProps) {
-  const config = VITAL_CONFIG[type];
+  const config = resolveVitalConfig(type);
   const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
   const displayUnit = getDisplayUnit(type);

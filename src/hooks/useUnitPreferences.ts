@@ -83,7 +83,7 @@ export function useUnitPreferences() {
     fromUnit?: string
   ): { value: number; unit: string } => {
     const config = VITAL_CONFIG[type];
-    const baseUnit = fromUnit || config.unit;
+    const baseUnit = fromUnit || config?.unit || '';
 
     switch (type) {
       case 'glucose': {
@@ -102,7 +102,7 @@ export function useUnitPreferences() {
         return { value: converted, unit: targetUnit };
       }
       default:
-        return { value, unit: config.unit };
+        return { value, unit: config?.unit || '' };
     }
   }, [preferences]);
 
@@ -141,13 +141,13 @@ export function useUnitPreferences() {
       case 'temperature':
         return preferences.temperature;
       default:
-        return VITAL_CONFIG[type].unit;
+        return VITAL_CONFIG[type]?.unit ?? '';
     }
   }, [preferences]);
 
   // Get normal range in user's preferred unit
   const getNormalRange = useCallback((type: VitalType): { min: number; max: number; unit: string } => {
-    const config = VITAL_CONFIG[type];
+    const config = VITAL_CONFIG[type] ?? { unit: '', normalMin: 0, normalMax: 0 };
     const baseMin = config.normalMin;
     const baseMax = config.normalMax;
 

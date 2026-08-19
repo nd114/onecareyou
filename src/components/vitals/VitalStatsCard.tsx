@@ -1,7 +1,7 @@
 import { forwardRef, memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, resolveVitalConfig } from '@/types/health';
 import { TrendingUp, TrendingDown, Minus, LucideIcon } from 'lucide-react';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
@@ -24,7 +24,7 @@ interface VitalStatsCardProps {
 
 export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProps>(
   function VitalStatsCard({ type, latestVital, stats, icon: Icon, colorClass }, ref) {
-    const config = VITAL_CONFIG[type];
+    const config = resolveVitalConfig(type);
     const { convertVitalValue, getDisplayUnit, getNormalRange } = useUnitPreferences();
 
     const normalRange = getNormalRange(type);
