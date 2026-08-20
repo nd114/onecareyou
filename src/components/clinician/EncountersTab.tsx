@@ -1,6 +1,8 @@
 // Phase 1.4 — Encounter editor dialog + tab content.
 import { useState, useMemo } from "react";
-import { Plus, FileSignature, Loader2, ChevronRight, FileText, Mic, Eye, EyeOff } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Plus, FileSignature, Loader2, ChevronRight, FileText, Mic, Eye, EyeOff, FileAudio } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +49,23 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
   const [scribeFor, setScribeFor] = useState<Encounter | null>(null);
   const [signing, setSigning] = useState<Encounter | null>(null);
   const [shareOnSign, setShareOnSign] = useState(true);
+
+  // Which of these encounters began as a dictation. A dictation row is
+  // readable only by the clinician who recorded it, so a colleague simply gets
+  // no rows back and sees no marker — which is the right answer, not a bug.
+  const encounterIds = useMemo(() => encounters.map((e) => e.id), [encounters]);
+  const { data: fromDictation } = useQuery({
+    queryKey: ["encounter-dictations", patientUserId, encounterIds.length],
+    enabled: encounterIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("clinician_dictations")
+        .select("encounter_id")
+        .in("encounter_id", encounterIds);
+      if (error) return new Set<string>();
+      return new Set<string>((data ?? []).map((r: any) => r.encounter_id));
+    },
+  });
   const [draft, setDraft] = useState({
     visit_type: "follow_up",
     chief_complaint: "",
@@ -245,6 +264,12 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                     <Badge variant={enc.status === "signed" ? "default" : "outline"} className="text-[10px]">
                       {enc.status}
                     </Badge>
+                    {fromDictation?.has(enc.id) && (
+                      <Badge variant="outline" className="text-[10px] gap-1">
+                        <FileAudio className="h-2.5 w-2.5" />
+                        From a dictation
+                      </Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(enc.occurred_at), "PP")}
                     </span>

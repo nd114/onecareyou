@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Mic, MicOff, Loader2, CheckCircle2, FileAudio, AlertTriangle, Trash2 } from 'lucide-react';
+import { Mic, MicOff, Loader2, CheckCircle2, FileAudio, AlertTriangle, Trash2, FileCheck2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileDictationDialog, type DictationExtract } from '@/components/clinician/FileDictationDialog';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -31,6 +33,10 @@ interface Dictation {
   summary_approved_at: string | null;
   bulk_approved: boolean;
   created_at: string;
+  patient_user_id: string | null;
+  encounter_id: string | null;
+  filed_at: string | null;
+  metadata: { extracted?: DictationExtract } | null;
 }
 
 export default function ClinicianDictations() {
@@ -42,6 +48,7 @@ export default function ClinicianDictations() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [editingTranscript, setEditingTranscript] = useState<Record<string, string>>({});
   const [editingSummary, setEditingSummary] = useState<Record<string, string>>({});
+  const [filing, setFiling] = useState<Dictation | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -52,7 +59,10 @@ export default function ClinicianDictations() {
       .eq('clinician_user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50);
-    setDictations((data as Dictation[]) ?? []);
+    // Cast through unknown: encounter_id and filed_at are added by
+    // 20260820110000 and the generated types track the live database, so they
+    // only appear here once that migration has been applied.
+    setDictations((data as unknown as Dictation[]) ?? []);
     setLoading(false);
   };
 
@@ -89,7 +99,7 @@ export default function ClinicianDictations() {
       .select('*')
       .single();
     if (error || !row) { toast.error(error?.message || 'Could not save dictation'); return; }
-    setDictations((prev) => [row as Dictation, ...prev]);
+    setDictations((prev) => [row as unknown as Dictation, ...prev]);
     setProcessingId(row.id);
     try {
       const { error: fnErr } = await supabase.functions.invoke('clinician-dictation-process', {
@@ -232,16 +242,28 @@ export default function ClinicianDictations() {
                 onApproveTranscript={() => approveTranscript(d)}
                 onApproveSummary={() => approveSummary(d)}
                 onDelete={() => deleteDictation(d)}
+                onFile={() => setFiling(d)}
               />
             ))}
           </div>
         )}
       </main>
+
+      {filing && (
+        <FileDictationDialog
+          open={!!filing}
+          onOpenChange={(o) => !o && setFiling(null)}
+          dictationId={filing.id}
+          summary={editingSummary[filing.id] ?? filing.summary}
+          extracted={filing.metadata?.extracted ?? null}
+          onFiled={() => { setFiling(null); void load(); }}
+        />
+      )}
     </>
   );
 }
 
-function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setEditSummary, onApproveTranscript, onApproveSummary, onDelete }: {
+function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setEditSummary, onApproveTranscript, onApproveSummary, onDelete, onFile }: {
   d: Dictation;
   editTranscript: string;
   editSummary: string;
@@ -250,6 +272,7 @@ function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setE
   onApproveTranscript: () => void;
   onApproveSummary: () => void;
   onDelete: () => void;
+  onFile: () => void;
 }) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const loadedRef = useRef(false);
@@ -265,8 +288,11 @@ function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setE
     pending_transcription: <Badge variant="outline">Transcribing…</Badge>,
     transcribed: <Badge variant="secondary">Awaiting review</Badge>,
     transcript_approved: <Badge variant="secondary">Transcript ✓ — summary pending</Badge>,
-    summary_approved: <Badge>Filed</Badge>,
-    filed: <Badge>Filed</Badge>,
+    // "Filed" used to mean "you clicked approve" — the dictation had reached no
+    // record at all. Approved and filed are now two different things, and the
+    // badge says which one this is.
+    summary_approved: <Badge variant="secondary">Approved — not filed</Badge>,
+    filed: <Badge>In the record</Badge>,
     error: <Badge variant="destructive">Error</Badge>,
   }[d.status] ?? <Badge variant="outline">{d.status}</Badge>;
 
@@ -311,8 +337,31 @@ function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setE
             </Label>
             <Textarea value={editSummary} onChange={(e) => setEditSummary(e.target.value)} rows={6} className="text-sm" />
             {!d.summary_approved_at && (
-              <Button size="sm" onClick={onApproveSummary}>Approve summary & file</Button>
+              <Button size="sm" onClick={onApproveSummary}>Approve summary</Button>
             )}
+          </div>
+        )}
+        {/* The step that was missing: an approved dictation reaching a patient's
+            record instead of ending its life on this page. */}
+        {d.summary_approved_at && !d.filed_at && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-dashed p-3">
+            <p className="text-xs text-muted-foreground">
+              Approved, but not yet part of anyone's record. Filing it creates a draft encounter
+              you can review and sign.
+            </p>
+            <Button size="sm" onClick={onFile} className="gap-1 flex-shrink-0">
+              <FileCheck2 className="h-3.5 w-3.5" /> File to record
+            </Button>
+          </div>
+        )}
+        {d.filed_at && d.patient_user_id && (
+          <div className="flex items-center justify-between gap-3 rounded-md border p-3 text-xs">
+            <span className="text-muted-foreground">
+              Filed {format(new Date(d.filed_at), 'PPp')} as a draft encounter.
+            </span>
+            <Button variant="outline" size="sm" asChild className="flex-shrink-0">
+              <Link to={`/clinician/patients?patient=${d.patient_user_id}`}>Open patient</Link>
+            </Button>
           </div>
         )}
       </CardContent>

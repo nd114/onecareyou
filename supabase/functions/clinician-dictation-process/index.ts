@@ -79,16 +79,24 @@ Deno.serve(async (req) => {
       { role: "user", content: transcript },
     ]);
 
+    // Pull out the parts of the dictation that belong somewhere in particular.
+    // Nothing here is written to a patient's record by this function; it only
+    // proposes, and the clinician ticks each item in the filing dialog. That
+    // split is deliberate — a misheard "one twenty over eighty" must never
+    // reach a chart because a model was confident.
+    const extracted = await extractStructured(transcript);
+
     await admin
       .from("clinician_dictations")
       .update({
         transcript,
         summary,
         status: "transcribed",
+        metadata: { ...(row.metadata ?? {}), extracted },
       })
       .eq("id", dictationId);
 
-    return json({ transcript, summary });
+    return json({ transcript, summary, extracted });
   } catch (e) {
     console.error("clinician-dictation-process error", e);
     // Leave a trace on the row itself. Without this a failed run left the
@@ -110,6 +118,70 @@ Deno.serve(async (req) => {
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
+
+/**
+ * The dictation, split into the things a record has slots for.
+ *
+ * Every item carries the phrase it came from, so the clinician reviewing it is
+ * checking a claim against the words rather than trusting a number on its own.
+ * A parse failure is not fatal: the transcript and summary are the deliverable,
+ * and an empty extraction just means nothing is pre-ticked.
+ */
+async function extractStructured(transcript: string): Promise<Extracted> {
+  const empty: Extracted = { vitals: [], guidance: [], note: null, soap: null };
+  if (!transcript.trim()) return empty;
+
+  try {
+    const raw = await callGateway([
+      {
+        role: "system",
+        content: [
+          "Extract structured items from a clinical dictation. Reply with JSON only, no prose, no code fence.",
+          "Shape:",
+          '{"vitals":[{"type":"blood_pressure|heart_rate|weight|temperature|blood_glucose|oxygen_saturation",',
+          '"value":number,"secondary_value":number|null,"unit":string,"source_phrase":string}],',
+          '"guidance":[{"title":string,"instruction":string,"source_phrase":string}],',
+          '"note":string|null,',
+          '"soap":{"chief_complaint":string|null,"subjective":string|null,"objective":string|null,',
+          '"assessment":string|null,"plan":string|null,"follow_up_in_days":number|null}}',
+          "",
+          "Rules. Include a vital ONLY if a number was actually said; never infer or normalise one that was not.",
+          "source_phrase must be copied verbatim from the transcript.",
+          "guidance is instructions addressed to the patient, in plain language.",
+          "note is anything for the care team that is not guidance and not a vital.",
+          "Use null and empty arrays freely. Do not invent anything.",
+        ].join("\n"),
+      },
+      { role: "user", content: transcript },
+    ]);
+
+    // Models fence JSON despite being asked not to.
+    const cleaned = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    const parsed = JSON.parse(cleaned) as Partial<Extracted>;
+    return {
+      vitals: Array.isArray(parsed.vitals) ? parsed.vitals.slice(0, 12) : [],
+      guidance: Array.isArray(parsed.guidance) ? parsed.guidance.slice(0, 12) : [],
+      note: typeof parsed.note === "string" ? parsed.note : null,
+      soap: parsed.soap && typeof parsed.soap === "object" ? parsed.soap : null,
+    };
+  } catch (e) {
+    console.error("dictation extraction failed", e);
+    return empty;
+  }
+}
+
+interface Extracted {
+  vitals: {
+    type: string;
+    value: number;
+    secondary_value: number | null;
+    unit: string;
+    source_phrase: string;
+  }[];
+  guidance: { title: string; instruction: string; source_phrase: string }[];
+  note: string | null;
+  soap: Record<string, unknown> | null;
+}
 
 async function callGateway(messages: unknown[]): Promise<string> {
   const res = await fetch(GATEWAY_URL, {
