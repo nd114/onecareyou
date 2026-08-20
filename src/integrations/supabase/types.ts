@@ -655,7 +655,9 @@ export type Database = {
           clinician_user_id: string
           created_at: string
           duration_seconds: number | null
+          encounter_id: string | null
           error_message: string | null
+          filed_at: string | null
           id: string
           metadata: Json
           patient_label: string | null
@@ -675,7 +677,9 @@ export type Database = {
           clinician_user_id: string
           created_at?: string
           duration_seconds?: number | null
+          encounter_id?: string | null
           error_message?: string | null
+          filed_at?: string | null
           id?: string
           metadata?: Json
           patient_label?: string | null
@@ -695,7 +699,9 @@ export type Database = {
           clinician_user_id?: string
           created_at?: string
           duration_seconds?: number | null
+          encounter_id?: string | null
           error_message?: string | null
+          filed_at?: string | null
           id?: string
           metadata?: Json
           patient_label?: string | null
@@ -709,7 +715,15 @@ export type Database = {
           transcript_approved_by?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clinician_dictations_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clinician_guidance: {
         Row: {
@@ -1379,6 +1393,7 @@ export type Database = {
           scribe_draft: Json | null
           scribe_generated_at: string | null
           scribe_transcript: string | null
+          shared_with_patient: boolean
           signed_at: string | null
           status: string
           subjective: string | null
@@ -1405,6 +1420,7 @@ export type Database = {
           scribe_draft?: Json | null
           scribe_generated_at?: string | null
           scribe_transcript?: string | null
+          shared_with_patient?: boolean
           signed_at?: string | null
           status?: string
           subjective?: string | null
@@ -1431,6 +1447,7 @@ export type Database = {
           scribe_draft?: Json | null
           scribe_generated_at?: string | null
           scribe_transcript?: string | null
+          shared_with_patient?: boolean
           signed_at?: string | null
           status?: string
           subjective?: string | null
@@ -1573,6 +1590,7 @@ export type Database = {
           tags: Json | null
           title: string | null
           updated_at: string
+          uploaded_by_user_id: string | null
           user_id: string
         }
         Insert: {
@@ -1595,6 +1613,7 @@ export type Database = {
           tags?: Json | null
           title?: string | null
           updated_at?: string
+          uploaded_by_user_id?: string | null
           user_id: string
         }
         Update: {
@@ -1617,6 +1636,7 @@ export type Database = {
           tags?: Json | null
           title?: string | null
           updated_at?: string
+          uploaded_by_user_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1677,6 +1697,7 @@ export type Database = {
           patient_user_id: string
           pinned: boolean
           updated_at: string
+          visibility: string
         }
         Insert: {
           author_user_id: string
@@ -1686,6 +1707,7 @@ export type Database = {
           patient_user_id: string
           pinned?: boolean
           updated_at?: string
+          visibility?: string
         }
         Update: {
           author_user_id?: string
@@ -1695,6 +1717,7 @@ export type Database = {
           patient_user_id?: string
           pinned?: boolean
           updated_at?: string
+          visibility?: string
         }
         Relationships: []
       }
@@ -3442,6 +3465,7 @@ export type Database = {
           id: string
           notes: string | null
           recorded_at: string
+          recorded_by_user_id: string | null
           secondary_value: number | null
           source: string | null
           type: string
@@ -3457,6 +3481,7 @@ export type Database = {
           id?: string
           notes?: string | null
           recorded_at?: string
+          recorded_by_user_id?: string | null
           secondary_value?: number | null
           source?: string | null
           type: string
@@ -3472,6 +3497,7 @@ export type Database = {
           id?: string
           notes?: string | null
           recorded_at?: string
+          recorded_by_user_id?: string | null
           secondary_value?: number | null
           source?: string | null
           type?: string
@@ -3931,6 +3957,18 @@ export type Database = {
           specialty: string
         }[]
       }
+      my_message_threads: {
+        Args: { _role: string }
+        Returns: {
+          counterparty_id: string
+          last_at: string
+          last_body: string
+          last_has_attachment: boolean
+          last_sender_user_id: string
+          total: number
+          unread: number
+        }[]
+      }
       my_tenant_owner_invitations: {
         Args: never
         Returns: {
@@ -3939,6 +3977,24 @@ export type Database = {
           practice_id: string
           practice_name: string
           tenant_type: string
+        }[]
+      }
+      my_visit_summaries: {
+        Args: never
+        Returns: {
+          assessment: string
+          chief_complaint: string
+          clinician_name: string
+          follow_up_in_days: number
+          id: string
+          objective: string
+          occurred_at: string
+          plan: string
+          practice_name: string
+          signed_at: string
+          status: string
+          subjective: string
+          visit_type: string
         }[]
       }
       patient_institution_contact: {
