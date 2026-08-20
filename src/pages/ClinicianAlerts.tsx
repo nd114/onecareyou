@@ -1,17 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Bell,
-  AlertTriangle,
-  Loader2,
-  Plus,
-  Trash2,
-  Search,
-  Activity,
-  Clock,
-  CheckCircle2,
-} from 'lucide-react';
+import { Bell, AlertTriangle, Loader2, Plus, Trash2, Search, Activity, Clock, CheckCircle2, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +14,7 @@ import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useAlertRules, type AlertLog } from '@/hooks/useAlertRules';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
+import { BulkAlertRuleDialog } from '@/components/clinician/BulkAlertRuleDialog';
 import { format } from 'date-fns';
 
 const formatAlertType = (type: string): string => {
@@ -194,24 +185,41 @@ const ClinicianAlerts = () => {
                     {alertRules.length} rule{alertRules.length !== 1 ? 's' : ''} configured
                   </CardDescription>
                 </div>
-                <CreateAlertRuleDialog
-                  trigger={
-                    <Button 
-                      size="sm"
-                      className="gradient-primary border-0"
-                      disabled={patients.length === 0}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Rule
-                    </Button>
-                  }
-                  patients={patients.map(p => ({
-                    id: p.id,
-                    user_id: p.user_id,
-                    patient_name: p.patient_name || 'Unknown Patient',
-                    patient_email: p.patient_email,
-                  }))}
-                />
+                <div className="flex gap-2">
+                  {/* Setting the same threshold thirty times is how a panel ends
+                      up with inconsistent rules and invisible gaps. */}
+                  <BulkAlertRuleDialog
+                    trigger={
+                      <Button variant="outline" size="sm" disabled={patients.length === 0}>
+                        <Users className="h-4 w-4 mr-2" />
+                        Set for several
+                      </Button>
+                    }
+                    patients={patients.map(p => ({
+                      id: p.id,
+                      user_id: p.user_id,
+                      patient_name: p.patient_name || 'Unknown Patient',
+                    }))}
+                  />
+                  <CreateAlertRuleDialog
+                    trigger={
+                      <Button
+                        size="sm"
+                        className="gradient-primary border-0"
+                        disabled={patients.length === 0}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Rule
+                      </Button>
+                    }
+                    patients={patients.map(p => ({
+                      id: p.id,
+                      user_id: p.user_id,
+                      patient_name: p.patient_name || 'Unknown Patient',
+                      patient_email: p.patient_email,
+                    }))}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 {alertRules.length > 3 && (

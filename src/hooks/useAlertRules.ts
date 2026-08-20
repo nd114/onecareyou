@@ -18,6 +18,12 @@ export interface AlertRule {
   updated_at: string;
 }
 
+export interface BulkAlertRuleResult {
+  created: number;
+  replaced: number;
+  failed: { patientUserId: string; message: string }[];
+}
+
 export interface CreateAlertRuleData {
   patient_user_id: string;
   share_id?: string;
@@ -123,6 +129,96 @@ export const useAlertRules = (patientUserId?: string) => {
     },
   });
 
+  /**
+   * One threshold across a group of patients.
+   *
+   * A clinician watching thirty hypertensives wants "tell me if any systolic
+   * goes over 150", not thirty visits to the same dialog. Creating them one at
+   * a time is how thresholds end up inconsistent across a panel — which is
+   * worse than having none, because the gaps are invisible.
+   *
+   * Applying to a patient who already has a rule for that vital replaces it
+   * rather than adding a second. Two thresholds on one measurement is not a
+   * refinement, it is two alerts firing for the same reading.
+   *
+   * One patient failing does not abandon the rest — a partial result is
+   * reported, naming who was missed, so the clinician can see the gap rather
+   * than assume the panel is covered.
+   */
+  const createAlertRulesForPatients = useMutation({
+    mutationFn: async (
+      input: Omit<CreateAlertRuleData, 'patient_user_id' | 'share_id'> & {
+        patients: { user_id: string; share_id?: string | null }[];
+      },
+    ): Promise<BulkAlertRuleResult> => {
+      if (!user) throw new Error('Not authenticated');
+      const result: BulkAlertRuleResult = { created: 0, replaced: 0, failed: [] };
+
+      for (const patient of input.patients) {
+        try {
+          const { data: existing, error: findError } = await supabase
+            .from('clinician_alert_rules')
+            .select('id')
+            .eq('clinician_user_id', user.id)
+            .eq('patient_user_id', patient.user_id)
+            .eq('vital_type', input.vital_type);
+          if (findError) throw findError;
+
+          const payload = {
+            clinician_user_id: user.id,
+            patient_user_id: patient.user_id,
+            share_id: patient.share_id || null,
+            vital_type: input.vital_type,
+            condition: input.condition,
+            threshold_value: input.threshold_value,
+            threshold_secondary: input.threshold_secondary ?? null,
+            alert_method: input.alert_method || 'email',
+            is_active: true,
+          };
+
+          if (existing && existing.length > 0) {
+            const { error } = await supabase
+              .from('clinician_alert_rules')
+              .update(payload)
+              .eq('id', existing[0].id);
+            if (error) throw error;
+            result.replaced += 1;
+          } else {
+            const { error } = await supabase.from('clinician_alert_rules').insert(payload);
+            if (error) throw error;
+            result.created += 1;
+          }
+        } catch (error) {
+          result.failed.push({
+            patientUserId: patient.user_id,
+            message: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      return result;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['alert-rules'] });
+      const applied = result.created + result.replaced;
+      if (result.failed.length === 0) {
+        toast.success(
+          `Alert set for ${applied} patient${applied === 1 ? '' : 's'}` +
+            (result.replaced ? ` (${result.replaced} replaced an existing threshold)` : ''),
+        );
+      } else {
+        // Naming the shortfall matters more than the success count: a clinician
+        // who thinks the panel is covered will not go looking.
+        toast.warning(
+          `Set for ${applied}, failed for ${result.failed.length}. The ones that failed have no threshold.`,
+        );
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to set alerts');
+    },
+  });
+
   const updateAlertRule = useMutation({
     mutationFn: async ({ id, ...data }: Partial<AlertRule> & { id: string }) => {
       if (!user) throw new Error('Not authenticated');
@@ -216,6 +312,7 @@ export const useAlertRules = (patientUserId?: string) => {
     alertLogs,
     isLoading: isLoadingRules || isLoadingLogs,
     createAlertRule,
+    createAlertRulesForPatients,
     updateAlertRule,
     deleteAlertRule,
     toggleAlertRule,
