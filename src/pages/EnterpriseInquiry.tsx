@@ -25,6 +25,7 @@ import { useClinicianProfile, MEDICAL_SPECIALTIES } from '@/hooks/useClinicianPr
 import { COUNTRY_LIST } from '@/hooks/useEmergencyNumbers';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { describeSubmissionError } from '@/lib/submission-errors';
 
 const EHR_SYSTEMS = [
   'Epic',
@@ -108,7 +109,13 @@ const EnterpriseInquiry = () => {
       toast.success('Inquiry submitted! Check your inbox for a confirmation.');
     } catch (error: any) {
       console.error('Error submitting inquiry:', error);
-      toast.error('Failed to submit inquiry. Please try again.');
+      // A throttled enquiry fails because of retrying, so "please try again"
+      // would be the one piece of advice that cannot work.
+      const { message } = describeSubmissionError(
+        error,
+        'Failed to submit inquiry. Please try again.',
+      );
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

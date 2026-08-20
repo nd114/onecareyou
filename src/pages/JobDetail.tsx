@@ -25,6 +25,7 @@ import { getIconComponent, jobTypeLabel } from '@/lib/job-listings';
 import { usePublishedJobs, toJobListing } from '@/hooks/useJobPostings';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { jobPostingSchema, breadcrumbSchema } from '@/components/seo/structuredData';
+import { describeSubmissionError } from '@/lib/submission-errors';
 
 
 const JobDetail = () => {
@@ -200,9 +201,16 @@ const JobDetail = () => {
       navigate('/careers?applied=true');
     } catch (error) {
       console.error('Application error:', error);
+      // "Please try again" is the wrong advice for the failure a visitor is
+      // most likely to hit here — a throttled submission fails *because* of
+      // trying again. See src/lib/submission-errors.ts.
+      const { message, isRateLimited } = describeSubmissionError(
+        error,
+        'There was an error submitting your application. Please try again.',
+      );
       toast({
-        title: 'Submission failed',
-        description: 'There was an error submitting your application. Please try again.',
+        title: isRateLimited ? 'Too many applications' : 'Submission failed',
+        description: message,
         variant: 'destructive'
       });
     } finally {
