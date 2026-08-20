@@ -130,12 +130,33 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                         From Vitals
                       </Badge>
                     )}
+                    {/* Two different dates, and conflating them loses the one
+                        that matters clinically. The document's own date is when
+                        the test was taken or the letter written; the upload date
+                        is when it reached the Vault. A result from March filed
+                        in August is a normal thing that should not look like a
+                        result from August. */}
                     {doc.document_date && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span
+                        className="text-xs text-muted-foreground flex items-center gap-1"
+                        title="Date on the document"
+                      >
                         <Calendar className="h-3 w-3" />
                         {format(new Date(doc.document_date), 'MMM d, yyyy')}
                       </span>
                     )}
+                    {doc.created_at &&
+                      (!doc.document_date ||
+                        new Date(doc.created_at).toDateString() !==
+                          new Date(doc.document_date).toDateString()) && (
+                        <span
+                          className="text-xs text-muted-foreground flex items-center gap-1"
+                          title="When this was added to your Health Vault"
+                        >
+                          <Upload className="h-3 w-3" />
+                          Added {format(new Date(doc.created_at), 'MMM d, yyyy')}
+                        </span>
+                      )}
                     {/* Shared badge */}
                     {shareCount > 0 && (
                       <button onClick={() => setShowShareDialog(true)}>

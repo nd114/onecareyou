@@ -84,7 +84,11 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
 
   // Date filtering state
   const [dateFilterType, setDateFilterType] = useState<DateFilterType>('recorded');
-  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('all');
+  // Opens on the last month rather than everything. Ninety days of readings
+  // across four measures is a few hundred rows, and an undifferentiated list
+  // that long is not a history a patient can read — the wider ranges are one
+  // tap away.
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
   const [customDateStart, setCustomDateStart] = useState<Date | undefined>(undefined);
   const [customDateEnd, setCustomDateEnd] = useState<Date | undefined>(undefined);
   

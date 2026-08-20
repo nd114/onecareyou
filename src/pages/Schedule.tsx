@@ -148,7 +148,7 @@ const Schedule = () => {
           className="mb-8"
         >
           <h1 className="font-display text-3xl font-bold mb-2">
-            Daily Schedule
+            Today's Doses
           </h1>
           <p className="text-muted-foreground">
             Track your medication doses throughout the day

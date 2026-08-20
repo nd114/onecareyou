@@ -34,7 +34,8 @@ export const PATIENT_PILLARS: PatientPillar[] = [
     primary: "/dashboard",
     tabs: [
       { to: "/dashboard", label: "Overview" },
-      { to: "/schedule", label: "Schedule" },
+      // "Schedule" reads as an appointment diary. This page is the day's doses.
+      { to: "/schedule", label: "Doses" },
       { to: "/guidance", label: "Catch-up" },
     ],
   },
@@ -101,7 +102,11 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     tabs: [
       { to: "/clinician/messages", label: "Messages" },
       { to: "/clinician/guidance", label: "Guidance" },
-      { to: "/clinician/dictations", label: "Dictations" },
+      // Dictation belongs to the visit, not beside Messages. EncounterScribePanel
+      // already records inside an encounter and produces a SOAP draft tied to a
+      // patient; the standalone page was a second, weaker copy — capped at 60
+      // seconds, with no patient attached. The route still resolves so existing
+      // recordings are not stranded, but it is no longer a destination of its own.
       { to: "/clinician/templates", label: "Templates" },
     ],
   },
@@ -112,10 +117,15 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     tabs: [
       { to: "/clinician/practice", label: "Overview" },
       { to: "/clinician/reports", label: "Reports" },
-      { to: "/clinician/audit", label: "Audit" },
-      { to: "/clinician/compliance", label: "Compliance" },
-      { to: "/clinician/baa", label: "BAA" },
-      { to: "/clinician/settings", label: "Settings" },
+      // Audit and the BAA are things you reach *because* of compliance, not
+      // three peers in a row. Both keep their routes — deep links and the
+      // BAA's existing back-to-compliance breadcrumb still work — they are
+      // just no longer competing for space in the tab bar.
+      { to: "/clinician/compliance", label: "Compliance", match: ["/clinician/audit", "/clinician/baa"] },
+      // This page edits the clinician's own professional profile, not the
+      // practice. Calling it "Settings" under a Practice heading is what made
+      // people expect practice configuration and find their own name.
+      { to: "/clinician/settings", label: "My profile" },
     ],
   },
 ];
