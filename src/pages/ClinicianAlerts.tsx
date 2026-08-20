@@ -293,16 +293,6 @@ const ClinicianAlerts = () => {
           </motion.div>
         </div>
       </main>
-
-      <CreateAlertRuleDialog
-        trigger={<span className="hidden" />}
-        patients={patients.map(p => ({
-          id: p.id,
-          user_id: p.user_id,
-          patient_name: p.patient_name || 'Unknown Patient',
-          patient_email: p.patient_email,
-        }))}
-      />
     </div>
   );
 };
