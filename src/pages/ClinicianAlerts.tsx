@@ -157,7 +157,7 @@ const ClinicianAlerts = () => {
           </Card>
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
           {/* Alert Rules */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
