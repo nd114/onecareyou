@@ -620,6 +620,9 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
+            </TabsContent>
+          </Tabs>
+
         </motion.div>
       </main>
     </div>
