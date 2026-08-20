@@ -245,6 +245,65 @@ const Features = () => {
         </div>
       </section>
 
+      {/* See how it works — video band */}
+      <section className="relative overflow-hidden py-24 bg-foreground/[0.03] border-y border-border">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_70%_at_20%_50%,hsl(var(--primary)/0.14),transparent_70%)]"
+        />
+        <div className="container relative">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="grid lg:grid-cols-2 gap-12 items-center"
+          >
+            <div>
+              <p className="eyebrow text-primary mb-4">Show, don't tell</p>
+              <h2 className="font-display text-3xl md:text-5xl font-bold leading-[1.08] tracking-tight mb-5">
+                See how it works
+                <span className="block text-accent">— live, not slides.</span>
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8 max-w-xl">
+                Watch a narrated, four-minute tour of the real patient app: logging vitals,
+                checking medications, filing documents in the Health Vault and choosing exactly
+                who in your care team sees what.
+              </p>
+              <Button size="lg" asChild>
+                <Link to="/how-it-works">
+                  Watch the walkthrough <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+
+            <Link
+              to="/how-it-works"
+              aria-label="Watch the OneCare patient walkthrough"
+              className="group block rounded-3xl border border-primary/15 bg-card p-2 shadow-2xl"
+            >
+              <div className="relative overflow-hidden rounded-2xl">
+                <img
+                  src={walkthroughPoster.url}
+                  alt="OneCare patient dashboard shown in the walkthrough video"
+                  loading="lazy"
+                  className="block w-full aspect-video object-cover object-top"
+                />
+                <span className="absolute inset-0 flex items-center justify-center bg-foreground/25 transition-colors group-hover:bg-foreground/35">
+                  <span className="flex h-18 w-18 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-transform group-hover:scale-105 h-[4.5rem] w-[4.5rem]">
+                    <Play className="h-7 w-7 translate-x-0.5" />
+                  </span>
+                </span>
+                <span className="absolute bottom-4 left-4 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold tracking-wide">
+                  3:44 · Patient walkthrough
+                </span>
+              </div>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+
+
       {/* CTA Section */}
       <section className="py-24 bg-background">
         <div className="container">
