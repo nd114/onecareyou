@@ -66,11 +66,11 @@ const VITAL_LABELS: Record<string, string> = {
 
 const METHOD_LABELS: Record<string, string> = { push: "Push", email: "Email", sms: "SMS" };
 
-export function vitalLabel(vital: string) {
+function vitalLabel(vital: string) {
   return VITAL_LABELS[vital] ?? vital.replace(/_/g, " ");
 }
 
-export function describeThreshold(rule: AlertRule) {
+function describeThreshold(rule: AlertRule) {
   const vital = vitalLabel(rule.vital_type);
   if (rule.condition === "outside_range" && rule.threshold_secondary !== null) {
     return `${vital} outside ${rule.threshold_value}–${rule.threshold_secondary}`;

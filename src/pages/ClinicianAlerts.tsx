@@ -1,12 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Bell, AlertTriangle, Loader2, Plus, Trash2, Search, Activity, Clock, CheckCircle2, Users } from 'lucide-react';
+import { Bell, AlertTriangle, Loader2, Activity, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
@@ -26,23 +24,13 @@ const formatAlertType = (type: string): string => {
 const ClinicianAlerts = () => {
   const navigate = useNavigate();
   const { isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
-  const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule, acknowledgeAlertLog } = useAlertRules();
+  const { alertRules, alertLogs, isLoading: isLoadingAlerts, acknowledgeAlertLog } = useAlertRules();
   const [triageTab, setTriageTab] = useState<'unread' | 'acknowledged'>('unread');
   const { patients } = useClinicianPatients();
   
-  const [searchQuery, setSearchQuery] = useState('');
 
   const isLoading = isLoadingProfile || isLoadingAlerts;
 
-  const filteredRules = useMemo(() => {
-    if (!searchQuery.trim()) return alertRules;
-    const query = searchQuery.toLowerCase();
-    return alertRules.filter(
-      (r) =>
-        r.vital_type.toLowerCase().includes(query) ||
-        r.condition.toLowerCase().includes(query)
-    );
-  }, [alertRules, searchQuery]);
 
   const activeRulesCount = alertRules.filter(r => r.is_active).length;
   const recentAlertsCount = alertLogs.filter(log => {
