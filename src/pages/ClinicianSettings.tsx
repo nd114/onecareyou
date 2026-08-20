@@ -245,8 +245,7 @@ const ClinicianSettings = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <ClinicianHeader />
-      <SectionTabs section="practice" variant="clinician" />
-      
+
       <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-3xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -254,16 +253,25 @@ const ClinicianSettings = () => {
         >
           <div className="mb-6">
             <h1 className="font-display text-2xl sm:text-3xl font-bold mb-2">
-              Settings
+              My profile &amp; settings
             </h1>
             <p className="text-muted-foreground">
-              Manage your profile and notification preferences
+              Your professional profile, your privacy record, and how OneCare notifies you.
             </p>
           </div>
 
+          {/* Same three-part shape as the patient side, minus care &amp; alerts. */}
+          <Tabs defaultValue="account">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="account">Account</TabsTrigger>
+              <TabsTrigger value="privacy">Privacy &amp; data</TabsTrigger>
+              <TabsTrigger value="prefs">Preferences</TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="account" className="mt-6">
           {/* Professional Profile (merged with Personal Info) */}
           <Card className="mb-6">
+
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
