@@ -102,7 +102,11 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     tabs: [
       { to: "/clinician/messages", label: "Messages" },
       { to: "/clinician/guidance", label: "Guidance" },
-      { to: "/clinician/dictations", label: "Dictations" },
+      // Dictation belongs to the visit, not beside Messages. EncounterScribePanel
+      // already records inside an encounter and produces a SOAP draft tied to a
+      // patient; the standalone page was a second, weaker copy — capped at 60
+      // seconds, with no patient attached. The route still resolves so existing
+      // recordings are not stranded, but it is no longer a destination of its own.
       { to: "/clinician/templates", label: "Templates" },
     ],
   },
