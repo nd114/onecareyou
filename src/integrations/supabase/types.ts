@@ -2899,6 +2899,7 @@ export type Database = {
           push_subscription: Json | null
           qhin_consent_at: string | null
           qhin_disclosure_version: string | null
+          simple_mode: boolean
           subscription_tier: string | null
           timezone: string | null
           unit_preferences: Json | null
@@ -2936,6 +2937,7 @@ export type Database = {
           push_subscription?: Json | null
           qhin_consent_at?: string | null
           qhin_disclosure_version?: string | null
+          simple_mode?: boolean
           subscription_tier?: string | null
           timezone?: string | null
           unit_preferences?: Json | null
@@ -2973,6 +2975,7 @@ export type Database = {
           push_subscription?: Json | null
           qhin_consent_at?: string | null
           qhin_disclosure_version?: string | null
+          simple_mode?: boolean
           subscription_tier?: string | null
           timezone?: string | null
           unit_preferences?: Json | null
