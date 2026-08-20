@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { isReadingOutsideRange } from '@/lib/patient-risk';
 
 interface Vital {
   id: string;
@@ -40,14 +41,10 @@ interface VitalsSummaryViewProps {
 }
 
 // Normal ranges for vitals (for visual indicators)
-const VITAL_RANGES = {
-  blood_pressure: { systolic: { low: 90, high: 140 }, diastolic: { low: 60, high: 90 } },
-  heart_rate: { low: 60, high: 100 },
-  blood_glucose: { low: 70, high: 140 }, // fasting
-  weight: { low: 0, high: 999 }, // no normal range
-  temperature: { low: 36.1, high: 37.2 },
-  oxygen_saturation: { low: 95, high: 100 },
-};
+// Ranges live in src/lib/patient-risk.ts. This file used to carry its own copy,
+// which is how two clinician surfaces came to disagree — that one knew a
+// diastolic mattered and the risk badge did not, and neither knew a temperature
+// could arrive in Fahrenheit.
 
 const VITAL_CONFIG = {
   blood_pressure: { label: 'Blood Pressure', icon: Heart, color: 'text-red-500', bgColor: 'bg-red-500/10' },
@@ -96,19 +93,12 @@ export function VitalsSummaryView({ vitals }: VitalsSummaryViewProps) {
         else if (diff < -threshold) trend = 'down';
       }
 
-      // Check if out of range
-      const range = VITAL_RANGES[type as keyof typeof VITAL_RANGES];
-      let isAbnormal = false;
-      if (range) {
-        if (type === 'blood_pressure') {
-          const bpRange = range as { systolic: { low: number; high: number }; diastolic: { low: number; high: number } };
-          isAbnormal = latest.value > bpRange.systolic.high || latest.value < bpRange.systolic.low ||
-            (latest.secondary_value !== undefined && (latest.secondary_value > bpRange.diastolic.high || latest.secondary_value < bpRange.diastolic.low));
-        } else {
-          const numRange = range as { low: number; high: number };
-          isAbnormal = latest.value > numRange.high || latest.value < numRange.low;
-        }
-      }
+      const isAbnormal = isReadingOutsideRange(
+        type,
+        latest.value,
+        latest.secondary_value,
+        latest.unit,
+      );
 
       // Get readings with notes (for clinician attention)
       const withNotes = sorted.filter(r => r.notes && r.notes.trim().length > 0).slice(0, 3);
