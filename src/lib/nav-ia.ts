@@ -113,10 +113,15 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     tabs: [
       { to: "/clinician/practice", label: "Overview" },
       { to: "/clinician/reports", label: "Reports" },
-      { to: "/clinician/audit", label: "Audit" },
-      { to: "/clinician/compliance", label: "Compliance" },
-      { to: "/clinician/baa", label: "BAA" },
-      { to: "/clinician/settings", label: "Settings" },
+      // Audit and the BAA are things you reach *because* of compliance, not
+      // three peers in a row. Both keep their routes — deep links and the
+      // BAA's existing back-to-compliance breadcrumb still work — they are
+      // just no longer competing for space in the tab bar.
+      { to: "/clinician/compliance", label: "Compliance", match: ["/clinician/audit", "/clinician/baa"] },
+      // This page edits the clinician's own professional profile, not the
+      // practice. Calling it "Settings" under a Practice heading is what made
+      // people expect practice configuration and find their own name.
+      { to: "/clinician/settings", label: "My profile" },
     ],
   },
 ];

@@ -1,8 +1,8 @@
 // Phase 3.3 — Compliance pack export.
 // One-click bundle: practice info + BAA status + audit log range + encryption attestation.
 import { useState } from "react";
-import { Shield, Download, Loader2, FileCheck2, FileText } from "lucide-react";
-import { Navigate } from "react-router-dom";
+import { Shield, Download, Loader2, FileCheck2, FileText, ArrowRight } from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -240,11 +240,41 @@ ${auditRows}
         <div className="flex items-center gap-3">
           <Shield className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-semibold">Compliance pack</h1>
+            <h1 className="text-2xl font-semibold">Compliance</h1>
             <p className="text-sm text-muted-foreground">
-              One-click export for audits, sales reviews, and patient questions.
+              Your access log, your agreement with OneCare, and a one-click export of both.
             </p>
           </div>
+        </div>
+
+        {/* The two pages that used to sit beside this one in the tab bar. */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link to="/clinician/audit" className="group">
+            <Card className="h-full transition-colors hover:border-primary/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between text-base">
+                  Access log
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                </CardTitle>
+                <CardDescription>
+                  Who opened which record, and what was changed.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+          <Link to="/clinician/baa" className="group">
+            <Card className="h-full transition-colors hover:border-primary/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between text-base">
+                  Business Associate Agreement
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                </CardTitle>
+                <CardDescription>
+                  Your signed agreement with OneCare, and its current status.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
         </div>
 
         <Card>
