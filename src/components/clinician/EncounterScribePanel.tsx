@@ -2,7 +2,9 @@
 // side-by-side with the transcript, then apply it to the encounter note.
 // Nothing reaches the encounter's clinical fields until the clinician applies.
 import { useEffect, useRef, useState } from "react";
-import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle } from "lucide-react";
+import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle, Activity } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { parseMentionedVital } from "@/lib/mentioned-vitals";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -57,6 +59,8 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
   const chunksRef = useRef<BlobPart[]>([]);
   const tickRef = useRef<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [pickedVitals, setPickedVitals] = useState<Set<number>>(new Set());
+  const [recordingVitals, setRecordingVitals] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -115,6 +119,52 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
       tickRef.current = window.setInterval(() => setElapsed(Date.now() - startedAt), 500);
     } catch {
       toast.error("Microphone unavailable — check browser permissions");
+    }
+  };
+
+  /**
+   * Write the ticked readings into the patient's chart.
+   *
+   * Each is its own insert so one refusal — a patient who does not share
+   * vitals, say — does not swallow the rest, and the clinician is told which
+   * ones did not land rather than being left to guess.
+   */
+  const recordPickedVitals = async () => {
+    if (!user?.id || pickedVitals.size === 0) return;
+    setRecordingVitals(true);
+    const failures: string[] = [];
+    let written = 0;
+    try {
+      for (const i of pickedVitals) {
+        const mentioned = draft.mentioned_vitals?.[i];
+        const parsed = mentioned && parseMentionedVital(mentioned);
+        if (!parsed) continue;
+        const { error } = await (supabase as any).from("vitals").insert({
+          user_id: encounter.patient_user_id,
+          recorded_by_user_id: user.id,
+          source: "clinician",
+          type: parsed.type,
+          value: parsed.value,
+          secondary_value: parsed.secondaryValue,
+          unit: parsed.unit,
+          recorded_at: encounter.occurred_at,
+          notes: `Heard during the visit: "${mentioned?.value ?? ""}"`.trim(),
+        });
+        if (error) failures.push(`${parsed.label}: ${error.message}`);
+        else written += 1;
+      }
+
+      if (written > 0) {
+        toast.success(`Recorded ${written} reading${written === 1 ? "" : "s"}`);
+        setPickedVitals(new Set());
+      }
+      if (failures.length) {
+        toast.error(`${failures.length} could not be recorded`, {
+          description: failures.slice(0, 3).join(" · "),
+        });
+      }
+    } finally {
+      setRecordingVitals(false);
     }
   };
 
@@ -218,21 +268,68 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
               </div>
             ))}
             {(draft.mentioned_vitals?.length || draft.mentioned_medications?.length) ? (
-              <div className="rounded-md border p-2 space-y-1 text-xs">
+              <div className="rounded-md border p-2 space-y-1.5 text-xs">
                 <div className="font-medium">Mentioned in the visit</div>
-                {draft.mentioned_vitals?.map((v, i) => (
-                  <div key={`v${i}`} className="text-muted-foreground">
-                    Vital · {[v.type, v.value, v.note].filter(Boolean).join(" — ")}
-                  </div>
-                ))}
+                {/* These used to end with "Not saved anywhere — add them
+                    yourself", because vitals accepted writes only from the
+                    patient's own account. They can be recorded now, one tick
+                    at a time and never by default. */}
+                {draft.mentioned_vitals?.map((v, i) => {
+                  const parsed = parseMentionedVital(v);
+                  return (
+                    <label
+                      key={`v${i}`}
+                      className={`flex items-start gap-2 ${parsed ? "cursor-pointer" : ""}`}
+                    >
+                      <Checkbox
+                        checked={pickedVitals.has(i)}
+                        disabled={!parsed}
+                        onCheckedChange={() =>
+                          setPickedVitals((prev) => {
+                            const next = new Set(prev);
+                            next.has(i) ? next.delete(i) : next.add(i);
+                            return next;
+                          })
+                        }
+                        className="mt-0.5"
+                      />
+                      <span className="text-muted-foreground">
+                        Vital · {[v.type, v.value, v.note].filter(Boolean).join(" — ")}
+                        {!parsed && (
+                          <span className="block text-[10px] text-amber-600 dark:text-amber-400">
+                            No clear number heard — record this one yourself.
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })}
                 {draft.mentioned_medications?.map((m, i) => (
-                  <div key={`m${i}`} className="text-muted-foreground">
+                  <div key={`m${i}`} className="text-muted-foreground pl-6">
                     Medication · {[m.name, m.dose, m.change].filter(Boolean).join(" — ")}
                   </div>
                 ))}
-                <div className="text-[10px] text-muted-foreground/80">
-                  Not saved anywhere — add them yourself if clinically appropriate.
-                </div>
+                {pickedVitals.size > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 w-full"
+                    onClick={recordPickedVitals}
+                    disabled={recordingVitals}
+                  >
+                    {recordingVitals ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Activity className="h-3.5 w-3.5" />
+                    )}
+                    Record {pickedVitals.size} reading{pickedVitals.size === 1 ? "" : "s"}
+                  </Button>
+                )}
+                {draft.mentioned_medications?.length ? (
+                  <div className="text-[10px] text-muted-foreground/80 pl-6">
+                    Medications are not written from here — change them on the patient's list.
+                  </div>
+                ) : null}
               </div>
             ) : null}
             <Button size="sm" className="gap-2 w-full" onClick={applyDraft} disabled={!hasDraft}>
