@@ -21,7 +21,6 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
-import { PatientNotesDialog } from '@/components/clinician/PatientNotesDialog';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { AddManagedPatientDialog } from '@/components/clinician/AddManagedPatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
@@ -57,7 +56,6 @@ const ClinicianPatients = () => {
     institutionPatients,
     isLoading: isLoadingPatients,
     autoClaimShares,
-    updatePatientNotes,
   } = useClinicianPatients();
   const { records: managedRecords, isLoading: isLoadingRecords } = useClinicianPatientRecords();
   const { patientLimit, tier, isTrial } = useClinicianSubscription();
@@ -72,13 +70,6 @@ const ClinicianPatients = () => {
         isTrial ? ' on the free trial' : ''
       }. Upgrade to add more.`;
   
-  const [notesDialog, setNotesDialog] = useState<{
-    open: boolean;
-    patientId: string;
-    patientName: string;
-    notes: string;
-  }>({ open: false, patientId: '', patientName: '', notes: '' });
-
   const [patientSearch, setPatientSearch] = useState('');
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState('connected');
@@ -519,20 +510,6 @@ const ClinicianPatients = () => {
           </TabsContent>
         </Tabs>
       </main>
-
-      <PatientNotesDialog
-        open={notesDialog.open}
-        onOpenChange={(open) => setNotesDialog({ ...notesDialog, open })}
-        patientName={notesDialog.patientName}
-        initialNotes={notesDialog.notes}
-        onSave={async (notes) => {
-          await updatePatientNotes.mutateAsync({
-            shareId: notesDialog.patientId,
-            notes,
-          });
-        }}
-        isSaving={updatePatientNotes.isPending}
-      />
     </div>
   );
 };

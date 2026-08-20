@@ -175,38 +175,6 @@ export function useClinicianPatients() {
     },
   });
 
-  // Update clinician notes for a patient
-  const updatePatientNotes = useMutation({
-    mutationFn: async ({ shareId, notes }: { shareId: string; notes: string }) => {
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('provider_shares')
-        .update({ clinician_notes: notes })
-        .eq('id', shareId)
-        .eq('clinician_user_id', user.id)
-        .select('id');
-
-      if (error) throw error;
-      // These notes live on the private share row. A hospital-assigned patient
-      // has no such row, so an empty result means nothing was written — report
-      // that rather than showing a success toast for a no-op.
-      if (!data || data.length === 0) {
-        throw new Error(
-          'These notes are part of a private Care Circle share. Use Internal notes for a hospital-assigned patient.',
-        );
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
-      toast.success('Patient notes saved');
-    },
-    onError: (error) => {
-      console.error('Error updating notes:', error);
-      toast.error('Failed to save notes');
-    },
-  });
-
   // Hospital-assigned patients are a second, independent pathway into the same
   // panel. They carry no provider_shares row, so they are shaped to match and
   // tagged by source rather than being folded in invisibly.
@@ -261,6 +229,5 @@ export function useClinicianPatients() {
     error,
     claimShare,
     autoClaimShares,
-    updatePatientNotes,
   };
 }

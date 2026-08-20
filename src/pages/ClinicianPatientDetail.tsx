@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -23,7 +23,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
@@ -47,19 +46,15 @@ import { VITAL_CONFIG, resolveVitalConfig } from '@/types/health';
 import { format, formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { useRecordAccessLog } from '@/hooks/useRecordAccessLog';
 
 const ClinicianPatientDetail = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
   const navigate = useNavigate();
-  const { patients, updatePatientNotes } = useClinicianPatients();
+  const { patients } = useClinicianPatients();
   const { clinicianGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs } = useAlertRules();
 
-  const [notes, setNotes] = useState('');
-  const [savingNotes, setSavingNotes] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<string>('encounters');
   const [showRiskDetails, setShowRiskDetails] = useState(false);
 
@@ -163,30 +158,6 @@ const ClinicianPatientDetail = () => {
     });
     return grouped;
   }, [vitals]);
-
-  // Initialize notes whenever the patient changes (was buggy useState init)
-  useEffect(() => {
-    if (patient?.clinician_notes) {
-      setNotes(patient.clinician_notes);
-    }
-  }, [patient?.id, patient?.clinician_notes]);
-
-  const handleSaveNotes = async () => {
-    if (!patient) return;
-    setSavingNotes(true);
-    try {
-      await updatePatientNotes.mutateAsync({ 
-        shareId: patient.id, 
-        notes 
-      });
-      setLastSavedAt(new Date());
-      toast.success('Notes saved');
-    } catch (error) {
-      toast.error('Failed to save notes');
-    } finally {
-      setSavingNotes(false);
-    }
-  };
 
   if (!patient) {
     return (
@@ -422,8 +393,10 @@ const ClinicianPatientDetail = () => {
                 <MessageSquare className="h-3 w-3" />
                 Messages
               </TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="internal">Internal</TabsTrigger>
+              {/* Both are notes; the difference is who reads them, so that is what
+                  the labels say. "Notes" and "Internal" said nothing. */}
+              <TabsTrigger value="notes">My notes</TabsTrigger>
+              <TabsTrigger value="internal">Team notes</TabsTrigger>
               <TabsTrigger value="network">Network</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
@@ -742,51 +715,10 @@ const ClinicianPatientDetail = () => {
 
             {/* Notes Tab */}
             <TabsContent value="notes">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <StickyNote className="h-5 w-5" />
-                    Clinical Notes
-                  </CardTitle>
-                  <CardDescription>
-                    {patient.source === 'hospital'
-                      ? 'These notes belong to a private Care Circle share. For a hospital-assigned patient, use the Internal notes tab — those stay private to the care team and never reach the patient’s Health Vault.'
-                      : 'Private notes about this patient (only visible to you)'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Textarea
-                    placeholder="Add notes about this patient's care, observations, or follow-up items..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={8}
-                    disabled={patient.source === 'hospital'}
-                  />
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-muted-foreground">
-                      {savingNotes
-                        ? 'Saving…'
-                        : lastSavedAt
-                          ? `Last saved ${formatDistanceToNow(lastSavedAt, { addSuffix: true })}`
-                          : 'Not saved yet — your edits are local until you click Save.'}
-                    </p>
-                    <Button
-                      onClick={handleSaveNotes}
-                      disabled={savingNotes || patient.source === 'hospital'}
-                      className="gradient-primary border-0"
-                    >
-                      {savingNotes ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        'Save Notes'
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Was one free-text field saved as a blob: a fortnight of
+                  observations with no dates and no way to change one line.
+                  Entries now, private to whoever wrote them. */}
+              <InternalNotesTab patientUserId={patient.user_id} visibility="private" />
             </TabsContent>
           </Tabs>
 
