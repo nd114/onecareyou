@@ -136,3 +136,23 @@ export function jobPostingSchema(job: {
     url: `${BRAND.urls.published}/careers/${job.id}`,
   };
 }
+
+export function videoSchema(video: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  contentUrl: string;
+  duration: string;
+  uploadDate: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: video.name,
+    description: video.description,
+    thumbnailUrl: [video.thumbnailUrl],
+    contentUrl: video.contentUrl,
+    duration: video.duration,
+    uploadDate: video.uploadDate,
+  };
+}
