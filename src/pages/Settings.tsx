@@ -59,6 +59,7 @@ import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { EmergencySettingsSection } from '@/components/emergency/EmergencySettingsSection';
 import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
+import { SharingHistorySection } from '@/components/settings/SharingHistorySection';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
 import { StorageUsageCard } from '@/components/StorageUsageCard';
 import { formatDateOnly } from '@/lib/date-only';
@@ -603,6 +604,14 @@ const Settings = () => {
           {/* AI Conversation History */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <AIHistorySection />
+
+            {/* Who has ever had this record, and what they got. Kept here
+                rather than on Care Circle: that page answers "who can see me
+                now", which is asked often; this answers "who has ever seen
+                me", which is asked rarely and needs to be complete. */}
+            <div className="mt-6">
+              <SharingHistorySection />
+            </div>
 
             <AuditTrailSection />
 

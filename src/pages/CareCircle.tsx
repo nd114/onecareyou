@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Link } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,17 +46,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-
-const SHARE_EVENT_LABELS: Record<string, string> = {
-  connected: 'Access granted',
-  claimed: 'Provider joined',
-  permissions_changed: 'What you share changed',
-  paused: 'Sharing paused',
-  resumed: 'Sharing resumed',
-  revoked: 'Access ended',
-  reshared: 'Sharing resumed',
-  expired: 'Access expired',
-};
 
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -523,7 +513,9 @@ const CareCircle = () => {
         </motion.div>
 
 
-        {/* Sharing history — permanent, append-only record */}
+        {/* The full history now lives in Settings, where "who has ever had my
+            record" belongs — this page is about who can see you now. A pointer
+            rather than a second copy, so the two cannot disagree. */}
         {shareEvents.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -532,30 +524,16 @@ const CareCircle = () => {
             className="mt-8"
           >
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Shield className="h-4 w-4 text-primary" />
-                  Sharing history
-                </CardTitle>
-                <CardDescription>
-                  A permanent record of every time access was granted, changed or ended. This can’t be edited or deleted.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {shareEvents.slice(0, 12).map((ev) => (
-                    <li key={ev.id} className="flex items-start justify-between gap-3 text-xs sm:text-sm border-b last:border-0 pb-2 last:pb-0">
-                      <span className="min-w-0">
-                        <span className="font-medium">{SHARE_EVENT_LABELS[ev.event_type] ?? ev.event_type}</span>
-                        {ev.provider_label && <span className="text-muted-foreground"> · {ev.provider_label}</span>}
-                        {ev.reason && <span className="text-muted-foreground"> · {ev.reason}</span>}
-                      </span>
-                      <span className="text-muted-foreground whitespace-nowrap">
-                        {new Date(ev.created_at).toLocaleDateString()}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+              <CardContent className="p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Shield className="h-4 w-4 shrink-0 text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Every change to who can see your record is kept permanently.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" asChild className="shrink-0">
+                  <Link to="/settings#sharing-history">View history</Link>
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
