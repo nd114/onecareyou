@@ -17,12 +17,14 @@ import {
   ArrowRight,
   Check,
   Share2,
+  Play,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { FEATURE_MOCKUPS } from '@/components/features/FeatureMockup';
+import walkthroughPoster from '@/assets/patient-walkthrough-poster.jpg.asset.json';
 
 const coreFeatures = [
   {
