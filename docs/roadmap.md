@@ -2,7 +2,7 @@
 
 **What this is.** The single living tracker for OneCare product work: what has shipped and when, what is in flight, what is next, and what is deliberately deferred. Update this file as work lands — do not start new roadmap or tracking documents.
 
-**Last updated:** 17 August 2026
+**Last updated:** 20 August 2026
 
 **Companion docs** (deep dives kept separate on purpose):
 
@@ -70,6 +70,18 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 ## Shipped log (newest first)
 
 ### August 2026
+
+- **The anonymous write surfaces got a limit.** Three tables accept INSERT from the open internet
+  on purpose — applying for a job without an account, anonymous beta telemetry, the enterprise
+  enquiry form — and none of them had any ceiling, so a loop could put ten thousand names, emails
+  and phone numbers into `job_applications` and the only sign would be the table growing. Now
+  throttled at the database by `BEFORE INSERT` triggers: per subject (client IP, falling back to
+  the email address so one flooder cannot lock out real applicants) and in aggregate, which is the
+  only limit that sees a slow spread across many addresses. The refusal is a sentence written for
+  the person reading it, and the public forms now show it — they used to catch every failure and
+  say "please try again", which is the one piece of advice that cannot work for a throttle.
+  The KingsChat callback, a public endpoint with no caller in the app, is switched off behind a
+  flag and refuses any callback without `state`. 15 regression assertions, 5 unit tests.
 
 - **A dictation now reaches the record.** The dictation surface transcribed, summarised, and
   stopped: `clinician_dictations.patient_user_id` had existed since the table was created and
@@ -176,18 +188,28 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 4. **Assignment-first access** — switch `can_view_all_patients` off as the hospital default once
    sub-admins are onboarded and trained, so a clinician sees the patients assigned to them.
    Prepared on `claude/oclmc-panel-scope-option-a-assignment-first`; see review C2.
-5. **Server-side audit logging.** `hipaa_audit_logs` rows are written by the client, so the log
-   records what the client chose to report. Sound for the honest-client case and fine for the BAA
-   conversation today, but PHI reads should be logged server-side before a formal audit. Raised in
-   three consecutive reviews now, and it matters more since tenant visibility was deliberately left
-   broad — the audit log is the compensating control for that decision.
-6. **Rate limiting on anonymous writes and sign-in.** There is none anywhere in the application
-   today; the only 429 handling is for responses *from* the AI gateway. Flagged in the August 2026
-   security review as an accepted risk pending a decision.
+5. **Server-side audit logging — half done.** Writes are covered: six `AFTER INSERT OR UPDATE`
+   triggers record changes to guidance, encounters, internal notes, managed records and both share
+   tables server-side, so a change to a patient's record is logged whatever the client reports
+   (August 2026). What is still client-written is *reads* — `useHipaaAuditLog` and
+   `useProviderShares` insert `hipaa_audit_logs` rows from the browser, so a PHI read is recorded
+   only if the client chooses to say so. Finish this before a formal audit. It matters more since
+   tenant visibility was deliberately left broad — the audit log is the compensating control for
+   that decision.
+6. **Rate limiting — anonymous writes done, sign-in outstanding.** The three tables the anonymous
+   role can INSERT into (`job_applications`, `beta_events`, `enterprise_inquiries`) are throttled
+   at the database by `BEFORE INSERT` triggers, per subject and in aggregate, keyed on the client
+   IP with a fall back to the email address (August 2026). The KingsChat callback — a public
+   endpoint with no caller — is switched off behind `KINGSCHAT_LINKING_ENABLED` and refuses to run
+   without a `state` value, so account linking cannot ship without the session binding.
+   Still outstanding: **sign-in**, which is Supabase Auth's own endpoint and is limited in the
+   dashboard rather than in a migration — confirm the configured limits and record them.
 7. **KingsChat account linking — with `state` and PKCE.** The callback exchanges a code correctly
-   but nothing binds it to the browser session that started the flow. Harmless while it does not
-   link accounts; an account-takeover path the moment it does. Requirements are written up in the
-   security review — settle them as part of the linking design, not afterwards.
+   but nothing binds it to the browser session that started the flow, and nothing in the app starts
+   one: there is no client code building an authorization URL, so the endpoint has no caller. It is
+   now closed by default and rejects any callback without `state`, so the requirement is enforced
+   in code rather than recorded in a document (August 2026). Whoever builds the linking design has
+   to build the issuing half first, which was the point.
 8. **Enterprise management depth** — provider/patient rosters, coverage and caseload views, owner KPI reports.
 9. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
 10. **AI medication knowledge base** for the patient assistant (interactions, side effects, missed doses; no dosage changes, no diagnosis).
