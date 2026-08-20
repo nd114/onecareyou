@@ -29,6 +29,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
+import { PatientAlertRulesCard } from '@/components/clinician/PatientAlertRulesCard';
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
 import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
@@ -367,6 +368,29 @@ const ClinicianPatientDetail = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* The thresholds themselves, not just how many there are. A clinician
+            could previously see that three alerts existed on this patient
+            without being able to see what they were without leaving the page. */}
+        {patientAlertRules.length > 0 && (
+          <div className="mb-6">
+            <PatientAlertRulesCard
+              rules={patientAlertRules}
+              action={
+                <CreateAlertRuleDialog
+                  patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
+                  selectedPatientId={patient.user_id}
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      <Bell className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  }
+                />
+              }
+            />
+          </div>
+        )}
 
         {/* Allergies and conditions, above the tabs — these should never be
             something a clinician has to go looking for. */}

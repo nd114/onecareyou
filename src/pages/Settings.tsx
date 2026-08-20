@@ -451,9 +451,13 @@ const Settings = () => {
 
                 {/* Edit profile */}
                 <EditProfileDialog />
+                {/* Not a duplicate of the dialog above: this page owns the
+                    fields that one deliberately leaves alone — allergies,
+                    conditions, country and emergency contact. Named for what it
+                    edits, because "guided health review" told nobody that. */}
                 <Link to="/onboarding">
                   <Button variant="ghost" className="w-full">
-                    Guided health review
+                    Allergies, conditions &amp; emergency contact
                   </Button>
                 </Link>
 

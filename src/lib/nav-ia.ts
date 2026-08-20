@@ -34,7 +34,8 @@ export const PATIENT_PILLARS: PatientPillar[] = [
     primary: "/dashboard",
     tabs: [
       { to: "/dashboard", label: "Overview" },
-      { to: "/schedule", label: "Schedule" },
+      // "Schedule" reads as an appointment diary. This page is the day's doses.
+      { to: "/schedule", label: "Doses" },
       { to: "/guidance", label: "Catch-up" },
     ],
   },

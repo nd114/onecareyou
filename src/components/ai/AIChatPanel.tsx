@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import {
-  Send, Loader2, Mic, MicOff, Trash2, ArrowRight, Bot, User, AlertTriangle, Paperclip,
+  Send, Loader2, Mic, MicOff, SquarePen, ArrowRight, Bot, User, AlertTriangle, Paperclip,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -448,11 +448,30 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChat
   );
 }
 
-/** Default clear-conversation control for panel headers. */
+/**
+ * Starts a fresh conversation.
+ *
+ * This was a bin, which sat next to the panel's close X and read as a second
+ * way to dismiss the thing — reported in review as "a bin and an X" without it
+ * being clear what either did. They were never duplicates: one closed the
+ * panel, one wiped the transcript.
+ *
+ * Now that conversations are kept and readable under the AI pillar, wiping the
+ * screen destroys nothing, so the honest label is what the action is for:
+ * starting again. The earlier exchange stays in the patient's history, where
+ * they can go back to it.
+ */
 export function ClearConversationButton({ onClear }: { onClear: () => void }) {
   return (
-    <Button variant="ghost" size="icon" onClick={onClear} className="h-8 w-8 shrink-0" title="Clear conversation">
-      <Trash2 className="h-4 w-4" />
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={onClear}
+      className="h-8 w-8 shrink-0"
+      title="Start a new conversation"
+      aria-label="Start a new conversation"
+    >
+      <SquarePen className="h-4 w-4" />
     </Button>
   );
 }
