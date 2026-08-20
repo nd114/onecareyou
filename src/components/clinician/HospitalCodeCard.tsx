@@ -22,6 +22,10 @@ export const HospitalCodeCard = () => {
   const canManage =
     currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
 
+  const label =
+    (tenant?.tenant_type ?? 'practice') === 'hospital' ? 'Hospital code' : 'Practice code';
+
+
   const [value, setValue] = useState('');
   const [available, setAvailable] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
