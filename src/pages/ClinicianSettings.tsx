@@ -24,7 +24,9 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
-import { SectionTabs } from '@/components/layout/SectionTabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
+
 import { useClinicianProfile, MEDICAL_SPECIALTIES, CLINICIAN_TITLES } from '@/hooks/useClinicianProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
