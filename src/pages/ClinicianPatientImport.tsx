@@ -1,10 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Download,
-  ArrowLeft, ArrowRight, Loader2, X, Edit2, Users, Shield,
-} from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Download, ArrowLeft, ArrowRight, Loader2, X, Edit2, Users, Shield, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +14,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { toast } from 'sonner';
 import { findDuplicateCandidates, dedupReasonLabel } from '@/lib/patient-dedup';
+import { validateCsvStructure, type CsvStructureProblem } from '@/lib/import-csv';
 
 interface ParsedRow {
   patient_name: string;
@@ -63,6 +61,7 @@ const ClinicianPatientImport = () => {
   const { importRecords, records: existingRecords } = useClinicianPatientRecords();
   const [step, setStep] = useState(1);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
+  const [structureProblems, setStructureProblems] = useState<CsvStructureProblem[]>([]);
   const [dataModel, setDataModel] = useState('clinician_managed');
   const [importResult, setImportResult] = useState<any>(null);
   const [editingCell, setEditingCell] = useState<{ row: number; field: string } | null>(null);
@@ -80,37 +79,23 @@ const ClinicianPatientImport = () => {
   };
 
   const parseCSV = useCallback((text: string) => {
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length < 2) {
-      toast.error('CSV must have a header row and at least one data row');
+    // Structure first, and the whole file is refused if it is wrong. A ragged
+    // row — usually an unescaped comma inside a value — used to parse without
+    // complaint and file its values one column out, which is not obviously
+    // wrong on screen and is a patient record by the time anyone notices.
+    const structure = validateCsvStructure(text);
+    if (!structure.ok) {
+      setStructureProblems(structure.problems);
+      setParsedRows([]);
+      setStep(1);
       return;
     }
+    setStructureProblems([]);
 
-    // Simple CSV parser that handles quoted fields
-    const parseLine = (line: string): string[] => {
-      const result: string[] = [];
-      let current = '';
-      let inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          result.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      result.push(current.trim());
-      return result;
-    };
-
-    const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z ]/g, '').trim());
+    const { headers, dataLines } = structure;
     const rows: ParsedRow[] = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseLine(lines[i]);
+    for (const values of dataLines) {
       if (values.every(v => !v)) continue;
 
       const getVal = (headerOptions: string[]) => {
@@ -321,6 +306,33 @@ const ClinicianPatientImport = () => {
                     className="max-w-xs mx-auto"
                   />
                 </div>
+
+                {/* Refused before anything is offered for import, and it says
+                    which line and why — a file you cannot fix is the same as no
+                    importer at all. */}
+                {structureProblems.length > 0 && (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                      <div className="min-w-0">
+                        <h4 className="font-medium text-sm">This file cannot be imported yet</h4>
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+                          Nothing has been imported. Fix the rows below and upload it again.
+                        </p>
+                        <ul className="space-y-1">
+                          {structureProblems.map((problem, index) => (
+                            <li key={index} className="text-xs">
+                              {problem.line ? (
+                                <span className="font-medium">Line {problem.line}: </span>
+                              ) : null}
+                              {problem.message}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-muted/50 rounded-lg p-4">
                   <h4 className="font-medium text-sm mb-2">Expected columns:</h4>
