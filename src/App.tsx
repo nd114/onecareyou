@@ -49,6 +49,7 @@ import TermsOfService from "./pages/TermsOfService";
 import DataProcessing from "./pages/DataProcessing";
 import About from "./pages/About";
 import Features from "./pages/Features";
+import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import MedicalDisclaimer from "./pages/MedicalDisclaimer";
