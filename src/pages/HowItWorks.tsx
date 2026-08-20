@@ -130,7 +130,7 @@ export default function HowItWorks() {
                     type="button"
                     onClick={play}
                     aria-label="Play the OneCare patient walkthrough"
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-foreground/35 backdrop-blur-[1px] transition-colors hover:bg-foreground/45"
+                    className="group absolute inset-0 flex flex-col items-center justify-center gap-4 bg-foreground/35 backdrop-blur-[1px] transition-colors hover:bg-foreground/45"
                   >
                     <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-transform group-hover:scale-105">
                       <Play className="h-8 w-8 translate-x-0.5" />

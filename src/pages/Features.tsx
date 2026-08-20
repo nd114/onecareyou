@@ -291,7 +291,7 @@ const Features = () => {
                   className="block w-full aspect-video object-cover object-top"
                 />
                 <span className="absolute inset-0 flex items-center justify-center bg-foreground/25 transition-colors group-hover:bg-foreground/35">
-                  <span className="flex h-18 w-18 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-transform group-hover:scale-105 h-[4.5rem] w-[4.5rem]">
+                  <span className="flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-transform group-hover:scale-105 h-[4.5rem] w-[4.5rem]">
                     <Play className="h-7 w-7 translate-x-0.5" />
                   </span>
                 </span>
