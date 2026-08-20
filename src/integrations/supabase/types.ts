@@ -3907,6 +3907,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_record_access: {
+        Args: {
+          _patient_user_id: string
+          _resource_id?: string
+          _resource_type: string
+        }
+        Returns: undefined
+      }
       my_institution_care_team: {
         Args: never
         Returns: {
