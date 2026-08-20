@@ -139,6 +139,7 @@ const App = () => (
             <Route path="/clinician/sign-up" element={<ClinicianSignUp />} />
             <Route path="/about" element={<About />} />
             <Route path="/features" element={<Features />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
