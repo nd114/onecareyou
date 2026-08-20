@@ -4052,6 +4052,24 @@ export type Database = {
         Args: { patient_uuid: string }
         Returns: boolean
       }
+      practice_member_directory: {
+        Args: { _practice_id: string }
+        Returns: {
+          avatar_url: string
+          can_view_all_patients: boolean
+          created_at: string
+          display_name: string
+          email: string
+          first_name: string
+          last_name: string
+          member_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          specialty: string
+          status: string
+          title: string
+          user_id: string
+        }[]
+      }
       practice_patient_overview: {
         Args: { _practice_id: string }
         Returns: {
@@ -4098,6 +4116,10 @@ export type Database = {
           _state?: string
           _zip_code?: string
         }
+        Returns: undefined
+      }
+      practice_set_name: {
+        Args: { _name: string; _practice_id: string }
         Returns: undefined
       }
       practice_staff_overview: {
