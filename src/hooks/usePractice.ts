@@ -131,18 +131,52 @@ export function usePractice() {
   const currentPractice = practices[0] || null;
   const currentMembership = memberships[0] || null;
 
-  // Get members of a practice
+  // Get members of a practice.
+  //
+  // Read through practice_member_directory rather than practice_members: a
+  // clinician usually has no patient `profiles` row, so joining names on the
+  // client rendered every colleague as "Unknown" / "Team member". The RPC
+  // resolves the professional name (title + first + last), then the profile
+  // name, then the account email.
   const usePracticeMembers = (practiceId: string) => {
     return useQuery({
       queryKey: ['practice-members', practiceId],
       queryFn: async () => {
-        const { data, error } = await (supabase
-          .from('practice_members' as any)
-          .select('*')
-          .eq('practice_id', practiceId)
-          .order('role', { ascending: true }) as any);
+        const { data, error } = await (supabase.rpc as any)('practice_member_directory', {
+          _practice_id: practiceId,
+        });
         if (error) throw error;
-        return (data || []) as PracticeMember[];
+        return ((data || []) as any[]).map((row): PracticeMember => ({
+          id: row.member_id,
+          practice_id: practiceId,
+          user_id: row.user_id,
+          role: row.role,
+          can_invite_patients: false,
+          can_invite_members: false,
+          can_manage_billing: false,
+          can_view_all_patients: !!row.can_view_all_patients,
+          can_manage_settings: false,
+          status: row.status,
+          invited_by: null,
+          invited_at: null,
+          accepted_at: null,
+          created_at: row.created_at,
+          profile: {
+            name: row.display_name,
+            email: row.email,
+            avatar_url: row.avatar_url ?? null,
+          },
+          clinician_profile:
+            row.first_name || row.last_name
+              ? {
+                  title: row.title || '',
+                  first_name: row.first_name || '',
+                  last_name: row.last_name || '',
+                  specialty: row.specialty || '',
+                }
+              : undefined,
+        }));
+
       },
       enabled: !!practiceId,
     });
