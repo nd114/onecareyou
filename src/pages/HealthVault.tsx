@@ -11,6 +11,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
+import { VisitSummariesSection } from '@/components/documents/VisitSummariesSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FREE_DOCUMENT_LIMIT } from '@/lib/pricing-constants';
@@ -94,7 +95,7 @@ const HealthVault = () => {
                 Health Vault
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Store and organize all your health documents in one place
+                Your visit summaries and health documents, in one place
               </p>
             </div>
             {!isOverFreeLimit && (
@@ -133,6 +134,11 @@ const HealthVault = () => {
               <Link to="/pricing" className="text-primary hover:underline">Upgrade for unlimited</Link>
             </div>
           )}
+
+          {/* What a clinician wrote after a visit. Sits above the files
+              because it is the thing people open the Vault to find after an
+              appointment, and because a document is only one kind of record. */}
+          <VisitSummariesSection />
 
           {/* Search */}
           <div className="relative mb-4">

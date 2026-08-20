@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, FolderPlus } from 'lucide-react';
+import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, FolderPlus, Stethoscope } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -128,6 +128,15 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                       <Badge variant="outline" className="text-[10px] h-5 gap-1">
                         <Upload className="h-2.5 w-2.5" />
                         From Vitals
+                      </Badge>
+                    )}
+                    {/* A document you did not upload yourself needs to say so.
+                        Finding an unexplained file in your own Vault is worse
+                        than not having it. */}
+                    {doc.source_context === 'clinician_upload' && (
+                      <Badge variant="outline" className="text-[10px] h-5 gap-1">
+                        <Stethoscope className="h-2.5 w-2.5" />
+                        From your clinician
                       </Badge>
                     )}
                     {/* Two different dates, and conflating them loses the one

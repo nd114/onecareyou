@@ -32,6 +32,7 @@ import { PatientAlertRulesCard } from '@/components/clinician/PatientAlertRulesC
 import { PatientRiskIndicator } from '@/components/clinician/PatientRiskIndicator';
 import { PatientAdherenceAnalytics } from '@/components/clinician/PatientAdherenceAnalytics';
 import { SharedDocumentsTab } from '@/components/clinician/SharedDocumentsTab';
+import { SendToVaultDialog } from '@/components/clinician/SendToVaultDialog';
 import { MessageThread } from '@/components/messaging/MessageThread';
 import { EncountersTab } from '@/components/clinician/EncountersTab';
 import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
@@ -650,7 +651,15 @@ const ClinicianPatientDetail = () => {
             </TabsContent>
 
             {/* Documents Tab */}
-            <TabsContent value="documents">
+            <TabsContent value="documents" className="space-y-4">
+              {/* Documents used to travel one way only: the patient shared, the
+                  clinician read. A referral letter had to leave by email. */}
+              <div className="flex justify-end">
+                <SendToVaultDialog
+                  patientUserId={patient.user_id}
+                  patientName={patient.patient_name || 'this patient'}
+                />
+              </div>
               <SharedDocumentsTab
                 patientUserId={patient.user_id}
                 shareId={patient.id}
