@@ -598,11 +598,13 @@ export type Database = {
       clinician_alert_rules: {
         Row: {
           alert_method: string | null
+          archived_at: string | null
           clinician_user_id: string
           condition: string
           created_at: string
           id: string
           is_active: boolean | null
+          label: string | null
           patient_user_id: string
           share_id: string | null
           threshold_secondary: number | null
@@ -612,11 +614,13 @@ export type Database = {
         }
         Insert: {
           alert_method?: string | null
+          archived_at?: string | null
           clinician_user_id: string
           condition: string
           created_at?: string
           id?: string
           is_active?: boolean | null
+          label?: string | null
           patient_user_id: string
           share_id?: string | null
           threshold_secondary?: number | null
@@ -626,11 +630,13 @@ export type Database = {
         }
         Update: {
           alert_method?: string | null
+          archived_at?: string | null
           clinician_user_id?: string
           condition?: string
           created_at?: string
           id?: string
           is_active?: boolean | null
+          label?: string | null
           patient_user_id?: string
           share_id?: string | null
           threshold_secondary?: number | null
