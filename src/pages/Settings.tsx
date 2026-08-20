@@ -7,6 +7,7 @@ import {
   BellRing, TrendingUp, Crown, CreditCard, Loader2, ExternalLink, Camera
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -24,7 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SimpleModeChoice } from '@/components/patient/SimpleModeChoice';
 import { format } from 'date-fns';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -160,6 +161,26 @@ const Settings = () => {
   useServiceWorker();
   
   const navigate = useNavigate();
+  const location = useLocation();
+
+  /**
+   * Which group to open.
+   *
+   * Grouping the page into tabs would otherwise break the links that point at
+   * something inside it — Care Circle's /settings#sharing-history, and the
+   * dashboard's ?section=notifications — because the target sits in a tab that
+   * is not rendered until it is selected. An anchor that lands on a closed tab
+   * is worse than no anchor at all.
+   */
+  const initialTab = (() => {
+    const hash = location.hash.replace('#', '');
+    const section = new URLSearchParams(location.search).get('section');
+    const target = hash || section || '';
+    if (['sharing-history', 'ai-history', 'audit', 'privacy'].includes(target)) return 'privacy';
+    if (['notifications', 'preferences', 'units', 'simple-mode'].includes(target)) return 'prefs';
+    if (['emergency', 'alerts', 'care'].includes(target)) return 'care';
+    return 'account';
+  })();
   
   // Use centralized theme
   const { theme, setTheme } = useTheme();
@@ -291,6 +312,19 @@ const Settings = () => {
           )}
 
           {/* Profile Section */}
+
+          {/* Settings had ten cards stacked on one page, which is a lot to scroll
+              past to change a unit preference. Grouped rather than split into
+              routes: the sections are short, and a sub-page each would trade
+              scrolling for navigating. */}
+          <Tabs defaultValue={initialTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="account">Account</TabsTrigger>
+              <TabsTrigger value="care">Care &amp; alerts</TabsTrigger>
+              <TabsTrigger value="privacy">Privacy &amp; data</TabsTrigger>
+              <TabsTrigger value="prefs">Preferences</TabsTrigger>
+            </TabsList>
+            <TabsContent value="account" className="space-y-6 mt-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -464,8 +498,50 @@ const Settings = () => {
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* AI & Privacy Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            {/* The full connect flow, not a link to it: a patient who
+                opens Settings to connect their hospital was previously
+                sent to Care Circle to do it. Same component as Care
+                Circle uses, so the disclosure before connecting is the
+                same wording in both places. */}
+            <HospitalShareCard />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Button 
+              variant="outline" 
+              className="w-full text-destructive hover:text-destructive"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </motion.div>
+            </TabsContent>
+            <TabsContent value="care" className="space-y-6 mt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+          >
+            <EmergencySettingsSection />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.38 }}
+          >
+            <CareAlertSettings />
+          </motion.div>
+            </TabsContent>
+            <TabsContent value="privacy" className="space-y-6 mt-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -604,8 +680,6 @@ const Settings = () => {
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* AI Conversation History */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <AIHistorySection />
 
@@ -623,9 +697,8 @@ const Settings = () => {
               <StorageUsageCard />
             </div>
           </motion.div>
-
-
-          {/* Preferences */}
+            </TabsContent>
+            <TabsContent value="prefs" className="space-y-6 mt-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -847,8 +920,6 @@ const Settings = () => {
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* Unit Preferences */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -931,53 +1002,8 @@ const Settings = () => {
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* My hospital */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            {/* The full connect flow, not a link to it: a patient who
-                opens Settings to connect their hospital was previously
-                sent to Care Circle to do it. Same component as Care
-                Circle uses, so the disclosure before connecting is the
-                same wording in both places. */}
-            <HospitalShareCard />
-          </motion.div>
-
-          {/* Emergency Information */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55 }}
-          >
-            <EmergencySettingsSection />
-          </motion.div>
-          {/* Care Alerts */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.38 }}
-          >
-            <CareAlertSettings />
-          </motion.div>
-
-          {/* Sign Out */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Button 
-              variant="outline" 
-              className="w-full text-destructive hover:text-destructive"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </motion.div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
