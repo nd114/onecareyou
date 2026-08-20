@@ -47,6 +47,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useRecordAccessLog } from '@/hooks/useRecordAccessLog';
 
 const ClinicianPatientDetail = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -66,6 +67,10 @@ const ClinicianPatientDetail = () => {
     patients.find(p => p.invite_code === inviteCode),
     [patients, inviteCode]
   );
+
+  // Opening a patient's record is the access event a compliance reviewer asks
+  // about. Logged once per record, server-verified — see useRecordAccessLog.
+  useRecordAccessLog(patient?.user_id, 'patient_record', patient?.id ?? null);
 
   // Fetch patient vitals
   const { data: vitals = [], isLoading: loadingVitals } = useQuery({
