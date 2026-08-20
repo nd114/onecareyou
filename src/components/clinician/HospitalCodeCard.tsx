@@ -162,8 +162,9 @@ export const HospitalCodeCard = () => {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Only practice owners and admins can change the hospital code.
+                Only practice owners and admins can change the {label.toLowerCase()}.
               </p>
+
             )}
           </>
         )}
