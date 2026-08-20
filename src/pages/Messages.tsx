@@ -6,14 +6,13 @@ import { Helmet } from 'react-helmet-async';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MessageThread } from '@/components/messaging/MessageThread';
+import { ConversationList, type Conversation } from '@/components/messaging/ConversationList';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessageThreads } from '@/hooks/useMessages';
 import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 interface Counterparty {
   clinicianUserId: string;
@@ -84,15 +83,29 @@ const Messages = () => {
 
 
   const { data: threadSummaries = [] } = useMessageThreads('patient');
-  const unreadByClinician = useMemo(() => {
-    const m = new Map<string, number>();
-    threadSummaries.forEach((t) => m.set(t.counterpartyId, t.unread));
-    return m;
-  }, [threadSummaries]);
 
+  const conversations: Conversation[] = useMemo(
+    () =>
+      clinicians.map((c) => ({
+        id: c.clinicianUserId,
+        name: c.name,
+        caption: c.isPast ? 'Past connection' : undefined,
+      })),
+    [clinicians],
+  );
+
+  // Land on whichever conversation moved most recently, not the first
+  // clinician in the share list.
   useEffect(() => {
-    if (!selected && clinicians.length > 0) setSelected(clinicians[0]);
-  }, [clinicians, selected]);
+    if (selected || clinicians.length === 0) return;
+    const newest = threadSummaries.find((t) =>
+      clinicians.some((c) => c.clinicianUserId === t.counterpartyId),
+    );
+    setSelected(
+      (newest && clinicians.find((c) => c.clinicianUserId === newest.counterpartyId)) ||
+        clinicians[0],
+    );
+  }, [clinicians, threadSummaries, selected]);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -131,39 +144,18 @@ const Messages = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4 h-[calc(100vh-220px)] min-h-[500px]">
-            <Card className="overflow-hidden">
-              <CardHeader className="py-3 px-4 border-b">
-                <CardTitle className="text-sm font-medium">Conversations</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 overflow-y-auto">
-                {clinicians.map((c) => {
-                  const unread = unreadByClinician.get(c.clinicianUserId) || 0;
-                  const active = selected?.clinicianUserId === c.clinicianUserId;
-                  return (
-                    <button
-                      key={c.clinicianUserId}
-                      onClick={() => setSelected(c)}
-                      className={cn(
-                        'w-full text-left px-4 py-3 border-b hover:bg-muted/50 transition-colors flex items-center justify-between gap-2',
-                        active && 'bg-muted',
-                      )}
-                    >
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{c.name}</div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {c.isPast ? 'Past connection' : 'Clinician'}
-                        </div>
-
-                      </div>
-                      {unread > 0 && (
-                        <Badge variant="default" className="h-5 px-1.5 text-[10px]">
-                          {unread}
-                        </Badge>
-                      )}
-                    </button>
-                  );
-                })}
-              </CardContent>
+            <Card className="overflow-hidden flex flex-col">
+              <ConversationList
+                conversations={conversations}
+                threads={threadSummaries}
+                selectedId={selected?.clinicianUserId ?? null}
+                onSelect={(c) =>
+                  setSelected(clinicians.find((x) => x.clinicianUserId === c.id) ?? null)
+                }
+                selfUserId={user?.id}
+                searchPlaceholder="Search clinicians and messages…"
+                emptyLabel="No conversations yet."
+              />
             </Card>
             <Card className="overflow-hidden flex flex-col">
               <CardHeader className="py-3 px-4 border-b">
