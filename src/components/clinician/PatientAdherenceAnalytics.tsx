@@ -34,6 +34,7 @@ import {
 } from 'recharts';
 import { format, eachDayOfInterval, subDays, startOfDay, getHours } from 'date-fns';
 import { toast } from 'sonner';
+import { summariseAdherence } from '@/lib/adherence';
 
 interface ScheduleEntry {
   id: string;
@@ -63,35 +64,31 @@ export const PatientAdherenceAnalytics = ({
   patientId,
   isLoading = false
 }: PatientAdherenceAnalyticsProps) => {
-  // Calculate overall stats
+  // Everything below is scored on doses that have come due. This block already
+  // was — `taken / (total - pending + missed)` is the due count spelled out —
+  // but the three that follow were not, so the headline rate disagreed with the
+  // per-medication, per-day and per-time-of-day breakdowns underneath it.
   const overallStats = useMemo(() => {
-    const total = scheduleEntries.length;
-    const taken = scheduleEntries.filter(e => e.status === 'taken').length;
-    const skipped = scheduleEntries.filter(e => e.status === 'skipped').length;
-    const pending = scheduleEntries.filter(e => e.status === 'pending').length;
-    
-    // Consider past pending as missed
-    const now = new Date();
-    const missed = scheduleEntries.filter(e => 
-      e.status === 'pending' && new Date(e.scheduled_time) < now
-    ).length;
-
-    const adherenceRate = total > 0 ? Math.round((taken / (total - pending + missed)) * 100) : 0;
-
-    return { total, taken, skipped, missed, pending, adherenceRate };
+    const summary = summariseAdherence(scheduleEntries);
+    return {
+      total: summary.due,
+      taken: summary.taken,
+      skipped: summary.skipped,
+      missed: summary.missed,
+      pending: summary.upcoming,
+      adherenceRate: summary.rate ?? 0,
+    };
   }, [scheduleEntries]);
 
   // Calculate per-medication adherence
   const medicationStats = useMemo(() => {
     return medications.map(med => {
       const medEntries = scheduleEntries.filter(e => e.medication_id === med.id);
-      const total = medEntries.length;
-      const taken = medEntries.filter(e => e.status === 'taken').length;
-      const skipped = medEntries.filter(e => e.status === 'skipped').length;
-      const now = new Date();
-      const missed = medEntries.filter(e => 
-        e.status === 'pending' && new Date(e.scheduled_time) < now
-      ).length;
+      const summary = summariseAdherence(medEntries);
+      const total = summary.due;
+      const taken = summary.taken;
+      const skipped = summary.skipped;
+      const missed = summary.missed;
 
       const adherenceRate = total > 0 ? Math.round((taken / total) * 100) : 0;
 
@@ -118,9 +115,10 @@ export const PatientAdherenceAnalytics = ({
         format(new Date(e.scheduled_time), 'yyyy-MM-dd') === dateStr
       );
       
-      const total = dayEntries.length;
-      const taken = dayEntries.filter(e => e.status === 'taken').length;
-      const adherenceRate = total > 0 ? Math.round((taken / total) * 100) : null;
+      const daySummary = summariseAdherence(dayEntries);
+      const total = daySummary.due;
+      const taken = daySummary.taken;
+      const adherenceRate = daySummary.rate;
 
       return {
         date: format(day, 'MMM d'),
@@ -151,9 +149,10 @@ export const PatientAdherenceAnalytics = ({
         return hour >= slot.start || hour < slot.end;
       });
 
-      const total = slotEntries.length;
-      const taken = slotEntries.filter(e => e.status === 'taken').length;
-      const adherenceRate = total > 0 ? Math.round((taken / total) * 100) : 0;
+      const slotSummary = summariseAdherence(slotEntries);
+      const total = slotSummary.due;
+      const taken = slotSummary.taken;
+      const adherenceRate = slotSummary.rate ?? 0;
 
       return {
         name: slot.label,

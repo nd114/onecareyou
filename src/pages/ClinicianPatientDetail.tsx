@@ -48,6 +48,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useRecordAccessLog } from '@/hooks/useRecordAccessLog';
+import { summariseAdherence } from '@/lib/adherence';
 
 const ClinicianPatientDetail = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -126,12 +127,13 @@ const ClinicianPatientDetail = () => {
     enabled: !!patient?.user_id && patient?.permissions?.adherence,
   });
 
-  // Calculate adherence rate
-  const adherenceRate = useMemo(() => {
-    if (scheduleEntries.length === 0) return null;
-    const taken = scheduleEntries.filter(e => e.status === 'taken').length;
-    return Math.round((taken / scheduleEntries.length) * 100);
-  }, [scheduleEntries]);
+  // Scored on doses that have come due, not every dose in the window. Counting
+  // tonight's tablets as already not-taken dragged a fully adherent patient
+  // toward the 80% line the risk assessment raises a finding at.
+  const adherenceRate = useMemo(
+    () => summariseAdherence(scheduleEntries).rate,
+    [scheduleEntries],
+  );
 
   // Filter guidance for this patient
   const patientGuidance = useMemo(() => 

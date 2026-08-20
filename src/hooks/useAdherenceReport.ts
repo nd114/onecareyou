@@ -36,6 +36,7 @@ export interface AdherenceReport {
 }
 
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
+import { summariseAdherence } from '@/lib/adherence';
 
 export const useAdherenceReport = (days: number = 7) => {
   const { user, profile } = useAuth();
@@ -51,7 +52,10 @@ export const useAdherenceReport = (days: number = 7) => {
     queryFn: async (): Promise<AdherenceReport> => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      const endDate = new Date();
+      // One clock for the whole calculation, so the daily rows, the totals and
+      // the previous-period comparison all agree about what has come due.
+      const now = new Date();
+      const endDate = now;
       const startDate = subDays(endDate, days - 1);
       
       // Fetch all schedule entries for the date range
@@ -72,23 +76,19 @@ export const useAdherenceReport = (days: number = 7) => {
           format(new Date(e.scheduled_time), 'yyyy-MM-dd') === dateStr
         );
 
-        const taken = dayEntries.filter(e => e.status === 'taken').length;
-        const skipped = dayEntries.filter(e => e.status === 'skipped').length;
-        const pending = dayEntries.filter(e => e.status === 'pending').length;
-        const total = dayEntries.length;
-        
-        // Consider past pending as missed
-        const isPast = date < startOfDay(new Date());
-        const missed = isPast ? pending : 0;
-        
+        // Scored on the doses that have come due. Dividing by every dose of
+        // the day made today's bar start at zero each morning and climb, which
+        // reads as a patient failing and recovering daily.
+        const day = summariseAdherence(dayEntries, now);
+
         return {
           date: dateStr,
           dateLabel: format(date, 'EEE'),
-          taken,
-          skipped,
-          missed,
-          total,
-          adherenceRate: total > 0 ? Math.round((taken / total) * 100) : 0,
+          taken: day.taken,
+          skipped: day.skipped,
+          missed: day.missed,
+          total: day.due,
+          adherenceRate: day.rate ?? 0,
         };
       });
 
@@ -97,43 +97,46 @@ export const useAdherenceReport = (days: number = 7) => {
         .filter(med => med.is_active || entries?.some(e => e.medication_id === med.id))
         .map(med => {
           const medEntries = (entries || []).filter(e => e.medication_id === med.id);
-          const taken = medEntries.filter(e => e.status === 'taken').length;
-          const skipped = medEntries.filter(e => e.status === 'skipped').length;
-          const pending = medEntries.filter(e => e.status === 'pending').length;
-          const total = medEntries.length;
-          
+          // `missed` was every pending dose for this medicine, future ones
+          // included, so a drug started yesterday looked mostly missed.
+          const summary = summariseAdherence(medEntries, now);
+
           return {
             medicationId: med.id,
             medicationName: med.name,
-            taken,
-            skipped,
-            missed: pending, // Simplification: pending in past = missed
-            total,
-            adherenceRate: total > 0 ? Math.round((taken / total) * 100) : 0,
+            taken: summary.taken,
+            skipped: summary.skipped,
+            missed: summary.missed,
+            total: summary.due,
+            adherenceRate: summary.rate ?? 0,
           };
         })
         .filter(m => m.total > 0);
 
-      // Calculate overall stats
-      const totalDoses = (entries || []).length;
-      const takenDoses = (entries || []).filter(e => e.status === 'taken').length;
-      const skippedDoses = (entries || []).filter(e => e.status === 'skipped').length;
-      const missedDoses = totalDoses - takenDoses - skippedDoses;
-      const overallAdherence = totalDoses > 0 ? Math.round((takenDoses / totalDoses) * 100) : 0;
+      // Overall, on the doses that have actually come due.
+      const overall = summariseAdherence(entries || [], now);
+      const totalDoses = overall.due;
+      const takenDoses = overall.taken;
+      const skippedDoses = overall.skipped;
+      const missedDoses = overall.missed;
+      const overallAdherence = overall.rate ?? 0;
 
       // Calculate week-over-week change (compare to previous period)
       const prevStartDate = subDays(startDate, days);
       const { data: prevEntries } = await supabase
         .from('schedule_entries')
-        .select('status')
+        // scheduled_time as well as status: the comparison window is scored by
+        // the same function, which needs to know when each dose was due.
+        .select('status, scheduled_time')
         .eq('user_id', user.id)
         .gte('scheduled_time', startOfDay(prevStartDate).toISOString())
         .lt('scheduled_time', startOfDay(startDate).toISOString());
 
-      const prevTotal = (prevEntries || []).length;
-      const prevTaken = (prevEntries || []).filter(e => e.status === 'taken').length;
-      const prevAdherence = prevTotal > 0 ? Math.round((prevTaken / prevTotal) * 100) : 0;
-      const weekOverWeekChange = overallAdherence - prevAdherence;
+      // The previous window is wholly in the past, so every dose in it is due;
+      // it goes through the same function anyway so the two halves of the
+      // comparison are counted the same way.
+      const previous = summariseAdherence(prevEntries || [], now);
+      const weekOverWeekChange = overallAdherence - (previous.rate ?? 0);
 
       return {
         overallAdherence,

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { startOfDay, endOfDay, subDays, format } from 'date-fns';
+import { summariseAdherence } from '@/lib/adherence';
 
 export interface DashboardStats {
   adherenceRate: number | null;
@@ -27,7 +28,9 @@ export const useDashboardStats = () => {
       // Fetch today's schedule entries
       const { data: todayEntries, error: scheduleError } = await supabase
         .from('schedule_entries')
-        .select('status')
+        // scheduled_time too: adherence is scored on the doses that have come
+        // due, which needs to know when each one was.
+        .select('status, scheduled_time')
         .eq('user_id', user.id)
         .gte('scheduled_time', dayStart)
         .lte('scheduled_time', dayEnd);
@@ -65,10 +68,13 @@ export const useDashboardStats = () => {
         (s) => !s.expires_at || s.expires_at > nowIso,
       ).length;
 
-      // Calculate stats
+      // Today, scored on what has come due. Dividing by every dose of the day
+      // meant the number fell each morning and climbed back through the
+      // evening, so a patient doing everything right watched it drop.
+      const todaySummary = summariseAdherence(todayEntries || []);
       const dailyDoses = todayEntries?.length || 0;
-      const takenToday = todayEntries?.filter(e => e.status === 'taken').length || 0;
-      const todayAdherence = dailyDoses > 0 ? Math.round((takenToday / dailyDoses) * 100) : 100;
+      const takenToday = todaySummary.taken;
+      const todayAdherence = todaySummary.rate ?? 100;
 
       // Weekly adherence by day
       const weeklyAdherence: number[] = [];
@@ -82,18 +88,15 @@ export const useDashboardStats = () => {
           return entryTime >= dayStartTime && entryTime <= dayEndTime;
         }) || [];
         
-        const dayTaken = dayEntries.filter(e => e.status === 'taken').length;
-        const dayTotal = dayEntries.length;
-        weeklyAdherence.push(dayTotal > 0 ? Math.round((dayTaken / dayTotal) * 100) : 100);
+        weeklyAdherence.push(summariseAdherence(dayEntries).rate ?? 100);
       }
 
       // Calculate overall adherence rate (last 7 days). Null when no scheduled
       // entries exist in the window so the UI can show "—" instead of 0%.
-      const totalWeekEntries = weekEntries?.length || 0;
-      const totalWeekTaken = weekEntries?.filter(e => e.status === 'taken').length || 0;
-      const adherenceRate = totalWeekEntries > 0
-        ? Math.round((totalWeekTaken / totalWeekEntries) * 100)
-        : null;
+      const weekSummary = summariseAdherence(weekEntries || []);
+      const totalWeekEntries = weekSummary.due;
+      const totalWeekTaken = weekSummary.taken;
+      const adherenceRate = weekSummary.rate;
 
       // Unique vital types
       const uniqueVitalTypes = new Set(vitals?.map(v => v.type) || []);
