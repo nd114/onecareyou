@@ -14,6 +14,10 @@ export interface AlertRule {
   threshold_secondary: number | null;
   alert_method: 'email' | 'sms' | 'push';
   is_active: boolean;
+  /** Soft delete: archived rules stop firing but stay on the record. */
+  archived_at: string | null;
+  /** Optional human name, e.g. "Post-discharge BP watch". */
+  label: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +36,7 @@ export interface CreateAlertRuleData {
   threshold_value: number;
   threshold_secondary?: number;
   alert_method?: string;
+  label?: string;
 }
 
 export interface AlertLog {
@@ -113,6 +118,7 @@ export const useAlertRules = (patientUserId?: string) => {
           threshold_value: data.threshold_value,
           threshold_secondary: data.threshold_secondary || null,
           alert_method: data.alert_method || 'email',
+          label: data.label?.trim() || null,
         })
         .select()
         .single();
@@ -288,6 +294,36 @@ export const useAlertRules = (patientUserId?: string) => {
     },
   });
 
+  /**
+   * Archiving, not deleting.
+   *
+   * A threshold that fired is part of how a patient was managed; erasing it
+   * erases the reason an alert exists in the log. Archiving stops the rule
+   * firing and takes it out of the working list while keeping it recoverable.
+   */
+  const archiveAlertRule = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('clinician_alert_rules')
+        .update({
+          archived_at: archived ? new Date().toISOString() : null,
+          // An archived rule must not keep firing.
+          ...(archived ? { is_active: false } : {}),
+        })
+        .eq('id', id)
+        .eq('clinician_user_id', user.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['alert-rules'] });
+      toast.success(variables.archived ? 'Rule archived' : 'Rule restored');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to archive rule');
+    },
+  });
+
   const acknowledgeAlertLog = useMutation({
     mutationFn: async (logId: string) => {
       if (!user) throw new Error('Not authenticated');
@@ -307,8 +343,15 @@ export const useAlertRules = (patientUserId?: string) => {
     },
   });
 
+  const activeRules = alertRules.filter((r) => !r.archived_at);
+  const archivedRules = alertRules.filter((r) => !!r.archived_at);
+
   return {
-    alertRules,
+    /** Working set — archived rules excluded. */
+    alertRules: activeRules,
+    /** Every rule including archived ones, for management views. */
+    allAlertRules: alertRules,
+    archivedRules,
     alertLogs,
     isLoading: isLoadingRules || isLoadingLogs,
     createAlertRule,
@@ -316,6 +359,7 @@ export const useAlertRules = (patientUserId?: string) => {
     updateAlertRule,
     deleteAlertRule,
     toggleAlertRule,
+    archiveAlertRule,
     acknowledgeAlertLog,
   };
 };
