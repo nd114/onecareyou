@@ -1,17 +1,17 @@
 import { VitalRecord } from '@/hooks/useVitals';
 import { VITAL_CONFIG, VitalType } from '@/types/health';
+import { describeReadingStatus } from '@/lib/patient-risk';
 import { format } from 'date-fns';
 
 // CSV Export
 export function exportVitalsToCSV(vitals: VitalRecord[], filename: string = 'vitals-export') {
   const headers = ['Type', 'Value', 'Unit', 'Status', 'Notes', 'Recorded At', 'Logged At'];
   
-  const getStatus = (vital: VitalRecord): string => {
-    const config = VITAL_CONFIG[vital.type];
-    if (vital.value < config.normalMin) return 'Low';
-    if (vital.value > config.normalMax) return 'High';
-    return 'Normal';
-  };
+  // Against the clinical action thresholds, not VITAL_CONFIG's target band —
+  // this report is read by a clinician, and it used to disagree with their own
+  // screen. Reads both halves of a blood pressure. See src/lib/patient-risk.ts.
+  const getStatus = (vital: VitalRecord): string =>
+    describeReadingStatus(vital.type, vital.value, vital.secondary_value, vital.unit);
 
   const formatValue = (vital: VitalRecord): string => {
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
@@ -51,12 +51,11 @@ export function exportVitalsToCSV(vitals: VitalRecord[], filename: string = 'vit
 
 // PDF Export
 export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vitals-export') {
-  const getStatus = (vital: VitalRecord): string => {
-    const config = VITAL_CONFIG[vital.type];
-    if (vital.value < config.normalMin) return 'Low';
-    if (vital.value > config.normalMax) return 'High';
-    return 'Normal';
-  };
+  // Against the clinical action thresholds, not VITAL_CONFIG's target band —
+  // this report is read by a clinician, and it used to disagree with their own
+  // screen. Reads both halves of a blood pressure. See src/lib/patient-risk.ts.
+  const getStatus = (vital: VitalRecord): string =>
+    describeReadingStatus(vital.type, vital.value, vital.secondary_value, vital.unit);
 
   const formatValue = (vital: VitalRecord): string => {
     if (vital.type === 'blood_pressure' && vital.secondary_value) {

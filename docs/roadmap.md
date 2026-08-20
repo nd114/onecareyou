@@ -71,6 +71,19 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ### August 2026
 
+- **One answer to "is this reading normal".** Three surfaces carried their own copy of the vital
+  ranges and disagreed. The risk badge scored blood pressure on the systolic alone —
+  `secondary_value` was on the interface and never read, so **120/110 registered as normal** — and
+  compared a temperature to a Celsius band whatever unit it arrived in, so 98.6°F was reported as
+  critical. It also counted any 15% movement as a risk factor, so a glucose falling from 250 toward
+  normal was flagged as a warning beside genuine findings. Separately, the vitals report a patient
+  exports **for their clinician** graded readings against the patient's *target* band, so it called
+  130/80 "High" while the clinician's own screen called it normal, and — reading `value` alone —
+  handed a doctor a 120/110 labelled "Normal". The assessment is now one tested pure function
+  (`src/lib/patient-risk.ts`) that every surface reads, findings carry the range they breached and
+  when the reading was taken, and only trends heading *away* from normal are reported. 27 unit
+  tests.
+
 - **The anonymous write surfaces got a limit.** Three tables accept INSERT from the open internet
   on purpose — applying for a job without an account, anonymous beta telemetry, the enterprise
   enquiry form — and none of them had any ceiling, so a loop could put ten thousand names, emails
