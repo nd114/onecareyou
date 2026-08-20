@@ -1,6 +1,8 @@
 // Phase 1.4 — Encounter editor dialog + tab content.
 import { useState, useMemo } from "react";
-import { Plus, FileSignature, Loader2, ChevronRight, FileText, Mic } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Plus, FileSignature, Loader2, ChevronRight, FileText, Mic, Eye, EyeOff, FileAudio } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +15,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useEncounters, type Encounter } from "@/hooks/useEncounters";
 import { EncounterScribePanel } from "@/components/clinician/EncounterScribePanel";
 import { usePatientActionLog } from "@/hooks/usePatientActionLog";
@@ -34,12 +41,31 @@ const VISIT_TYPES = [
 ];
 
 export function EncountersTab({ patientUserId, patientName }: Props) {
-  const { encounters, isLoading, create, update, sign } = useEncounters(patientUserId);
+  const { encounters, isLoading, create, update, sign, setShared } = useEncounters(patientUserId);
   const { log } = usePatientActionLog(patientUserId);
   const { templates } = useClinicalTemplates("visit");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Encounter | null>(null);
   const [scribeFor, setScribeFor] = useState<Encounter | null>(null);
+  const [signing, setSigning] = useState<Encounter | null>(null);
+  const [shareOnSign, setShareOnSign] = useState(true);
+
+  // Which of these encounters began as a dictation. A dictation row is
+  // readable only by the clinician who recorded it, so a colleague simply gets
+  // no rows back and sees no marker — which is the right answer, not a bug.
+  const encounterIds = useMemo(() => encounters.map((e) => e.id), [encounters]);
+  const { data: fromDictation } = useQuery({
+    queryKey: ["encounter-dictations", patientUserId, encounterIds.length],
+    enabled: encounterIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("clinician_dictations")
+        .select("encounter_id")
+        .in("encounter_id", encounterIds);
+      if (error) return new Set<string>();
+      return new Set<string>((data ?? []).map((r: any) => r.encounter_id));
+    },
+  });
   const [draft, setDraft] = useState({
     visit_type: "follow_up",
     chief_complaint: "",
@@ -102,15 +128,23 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
     resetDraft();
   };
 
-  const handleSign = async (enc: Encounter) => {
-    await sign.mutateAsync(enc.id);
+  // Signing releases the summary to the patient, so it asks rather than
+  // assumes — and says which way it is about to go before it goes.
+  const handleSign = async () => {
+    if (!signing) return;
+    const enc = signing;
+    await sign.mutateAsync({ id: enc.id, sharedWithPatient: shareOnSign });
     await log.mutateAsync({
       patient_user_id: patientUserId,
       action: "encounter_signed",
-      summary: `Signed encounter from ${format(new Date(enc.occurred_at), "PP")}`,
+      summary: `Signed encounter from ${format(new Date(enc.occurred_at), "PP")}${
+        shareOnSign ? " and shared it with the patient" : " without sharing it with the patient"
+      }`,
       ref_table: "encounters",
       ref_id: enc.id,
     });
+    setSigning(null);
+    setShareOnSign(true);
   };
 
   const openEditor = (enc?: Encounter) => {
@@ -230,6 +264,12 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                     <Badge variant={enc.status === "signed" ? "default" : "outline"} className="text-[10px]">
                       {enc.status}
                     </Badge>
+                    {fromDictation?.has(enc.id) && (
+                      <Badge variant="outline" className="text-[10px] gap-1">
+                        <FileAudio className="h-2.5 w-2.5" />
+                        From a dictation
+                      </Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(enc.occurred_at), "PP")}
                     </span>
@@ -250,15 +290,36 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                         <Mic className="h-3.5 w-3.5" /> Scribe
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => openEditor(enc)}>Edit</Button>
-                      <Button size="sm" onClick={() => handleSign(enc)} className="gap-1">
+                      <Button size="sm" onClick={() => { setSigning(enc); setShareOnSign(true); }} className="gap-1">
                         <FileSignature className="h-3.5 w-3.5" /> Sign
                       </Button>
                     </>
                   )}
                   {enc.status === "signed" && (
-                    <Button variant="ghost" size="sm" onClick={() => openEditor(enc)}>
-                      View <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    <>
+                      {/* Whether the patient can read this is part of the
+                          record's state, so it is shown, not buried. */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs"
+                        onClick={() => setShared.mutate({ id: enc.id, shared: !enc.shared_with_patient })}
+                        title={
+                          enc.shared_with_patient
+                            ? "Shared with the patient — click to stop sharing"
+                            : "Not shared with the patient — click to share"
+                        }
+                      >
+                        {enc.shared_with_patient ? (
+                          <><Eye className="h-3.5 w-3.5" /> Shared</>
+                        ) : (
+                          <><EyeOff className="h-3.5 w-3.5" /> Not shared</>
+                        )}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openEditor(enc)}>
+                        View <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </li>
@@ -266,6 +327,40 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
           </ul>
         )}
       </CardContent>
+
+      <AlertDialog open={!!signing} onOpenChange={(o) => !o && setSigning(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign this encounter?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Signing closes the note. {patientName} will be able to read the summary — the
+              reason for the visit, what you found, your assessment and the plan. The ambient
+              transcript, the codes and anything still in draft are never shared.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
+            <Checkbox
+              checked={shareOnSign}
+              onCheckedChange={(v) => setShareOnSign(v === true)}
+              className="mt-0.5"
+            />
+            <span className="text-sm">
+              Share this summary with {patientName}
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                Leave this on unless the note needs discussing in person first. You can change
+                it later either way.
+              </span>
+            </span>
+          </label>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSign} disabled={sign.isPending}>
+              {sign.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Sign
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={!!scribeFor} onOpenChange={(o) => !o && setScribeFor(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

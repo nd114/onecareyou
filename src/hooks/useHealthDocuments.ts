@@ -47,6 +47,8 @@ export interface HealthDocument {
   document_date: string | null;
   folder: string | null;
   source_context: string;
+  /** Set when a clinician put this in the Vault; null when the patient did. */
+  uploaded_by_user_id: string | null;
   created_at: string;
   updated_at: string;
 }

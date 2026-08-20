@@ -71,6 +71,34 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ### August 2026
 
+- **A dictation now reaches the record.** The dictation surface transcribed, summarised, and
+  stopped: `clinician_dictations.patient_user_id` had existed since the table was created and
+  nothing ever set it, so the visit had to be typed again into the encounter. Filing a dictation
+  now creates a draft encounter on a chosen patient, with readings, patient instructions and a
+  team note extracted from the transcript — each shown beside the verbatim phrase it came from,
+  and nothing written without a tick. The badge that said "Filed" the moment you clicked approve
+  now distinguishes approved from filed. Underneath, `vitals` accepted INSERT only from
+  `auth.uid() = user_id`, so *every* clinical route into a patient's readings dead-ended, not
+  just this one; a clinician who shares vitals can now record one, attributed and add-only.
+  13 regression assertions.
+- **Visit summaries reach the patient, and documents travel both ways.** A clinician recorded an
+  encounter and the patient could not read a word of it. `encounters` had carried a patient policy
+  all along — `USING (patient_user_id = auth.uid())` — that nothing used, which is the only reason
+  it never mattered: RLS is row-level, so it handed over the ambient-scribe transcript, the billing
+  codes and every note still being typed. Replaced by `my_visit_summaries()`, which returns signed
+  notes and the summary columns only. Signing now asks whether to share, defaulting to yes.
+  Separately, `health_documents` accepted inserts only from the row's owner, so a referral letter
+  had no route to the patient at all; a clinician can now add to a patient's Vault, and only add.
+  16 regression assertions.
+- **Both kinds of clinician note became entries.** "Notes" was a single free-text column on the
+  share row, rewritten wholesale — a fortnight of observations as one undated block. Both surfaces
+  are now entries with a `visibility` column deciding who reads them, labelled "My notes" and
+  "Team notes" because who can read it is the only difference there is. Team notes say who wrote
+  them; editing an entry is new to both. Old blobs were carried across. 10 regression assertions.
+- **Alert thresholds across a panel, and import files refused rather than imported crooked.**
+  One threshold set on many patients at once, replacing rather than duplicating an existing rule;
+  a malformed CSV is now rejected with the specific problem named instead of importing sideways.
+
 - **Security review and red-team pass.** Seven findings, three of them serious, each reproduced as a
   real caller against a replay of the migration history before being fixed: any patient could set
   their own `subscription_tier` to premium; any hospital admin could rewrite their own commercial

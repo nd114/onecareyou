@@ -24,6 +24,8 @@ export interface Encounter {
   follow_up_in_days: number | null;
   follow_up_task_id: string | null;
   signed_at: string | null;
+  /** Whether the patient may read this summary once it is signed. */
+  shared_with_patient: boolean;
   metadata: Record<string, unknown>;
   scribe_transcript: string | null;
   scribe_audio_path: string | null;
@@ -92,11 +94,19 @@ export function useEncounters(patientUserId?: string) {
     },
   });
 
+  /**
+   * Signing is what releases the summary to the patient, so the decision to
+   * withhold one is taken here rather than left implicit.
+   */
   const sign = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, sharedWithPatient = true }: { id: string; sharedWithPatient?: boolean }) => {
       const { data, error } = await (supabase as any)
         .from("encounters")
-        .update({ status: "signed", signed_at: new Date().toISOString() })
+        .update({
+          status: "signed",
+          signed_at: new Date().toISOString(),
+          shared_with_patient: sharedWithPatient,
+        })
         .eq("id", id)
         .select()
         .single();
@@ -104,9 +114,35 @@ export function useEncounters(patientUserId?: string) {
       return data as Encounter;
     },
     onSuccess: (enc) => {
-      toast.success("Encounter signed");
+      toast.success(
+        enc.shared_with_patient
+          ? "Signed and shared with the patient"
+          : "Signed — not shared with the patient",
+      );
       qc.invalidateQueries({ queryKey: ["encounters", enc.patient_user_id] });
     },
+    onError: (e: any) => toast.error(e.message || "Could not sign the encounter"),
+  });
+
+  /** Changing your mind after signing, in either direction. */
+  const setShared = useMutation({
+    mutationFn: async ({ id, shared }: { id: string; shared: boolean }) => {
+      const { data, error } = await (supabase as any)
+        .from("encounters")
+        .update({ shared_with_patient: shared })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Encounter;
+    },
+    onSuccess: (enc) => {
+      toast.success(
+        enc.shared_with_patient ? "Shared with the patient" : "No longer shared with the patient",
+      );
+      qc.invalidateQueries({ queryKey: ["encounters", enc.patient_user_id] });
+    },
+    onError: (e: any) => toast.error(e.message || "Could not change sharing"),
   });
 
   return {
@@ -115,5 +151,6 @@ export function useEncounters(patientUserId?: string) {
     create,
     update,
     sign,
+    setShared,
   };
 }
