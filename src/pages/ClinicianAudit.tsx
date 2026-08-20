@@ -214,6 +214,7 @@ export default function ClinicianAudit() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>
