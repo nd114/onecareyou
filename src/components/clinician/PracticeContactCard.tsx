@@ -19,6 +19,7 @@ const FIELDS: Array<[keyof PracticeContactInput, string, string?]> = [
 ];
 
 const EMPTY = {
+  name: '',
   address: '',
   city: '',
   state: '',
@@ -30,8 +31,8 @@ const EMPTY = {
 };
 
 /**
- * The tenant enters their own contact and address details during set-up and can
- * update them any time. This row is what OneCare and patients both read.
+ * The tenant enters their own name, contact and address details during set-up
+ * and can update them any time. This row is what OneCare and patients both read.
  */
 export function PracticeContactCard() {
   const { currentPractice, currentMembership } = usePractice();
@@ -41,6 +42,7 @@ export function PracticeContactCard() {
   useEffect(() => {
     if (!contact) return;
     setForm({
+      name: contact.name ?? '',
       address: contact.address ?? '',
       city: contact.city ?? '',
       state: contact.state ?? '',
@@ -62,7 +64,7 @@ export function PracticeContactCard() {
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
-          Contact and address
+          Practice details
         </CardTitle>
         <CardDescription>
           {canEdit
@@ -77,6 +79,15 @@ export function PracticeContactCard() {
           </div>
         ) : (
           <>
+            <div className="space-y-2">
+              <Label htmlFor="practice-name">Practice name</Label>
+              <Input
+                id="practice-name"
+                value={form.name}
+                disabled={!canEdit}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {FIELDS.map(([key, label, type]) => (
                 <div key={key} className="space-y-2">
@@ -92,7 +103,7 @@ export function PracticeContactCard() {
               ))}
             </div>
             {canEdit && (
-              <Button size="sm" disabled={isSaving} onClick={() => save(form)}>
+              <Button size="sm" disabled={isSaving || form.name.trim().length < 2} onClick={() => save(form)}>
                 {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Save details
               </Button>

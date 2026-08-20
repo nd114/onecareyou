@@ -24,7 +24,9 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
-import { SectionTabs } from '@/components/layout/SectionTabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
+
 import { useClinicianProfile, MEDICAL_SPECIALTIES, CLINICIAN_TITLES } from '@/hooks/useClinicianProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -196,7 +198,7 @@ const ClinicianSettings = () => {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
-        <SectionTabs section="practice" variant="clinician" />
+        
         <main className="container py-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
@@ -245,8 +247,7 @@ const ClinicianSettings = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <ClinicianHeader />
-      <SectionTabs section="practice" variant="clinician" />
-      
+
       <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-3xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -254,16 +255,25 @@ const ClinicianSettings = () => {
         >
           <div className="mb-6">
             <h1 className="font-display text-2xl sm:text-3xl font-bold mb-2">
-              Settings
+              My profile &amp; settings
             </h1>
             <p className="text-muted-foreground">
-              Manage your profile and notification preferences
+              Your professional profile, your privacy record, and how OneCare notifies you.
             </p>
           </div>
 
+          {/* Same three-part shape as the patient side, minus care &amp; alerts. */}
+          <Tabs defaultValue="account">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="account">Account</TabsTrigger>
+              <TabsTrigger value="privacy">Privacy &amp; data</TabsTrigger>
+              <TabsTrigger value="prefs">Preferences</TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="account" className="mt-6">
           {/* Professional Profile (merged with Personal Info) */}
           <Card className="mb-6">
+
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
@@ -477,9 +487,16 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
+          </TabsContent>
 
+          <TabsContent value="privacy" className="space-y-6 mt-6">
+            <AuditTrailSection />
+          </TabsContent>
+
+          <TabsContent value="prefs" className="mt-6">
           {/* Notification Settings */}
           <Card>
+
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
@@ -620,6 +637,9 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
+            </TabsContent>
+          </Tabs>
+
         </motion.div>
       </main>
     </div>

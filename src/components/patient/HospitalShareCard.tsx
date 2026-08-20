@@ -65,7 +65,7 @@ export const HospitalShareCard = () => {
     try {
       const result = await lookupInstitution(code.trim());
       if (!result) {
-        toast.error('No hospital found with that code');
+        toast.error('No clinic or hospital found with that code');
         setFound(null);
       } else {
         setFound(result);
@@ -126,7 +126,7 @@ export const HospitalShareCard = () => {
           Hospitals &amp; clinics
         </CardTitle>
         <CardDescription>
-          Share your record with a hospital as an institution. The hospital assigns the doctor who
+          Share your record with a clinic or hospital using their code. The practice assigns the clinician who
           looks after you — you stay in control and can disconnect at any time.
         </CardDescription>
       </CardHeader>
@@ -193,7 +193,7 @@ export const HospitalShareCard = () => {
 
                     {editingId === share.id && (
                       <div className="space-y-3 rounded-lg bg-muted/40 p-3">
-                        <p className="text-sm font-medium">What this hospital can see</p>
+                        <p className="text-sm font-medium">What this practice can see</p>
                         <div className="space-y-2">
                           {SHARE_CATEGORIES.map((c) => (
                             <label
@@ -227,7 +227,7 @@ export const HospitalShareCard = () => {
 
             <div className="space-y-3 rounded-lg border border-dashed p-3">
               <div className="space-y-2">
-                <Label htmlFor="hospital-code">Hospital code</Label>
+                <Label htmlFor="hospital-code">Clinic or hospital code</Label>
                 <div className="flex gap-2">
                   <Input
                     id="hospital-code"
@@ -246,7 +246,7 @@ export const HospitalShareCard = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Your hospital gives you this code when you register with them.
+                  Your clinic or hospital gives you this code when you register with them.
                 </p>
               </div>
 

@@ -22,6 +22,10 @@ export const HospitalCodeCard = () => {
   const canManage =
     currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
 
+  const label =
+    (tenant?.tenant_type ?? 'practice') === 'hospital' ? 'Hospital code' : 'Practice code';
+
+
   const [value, setValue] = useState('');
   const [available, setAvailable] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
@@ -64,13 +68,12 @@ export const HospitalCodeCard = () => {
   const copy = async () => {
     if (!tenant?.slug) return;
     await navigator.clipboard.writeText(tenant.slug);
-    toast.success('Hospital code copied');
+    toast.success(`${label} copied`);
   };
 
-  // Hospital-only surface: solo practices never see a hospital code.
+  // Every practice gets a code, not just hospitals: a solo clinician needs one
+  // too so their patients can add them from Care Circle without an invitation.
   if (!currentPractice) return null;
-  if (!isLoading && (tenant?.tenant_type ?? 'practice') !== 'hospital' && !tenant?.slug) return null;
-
 
   return (
     <Card>
@@ -79,11 +82,11 @@ export const HospitalCodeCard = () => {
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Hash className="h-4 w-4 text-primary" />
-              Hospital code
+              {label}
             </CardTitle>
             <CardDescription>
-              Patients type this code in their Care Circle to share their record with{' '}
-              {currentPractice.name} as an institution.
+              Patients type this code into their Care Circle to share their record with{' '}
+              {currentPractice.name}.
             </CardDescription>
           </div>
           <Badge variant="secondary" className="capitalize">
@@ -91,6 +94,7 @@ export const HospitalCodeCard = () => {
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-4">
         {isLoading ? (
           <div className="flex justify-center py-3">
@@ -158,8 +162,9 @@ export const HospitalCodeCard = () => {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Only practice owners and admins can change the hospital code.
+                Only practice owners and admins can change the {label.toLowerCase()}.
               </p>
+
             )}
           </>
         )}

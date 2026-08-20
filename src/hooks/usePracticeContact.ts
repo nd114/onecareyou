@@ -37,8 +37,17 @@ export function usePracticeContact(practiceId?: string | null) {
   });
 
   const save = useMutation({
-    mutationFn: async (input: Partial<PracticeContactInput>) => {
+    mutationFn: async (input: Partial<PracticeContactInput> & { name?: string }) => {
       if (!practiceId) throw new Error('No practice selected');
+      // The name lives on the same row but is renamed through its own guard so
+      // an empty field can never blank out a practice's identity.
+      if (typeof input.name === 'string' && input.name.trim() !== (query.data?.name ?? '')) {
+        const { error: nameError } = await supabase.rpc('practice_set_name' as never, {
+          _practice_id: practiceId,
+          _name: input.name.trim(),
+        } as never);
+        if (nameError) throw nameError;
+      }
       const { error } = await supabase.rpc('practice_set_contact', {
         _practice_id: practiceId,
         _address: input.address ?? null,
@@ -52,6 +61,7 @@ export function usePracticeContact(practiceId?: string | null) {
       });
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success('Contact details saved');
       queryClient.invalidateQueries({ queryKey: ['practice-contact', practiceId] });
