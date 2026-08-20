@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
-import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Download } from 'lucide-react';
+import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Download, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useMessages, type Message } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,6 +115,38 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const lastTypingSentRef = useRef<number>(0);
+  const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [hitIndex, setHitIndex] = useState(0);
+
+  // A conversation with a clinician is a record you come back to, so it needs
+  // to be searchable — "what did they say about the lab result" was a scroll.
+  const hits = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [] as string[];
+    return messages.filter((m) => m.body.toLowerCase().includes(q)).map((m) => m.id);
+  }, [messages, search]);
+
+  const hitSet = useMemo(() => new Set(hits), [hits]);
+  const activeHitId = hits.length > 0 ? hits[Math.min(hitIndex, hits.length - 1)] : null;
+
+  useEffect(() => {
+    setHitIndex(0);
+  }, [search]);
+
+  // A search belongs to the conversation it was typed in. Carrying it across
+  // would leave the next thread scrolled to a match in someone else's.
+  useEffect(() => {
+    setSearch('');
+    setSearchOpen(false);
+  }, [otherPartyUserId]);
+
+  useEffect(() => {
+    if (!activeHitId) return;
+    document
+      .getElementById(`msg-${activeHitId}`)
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [activeHitId]);
 
   // Stable channel key so both sides agree (sorted ids)
   const channelKey = useMemo(() => {
@@ -152,10 +185,12 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
     });
   };
 
-  // Auto-scroll on new messages / typing
+  // Auto-scroll on new messages / typing — but not while the reader is being
+  // moved around by a search, or the jump is undone the moment it lands.
   useEffect(() => {
+    if (activeHitId) return;
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages.length, otherTyping]);
+  }, [messages.length, otherTyping, activeHitId]);
 
   // Mark as read when viewing
   useEffect(() => {
@@ -197,6 +232,67 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
 
   return (
     <div className={cn('flex flex-col h-full min-h-[400px]', className)}>
+      <div className="flex items-center gap-2 px-3 py-2 border-b">
+        {searchOpen ? (
+          <>
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search this conversation…"
+                className="pl-8 h-8 text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') { setSearch(''); setSearchOpen(false); }
+                  if (e.key === 'Enter' && hits.length > 0) {
+                    setHitIndex((i) => (e.shiftKey ? (i - 1 + hits.length) % hits.length : (i + 1) % hits.length));
+                  }
+                }}
+              />
+            </div>
+            <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
+              {search.trim() ? (hits.length ? `${Math.min(hitIndex, hits.length - 1) + 1}/${hits.length}` : 'none') : ''}
+            </span>
+            <Button
+              variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={hits.length === 0}
+              onClick={() => setHitIndex((i) => (i - 1 + hits.length) % hits.length)}
+              aria-label="Previous match"
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={hits.length === 0}
+              onClick={() => setHitIndex((i) => (i + 1) % hits.length)}
+              aria-label="Next match"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+              onClick={() => { setSearch(''); setSearchOpen(false); }}
+              aria-label="Close search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <span className="text-[11px] text-muted-foreground flex-1 truncate">
+              {messages.length > 0
+                ? `${messages.length} message${messages.length === 1 ? '' : 's'} with ${otherPartyName}`
+                : otherPartyName}
+            </span>
+            <Button
+              variant="ghost" size="sm" className="h-7 gap-1 text-xs shrink-0"
+              onClick={() => setSearchOpen(true)}
+              disabled={messages.length === 0}
+            >
+              <Search className="h-3.5 w-3.5" /> Search
+            </Button>
+          </>
+        )}
+      </div>
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-10">
@@ -224,11 +320,14 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
                       return (
                         <div
                           key={m.id}
+                          id={`msg-${m.id}`}
                           className={cn(
                             'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words shadow-sm',
                             mine
                               ? 'bg-primary text-primary-foreground'
                               : 'bg-muted text-foreground',
+                            hitSet.has(m.id) && 'ring-2 ring-amber-400/70',
+                            activeHitId === m.id && 'ring-2 ring-amber-500',
                             mine
                               ? isLast
                                 ? 'rounded-br-sm'

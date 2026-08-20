@@ -131,47 +131,74 @@ export function useMessages(otherPartyUserId: string | null, role: 'patient' | '
   return { messages, isLoading, send, markRead, unreadCount };
 }
 
+export interface MessageThreadSummary {
+  counterpartyId: string;
+  lastBody: string;
+  lastAt: string;
+  lastSenderUserId: string;
+  lastHasAttachment: boolean;
+  unread: number;
+  total: number;
+}
+
 /**
- * Lists threads for the current user (across all counterparties).
- * Returns latest-message-per-counterparty with unread count.
+ * One row per conversation, newest first.
+ *
+ * This used to fetch the 500 most recent messages and group them in the
+ * browser. Past that ceiling a conversation vanished from the inbox and its
+ * unread badge read zero — silently, and worst for the busiest clinician.
+ * my_message_threads() does the grouping in SQL over the whole table; it is
+ * SECURITY INVOKER, so the row policies still decide what is countable.
  */
 export function useMessageThreads(role: 'patient' | 'clinician') {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const queryKey = ['message-threads', user?.id, role];
 
-  return useQuery({
-    queryKey: ['message-threads', user?.id, role],
+  const query = useQuery({
+    queryKey,
     queryFn: async () => {
-      if (!user?.id) return [];
-      const selfField = role === 'patient' ? 'patient_user_id' : 'clinician_user_id';
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq(selfField, user.id)
-        .order('created_at', { ascending: false })
-        .limit(500);
+      if (!user?.id) return [] as MessageThreadSummary[];
+      const { data, error } = await (supabase as any).rpc('my_message_threads', { _role: role });
       if (error) throw error;
-
-      const byCounterparty = new Map<
-        string,
-        { counterpartyId: string; latest: Message; unread: number }
-      >();
-      for (const m of (data || []) as Message[]) {
-        const counterpartyId =
-          role === 'patient' ? m.clinician_user_id : m.patient_user_id;
-        const existing = byCounterparty.get(counterpartyId);
-        const isUnread = m.sender_user_id !== user.id && !m.read_at;
-        if (!existing) {
-          byCounterparty.set(counterpartyId, {
-            counterpartyId,
-            latest: m,
-            unread: isUnread ? 1 : 0,
-          });
-        } else if (isUnread) {
-          existing.unread += 1;
-        }
-      }
-      return Array.from(byCounterparty.values());
+      return ((data ?? []) as any[]).map((r) => ({
+        counterpartyId: r.counterparty_id as string,
+        lastBody: (r.last_body ?? '') as string,
+        lastAt: r.last_at as string,
+        lastSenderUserId: r.last_sender_user_id as string,
+        lastHasAttachment: !!r.last_has_attachment,
+        unread: Number(r.unread ?? 0),
+        total: Number(r.total ?? 0),
+      })) as MessageThreadSummary[];
     },
     enabled: !!user?.id,
   });
+
+  // The list itself needs to move when a message arrives in a conversation the
+  // reader is not currently looking at. Without this the badge and the ordering
+  // only caught up on a refetch, so a new message from another patient was
+  // invisible until you navigated away and back.
+  useEffect(() => {
+    if (!user?.id) return;
+    const selfField = role === 'patient' ? 'patient_user_id' : 'clinician_user_id';
+    const channel = supabase
+      .channel(`message-threads-${role}-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `${selfField}=eq.${user.id}`,
+        },
+        () => queryClient.invalidateQueries({ queryKey }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, role]);
+
+  return query;
 }
