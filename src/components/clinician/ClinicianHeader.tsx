@@ -337,7 +337,7 @@ export function ClinicianHeader() {
                 <DropdownMenuItem asChild>
                   <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" />
-                    Settings
+                    My profile &amp; settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -450,7 +450,7 @@ export function ClinicianHeader() {
               className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
             >
               <Settings className="h-4 w-4" />
-              Settings
+              My profile &amp; settings
             </Link>
             <Link
               to="/clinician/why-onecare"
