@@ -477,9 +477,16 @@ const ClinicianSettings = () => {
               </div>
             </CardContent>
           </Card>
+          </TabsContent>
 
+          <TabsContent value="privacy" className="space-y-6 mt-6">
+            <AuditTrailSection />
+          </TabsContent>
+
+          <TabsContent value="prefs" className="mt-6">
           {/* Notification Settings */}
           <Card>
+
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
