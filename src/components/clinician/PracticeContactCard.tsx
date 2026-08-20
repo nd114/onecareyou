@@ -110,9 +110,6 @@ export function PracticeContactCard() {
             )}
           </>
         )}
-
-          </>
-        )}
       </CardContent>
     </Card>
   );
