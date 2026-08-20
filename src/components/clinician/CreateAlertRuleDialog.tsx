@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Bell } from 'lucide-react';
-import { useAlertRules, CreateAlertRuleData } from '@/hooks/useAlertRules';
+import { useAlertRules, type AlertRule } from '@/hooks/useAlertRules';
 
 interface Patient {
   id: string;
@@ -22,9 +22,13 @@ interface Patient {
 }
 
 interface CreateAlertRuleDialogProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   patients: Patient[];
   selectedPatientId?: string;
+  /** When supplied the dialog edits that rule instead of creating a new one. */
+  rule?: AlertRule;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const VITAL_TYPES = [
@@ -47,44 +51,85 @@ const ALERT_METHODS = [
   { value: 'push', label: 'Push Notification' },
 ];
 
-export function CreateAlertRuleDialog({ trigger, patients, selectedPatientId }: CreateAlertRuleDialogProps) {
-  const [open, setOpen] = useState(false);
-  const { createAlertRule } = useAlertRules();
-  
-  const [formData, setFormData] = useState({
-    patient_user_id: selectedPatientId || '',
-    vital_type: '',
-    condition: 'above',
-    threshold_value: '',
-    threshold_secondary: '',
-    alert_method: 'email',
-  });
+const emptyForm = (patientId?: string) => ({
+  patient_user_id: patientId || '',
+  vital_type: '',
+  condition: 'above',
+  threshold_value: '',
+  threshold_secondary: '',
+  alert_method: 'email',
+  label: '',
+});
+
+export function CreateAlertRuleDialog({
+  trigger,
+  patients,
+  selectedPatientId,
+  rule,
+  open: controlledOpen,
+  onOpenChange,
+}: CreateAlertRuleDialogProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
+  const { createAlertRule, updateAlertRule } = useAlertRules();
+  const isEditing = !!rule;
+
+  const [formData, setFormData] = useState(emptyForm(selectedPatientId));
+
+  // A rule opened for editing must show what it currently says, not a blank
+  // form — otherwise "edit" silently becomes "retype from memory".
+  useEffect(() => {
+    if (rule) {
+      setFormData({
+        patient_user_id: rule.patient_user_id,
+        vital_type: rule.vital_type,
+        condition: rule.condition,
+        threshold_value: String(rule.threshold_value ?? ''),
+        threshold_secondary: rule.threshold_secondary != null ? String(rule.threshold_secondary) : '',
+        alert_method: rule.alert_method,
+        label: rule.label || '',
+      });
+    } else {
+      setFormData(emptyForm(selectedPatientId));
+    }
+  }, [rule, selectedPatientId, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const selectedPatient = patients.find(p => p.user_id === formData.patient_user_id);
-    
-    await createAlertRule.mutateAsync({
-      patient_user_id: formData.patient_user_id,
-      share_id: selectedPatient?.id,
-      vital_type: formData.vital_type,
-      condition: formData.condition,
-      threshold_value: parseFloat(formData.threshold_value),
-      threshold_secondary: formData.condition === 'outside_range' && formData.threshold_secondary 
-        ? parseFloat(formData.threshold_secondary) 
-        : undefined,
-      alert_method: formData.alert_method,
-    });
 
-    setFormData({
-      patient_user_id: selectedPatientId || '',
-      vital_type: '',
-      condition: 'above',
-      threshold_value: '',
-      threshold_secondary: '',
-      alert_method: 'email',
-    });
+    const selectedPatient = patients.find(p => p.user_id === formData.patient_user_id);
+    const secondary = formData.condition === 'outside_range' && formData.threshold_secondary
+      ? parseFloat(formData.threshold_secondary)
+      : undefined;
+
+    if (isEditing && rule) {
+      await updateAlertRule.mutateAsync({
+        id: rule.id,
+        vital_type: formData.vital_type,
+        condition: formData.condition as AlertRule['condition'],
+        threshold_value: parseFloat(formData.threshold_value),
+        threshold_secondary: secondary ?? null,
+        alert_method: formData.alert_method as AlertRule['alert_method'],
+        label: formData.label.trim() || null,
+      });
+    } else {
+      await createAlertRule.mutateAsync({
+        patient_user_id: formData.patient_user_id,
+        share_id: selectedPatient?.id,
+        vital_type: formData.vital_type,
+        condition: formData.condition,
+        threshold_value: parseFloat(formData.threshold_value),
+        threshold_secondary: secondary,
+        alert_method: formData.alert_method,
+        label: formData.label,
+      });
+    }
+
+    setFormData(emptyForm(selectedPatientId));
     setOpen(false);
   };
 
@@ -99,20 +144,20 @@ export function CreateAlertRuleDialog({ trigger, patients, selectedPatientId }: 
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>Create Alert Rule</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit alert rule' : 'Create alert rule'}</DialogTitle>
           <DialogDescription>
-            Set up automatic notifications when patient vitals exceed thresholds
+            {isEditing
+              ? 'Change the threshold, how you are told, or what this rule is called.'
+              : 'Set up automatic notifications when patient vitals exceed thresholds'}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Patient Selection */}
-          {!selectedPatientId && (
+          {!selectedPatientId && !isEditing && (
             <div className="space-y-2">
               <Label>Select Patient *</Label>
               <Select
@@ -133,6 +178,19 @@ export function CreateAlertRuleDialog({ trigger, patients, selectedPatientId }: 
               </Select>
             </div>
           )}
+
+          {/* Optional name — "9 rules, all Blood Pressure" tells a clinician
+              nothing on first glance. A name does. */}
+          <div className="space-y-2">
+            <Label htmlFor="rule_label">Rule name (optional)</Label>
+            <Input
+              id="rule_label"
+              value={formData.label}
+              onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+              placeholder="e.g. Post-discharge BP watch"
+              maxLength={80}
+            />
+          </div>
 
           {/* Vital Type */}
           <div className="space-y-2">
@@ -232,17 +290,23 @@ export function CreateAlertRuleDialog({ trigger, patients, selectedPatientId }: 
             <Button 
               type="submit" 
               className="gradient-primary border-0"
-              disabled={createAlertRule.isPending || !formData.patient_user_id || !formData.vital_type || !formData.threshold_value}
+              disabled={
+                createAlertRule.isPending ||
+                updateAlertRule.isPending ||
+                !formData.patient_user_id ||
+                !formData.vital_type ||
+                !formData.threshold_value
+              }
             >
-              {createAlertRule.isPending ? (
+              {createAlertRule.isPending || updateAlertRule.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  {isEditing ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
                 <>
                   <Bell className="h-4 w-4 mr-2" />
-                  Create Rule
+                  {isEditing ? 'Save changes' : 'Create rule'}
                 </>
               )}
             </Button>

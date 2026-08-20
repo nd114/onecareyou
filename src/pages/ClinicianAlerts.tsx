@@ -1,20 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Bell, AlertTriangle, Loader2, Plus, Trash2, Search, Activity, Clock, CheckCircle2, Users } from 'lucide-react';
+import { Bell, AlertTriangle, Loader2, Activity, CheckCircle2, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useAlertRules, type AlertLog } from '@/hooks/useAlertRules';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
-import { CreateAlertRuleDialog } from '@/components/clinician/CreateAlertRuleDialog';
-import { BulkAlertRuleDialog } from '@/components/clinician/BulkAlertRuleDialog';
+import { AlertRulesManager } from '@/components/clinician/AlertRulesManager';
 import { format } from 'date-fns';
 
 const formatAlertType = (type: string): string => {
@@ -27,23 +24,13 @@ const formatAlertType = (type: string): string => {
 const ClinicianAlerts = () => {
   const navigate = useNavigate();
   const { isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
-  const { alertRules, alertLogs, isLoading: isLoadingAlerts, deleteAlertRule, toggleAlertRule, acknowledgeAlertLog } = useAlertRules();
+  const { alertRules, alertLogs, isLoading: isLoadingAlerts, acknowledgeAlertLog } = useAlertRules();
   const [triageTab, setTriageTab] = useState<'unread' | 'acknowledged'>('unread');
   const { patients } = useClinicianPatients();
   
-  const [searchQuery, setSearchQuery] = useState('');
 
   const isLoading = isLoadingProfile || isLoadingAlerts;
 
-  const filteredRules = useMemo(() => {
-    if (!searchQuery.trim()) return alertRules;
-    const query = searchQuery.toLowerCase();
-    return alertRules.filter(
-      (r) =>
-        r.vital_type.toLowerCase().includes(query) ||
-        r.condition.toLowerCase().includes(query)
-    );
-  }, [alertRules, searchQuery]);
 
   const activeRulesCount = alertRules.filter(r => r.is_active).length;
   const recentAlertsCount = alertLogs.filter(log => {
@@ -170,131 +157,23 @@ const ClinicianAlerts = () => {
           </Card>
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
           {/* Alert Rules */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Card>
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <CardTitle className="text-base sm:text-lg">Alert Rules</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    {alertRules.length} rule{alertRules.length !== 1 ? 's' : ''} configured
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  {/* Setting the same threshold thirty times is how a panel ends
-                      up with inconsistent rules and invisible gaps. */}
-                  <BulkAlertRuleDialog
-                    trigger={
-                      <Button variant="outline" size="sm" disabled={patients.length === 0}>
-                        <Users className="h-4 w-4 mr-2" />
-                        Set for several
-                      </Button>
-                    }
-                    patients={patients.map(p => ({
-                      id: p.id,
-                      user_id: p.user_id,
-                      patient_name: p.patient_name || 'Unknown Patient',
-                    }))}
-                  />
-                  <CreateAlertRuleDialog
-                    trigger={
-                      <Button
-                        size="sm"
-                        className="gradient-primary border-0"
-                        disabled={patients.length === 0}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Rule
-                      </Button>
-                    }
-                    patients={patients.map(p => ({
-                      id: p.id,
-                      user_id: p.user_id,
-                      patient_name: p.patient_name || 'Unknown Patient',
-                      patient_email: p.patient_email,
-                    }))}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {alertRules.length > 3 && (
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search rules..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {alertRules.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="font-semibold mb-2">No alert rules yet</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Create rules to get notified when patient vitals exceed thresholds
-                    </p>
-                    {patients.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        You need connected patients to create alert rules
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredRules.map((rule) => (
-                      <div
-                        key={rule.id}
-                        className="p-3 rounded-lg border"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <Badge variant="outline" className="capitalize">
-                                {rule.vital_type.replace('_', ' ')}
-                              </Badge>
-                              <Badge variant={rule.is_active ? 'default' : 'secondary'}>
-                                {rule.is_active ? 'Active' : 'Paused'}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {rule.condition === 'above' ? '>' : rule.condition === 'below' ? '<' : 'Range'} {rule.threshold_value}
-                              {rule.threshold_secondary ? ` - ${rule.threshold_secondary}` : ''}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={rule.is_active ?? false}
-                              onCheckedChange={(checked) => 
-                                toggleAlertRule.mutate({ id: rule.id, is_active: checked })
-                              }
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => deleteAlertRule.mutate(rule.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <AlertRulesManager
+              patients={patients.map((p) => ({
+                id: p.id,
+                user_id: p.user_id,
+                patient_name: p.patient_name || 'Unnamed patient',
+                patient_email: p.patient_email,
+              }))}
+            />
           </motion.div>
+
 
           {/* Recent Alert Logs */}
           <motion.div
@@ -402,16 +281,6 @@ const ClinicianAlerts = () => {
           </motion.div>
         </div>
       </main>
-
-      <CreateAlertRuleDialog
-        trigger={<span className="hidden" />}
-        patients={patients.map(p => ({
-          id: p.id,
-          user_id: p.user_id,
-          patient_name: p.patient_name || 'Unknown Patient',
-          patient_email: p.patient_email,
-        }))}
-      />
     </div>
   );
 };

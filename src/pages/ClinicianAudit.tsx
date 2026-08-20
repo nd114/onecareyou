@@ -158,7 +158,28 @@ export default function ClinicianAudit() {
             ) : filtered.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">No audit events match your filter.</p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Mobile: one card per event — a six-column table is unreadable
+                  on a phone, and clinicians review audit trails on the ward. */}
+              <ul className="space-y-2 sm:hidden">
+                {filtered.map((e) => (
+                  <li key={e.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant="outline" className="text-xs">{e.action}</Badge>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {format(new Date(e.created_at), "MMM d, HH:mm")}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-sm truncate">{e.actor_label}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      <span className="font-mono">{e.resource_type}</span>
+                      {e.resource_id && <span> / {e.resource_id.slice(0, 8)}…</span>}
+                      {e.patient_label ? ` · ${e.patient_label}` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="text-xs uppercase text-muted-foreground border-b border-border">
                     <tr>
@@ -193,6 +214,7 @@ export default function ClinicianAudit() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>

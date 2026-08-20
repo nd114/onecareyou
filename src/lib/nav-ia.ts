@@ -122,10 +122,9 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
       // BAA's existing back-to-compliance breadcrumb still work — they are
       // just no longer competing for space in the tab bar.
       { to: "/clinician/compliance", label: "Compliance", match: ["/clinician/audit", "/clinician/baa"] },
-      // This page edits the clinician's own professional profile, not the
-      // practice. Calling it "Settings" under a Practice heading is what made
-      // people expect practice configuration and find their own name.
-      { to: "/clinician/settings", label: "My profile" },
+      // "My profile" is deliberately NOT a Practice tab: it edits the person,
+      // not the organisation. It lives in the account dropdown under their own
+      // name, which is where anyone looks for their own details.
     ],
   },
 ];
