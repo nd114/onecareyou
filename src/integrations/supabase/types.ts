@@ -3175,6 +3175,27 @@ export type Database = {
           },
         ]
       }
+      rate_limit_events: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: number
+          subject: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: number
+          subject: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: number
+          subject?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           created_at: string
@@ -3814,6 +3835,16 @@ export type Database = {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
+      enforce_rate_limit: {
+        Args: {
+          _bucket: string
+          _max: number
+          _message?: string
+          _subject: string
+          _window: string
+        }
+        Returns: undefined
+      }
       find_institution_by_slug: {
         Args: { _slug: string }
         Returns: {
@@ -4150,6 +4181,7 @@ export type Database = {
           tenant_type: string
         }[]
       }
+      request_client_ip: { Args: never; Returns: string }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }
