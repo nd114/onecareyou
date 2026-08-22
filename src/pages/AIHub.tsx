@@ -67,9 +67,9 @@ export default function AIHub() {
       <SectionTabs section="ai" variant="patient" />
 
       <main className="container py-6 px-4 max-w-6xl">
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           {/* Conversation switcher */}
-          <Card className="lg:sticky lg:top-6 h-fit">
+          <Card className="lg:sticky lg:top-6 h-fit min-w-0">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <MessageSquare className="h-4 w-4 text-primary" />
@@ -127,7 +127,7 @@ export default function AIHub() {
 
           {/* Pane: live chat, or a stored conversation read back */}
           {selected === null ? (
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden min-w-0">
               <AIChatPanel
                 className="h-[calc(100vh-16rem)] min-h-[480px]"
                 renderHeader={({ hasMessages, clearChat }) => (
@@ -145,7 +145,7 @@ export default function AIHub() {
               />
             </Card>
           ) : (
-            <Card>
+            <Card className="min-w-0">
               <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
                 <div className="min-w-0">
                   <p className="font-medium leading-tight truncate">Past conversation</p>
