@@ -32,7 +32,7 @@ export function MarkdownMessage({ content, className }: MarkdownMessageProps) {
         '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
         '[&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:my-2 [&_blockquote]:text-muted-foreground',
         '[&_hr]:my-3 [&_hr]:border-border',
-        '[&_table]:my-2 [&_table]:text-xs [&_table]:border-collapse',
+        '[&_table]:my-2 [&_table]:text-xs [&_table]:border-collapse [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto',
         '[&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1 [&_th]:font-semibold [&_th]:bg-muted',
         '[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1',
         className,
