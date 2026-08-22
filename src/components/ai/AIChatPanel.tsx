@@ -147,13 +147,13 @@ function MessageBubble({
         </div>
       )}
       <div className={cn(
-        'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm',
+        'max-w-[85%] min-w-0 rounded-2xl px-4 py-2.5 text-sm',
         isUser
           ? 'bg-primary text-primary-foreground rounded-br-md'
           : 'bg-muted rounded-bl-md'
       )}>
         {isUser ? (
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
         ) : (
           <MarkdownMessage content={message.content} />
         )}
@@ -218,9 +218,10 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChat
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    // ScrollArea renders a nested viewport — that is the element that scrolls,
+    // not the root the ref is attached to.
+    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (viewport) viewport.scrollTop = viewport.scrollHeight;
   }, [messages, isLoading]);
 
   const handleSend = async () => {
@@ -421,7 +422,7 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChat
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask a question, attach a file, or dictate..."
-            className="min-h-[36px] max-h-[100px] resize-none text-sm"
+            className="min-h-[36px] max-h-[100px] min-w-0 flex-1 resize-none text-sm"
             rows={1}
           />
           <Button
