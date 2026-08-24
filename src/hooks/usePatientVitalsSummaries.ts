@@ -49,6 +49,9 @@ export function usePatientVitalsSummaries(patientUserIds: string[]) {
         .select('user_id, status')
         .in('user_id', patientUserIds)
         .gte('scheduled_time', sevenDaysAgo.toISOString())
+        // Bounded at now on purpose: adherence is scored on doses that have
+        // come due. Widening this to the end of the day would count tonight's
+        // tablets as already not taken. See src/lib/adherence.ts.
         .lte('scheduled_time', new Date().toISOString());
 
       if (scheduleError) {

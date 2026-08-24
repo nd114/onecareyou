@@ -71,6 +71,17 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ### August 2026
 
+- **Doses that are not due yet stopped counting as doses not taken.** Adherence divided taken by
+  every scheduled entry in the window, tonight's tablets included. On a seven-day window at two
+  doses a day, a patient who had taken every single dose read as 12/14 — **86%** — at nine in the
+  morning on the last day, recovering to 100% only once the evening tablets were swallowed. The
+  same arithmetic was in six places across both sides: the patient's dashboard (where the number
+  fell each morning and climbed back through the evening), their adherence report, the per-drug and
+  per-time-of-day breakdowns a clinician sees, and the figure feeding the risk assessment — which
+  raises a finding below 80%, so a perfectly adherent patient drifted toward being flagged by the
+  clock. One tested function now scores all of them on doses that have actually come due, and
+  reports nothing rather than 0% when a schedule has not started. 13 unit tests.
+
 - **One answer to "is this reading normal".** Three surfaces carried their own copy of the vital
   ranges and disagreed. The risk badge scored blood pressure on the systolic alone —
   `secondary_value` was on the interface and never read, so **120/110 registered as normal** — and
