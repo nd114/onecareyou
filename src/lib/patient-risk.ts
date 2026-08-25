@@ -246,6 +246,22 @@ export function describeReadingStatus(
   return "Normal";
 }
 
+/**
+ * The normal range as a printable string, for a report that shows one.
+ *
+ * A blood pressure has two, so it reads as a pair — printing only the systolic
+ * band next to a systolic/diastolic figure invites the reader to check the
+ * wrong half.
+ */
+export function describeNormalRange(type: string): string {
+  const canonical = canonicalType(type);
+  if (canonical === "blood_pressure") {
+    return `${BANDS.systolic.low}–${BANDS.systolic.high} / ${BANDS.diastolic.low}–${BANDS.diastolic.high}`;
+  }
+  const band = BANDS[canonical];
+  return band ? `${band.low}–${band.high}` : "—";
+}
+
 export function assessPatientRisk(
   vitals: RiskVital[],
   adherenceRate?: number,

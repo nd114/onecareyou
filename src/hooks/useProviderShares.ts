@@ -264,23 +264,11 @@ export function useProviderShares() {
         details: { permissions_at_revocation: existing?.permissions ?? null },
       });
 
-      try {
-        await (supabase.from('hipaa_audit_logs' as any).insert({
-          user_id: user.id,
-          action: 'provider_share_revoked',
-          resource_type: 'provider_share',
-          resource_id: shareId,
-          patient_user_id: user.id,
-          details: {
-            provider_name: existing?.provider_name ?? null,
-            provider_email: existing?.provider_email ?? null,
-            reason: reason ?? null,
-          },
-          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-        }) as any);
-      } catch (err) {
-        console.error('Audit log failed for share revoke:', err);
-      }
+      // The audit entry for this revocation is written by trg_audit_provider_share
+      // in the same statement as the update, so it cannot be declined or
+      // mislabelled by the client. This used to also insert one from the browser,
+      // which duplicated the trigger's row and — because the client chose every
+      // field — was the weaker of the two records. See 20260820140000.
 
       return existing;
     },

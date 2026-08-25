@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   assessPatientRisk,
+  describeNormalRange,
   describeReadingStatus,
   isReadingOutsideRange,
   normaliseReading,
@@ -208,5 +209,25 @@ describe("describeReadingStatus — the report a patient hands their clinician",
 
   it("says Normal for a measurement with no defined range rather than guessing", () => {
     expect(describeReadingStatus("weight", 78, null, "kg")).toBe("Normal");
+  });
+});
+
+describe("describeNormalRange", () => {
+  it("prints both halves for a blood pressure", () => {
+    // Printing only the systolic band beside a 130/85 figure invites the
+    // reader to check the wrong half.
+    expect(describeNormalRange("blood_pressure")).toBe("90–140 / 60–90");
+  });
+
+  it("prints a single band for a single-value measurement", () => {
+    expect(describeNormalRange("heart_rate")).toBe("60–100");
+  });
+
+  it("resolves an alias", () => {
+    expect(describeNormalRange("blood_glucose")).toBe("70–140");
+  });
+
+  it("says nothing rather than inventing a range it does not have", () => {
+    expect(describeNormalRange("weight")).toBe("—");
   });
 });
