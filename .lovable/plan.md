@@ -1,48 +1,83 @@
-# How-To Videos: Live Screen Capture with Female Voiceover
+# Clinical Workflow Depth — FHIR-shaped, Medplum-informed (roadmap only)
 
-Yes — this is doable, and it can be genuinely live rather than a slideshow of screenshots.
+You asked for the architecture and sequencing, not a build. This plan produces **documents only**: a target architecture, a module-by-module map, and a migration path. No schema or code changes until you approve a phase.
 
-Approach: drive the real app in a headless browser against the seeded demo accounts, record actual screen video (typing, scrolling, clicks, page transitions), overlay a visible animated cursor, then narrate it with a female ElevenLabs voice and assemble the final MP4.
+## Recommendation
 
-## What you get
+**Be FHIR-shaped, not Medplum-hosted.** Model our own Postgres tables on the FHIR resources that matter (naming, required fields, status vocabularies, code systems), keep RLS and the existing OneCare access model as the source of truth, and treat Medplum as a *reference implementation and optional interop peer* — we read their resource design and their open-source ideas, review anything we adopt, and never depend on their service to run. If Medplum disappears, nothing in OneCare stops.
 
-Two videos, rendered to `/mnt/documents/`:
+Why not the two extremes:
+- A pure "borrow the module names" build gets us features fast but leaves us with bespoke shapes we would have to re-model the first time a hospital asks for FHIR export — which enterprise deals will ask for.
+- A full generic FHIR JSONB datastore with a FHIR API is the right end state for a platform whose product *is* the datastore. Ours is a patient-facing continuity product; a generic resource store would slow every screen and dilute the four-pillar discipline.
 
-1. **Patient walkthrough** (~2.5-3 min, desktop 1920x1080 with a mobile section)
-   Sign in, Today, log a vital, mark a dose, Medications, Health Vault (open a document), Care Circle sharing, Ask AI, Simple Mode.
-2. **Clinician walkthrough** (~2.5-3 min, desktop 1920x1080)
-   Sign in, Today triage inbox, patient list + search, patient detail, guidance, dictation/scribe SOAP draft, Practice (team, storage), audit.
+The middle path: **relational tables named and shaped after FHIR resources, with a thin mapping layer** (`src/lib/fhir/`) that converts a row to a FHIR resource and back. That mapper is what powers export, QHIN, and EHR write-back later, and it is the only place interop logic lives.
 
-Optionally a third short **60-second combined overview** cut from the same footage for socials.
+## What OneCare must not become
 
-## Script
+OneCare's purpose is to close the post-discharge information gap for the patient. So every module below earns its place only through a patient-visible outcome:
 
-No script exists yet for a how-to. I'll write two narration scripts derived from the platform functionality and documentations starting from the two handbooks (`patient-guide.md` and `clinician-guide.md`) and going on to others for current platform functionality so the wording matches product vocabulary (wellness routine, catch-up reminder, care record snapshot, "coming soon" where unbuilt). Scripts are saved as `docs/video/patient-howto-script.md` and `docs/video/clinician-howto-script.md` so you can edit lines before I render audio.
+| Module | Clinician gets | Patient must get |
+| --- | --- | --- |
+| Intake & registration | Structured pre-visit answers | Fill it once, on their phone, reused next visit |
+| Scheduling | Real appointment book | See upcoming visits, confirm, reschedule, prep list |
+| Charting | Encounters (already live) | Plain-language visit summary they keep in the Vault |
+| Diagnostic orders | Order + track labs/imaging | Know what was ordered, why, and the result |
+| Messaging | Already live | Already live |
+| Billing | Charge capture, statements | See what they owe, what insurance covered, receipts |
 
-## How it runs
+Anything with no patient-side column stays out.
+
+## Resource map (our table -> FHIR resource)
+
+Existing, already close: `profiles`/`clinician_patient_records` -> Patient, `encounters` -> Encounter + Composition, `medications` -> MedicationStatement, `vitals` -> Observation, `health_documents` -> DocumentReference, `clinician_guidance` -> CarePlan/Communication, `messages` -> Communication, `practices` -> Organization, `clinician_profiles` -> Practitioner, `practice_members` -> PractitionerRole, `referrals` -> ServiceRequest (referral).
+
+New, per phase:
 
 ```text
-1. Script  ->  2. Voiceover (ElevenLabs, female voice)  ->  3. Timed capture  ->  4. Assemble
+Intake        questionnaires, questionnaire_responses      Questionnaire / QuestionnaireResponse
+Scheduling    appointments, appointment_slots, schedules   Appointment / Slot / Schedule
+Orders        service_requests, diagnostic_reports         ServiceRequest / DiagnosticReport / Observation
+Billing       charge_items, invoices, invoice_lines,       ChargeItem / Invoice / Coverage /
+              payments, coverages                          PaymentReconciliation
+Coding        code_systems (ICD-10, CPT, LOINC subsets)    CodeSystem / ValueSet
 ```
 
-- **Voiceover first.** Each narration beat becomes its own MP3 so I know its exact duration; that duration then sets how long the matching on-screen action lingers. This is what keeps audio and picture in sync instead of guessing.
-- **Live capture.** Playwright records video of the real dev server while logged into the demo accounts (`demo-clinician-1@onecare.you` and the seeded patient James Thompson). Human-feeling pacing: eased cursor movement, per-character typing, smooth scrolling, brief pauses on each pane. Cookie banners and the floating bug/AI buttons are dismissed so frames are clean.
-- **Visible cursor.** Headless browsers don't draw a pointer, so I inject a small overlay cursor element that tracks every synthetic mouse move and pulses on click — the standard way to make automated capture read as a real demo.
-- **Assembly in Remotion.** Reuse the existing `remotion/` project and its theme (forest green / cream / gold, Fraunces-style display type): title card, section cards between chapters, lower-third captions for key steps, zoom/pan on small UI details, and the narration track laid over the screen recording. Final render via the existing `scripts/render-remotion.mjs` pattern, unmuted this time.
-- Screenshots we already captured stay useful as fallbacks for any pane that won't cooperate live, and as poster frames.
+Naming note: patient-side `schedule_entries` (medication doses) stays as-is — it is not FHIR Appointment and must not be conflated.
 
-## Anything needed from you
+## Phasing
 
-Only three choices, and I can pick sensible defaults if you'd rather not:
+**Phase 0 — Foundations (docs + small, low-risk).** The FHIR mapping layer skeleton, a shared `code_systems` lookup, and a documented convention for status enums, `subject`/`performer` columns, and audit logging on every new clinical table.
 
-1. **Voice** — I'll use a warm, clear female ElevenLabs voice (Rachel-style) unless you name one.
-2. **Audience/tone** — I'll aim at "new user onboarding" (calm, instructional). Say the word if you want a sales tone instead.
-3. **Music** — off by default; narration only.
+**Phase 1 — Scheduling.** `appointments` bound to practice/clinician/patient, patient-visible in Today and My Health, clinician-visible in the Today inbox. Unlocks intake and billing (both hang off an appointment) and is the module with the clearest immediate value.
 
-No credentials needed — demo sessions are minted from within the sandbox. Nothing real-patient appears; demo data only.
+**Phase 2 — Intake & registration.** Questionnaire builder for practices (reuse `clinical_templates` patterns), patient fills on mobile, response lands on the appointment and pre-fills the encounter.
 
-## Notes and limits
+**Phase 3 — Billing & payments, statements-first.** `charge_items` -> `invoices` from a signed encounter; patient sees a Billing surface with balance, line items, and receipts. **Payment collection is a separate switch** (see below) and is not part of Phase 3.
 
-- Videos stay under ~5 minutes each so each render fits comfortably inside the sandbox's 10-minute render window; longer pieces get rendered per chapter and concatenated.
-- Audio encoding uses AAC via the system ffmpeg on the final mux step, since Remotion's bundled encoder in this sandbox can't do it directly.
-- Capture only — no product code changes. If a walkthrough exposes a real UI bug (clipped text, empty pane), I'll report it rather than quietly edit the app.
+**Phase 4 — Diagnostic orders & results.** `service_requests` with status tracking, results attached as `DiagnosticReport` + Observations, patient sees "ordered / collected / resulted" and the plain-language explanation.
+
+**Phase 5 — Interop surface.** Turn the mapper outward: per-patient FHIR export bundle, then narrow write-back where partner agreements exist (already scoped in `ehr-integration-plan.md`).
+
+## Payments — deliberately left open
+
+The plan documents two modes behind one flag, so the decision does not block Phase 3:
+- **Statements only** — practice issues the invoice, we display balance and receipts, patient pays elsewhere. No processor, no PCI surface, no Connect onboarding.
+- **Pay in OneCare** — Stripe Connect with practice onboarding, platform fee, refunds and reconciliation. Bigger build, real revenue line, and it changes our regulatory posture.
+
+Recommendation captured in the doc: ship statements-first in Phase 3, keep the invoice schema payment-ready (`amount_paid`, `payment_status`, external payment ids), and turn on Connect only when a practice actually asks to collect. No Stripe work now.
+
+## Deliverables of this plan
+
+1. `docs/clinical-modules-plan.md` — the target architecture: FHIR-shaped-not-Medplum-hosted rationale, the resource map above with full column sketches per new table, RLS and access-model rules per module (patient / connected clinician / institution + assignment), the patient-visible requirement per module, and the phase gates.
+2. `docs/billing-plan.md` — billing data model, statements-vs-Connect decision matrix, patient billing surface, and what changes in `pricing-constants.ts` if we take a platform fee.
+3. `docs/roadmap.md` — a "Clinical workflow depth" entry under Next up linking both docs, and companion-doc links added at the top. No existing roadmap content rewritten.
+4. `mem://features/clinician/clinical-modules-fhir-strategy` — the durable rule: FHIR-shaped own tables, Medplum as reviewed reference only, no module without a patient-visible outcome; plus the index entry.
+
+## Technical notes
+
+- Every new clinical table follows the house rules already in force: `CREATE TABLE` -> `GRANT` -> `ENABLE ROW LEVEL SECURITY` -> policies scoped `TO authenticated`, access decided through the existing SECURITY DEFINER helpers (`clinician_has_patient_access`, `practice_has_patient_access`, `is_assigned_to_patient_in_practice`) rather than new bespoke logic, and writes logged via `log_record_access` / `patient_action_log`.
+- Surface budget: scheduling and billing land inside the existing pillars (patient: Today + My Health; clinician: Today + Patients + Practice) as sub-tabs. No fifth pillar on either side.
+- The mapper lives in `src/lib/fhir/` as pure functions with Vitest coverage, so interop is testable without a network.
+- Time-dependent rules (appointment in the future, invoice due dates) use validation triggers, never CHECK constraints.
+
+No source files or database objects change in this plan — documents and memory only.
