@@ -15,6 +15,7 @@ import { useAdminRole } from '@/hooks/useAdminRole';
 
 import { z } from 'zod';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { KingsChatSignInButton } from '@/components/auth/KingsChatSignInButton';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -218,6 +219,10 @@ const SignIn = () => {
             </div>
 
             <GoogleSignInButton label="Sign in with Google" />
+
+            <div className="mt-3">
+              <KingsChatSignInButton label="Sign in with KingsChat" />
+            </div>
 
             <div className="mt-6 text-center space-y-3">
               <p className="text-sm text-muted-foreground">
