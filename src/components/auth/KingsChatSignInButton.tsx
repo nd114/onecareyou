@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import kingschatLogo from "@/assets/kingschat-logo.png.asset.json";
 
 interface KingsChatSignInButtonProps {
   label?: string;
