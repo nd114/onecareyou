@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import kingschatLogo from "@/assets/kingschat-logo.png.asset.json";
 
 interface KingsChatSignInButtonProps {
   label?: string;
@@ -122,16 +123,7 @@ export function KingsChatSignInButton({
       {loading ? (
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
       ) : (
-        <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M12 2C6.48 2 2 5.94 2 10.8c0 2.78 1.47 5.26 3.76 6.85-.1.75-.45 2.23-1.26 3.35-.16.22-.05.52.21.57.09.01.18.01.27.01 1.06 0 2.49-.7 3.46-1.35.84.2 1.72.31 2.63.31 5.52 0 10-3.94 10-8.8S17.52 2 12 2Z"
-            fill="#6941C6"
-          />
-          <path
-            d="M8.5 9.4h7v1.5h-7v-1.5Zm0 3h4.5v1.5H8.5v-1.5Z"
-            fill="#fff"
-          />
-        </svg>
+        <img src={kingschatLogo.url} alt="" aria-hidden="true" className="mr-2 h-4 w-4" />
       )}
       {label}
     </Button>
