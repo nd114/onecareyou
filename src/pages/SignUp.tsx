@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { KingsChatSignInButton } from '@/components/auth/KingsChatSignInButton';
 
 const signUpSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
@@ -229,6 +230,10 @@ const SignUp = () => {
             </div>
 
             <GoogleSignInButton label="Sign up with Google" redirectTo="/onboarding" />
+
+            <div className="mt-3">
+              <KingsChatSignInButton label="Sign up with KingsChat" redirectTo="/onboarding" />
+            </div>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
