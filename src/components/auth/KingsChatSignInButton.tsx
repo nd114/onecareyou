@@ -30,7 +30,8 @@ function openKingsChatLogin(): Promise<KingsChatTokenResponse> {
 
   const url = new URL(KINGSCHAT_AUTH_URL);
   url.searchParams.append("client_id", CLIENT_ID);
-  url.searchParams.append("scopes", "user");
+  // KingsChat's auth page JSON.parse()es this param — it must be a JSON array, not a plain string.
+  url.searchParams.append("scopes", JSON.stringify(["user"]));
   url.searchParams.append("redirect_uri", window.location.origin);
   url.searchParams.append("post_message", "1");
 
