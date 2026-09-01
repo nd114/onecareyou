@@ -132,7 +132,13 @@ const App = () => (
             <Route path="/beta" element={<BetaLanding />} />
             <Route path="/beta/book" element={<BetaBooking />} />
             <Route path="/beta/nda" element={<BetaNDA />} />
-            <Route path="/sign-in" element={<SignIn />} />
+            {/* Branded sign-in on a tenant host; the generic page elsewhere. */}
+            <Route path="/sign-in" element={<TenantHome mode="sign-in" />} />
+            <Route
+              path="/clinician/sign-in"
+              element={<TenantHome audience="staff" mode="sign-in" />}
+            />
+
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
