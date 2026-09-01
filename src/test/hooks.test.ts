@@ -78,28 +78,6 @@ describe('useSessionTimeout', () => {
   });
 });
 
-describe('useHipaaAuditLog', () => {
-  it('returns logAccess function', async () => {
-    const { useHipaaAuditLog } = await import('@/hooks/useHipaaAuditLog');
-    const { result } = renderHook(() => useHipaaAuditLog());
-    expect(result.current.logAccess).toBeDefined();
-    expect(typeof result.current.logAccess).toBe('function');
-  });
-
-  it('logAccess does not throw without user', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    (useAuth as any).mockReturnValueOnce({ user: null });
-    
-    const { useHipaaAuditLog } = await import('@/hooks/useHipaaAuditLog');
-    const { result } = renderHook(() => useHipaaAuditLog());
-    
-    await expect(result.current.logAccess({
-      action: 'test',
-      resource_type: 'test',
-    })).resolves.toBeUndefined();
-  });
-});
-
 describe('useDashboardStats', () => {
   it('returns default stats when no data', async () => {
     const { useDashboardStats } = await import('@/hooks/useDashboardStats');

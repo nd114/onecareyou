@@ -93,7 +93,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     bullets: [
       'Care Circle: added one-click "Email" invite (mailto pre-fills provider email, subject, and secure link) — no more copy-paste only.',
       'Onboarding: new "Save & Continue Later" button persists draft progress without marking onboarding complete, so patients can resume.',
-      'Provider share revoke: now writes a hipaa_audit_logs entry (provider_share_revoked) and shows a richer confirmation toast naming the provider.',
+      'Provider share revoke: audited and shows a richer confirmation toast naming the provider. (The audit entry is now written server-side by a database trigger rather than by the browser.)',
       'i18n scaffold: i18next + react-i18next + browser language-detector wired through src/lib/i18n.ts; Settings now has a Language selector (English live, ES/FR marked coming soon).',
     ],
   },
@@ -205,7 +205,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     title: 'Security & compliance hardening',
     tags: ['security'],
     bullets: [
-      'HIPAA audit logging on every PHI interaction (useHipaaAuditLog).',
+      'Server-side audit logging: record changes written by database triggers, record access verified before it is logged, and the log itself not writable by the account it describes.',
       'Clinician 30-minute strict inactivity logout.',
       'Generic password-reset responses to prevent user enumeration.',
       'AES-256 at rest, TLS in transit, Leaked Password Protection enabled.',

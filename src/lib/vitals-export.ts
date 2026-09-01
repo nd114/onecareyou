@@ -1,6 +1,6 @@
 import { VitalRecord } from '@/hooks/useVitals';
 import { VITAL_CONFIG, VitalType } from '@/types/health';
-import { describeReadingStatus } from '@/lib/patient-risk';
+import { describeNormalRange, describeReadingStatus } from '@/lib/patient-risk';
 import { format } from 'date-fns';
 
 // CSV Export
@@ -78,8 +78,14 @@ export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vit
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const inRange = values.filter(v => v >= config.normalMin && v <= config.normalMax).length;
-    
+    // Graded the same way as the Status column on each row. These two used to
+    // disagree inside one document: rows against the clinical thresholds, this
+    // summary against VITAL_CONFIG's target band, which is a tighter number and
+    // labelled "normal range" here as though it were the same thing.
+    const inRange = records.filter(
+      (r) => describeReadingStatus(r.type, r.value, r.secondary_value, r.unit) === 'Normal',
+    ).length;
+
     return {
       type: config.label,
       unit: config.unit,
@@ -87,8 +93,8 @@ export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vit
       average: avg.toFixed(1),
       min,
       max,
-      inRangePercent: Math.round((inRange / values.length) * 100),
-      normalRange: `${config.normalMin}-${config.normalMax}`,
+      inRangePercent: Math.round((inRange / records.length) * 100),
+      normalRange: describeNormalRange(type),
     };
   });
 

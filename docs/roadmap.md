@@ -71,6 +71,20 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ### August 2026
 
+- **The audit log stopped being writable by the accounts it describes.** `hipaa_audit_logs` took
+  INSERT straight from the browser under a policy whose only check was that the actor named
+  themselves — so a signed-in clinician could record an access they never made, against a patient
+  they had no relationship with, label a real access with a milder action, or bury a genuine entry
+  under any volume of noise. Nothing verified that the access being recorded was one the caller
+  could have made. That log is the compensating control for tenant visibility being deliberately
+  broad, and it is what a BAA conversation points at, so it had to be evidence rather than
+  testimony. Direct INSERT, UPDATE and DELETE are revoked; reads are recorded only through
+  `log_record_access()`, which takes the actor from `auth.uid()`, verifies access first, and
+  accepts an action only from a fixed set. Two client-side writers went with it — one was dead
+  code that the changelog nonetheless cited as proof of "HIPAA audit logging on every PHI
+  interaction", and the other duplicated a trigger's row with a weaker, client-authored version.
+  Both changelog claims corrected. 13 regression assertions.
+
 - **Doses that are not due yet stopped counting as doses not taken.** Adherence divided taken by
   every scheduled entry in the window, tonight's tablets included. On a seven-day window at two
   doses a day, a patient who had taken every single dose read as 12/14 — **86%** — at nine in the
@@ -204,7 +218,9 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    clearance, dvh, iOS input zoom, notch insets, PWA colours, Capacitor build
    config); tap targets, keyboard overlap and tablet landscape need real devices.
    Table overflow on the four pages that render real tables is outstanding.
-2. **Cross-tenant audit search** in the admin console (admin actions + access logs).
+2. ~~**Cross-tenant audit search** in the admin console.~~ **Done** — `admin_access_log_search`
+   backs a read-only panel on the console, searchable by action, clinician email or patient email,
+   newest first and capped at 200 results.
 3. **Post-login tenant branding** — the hospital's name and logo behind sign-in as well as on the
    sign-up address. Deliberately deferred (Aug 2026): the branded intake page carries name, logo
    and brand colours, and everything after sign-in stays Emerald Prestige. Revisit if a hospital
@@ -212,14 +228,15 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 4. **Assignment-first access** — switch `can_view_all_patients` off as the hospital default once
    sub-admins are onboarded and trained, so a clinician sees the patients assigned to them.
    Prepared on `claude/oclmc-panel-scope-option-a-assignment-first`; see review C2.
-5. **Server-side audit logging — half done.** Writes are covered: six `AFTER INSERT OR UPDATE`
-   triggers record changes to guidance, encounters, internal notes, managed records and both share
-   tables server-side, so a change to a patient's record is logged whatever the client reports
-   (August 2026). What is still client-written is *reads* — `useHipaaAuditLog` and
-   `useProviderShares` insert `hipaa_audit_logs` rows from the browser, so a PHI read is recorded
-   only if the client chooses to say so. Finish this before a formal audit. It matters more since
-   tenant visibility was deliberately left broad — the audit log is the compensating control for
-   that decision.
+5. ~~**Server-side audit logging.**~~ **Done** (August 2026). Changes are recorded by six
+   `AFTER INSERT OR UPDATE` triggers in the same statement as the change. Reads go through
+   `log_record_access()`, which takes the actor from `auth.uid()`, verifies the access before
+   recording it, and accepts only a fixed set of actions. The table itself is no longer writable
+   by the client at all — the open `WITH CHECK (auth.uid() = user_id)` INSERT policy that let a
+   clinician author arbitrary entries, against any patient, is gone. What remains is a product
+   question rather than a gap: nothing in Postgres knows a page was rendered, so a read is
+   reported by the client and the guarantee is that a report cannot be forged or misattributed —
+   only withheld.
 6. **Rate limiting — anonymous writes done, sign-in outstanding.** The three tables the anonymous
    role can INSERT into (`job_applications`, `beta_events`, `enterprise_inquiries`) are throttled
    at the database by `BEFORE INSERT` triggers, per subject and in aggregate, keyed on the client
