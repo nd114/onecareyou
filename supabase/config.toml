@@ -30,19 +30,3 @@ verify_jwt = false
 [functions.kingschat-callback]
 verify_jwt = false
 
-# Both are called before anyone is signed in, and both must answer the browser's
-# CORS preflight. A preflight is sent by the browser itself and carries no
-# Authorization header, so with verify_jwt = true the gateway rejects it with a
-# 401 before the function runs — no CORS headers on the response, and the
-# browser reports "Response to preflight request doesn't pass access control
-# check: It does not have HTTP ok status".
-#
-# Requiring a JWT to *begin* signing in was confused anyway: it only ever worked
-# because supabase-js attaches the anon key, which is public. kingschat-start
-# guards itself by rate limit; kingschat-poll needs a 244-bit nonce it did not
-# issue and cannot guess.
-[functions.kingschat-start]
-verify_jwt = false
-
-[functions.kingschat-poll]
-verify_jwt = false

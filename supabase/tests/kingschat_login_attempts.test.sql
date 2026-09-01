@@ -136,6 +136,44 @@ BEGIN
   SELECT count(*) INTO _count FROM public.kingschat_login_attempts WHERE nonce = 'nonce-pending';
   PERFORM pg_temp.assert(_count = 1, 'while a live attempt is untouched');
 
+  -- ==========================================================================
+  -- 7. The browser's two halves, over PostgREST
+  --
+  -- Issuing and claiming are database functions rather than edge functions, so
+  -- signing in depends on one deployment instead of three. Both are callable
+  -- without a session — nobody has one yet — which makes what they refuse to
+  -- say as important as what they return.
+  -- ==========================================================================
+  EXECUTE 'SET LOCAL ROLE anon';
+  SELECT public.kingschat_begin_login() INTO _txt;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(length(_txt) = 64, 'an anonymous caller can begin a login and gets a 256-bit nonce');
+
+  EXECUTE 'SET LOCAL ROLE anon';
+  SELECT status INTO _claimed FROM public.kingschat_claim_login(_txt);
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_claimed = 'pending', 'and it reads as pending until the callback lands');
+
+  UPDATE public.kingschat_login_attempts
+     SET status = 'fulfilled', token_hash = 'tok_rpc', fulfilled_at = now()
+   WHERE nonce = _txt;
+
+  EXECUTE 'SET LOCAL ROLE anon';
+  SELECT token_hash INTO _claimed FROM public.kingschat_claim_login(_txt);
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_claimed = 'tok_rpc', 'whoever holds the nonce gets the token');
+
+  EXECUTE 'SET LOCAL ROLE anon';
+  SELECT token_hash INTO _claimed FROM public.kingschat_claim_login(_txt);
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_claimed IS NULL, 'and only the first caller does');
+
+  EXECUTE 'SET LOCAL ROLE anon';
+  SELECT status INTO _claimed FROM public.kingschat_claim_login('not-a-real-nonce');
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_claimed = 'unknown',
+    'a guessed nonce is answered the same way an expired one is, confirming nothing');
+
   RAISE NOTICE 'ALL KINGSCHAT LOGIN ATTEMPT TESTS PASSED';
 END $$;
 
