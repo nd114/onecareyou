@@ -29,3 +29,11 @@ verify_jwt = false
 
 [functions.kingschat-callback]
 verify_jwt = false
+
+# Called from the browser before anyone is signed in; supabase-js still sends
+# the anon key, so JWT verification stays on.
+[functions.kingschat-start]
+verify_jwt = true
+
+[functions.kingschat-poll]
+verify_jwt = true
