@@ -63,8 +63,8 @@ describe("decodeJwtClaims", () => {
 
 describe("identityFromClaims", () => {
   it("reads the standard OIDC spelling", () => {
-    const id = identityFromClaims({ sub: "kc-1", email: "A@B.test", name: "Ada" });
-    expect(id).toMatchObject({ subject: "kc-1", email: "a@b.test", name: "Ada" });
+    const id = identityFromClaims({ sub: "kc-1", email: "A@B.test", name: "Jane" });
+    expect(id).toMatchObject({ subject: "kc-1", email: "a@b.test", name: "Jane" });
   });
 
   it("finds the subject under other spellings providers use", () => {
@@ -72,7 +72,7 @@ describe("identityFromClaims", () => {
     // one being assumed and the login failing silently when it is wrong.
     expect(identityFromClaims({ user_id: "kc-2" }).subject).toBe("kc-2");
     expect(identityFromClaims({ userId: "kc-3" }).subject).toBe("kc-3");
-    expect(identityFromClaims({ username: "ada" }).subject).toBe("ada");
+    expect(identityFromClaims({ username: "Jane" }).subject).toBe("Jane");
   });
 
   it("accepts a numeric id", () => {
