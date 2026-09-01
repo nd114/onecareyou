@@ -38,7 +38,6 @@ import ClinicianPractice from "./pages/ClinicianPractice";
 import FamilyDashboard from "./pages/FamilyDashboard";
 import FamilyMemberDetail from "./pages/FamilyMemberDetail";
 import Onboarding from "./pages/Onboarding";
-import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
