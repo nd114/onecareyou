@@ -1,78 +1,141 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import kingschatLogo from "@/assets/kingschat-logo.png.asset.json";
-// Official SDK: builds the auth URL exactly the way KingsChat's login page
-// expects (scopes as a JSON array, redirect_uri = window.location.origin,
-// post_message=1) and resolves with the token via postMessage.
-import kingschat from "kingschat-web-sdk";
 
 interface KingsChatSignInButtonProps {
   label?: string;
   redirectTo?: string;
 }
 
-// KingsChat app registered for this site. The origin you sign in from must be
-// registered as a redirect URL on this app, because the SDK always sends
-// redirect_uri = window.location.origin.
-const CLIENT_ID = "cb84e89e-9b79-4da6-b69a-36eda4ab6135";
+const POLL_INTERVAL_MS = 1500;
+const GIVE_UP_AFTER_MS = 5 * 60 * 1000;
 
-interface KingsChatTokenResponse {
-  accessToken: string;
-  refreshToken?: string;
-  expiresInMillis?: number;
-}
+type PollResult = {
+  status: "pending" | "ready" | "failed" | "expired" | "consumed" | "unknown";
+  token_hash?: string;
+  error?: string;
+};
 
-function openKingsChatLogin(): Promise<KingsChatTokenResponse> {
-  return kingschat.login({
-    clientId: CLIENT_ID,
-    scopes: ["conference_calls"],
-  }) as Promise<KingsChatTokenResponse>;
-}
-
-
+/**
+ * Sign in with KingsChat.
+ *
+ * KingsChat does not redirect the browser back with an authorization code — it
+ * POSTs the code to the callback URL registered on the application, server to
+ * server. So this window never sees the code, and the two halves are joined by
+ * the nonce the server issues before the user leaves: KingsChat echoes it back
+ * as `origin`, the callback stores the result against it, and this polls for it.
+ *
+ * The previous version used kingschat-web-sdk, which opens accounts.kingsch.at
+ * and expects the token back by postMessage. That is a retired generation of
+ * the API — today's login page is accounts.kingschat.online and the platform
+ * ignores a redirect_uri passed at request time — so it could not have worked
+ * regardless of configuration.
+ */
 export function KingsChatSignInButton({
   label = "Continue with KingsChat",
   redirectTo,
 }: KingsChatSignInButtonProps) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const cancelled = useRef(false);
+  const popup = useRef<Window | null>(null);
+
+  // A login left in flight when the page changes should stop polling rather
+  // than resolve into a component that is no longer mounted.
+  useEffect(() => {
+    return () => {
+      cancelled.current = true;
+      popup.current?.close();
+    };
+  }, []);
+
+  const finish = (message: string) => {
+    toast.error(message);
+    popup.current?.close();
+    setLoading(false);
+  };
 
   const handleClick = async () => {
     setLoading(true);
+    cancelled.current = false;
+
+    // Opened before the await: a popup opened after one is blocked, because the
+    // browser no longer counts it as a response to the click.
+    popup.current = window.open("", "_blank", "width=520,height=680");
+
     try {
-      // 1. KingsChat popup login → access token
-      const tokens = await openKingsChatLogin();
-
-      // 2. Server verifies the token, resolves identity, mints a magic-link token
-      const { data, error } = await supabase.functions.invoke("kingschat-auth", {
-        body: { accessToken: tokens.accessToken },
-      });
-      if (error || !data?.token_hash) {
-        toast.error(data?.error || error?.message || "KingsChat sign-in failed");
-        setLoading(false);
+      const { data, error } = await supabase.functions.invoke("kingschat-start", { body: {} });
+      if (error || !data?.url || !data?.nonce) {
+        finish(data?.error || error?.message || "Could not start KingsChat sign-in");
         return;
       }
 
-      // 3. Exchange the one-time token for a real session
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        token_hash: data.token_hash,
-        type: "email",
-      });
-      if (verifyError) {
-        toast.error(verifyError.message);
-        setLoading(false);
+      if (popup.current && !popup.current.closed) {
+        popup.current.location.href = data.url;
+      } else {
+        // Popups blocked: this tab goes instead. The login still completes —
+        // the code reaches the server either way — but this window is replaced,
+        // so the poll cannot finish here.
+        window.location.href = data.url;
         return;
       }
 
-      toast.success("Signed in with KingsChat");
-      navigate(redirectTo ?? "/dashboard", { replace: true });
+      const startedAt = Date.now();
+      while (!cancelled.current) {
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+        if (cancelled.current) return;
+
+        if (Date.now() - startedAt > GIVE_UP_AFTER_MS) {
+          finish("KingsChat sign-in timed out. Please try again.");
+          return;
+        }
+
+        const { data: poll, error: pollError } = await supabase.functions.invoke(
+          "kingschat-poll",
+          { body: { nonce: data.nonce } },
+        );
+        if (pollError) continue; // A dropped poll is not a failed login.
+
+        const result = poll as PollResult;
+        if (result.status === "pending") {
+          // Give up early if they closed the window without finishing.
+          if (popup.current?.closed) {
+            finish("KingsChat sign-in was cancelled");
+            return;
+          }
+          continue;
+        }
+        if (result.status === "ready" && result.token_hash) {
+          popup.current?.close();
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: result.token_hash,
+            type: "email",
+          });
+          if (verifyError) {
+            finish(verifyError.message);
+            return;
+          }
+          toast.success("Signed in with KingsChat");
+          navigate(redirectTo ?? "/dashboard", { replace: true });
+          return;
+        }
+        if (result.status === "failed") {
+          finish(result.error ?? "KingsChat sign-in failed");
+          return;
+        }
+        finish(
+          result.status === "expired"
+            ? "KingsChat sign-in took too long. Please try again."
+            : "That KingsChat sign-in is no longer valid. Please try again.",
+        );
+        return;
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "KingsChat sign-in failed");
-      setLoading(false);
+      finish(err instanceof Error ? err.message : "KingsChat sign-in failed");
     }
   };
 
