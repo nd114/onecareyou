@@ -38,7 +38,6 @@ import ClinicianPractice from "./pages/ClinicianPractice";
 import FamilyDashboard from "./pages/FamilyDashboard";
 import FamilyMemberDetail from "./pages/FamilyMemberDetail";
 import Onboarding from "./pages/Onboarding";
-import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -132,7 +131,13 @@ const App = () => (
             <Route path="/beta" element={<BetaLanding />} />
             <Route path="/beta/book" element={<BetaBooking />} />
             <Route path="/beta/nda" element={<BetaNDA />} />
-            <Route path="/sign-in" element={<SignIn />} />
+            {/* Branded sign-in on a tenant host; the generic page elsewhere. */}
+            <Route path="/sign-in" element={<TenantHome mode="sign-in" />} />
+            <Route
+              path="/clinician/sign-in"
+              element={<TenantHome audience="staff" mode="sign-in" />}
+            />
+
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
