@@ -11,6 +11,12 @@ interface KingsChatSignInButtonProps {
   redirectTo?: string;
 }
 
+// The client id is public — it travels in the login URL the browser is sent to,
+// so anyone using the app can read it. The API key and everything else stay on
+// the server.
+const KINGSCHAT_CLIENT_ID = "45b995ce-a27e-49b2-9047-8d43229b0d46";
+const KINGSCHAT_LOGIN_URL = "https://accounts.kingschat.online/log-in";
+
 const POLL_INTERVAL_MS = 1500;
 const GIVE_UP_AFTER_MS = 5 * 60 * 1000;
 
@@ -26,8 +32,15 @@ type PollResult = {
  * KingsChat does not redirect the browser back with an authorization code — it
  * POSTs the code to the callback URL registered on the application, server to
  * server. So this window never sees the code, and the two halves are joined by
- * the nonce the server issues before the user leaves: KingsChat echoes it back
- * as `origin`, the callback stores the result against it, and this polls for it.
+ * the nonce issued before the user leaves: KingsChat echoes it back as `origin`,
+ * the callback stores the result against it, and this asks for it.
+ *
+ * Issuing and claiming go through database functions rather than edge functions.
+ * They only ever touched one table, and every extra edge function is another
+ * deployment that has to land before anyone can sign in — which is exactly what
+ * failed: the browser's preflight to kingschat-start never returned an HTTP-ok
+ * status. PostgREST is already there and already answers this browser correctly,
+ * as every other query in the app demonstrates.
  *
  * The previous version used kingschat-web-sdk, which opens accounts.kingsch.at
  * and expects the token back by postMessage. That is a retired generation of
@@ -68,19 +81,25 @@ export function KingsChatSignInButton({
     popup.current = window.open("", "_blank", "width=520,height=680");
 
     try {
-      const { data, error } = await supabase.functions.invoke("kingschat-start", { body: {} });
-      if (error || !data?.url || !data?.nonce) {
-        finish(data?.error || error?.message || "Could not start KingsChat sign-in");
+      // Cast: the generated types track the live database, so these two RPCs
+      // only appear there once 20260820160000 has been applied.
+      const { data: nonce, error } = await (supabase as any).rpc("kingschat_begin_login");
+      if (error || typeof nonce !== "string" || !nonce) {
+        finish(error?.message || "Could not start KingsChat sign-in");
         return;
       }
 
+      const loginUrl = `${KINGSCHAT_LOGIN_URL}?clientId=${encodeURIComponent(
+        KINGSCHAT_CLIENT_ID,
+      )}&origin=${encodeURIComponent(nonce)}`;
+
       if (popup.current && !popup.current.closed) {
-        popup.current.location.href = data.url;
+        popup.current.location.href = loginUrl;
       } else {
         // Popups blocked: this tab goes instead. The login still completes —
         // the code reaches the server either way — but this window is replaced,
         // so the poll cannot finish here.
-        window.location.href = data.url;
+        window.location.href = loginUrl;
         return;
       }
 
@@ -94,13 +113,14 @@ export function KingsChatSignInButton({
           return;
         }
 
-        const { data: poll, error: pollError } = await supabase.functions.invoke(
-          "kingschat-poll",
-          { body: { nonce: data.nonce } },
+        const { data: rows, error: pollError } = await (supabase as any).rpc(
+          "kingschat_claim_login",
+          { _nonce: nonce },
         );
         if (pollError) continue; // A dropped poll is not a failed login.
 
-        const result = poll as PollResult;
+        const result = (Array.isArray(rows) ? rows[0] : rows) as PollResult | undefined;
+        if (!result) continue;
         if (result.status === "pending") {
           // Give up early if they closed the window without finishing.
           if (popup.current?.closed) {
