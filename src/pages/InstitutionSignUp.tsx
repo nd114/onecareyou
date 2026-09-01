@@ -302,8 +302,11 @@ export default function InstitutionSignUp({
           {institution && (
             <p className="text-xs text-center text-muted-foreground">
               Work at {institution.name}?{' '}
-              <Link to="/staff" className="text-primary hover:underline">
-                Staff sign-in
+              <Link
+                to={mode === 'sign-in' ? '/clinician/sign-in' : '/staff'}
+                className="text-primary hover:underline"
+              >
+                {mode === 'sign-in' ? 'Staff sign-in' : 'Staff sign-up'}
               </Link>
               .
             </p>
