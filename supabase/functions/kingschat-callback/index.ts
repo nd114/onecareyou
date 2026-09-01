@@ -86,14 +86,93 @@ function json(body: unknown, status = 200) {
   });
 }
 
+/**
+ * A closing page instead of raw JSON.
+ *
+ * KingsChat can deliver the callback as a browser navigation (the window it
+ * opened for the login lands here), so a JSON body would be shown to the user
+ * as text — which is exactly what the "Invalid JSON body" screenshot was. When
+ * the request looks like a browser navigation we answer with a page that tells
+ * the opener it is done and closes itself.
+ */
+function page(message: string, status = 200) {
+  const html = `<!doctype html><html><head><meta charset="utf-8">
+<title>KingsChat sign-in</title>
+<style>body{font-family:system-ui,sans-serif;background:#faf7ef;color:#14342b;display:grid;place-items:center;height:100vh;margin:0}p{max-width:28rem;text-align:center;line-height:1.5}</style>
+</head><body><p>${message}</p>
+<script>try{window.opener&&window.opener.postMessage({source:"kingschat-callback",ok:${status < 400}},"*");}catch(e){}setTimeout(function(){try{window.close()}catch(e){}},1200);</script>
+</body></html>`;
+  return new Response(html, {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+function wantsHtml(req: Request) {
+  return (req.headers.get("accept") ?? "").includes("text/html");
+}
+
+/**
+ * KingsChat does not document a single wire format for this callback, and in
+ * practice it has arrived as JSON, as a form post, and as a plain navigation
+ * with query parameters. All three carry the same two values, so all three are
+ * read here rather than rejecting on content type.
+ */
+async function readPayload(req: Request): Promise<{ code?: string; origin?: string }> {
+  const url = new URL(req.url);
+  const fromQuery = {
+    code: url.searchParams.get("code") ?? url.searchParams.get("authorization_code") ?? undefined,
+    origin:
+      url.searchParams.get("origin") ??
+      url.searchParams.get("state") ??
+      url.searchParams.get("nonce") ??
+      undefined,
+  };
+
+  if (req.method === "GET") return fromQuery;
+
+  const raw = (await req.text()).trim();
+  if (!raw) return fromQuery;
+
+  if (raw.startsWith("{")) {
+    try {
+      const body = JSON.parse(raw) as Record<string, unknown>;
+      return {
+        code: (body.code ?? body.authorization_code ?? fromQuery.code) as string | undefined,
+        origin: (body.origin ?? body.state ?? body.nonce ?? fromQuery.origin) as string | undefined,
+      };
+    } catch {
+      // fall through to form parsing — a malformed body is worth one more read
+    }
+  }
+
+  const form = new URLSearchParams(raw);
+  return {
+    code: form.get("code") ?? form.get("authorization_code") ?? fromQuery.code ?? undefined,
+    origin:
+      form.get("origin") ?? form.get("state") ?? form.get("nonce") ?? fromQuery.origin ?? undefined,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (req.method !== "POST" && req.method !== "GET") {
+    return json({ error: "Method not allowed" }, 405);
+  }
+
+  const browser = wantsHtml(req);
+  const respond = (body: { error?: string }, status: number) =>
+    browser
+      ? page(
+          body.error ?? "Signed in. You can close this window.",
+          status,
+        )
+      : json(body, status);
 
   const clientId = Deno.env.get("KINGSCHAT_CLIENT_ID");
   if (!clientId) {
     console.error("KINGSCHAT_CLIENT_ID is not configured");
-    return json({ error: "Not configured" }, 503);
+    return respond({ error: "Not configured" }, 503);
   }
 
   const admin = createClient(
@@ -114,26 +193,20 @@ Deno.serve(async (req) => {
         .eq("nonce", nonce)
         .eq("status", "pending");
     }
-    return json({ error: reason }, status);
+    return respond({ error: reason }, status);
   };
 
   try {
-    let payload: { code?: string; origin?: string };
-    try {
-      payload = await req.json();
-    } catch {
-      return json({ error: "Invalid JSON body" }, 400);
-    }
-
+    const payload = await readPayload(req);
     const code = payload.code?.trim();
     nonce = payload.origin?.trim() || null;
 
-    if (!code) return json({ error: "Missing authorization code" }, 400);
+    if (!code) return respond({ error: "Missing authorization code" }, 400);
     if (!nonce) {
       // Without it there is no way to know which browser this belongs to, and
       // no protection against the code being redeemed in someone else's session.
       console.error("KingsChat callback arrived without origin");
-      return json({ error: "Missing origin" }, 400);
+      return respond({ error: "Missing origin" }, 400);
     }
 
     // The nonce is looked up, never interpreted. An unknown or stale one is a
@@ -146,10 +219,10 @@ Deno.serve(async (req) => {
 
     if (!attempt) {
       console.error("KingsChat callback with an unrecognised origin");
-      return json({ error: "Unrecognised sign-in attempt" }, 400);
+      return respond({ error: "Unrecognised sign-in attempt" }, 400);
     }
     if (attempt.status !== "pending") {
-      return json({ error: "This sign-in was already completed" }, 409);
+      return respond({ error: "This sign-in was already completed" }, 409);
     }
     if (new Date(attempt.expires_at) < new Date()) {
       return await fail("This sign-in took too long. Please try again.", 410);
@@ -228,10 +301,10 @@ Deno.serve(async (req) => {
 
     if (saveError) {
       console.error("Could not record the fulfilled KingsChat login", saveError);
-      return json({ error: "Could not complete sign-in" }, 500);
+      return respond({ error: "Could not complete sign-in" }, 500);
     }
 
-    return json({ ok: true });
+    return browser ? page("Signed in. You can close this window.") : json({ ok: true });
   } catch (error) {
     console.error("KingsChat callback error", error);
     return await fail("Unexpected error completing sign-in", 500);
