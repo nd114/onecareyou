@@ -12,6 +12,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 const LOGIN_URL = "https://accounts.kingschat.online/log-in";
@@ -38,6 +40,22 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
+
+  // Unauthenticated by necessity — nobody is signed in when they click sign in —
+  // so it carries its own limit rather than leaving an open endpoint that
+  // inserts a row on demand. Reuses the throttle added in 20260820130000.
+  const forwardedFor = req.headers.get("x-forwarded-for") ?? "";
+  const clientIp = forwardedFor.split(",")[0]?.trim() || "unattributed";
+  const { error: limitError } = await admin.rpc("enforce_rate_limit", {
+    _bucket: "kingschat_login_start",
+    _subject: clientIp,
+    _max: 20,
+    _window: "01:00:00",
+    _message: "Too many sign-in attempts. Please wait a few minutes and try again.",
+  });
+  if (limitError) {
+    return json({ error: limitError.message ?? "Too many sign-in attempts" }, 429);
+  }
 
   // Two UUIDs: 244 bits, and no reliance on one generator being perfect.
   const nonce = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, "");
