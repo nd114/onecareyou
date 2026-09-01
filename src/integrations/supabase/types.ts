@@ -1886,6 +1886,45 @@ export type Database = {
         }
         Relationships: []
       }
+      kingschat_login_attempts: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          failure_reason: string | null
+          fulfilled_at: string | null
+          id: string
+          kingschat_subject: string | null
+          nonce: string
+          status: string
+          token_hash: string | null
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          failure_reason?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          kingschat_subject?: string | null
+          nonce: string
+          status?: string
+          token_hash?: string | null
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          failure_reason?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          kingschat_subject?: string | null
+          nonce?: string
+          status?: string
+          token_hash?: string | null
+        }
+        Relationships: []
+      }
       legal_acceptances: {
         Row: {
           accepted_at: string
@@ -3963,6 +4002,15 @@ export type Database = {
         Returns: boolean
       }
       is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
+      kingschat_begin_login: { Args: never; Returns: string }
+      kingschat_claim_login: {
+        Args: { _nonce: string }
+        Returns: {
+          error: string
+          status: string
+          token_hash: string
+        }[]
+      }
       led_department_ids: { Args: never; Returns: string[] }
       log_platform_admin_action: {
         Args: {
@@ -4191,6 +4239,7 @@ export type Database = {
           tenant_type: string
         }[]
       }
+      purge_expired_kingschat_attempts: { Args: never; Returns: number }
       request_client_ip: { Args: never; Returns: string }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       set_institution_slug: {
