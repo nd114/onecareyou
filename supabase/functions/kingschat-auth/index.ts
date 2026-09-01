@@ -14,8 +14,8 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const PROFILE_ENDPOINTS = [
-  "https://connect.kingsch.at/developer/api/profile",
-  "https://connect.kingsch.at/api/profile",
+  "https://accounts.kingschat.online/log-in?clientId=cb84e89e-9b79-4da6-b69a-36eda4ab6135", // "https://connect.kingsch.at/developer/api/profile",
+  // "https://connect.kingsch.at/api/profile",
 ];
 
 function json(body: unknown, status = 200) {
@@ -79,8 +79,7 @@ Deno.serve(async (req) => {
     return json(
       {
         error:
-          "Your KingsChat account does not share an email address. " +
-          "Please sign in with email or Google instead.",
+          "Your KingsChat account does not share an email address. " + "Please sign in with email or Google instead.",
       },
       400,
     );
