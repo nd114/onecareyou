@@ -13,7 +13,14 @@ interface KingsChatSignInButtonProps {
 
 const KINGSCHAT_AUTH_URL = "https://accounts.kingsch.at/";
 const ALLOWED_ORIGINS = ["https://accounts.kingsch.at"];
-const CLIENT_ID = "45b995ce-a27e-49b2-9047-8d43229b0d46";
+// KingsChat app registered with redirect URL https://www.onecare.you/
+const CLIENT_ID = "cb84e89e-9b79-4da6-b69a-36eda4ab6135";
+// KingsChat validates redirect_uri against the exact value registered for the
+// app, so it must be the registered origin — not the origin we happen to be on
+// (preview, apex domain, etc.). The popup posts tokens back via postMessage,
+// so no navigation to this URL actually happens.
+const REDIRECT_URI = "https://www.onecare.you";
+
 
 interface KingsChatTokenResponse {
   accessToken: string;
