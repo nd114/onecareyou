@@ -198,17 +198,15 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await readPayload(req);
-
-
     const code = payload.code?.trim();
     nonce = payload.origin?.trim() || null;
 
-    if (!code) return json({ error: "Missing authorization code" }, 400);
+    if (!code) return respond({ error: "Missing authorization code" }, 400);
     if (!nonce) {
       // Without it there is no way to know which browser this belongs to, and
       // no protection against the code being redeemed in someone else's session.
       console.error("KingsChat callback arrived without origin");
-      return json({ error: "Missing origin" }, 400);
+      return respond({ error: "Missing origin" }, 400);
     }
 
     // The nonce is looked up, never interpreted. An unknown or stale one is a
@@ -221,10 +219,10 @@ Deno.serve(async (req) => {
 
     if (!attempt) {
       console.error("KingsChat callback with an unrecognised origin");
-      return json({ error: "Unrecognised sign-in attempt" }, 400);
+      return respond({ error: "Unrecognised sign-in attempt" }, 400);
     }
     if (attempt.status !== "pending") {
-      return json({ error: "This sign-in was already completed" }, 409);
+      return respond({ error: "This sign-in was already completed" }, 409);
     }
     if (new Date(attempt.expires_at) < new Date()) {
       return await fail("This sign-in took too long. Please try again.", 410);
@@ -303,10 +301,10 @@ Deno.serve(async (req) => {
 
     if (saveError) {
       console.error("Could not record the fulfilled KingsChat login", saveError);
-      return json({ error: "Could not complete sign-in" }, 500);
+      return respond({ error: "Could not complete sign-in" }, 500);
     }
 
-    return json({ ok: true });
+    return browser ? page("Signed in. You can close this window.") : json({ ok: true });
   } catch (error) {
     console.error("KingsChat callback error", error);
     return await fail("Unexpected error completing sign-in", 500);
