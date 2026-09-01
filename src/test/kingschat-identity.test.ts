@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   decodeJwtClaims,
   identityFromClaims,
+  identityFromProfile,
   isPlaceholderEmail,
   placeholderEmail,
 } from "../../supabase/functions/_shared/kingschat-identity";
@@ -117,5 +118,55 @@ describe("placeholderEmail", () => {
     expect(isPlaceholderEmail(placeholderEmail("kc-abc"))).toBe(true);
     expect(isPlaceholderEmail("someone@gmail.com")).toBe(false);
     expect(isPlaceholderEmail(null)).toBe(false);
+  });
+});
+
+describe("identityFromProfile", () => {
+  const full = {
+    profile: {
+      id: "user_abc123",
+      name: "Jane Doe",
+      username: "janedoe",
+      email: "Jane@Example.com",
+      is_email_verified: true,
+    },
+  };
+
+  it("reads the documented profile shape", () => {
+    expect(identityFromProfile(full)).toMatchObject({
+      subject: "user_abc123",
+      email: "jane@example.com",
+      name: "Jane Doe",
+    });
+  });
+
+  it("refuses an unverified email", () => {
+    // Linking on an unverified address would let anyone set their KingsChat
+    // email to a patient's and sign straight into that patient's record.
+    const unverified = { profile: { ...full.profile, is_email_verified: false } };
+    expect(identityFromProfile(unverified).email).toBeNull();
+    expect(identityFromProfile(unverified).subject).toBe("user_abc123");
+  });
+
+  it("treats a missing verification flag as unverified", () => {
+    const noFlag = { profile: { id: "u1", email: "someone@example.com" } };
+    expect(identityFromProfile(noFlag).email).toBeNull();
+  });
+
+  it("handles an account with no email set", () => {
+    expect(identityFromProfile({ profile: { id: "u1", email: null } }).email).toBeNull();
+  });
+
+  it("falls back to the username when there is no id", () => {
+    expect(identityFromProfile({ profile: { username: "janedoe" } }).subject).toBe("janedoe");
+  });
+
+  it("uses the username as a name when no display name is set", () => {
+    expect(identityFromProfile({ profile: { id: "u1", username: "janedoe" } }).name).toBe("janedoe");
+  });
+
+  it("is safe on an empty or malformed response", () => {
+    expect(identityFromProfile(null)).toMatchObject({ subject: null, email: null });
+    expect(identityFromProfile({})).toMatchObject({ subject: null, email: null });
   });
 });

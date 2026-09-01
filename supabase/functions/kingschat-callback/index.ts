@@ -15,8 +15,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   decodeJwtClaims,
   identityFromClaims,
+  identityFromProfile,
   isPlaceholderEmail,
   placeholderEmail,
+  type KingsChatIdentity,
 } from "../_shared/kingschat-identity.ts";
 
 const corsHeaders = {
@@ -25,6 +27,55 @@ const corsHeaders = {
 };
 
 const TOKEN_ENDPOINT = "https://connect.kingsch.at/developer/api/oauth2/token";
+const PROFILE_ENDPOINT = "https://connect.kingsch.at/developer/api/user/profile";
+
+/**
+ * Who this token belongs to.
+ *
+ * The profile endpoint is the documented answer and the only one that reports
+ * whether an email is verified, so it is tried first. It needs the project API
+ * key alongside the user's token, and returns 403 if profile access is not
+ * enabled for the project or the user did not authorise it — neither of which
+ * should fail the whole sign-in, because the access token is itself an RS256
+ * JWT carrying an identity. So the JWT is the fallback, and the reason the
+ * profile call failed is logged rather than swallowed.
+ */
+async function resolveIdentity(accessToken: string): Promise<KingsChatIdentity> {
+  const apiKey = Deno.env.get("KINGSCHAT_API_KEY");
+
+  if (apiKey) {
+    try {
+      const res = await fetch(PROFILE_ENDPOINT, {
+        headers: {
+          "api-key": apiKey,
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+      });
+      if (res.ok) {
+        const identity = identityFromProfile(await res.json());
+        if (identity.subject) return identity;
+        console.error("KingsChat profile returned nothing identifying the holder");
+      } else {
+        // 401 invalid_api_key, 403 project_cannot_access_profile or
+        // user_not_authorized, 404 user_not_found — each needs a different fix
+        // in the portal, so the status is worth having in the log.
+        console.error("KingsChat profile lookup failed", res.status, await res.text());
+      }
+    } catch (e) {
+      console.error("KingsChat profile lookup error", e);
+    }
+  } else {
+    console.error("KINGSCHAT_API_KEY is not set — falling back to the token's own claims");
+  }
+
+  const identity = identityFromClaims(decodeJwtClaims(accessToken));
+  console.log(
+    "KingsChat token claims present:",
+    Object.keys(identity.claims).join(", ") || "none",
+  );
+  return identity;
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -121,21 +172,17 @@ Deno.serve(async (req) => {
       return await fail("KingsChat could not confirm this sign-in", 502);
     }
 
-    // Identity comes from the token itself — it is an RS256 JWT — rather than a
-    // profile endpoint. The claim names are not documented, so the key names are
-    // logged (never the values) and the first real login tells us what we get.
-    const claims = decodeJwtClaims(accessToken);
-    const identity = identityFromClaims(claims);
-    console.log("KingsChat token claims present:", Object.keys(identity.claims).join(", ") || "none");
+    const identity = await resolveIdentity(accessToken);
 
     if (!identity.subject) {
       console.error("KingsChat token carried nothing identifying the holder");
       return await fail("KingsChat did not tell us who you are", 502);
     }
 
-    // Supabase needs an address to hold an account against. A real one links to
-    // an existing OneCare account; a placeholder is stable per KingsChat user
-    // and is recognisable later so it is never mistaken for a contactable email.
+    // Supabase needs an address to hold an account against. A *verified* address
+    // links to an existing OneCare account; anything less takes the placeholder
+    // path, because linking on an unverified email would let someone set their
+    // KingsChat address to a patient's and sign into that patient's record.
     const email = identity.email ?? placeholderEmail(identity.subject);
 
     let link = await admin.auth.admin.generateLink({ type: "magiclink", email });

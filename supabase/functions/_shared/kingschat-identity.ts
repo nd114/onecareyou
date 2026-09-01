@@ -91,6 +91,46 @@ export function identityFromClaims(claims: KingsChatClaims | null): KingsChatIde
   };
 }
 
+/** The documented profile shape: GET /developer/api/user/profile. */
+export interface KingsChatProfileResponse {
+  profile?: {
+    id?: string;
+    name?: string | null;
+    username?: string | null;
+    email?: string | null;
+    is_email_verified?: boolean;
+    avatar?: string | null;
+  };
+}
+
+/**
+ * Identity from the profile endpoint, which is the documented answer.
+ *
+ * The email is only taken when KingsChat says it is verified. An unverified
+ * address must not link a KingsChat login to an existing OneCare account:
+ * anyone could set their KingsChat email to a real patient's and sign straight
+ * into that patient's record. Unverified is treated as no email at all, which
+ * sends the account down the placeholder path instead.
+ */
+export function identityFromProfile(body: KingsChatProfileResponse | null): KingsChatIdentity {
+  const profile = body?.profile;
+  if (!profile) return { subject: null, email: null, name: null, claims: {} };
+
+  const id = typeof profile.id === "string" && profile.id.trim() ? profile.id.trim() : null;
+  const username =
+    typeof profile.username === "string" && profile.username.trim() ? profile.username.trim() : null;
+
+  const rawEmail = typeof profile.email === "string" ? profile.email.trim() : "";
+  const verified = profile.is_email_verified === true;
+
+  return {
+    subject: id ?? username,
+    email: rawEmail && verified ? rawEmail.toLowerCase() : null,
+    name: (typeof profile.name === "string" && profile.name.trim()) || username || null,
+    claims: { ...profile },
+  };
+}
+
 /**
  * A placeholder address for someone KingsChat gave us no email for.
  *
