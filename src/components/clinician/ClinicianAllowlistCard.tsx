@@ -1,21 +1,15 @@
-import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Check, Loader2, ShieldCheck, Upload, UserMinus, X } from 'lucide-react';
-import { usePractice } from '@/hooks/usePractice';
-import { usePracticeTenant } from '@/hooks/usePracticeTenant';
-import { useClinicianAllowlist } from '@/hooks/useClinicianAllowlist';
-import { parseStaffCsv } from '@/lib/staff-csv';
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, Loader2, ShieldCheck, Upload, UserMinus, X } from "lucide-react";
+import { usePractice } from "@/hooks/usePractice";
+import { usePracticeTenant } from "@/hooks/usePracticeTenant";
+import { useClinicianAllowlist } from "@/hooks/useClinicianAllowlist";
+import { parseStaffCsv } from "@/lib/staff-csv";
 
 /**
  * How a hospital says who its clinicians are: an approved email domain, an
@@ -39,21 +33,20 @@ export const ClinicianAllowlistCard = () => {
   } = useClinicianAllowlist(currentPractice?.id);
 
   const [domainInput, setDomainInput] = useState<string | null>(null);
-  const [csv, setCsv] = useState('');
+  const [csv, setCsv] = useState("");
   const [csvOpen, setCsvOpen] = useState(false);
 
-  const isChiefAdmin =
-    currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
+  const isChiefAdmin = currentMembership?.role === "owner" || currentMembership?.role === "admin";
   if (!currentPractice || !isChiefAdmin) return null;
-  if ((tenant?.tenant_type ?? 'practice') !== 'hospital') return null;
+  if ((tenant?.tenant_type ?? "practice") !== "hospital") return null;
 
-  const domainValue = domainInput ?? domains.join(', ');
+  const domainValue = domainInput ?? domains.join(", ");
 
   const handleCsv = async () => {
     const { entries, skipped } = parseStaffCsv(csv);
     if (entries.length === 0) return;
     await addEntries(entries);
-    setCsv('');
+    setCsv("");
     setCsvOpen(false);
     if (skipped > 0) {
       // Surfaced rather than silently dropped: a hospital pasting 200 rows
@@ -72,13 +65,11 @@ export const ClinicianAllowlistCard = () => {
               Staff recognition
             </CardTitle>
             <CardDescription>
-              Decide who counts as your clinician. Anyone who matches an approved domain or your
-              staff list is affiliated straight away; anyone else waits here for your approval.
+              Decide who counts as your clinician. Anyone who matches an approved domain or your staff list is
+              affiliated straight away; anyone else waits here for your approval.
             </CardDescription>
           </div>
-          {pending.length > 0 && (
-            <Badge variant="destructive">{pending.length} waiting</Badge>
-          )}
+          {pending.length > 0 && <Badge variant="destructive">{pending.length} waiting</Badge>}
         </div>
       </CardHeader>
 
@@ -107,8 +98,7 @@ export const ClinicianAllowlistCard = () => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Staff with an email at these domains are recognised automatically. Leave empty to
-            approve everyone by hand.
+            Staff with an email at these domains are recognised automatically. Leave empty to approve everyone by hand.
           </p>
         </div>
 
@@ -126,7 +116,7 @@ export const ClinicianAllowlistCard = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setStatus({ userId: p.user_id, status: 'active' })}
+                    onClick={() => setStatus({ userId: p.user_id, status: "active" })}
                   >
                     <Check className="h-4 w-4 mr-1" />
                     Approve
@@ -134,7 +124,7 @@ export const ClinicianAllowlistCard = () => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => setStatus({ userId: p.user_id, status: 'rejected' })}
+                    onClick={() => setStatus({ userId: p.user_id, status: "rejected" })}
                   >
                     <X className="h-4 w-4 mr-1" />
                     Reject
@@ -159,15 +149,15 @@ export const ClinicianAllowlistCard = () => {
             <div className="space-y-2 rounded-lg border border-dashed p-3">
               <Textarea
                 rows={5}
-                placeholder={'email,name,role\nada@lmc.org,Dr Ada Obi,clinician\nben@lmc.org,Nurse Ben,nurse'}
+                placeholder={"email,name,role\n jane@lmc.org,Dr Jane Evans,clinician\njohn@lmc.org,Nurse John,nurse"}
                 value={csv}
                 onChange={(e) => setCsv(e.target.value)}
                 className="font-mono text-xs"
               />
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground">
-                  Paste your staff export. A header row is optional; email is the only column that
-                  matters. Existing accounts keep their profile — this only tags the affiliation.
+                  Paste your staff export. A header row is optional; email is the only column that matters. Existing
+                  accounts keep their profile — this only tags the affiliation.
                 </p>
                 <Button size="sm" onClick={handleCsv} disabled={!csv.trim() || isAdding}>
                   {isAdding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -208,9 +198,9 @@ export const ClinicianAllowlistCard = () => {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Removing someone from this list does not end an affiliation they already hold — use the
-          team list to offboard. Offboarding ends their access to your patients immediately and
-          keeps everything they wrote, attributed to them.
+          Removing someone from this list does not end an affiliation they already hold — use the team list to offboard.
+          Offboarding ends their access to your patients immediately and keeps everything they wrote, attributed to
+          them.
         </p>
       </CardContent>
     </Card>
