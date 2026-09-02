@@ -43,8 +43,21 @@ export function UpcomingAppointments() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-sm">{format(when, "EEE d MMM, h:mm a")}</span>
                 <Badge variant="secondary" className="text-[10px]">{relative}</Badge>
+                {/* A proposed time is a suggestion, not a booking, and showing
+                    the two identically would have a patient turn up to
+                    something nobody agreed. They cannot confirm it here — they
+                    read appointments rather than write them — so this says who
+                    will. */}
+                {a.status === "proposed" && (
+                  <Badge variant="outline" className="text-[10px]">Suggested time</Badge>
+                )}
               </div>
               {a.description && <p className="text-sm mt-1">{a.description}</p>}
+              {a.status === "proposed" && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Your clinic will confirm this time with you.
+                </p>
+              )}
               {a.visitType && <p className="text-xs text-muted-foreground mt-0.5">{a.visitType}</p>}
               {a.locationText && (
                 <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">

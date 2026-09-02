@@ -382,7 +382,15 @@ const ClinicianPatientDetail = () => {
           className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4"
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 min-w-0">
-            <TabsList className="flex flex-wrap w-full justify-start gap-1 h-auto">
+            {/* Fifteen tabs in one undifferentiated row meant every one was
+                equally prominent, so none was. Grouped by what a clinician is
+                actually doing — reading the record, planning what happens next,
+                corresponding, and the admin around it — and ordered to match.
+                Still one row of tabs, so nothing is buried a level down. */}
+            <TabsList className="flex flex-wrap w-full justify-start gap-1 h-auto p-1.5">
+              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-0.5">
+                The record
+              </span>
               <TabsTrigger value="encounters">Encounters</TabsTrigger>
               <TabsTrigger value="vitals">Vitals</TabsTrigger>
               <TabsTrigger value="medications">Meds</TabsTrigger>
@@ -395,10 +403,17 @@ const ClinicianPatientDetail = () => {
                 <FileText className="h-3 w-3" />
                 Docs
               </TabsTrigger>
-              <TabsTrigger value="appointments">Appointments</TabsTrigger>
+
+              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
+                What happens next
+              </span>
               <TabsTrigger value="careplan">Care plan</TabsTrigger>
-              <TabsTrigger value="billing">Billing</TabsTrigger>
+              <TabsTrigger value="appointments">Appointments</TabsTrigger>
               <TabsTrigger value="guidance">Guidance</TabsTrigger>
+
+              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
+                Correspondence
+              </span>
               <TabsTrigger value="messages" className="flex items-center gap-1">
                 <MessageSquare className="h-3 w-3" />
                 Messages
@@ -407,6 +422,11 @@ const ClinicianPatientDetail = () => {
                   the labels say. "Notes" and "Internal" said nothing. */}
               <TabsTrigger value="notes">My notes</TabsTrigger>
               <TabsTrigger value="internal">Team notes</TabsTrigger>
+
+              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
+                Around the care
+              </span>
+              <TabsTrigger value="billing">Billing</TabsTrigger>
               <TabsTrigger value="network">Network</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>

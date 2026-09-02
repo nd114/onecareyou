@@ -26,6 +26,8 @@ import { EncounterScribePanel } from "@/components/clinician/EncounterScribePane
 import { usePatientActionLog } from "@/hooks/usePatientActionLog";
 import { useClinicalTemplates } from "@/hooks/useClinicalTemplates";
 import { format } from "date-fns";
+import { useAppointments } from "@/hooks/useAppointments";
+import { toast } from "sonner";
 
 interface Props {
   patientUserId: string;
@@ -50,6 +52,8 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
   const [scribeFor, setScribeFor] = useState<Encounter | null>(null);
   const [signing, setSigning] = useState<Encounter | null>(null);
   const [shareOnSign, setShareOnSign] = useState(true);
+  const [bookFollowUp, setBookFollowUp] = useState(true);
+  const { schedule } = useAppointments(patientUserId);
 
   // Which of these encounters began as a dictation. A dictation row is
   // readable only by the clinician who recorded it, so a colleague simply gets
@@ -135,6 +139,33 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
     if (!signing) return;
     const enc = signing;
     await sign.mutateAsync({ id: enc.id, sharedWithPatient: shareOnSign });
+
+    // "Review in six months" was being collected and going nowhere: nothing read
+    // follow_up_in_days and nothing ever wrote follow_up_task_id. Now that
+    // appointments exist, the follow-up is raised here — as `proposed`, because
+    // a time nobody has agreed is not a booking. The patient cannot confirm it
+    // themselves (they read appointments, they do not write them), so the card
+    // on their side says the clinic will confirm rather than implying they can.
+    if (bookFollowUp && enc.follow_up_in_days) {
+      const when = new Date();
+      when.setDate(when.getDate() + enc.follow_up_in_days);
+      try {
+        await schedule.mutateAsync({
+          patientUserId,
+          clinicianUserId: enc.clinician_user_id,
+          practiceId: enc.practice_id,
+          status: "proposed",
+          description: `Follow-up after ${enc.visit_type.replace(/_/g, " ")} on ${format(new Date(enc.occurred_at), "d MMM yyyy")}`,
+          visitType: "Follow-up",
+          start: when.toISOString(),
+          end: new Date(when.getTime() + 30 * 60000).toISOString(),
+        });
+      } catch {
+        // Signing already succeeded; a failed booking must not undo it or look
+        // like the note did not sign.
+        toast.error("The note was signed, but the follow-up could not be booked.");
+      }
+    }
     await log.mutateAsync({
       patient_user_id: patientUserId,
       action: "encounter_signed",
@@ -146,6 +177,7 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
     });
     setSigning(null);
     setShareOnSign(true);
+    setBookFollowUp(true);
   };
 
   const openEditor = (enc?: Encounter) => {
@@ -340,9 +372,10 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Sign this encounter?</AlertDialogTitle>
             <AlertDialogDescription>
-              Signing closes the note. {patientName} will be able to read the summary — the
-              reason for the visit, what you found, your assessment and the plan. The ambient
-              transcript, the codes and anything still in draft are never shared.
+              Signing is final: the note cannot be edited afterwards, and corrections go in an
+              addendum that is dated and attributed. {patientName} will be able to read the
+              summary — the reason for the visit, what you found, your assessment and the plan.
+              The ambient transcript, the codes and anything still in draft are never shared.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
@@ -359,6 +392,28 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
               </span>
             </span>
           </label>
+          {signing?.follow_up_in_days ? (
+            <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
+              <Checkbox
+                checked={bookFollowUp}
+                onCheckedChange={(v) => setBookFollowUp(v === true)}
+                className="mt-0.5"
+              />
+              <span className="text-sm">
+                Book the follow-up in {signing.follow_up_in_days} days
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  Proposed for{" "}
+                  {format(
+                    new Date(Date.now() + signing.follow_up_in_days * 86400000),
+                    "EEEE d MMMM",
+                  )}
+                  . {patientName} sees it as a suggested time; confirm it from the
+                  Appointments tab once a slot is agreed.
+                </span>
+              </span>
+            </label>
+          ) : null}
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleSign} disabled={sign.isPending}>
