@@ -29,6 +29,7 @@ import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
 import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
 import { UpcomingAppointments } from '@/components/patient/UpcomingAppointments';
+import { BillingSummary } from '@/components/patient/BillingSummary';
 import { InstitutionIntakeCard } from '@/components/patient/InstitutionIntakeCard';
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 
@@ -125,6 +126,7 @@ const Dashboard = () => {
 
         {/* Visits a clinician booked, visible to the person being booked. */}
         <UpcomingAppointments />
+        <BillingSummary />
 
 
         {/* Pending Clinician-Imported Records Consent */}

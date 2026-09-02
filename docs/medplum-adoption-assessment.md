@@ -85,7 +85,11 @@ the clinician EHR shell is a separate surface that can carry its own kit. Cost:
 still two systems, but the seam is a route rather than a component tree, and the
 patient bundle stays clean.
 
-**Recommendation: C, then B opportunistically.** The clinician portal is where
+**Chosen: B.** One design system, our brand, their information architecture
+copied where it is better. It also keeps the Medplum dependency optional rather
+than structural — see §8.
+
+Previously recommended C, for the record: The clinician portal is where
 the depth gap is, it is desktop-first, and its users are staff rather than
 patients on metered data. It also gets a demonstrable EHR shell up fastest, which
 is what the LMC conversation needs — while leaving the patient experience, which
@@ -104,14 +108,14 @@ From their feature grid, against what we have:
 | **Diagnostic Orders** | Not present | Yes, but needs a lab integration to mean anything |
 | **Intake & Registration** | We have onboarding | Their Questionnaire engine is strong |
 | **Messaging** | Shipped, recently deepened | Little to take |
-| **Billing & Payments** | Not present | **Flagged — see below** |
+| **Billing & Payments** | Shipped, FHIR Invoice, patient-visible | Payments pending — see `docs/billing-and-payments.md` |
 
-**Billing is flagged deliberately.** Earlier in this project the call was that
-claims and payments are "getting close to EHR, which IS NOT what OneCare is
-about". That reasoning has not been retracted and the screenshots do not retract
-it — a feature grid is not a decision. Everything else here deepens the clinical
-record; billing starts a different product with a different buyer and a different
-compliance surface. Worth an explicit yes before anyone builds it.
+**Billing — resolved, and built.** The flag was raised and answered: patient-side
+billing is in scope, because a bill a patient can only see by asking is the same
+asymmetry the product exists to remove. Payer claims processing stays out. See
+`docs/billing-and-payments.md`, which also records the payments and platform-fee
+direction — including the merchant-of-record question that decides whether that
+is an integration or a licensed business.
 
 ## 6. Spaces
 
@@ -141,3 +145,38 @@ things over.
 The adapter is in and proven, so any of A, B or C can proceed from here. Nothing
 below §4 should be built until that choice is made, because it decides whether we
 are writing components or importing them.
+
+## 8. Do we depend on them?
+
+Asked directly, and worth answering precisely, because the answer is not obvious
+from the fact that their client appears in our tests.
+
+**They have no access to anything of ours.** `@medplum/core`, `@medplum/fhirtypes`
+and `@medplum/fhir-router` are npm packages that execute inside our own process.
+There is no Medplum server, no Medplum account, no API key, and no endpoint of
+theirs anywhere in the codebase. Nothing phones home. When the tests construct a
+`MedplumClient`, that is our code instantiating their class and handing it our
+own `fetch` — the data never leaves the process it started in.
+
+**Our architecture does not depend on their client.** Nothing in the running app
+imports the repository or the client; the app talks to Supabase directly, as it
+always has. What we actually use is:
+
+| Package | Runtime cost | Removable? |
+| --- | --- | --- |
+| `@medplum/fhirtypes` | **Zero** — types only, erased at compile | Trivially; we would hand-write the interfaces |
+| `@medplum/core` | Validation only, in tests and server paths | Yes; we would lose the FHIRPath invariant checks |
+| `@medplum/definitions` | devDependency, never bundled | Yes |
+| `@medplum/fhir-router` | Only if we expose a FHIR REST API | Yes; unused by the app today |
+
+**Choosing B reduces the coupling further.** Their screens are the part that hard-
+depends on `MedplumClient`, via `useMedplum()` — 68 of their 142 files. Rebuilding
+in shadcn means we never take that dependency. The repository and `createFhirFetch`
+stay valuable for a different reason: they are how an *external* system — a
+hospital integration engine, a QHIN, an EHR — would talk FHIR to us. That is
+worth having whether or not any Medplum UI is ever used.
+
+The genuine lock-in risk would have been self-hosting their server, which is
+exactly what was rejected in §2. What remains is a set of libraries doing work we
+would otherwise do worse: their validator has caught four real bugs in this
+codebase that review did not.

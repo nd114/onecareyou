@@ -126,5 +126,25 @@ The withheld/empty distinction is the one to protect. "No known allergies" when
 the truth is "you were not told" is the failure it exists to prevent, so the
 constraint allows NULL rather than collapsing it into an empty array.
 
+`fhir_invoices.test.sql` — billing, and who may see a bill:
+
+| Rule | Source |
+| --- | --- |
+| The invoice total is summed by the database from its line items | a client that computes its own eventually computes a different one |
+| An issued invoice does not silently re-total when a line is added | it is a statement someone has been given |
+| The patient reads their own issued invoices without asking | the asymmetry this product exists to remove |
+| A draft stays with the practice until issued | a number still being decided cannot usefully be queried |
+| Line items follow the invoice, through an RLS-aware subquery | a total with no breakdown is a demand, not a bill |
+| A patient cannot mark their own invoice paid | payment confirmation is server-side |
+| Nobody deletes an invoice; cancelling is a status | FHIR `cancelled` / `entered-in-error` |
+| Paid never exceeds billed; totals are never negative | a credit is its own invoice |
+| Not balanced until paid in full | FHIR's meaning of the status |
+| Currency is an ISO code; due never precedes issued | constraint and trigger |
+
+The line-item assertion is the one that earns its place: the policy leans on a
+subquery against `fhir_invoices`, and whether that subquery inherits the invoice
+table's row policies is a thing to test rather than believe. Replacing it with
+`USING (true)` makes the suite fail, which is how we know it is load-bearing.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.
