@@ -28,6 +28,7 @@ import { useVitals } from '@/hooks/useVitals';
 import { MEDICATION_TYPE_COLORS } from '@/types/health';
 import { format } from 'date-fns';
 import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
+import { UpcomingAppointments } from '@/components/patient/UpcomingAppointments';
 import { InstitutionIntakeCard } from '@/components/patient/InstitutionIntakeCard';
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 
@@ -121,6 +122,9 @@ const Dashboard = () => {
 
         {/* Pending Invitations from Clinicians */}
         <PendingInvitationsCard />
+
+        {/* Visits a clinician booked, visible to the person being booked. */}
+        <UpcomingAppointments />
 
 
         {/* Pending Clinician-Imported Records Consent */}

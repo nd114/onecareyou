@@ -49,6 +49,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useRecordAccessLog } from '@/hooks/useRecordAccessLog';
 import { summariseAdherence } from '@/lib/adherence';
+import { AppointmentsTab } from '@/components/clinician/AppointmentsTab';
 
 const ClinicianPatientDetail = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -391,6 +392,7 @@ const ClinicianPatientDetail = () => {
                 <FileText className="h-3 w-3" />
                 Docs
               </TabsTrigger>
+              <TabsTrigger value="appointments">Appointments</TabsTrigger>
               <TabsTrigger value="guidance">Guidance</TabsTrigger>
               <TabsTrigger value="messages" className="flex items-center gap-1">
                 <MessageSquare className="h-3 w-3" />
@@ -650,6 +652,16 @@ const ClinicianPatientDetail = () => {
                   isLoading={loadingSchedule}
                 />
               )}
+            </TabsContent>
+
+            <TabsContent value="appointments">
+              {/* FHIR Appointment, in our own database behind the same row
+                  policies as everything else. See src/lib/fhir/. */}
+              <AppointmentsTab
+                patientUserId={patient.user_id}
+                patientName={patient.patient_name || 'this patient'}
+                practiceId={patient.hospital_id ?? null}
+              />
             </TabsContent>
 
             {/* Documents Tab */}

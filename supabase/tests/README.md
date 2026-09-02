@@ -16,11 +16,23 @@ psql "$(supabase status -o env | grep DB_URL | cut -d= -f2- | tr -d '"')" \
 Against a plain Postgres 16, the history replays with a small compatibility
 shim (roles `anon`/`authenticated`/`service_role`, an `auth.uid()` reading
 `request.jwt.claim.sub`, and stub `storage`/`realtime` schemas), plus the
-grants Supabase applies by default to new objects in `public`:
+grants Supabase applies by default to new objects in `public`. The shim ends
+with those, as `ALTER DEFAULT PRIVILEGES`:
 
 ```sql
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT ALL ON TABLES TO anon, authenticated, service_role;
 ```
+
+**Run the shim before the migrations, and do not substitute a blanket
+`GRANT ALL ON ALL TABLES` afterwards.** Supabase applies these at
+`CREATE TABLE` time, so a `REVOKE` later in the history wins — which is exactly
+how `rate_limit_events`, `kingschat_login_attempts` and the audit log end up
+with no client grants at all. Granting everything after the replay silently
+undoes every one of those revokes, and the four suites that assert them fail
+against code that is in fact correct. Default privileges are per-role and
+persist in the cluster, so a database being reused for a second replay wants
+them revoked first.
 
 Each file runs inside a transaction and rolls back, so it leaves no fixtures
 behind. A failed assertion raises and aborts; a clean run ends with
@@ -75,6 +87,29 @@ behind. A failed assertion raises and aborts; a clean run ends with
 | A clinician cannot re-activate a revoked share or widen their permissions | The patient creates, narrows and ends every relationship |
 | The legitimate write each policy exists for still works | Guards must not break notes, renames or profile edits |
 | Service-role callers can still set entitlement | Stripe and admin tooling run server-side |
+
+`fhir_appointments.test.sql` — scheduling, as a FHIR Appointment:
+
+| Rule | Source |
+| --- | --- |
+| The patient reads the appointments made for them, and only those | the point of the module |
+| Both clinician pathways reach it; an unrelated clinician reaches nothing | consent model §2B |
+| A clinician schedules only for patients they can already reach | consent model §2B |
+| An appointment cannot be attributed to another clinician | `created_by = auth.uid()` |
+| The patient reads but does not write the clinic's calendar | requesting a time is a separate flow |
+| Nobody can delete: cancelling is a status change | FHIR Appointment.status |
+| A signed-out visitor reads nothing | appointments are never public |
+| A booked appointment must have a start and an end | FHIR invariant app-3 |
+| An appointment cannot end before it starts | clinical sanity |
+| A status outside the FHIR value set is refused | the gap `@medplum/core` does not cover |
+| `updated_at` is stamped by the database, not trusted from the client | audit integrity |
+
+The delete and value-set assertions are the ones worth keeping honest. Both
+cover a layer the client-side validator does not: Medplum passes a status code
+it has never heard of, because value-set binding needs terminology the
+structure-definition bundles do not carry, and the delete test runs with the
+privilege deliberately granted so that the refusal has to come from the absence
+of a policy rather than from the grant.
 
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.
