@@ -46,10 +46,12 @@ const STATUS_STYLE: Partial<Record<AppointmentStatus, string>> = {
 /**
  * Scheduling for one patient.
  *
- * Every row here is a FHIR Appointment, validated by Medplum's validator on the
- * way in and stored in our own Postgres behind the same row policies as the rest
- * of the record. Cancelling sets a status rather than deleting: a missed
- * appointment is part of the history, and the table grants no DELETE.
+ * Every row here is a FHIR Appointment, stored in our own Postgres behind the
+ * same row policies as the rest of the record. The full FHIR check runs in the
+ * tests and server-side, not in the browser — see src/lib/fhir/validate.ts —
+ * and the database refuses anything FHIR would reject. Cancelling sets a status
+ * rather than deleting: a missed appointment is part of the history, and the
+ * table grants no DELETE.
  */
 export function AppointmentsTab({ patientUserId, patientName, practiceId }: Props) {
   const { appointments, isLoading, schedule, setStatus } = useAppointments(patientUserId);

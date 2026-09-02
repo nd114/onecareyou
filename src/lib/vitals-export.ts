@@ -2,6 +2,7 @@ import { VitalRecord } from '@/hooks/useVitals';
 import { VITAL_CONFIG, VitalType } from '@/types/health';
 import { describeNormalRange, describeReadingStatus } from '@/lib/patient-risk';
 import { format } from 'date-fns';
+import { toFhirBundle } from '@/lib/fhir/observation';
 
 // CSV Export
 export function exportVitalsToCSV(vitals: VitalRecord[], filename: string = 'vitals-export') {
@@ -280,4 +281,36 @@ export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vit
     printWindow.document.write(htmlContent);
     printWindow.document.close();
   }
+}
+
+/**
+ * A FHIR Bundle of the readings, for a system rather than a person.
+ *
+ * CSV is for a spreadsheet and PDF is for a clinic's printer; neither can be
+ * loaded into an EHR without somebody retyping it. This is the same readings as
+ * FHIR R4 Observations, which is what a receiving system actually accepts —
+ * and it is the first thing on this platform that another system can read
+ * without a bespoke mapping written for us.
+ *
+ * The bundle itself is built in src/lib/fhir/observation.ts so that a test can
+ * reach it. Built inline here, it carried a `total` field that FHIR's bdl-1
+ * invariant forbids on a collection bundle, and nothing caught it.
+ */
+export function exportVitalsToFhir(vitals: VitalRecord[], filename: string = 'vitals-fhir') {
+  const patientUserId = vitals[0]?.user_id;
+  if (!patientUserId) return;
+
+  const bundle = toFhirBundle(vitals, patientUserId);
+
+  const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/fhir+json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}-${format(new Date(), 'yyyy-MM-dd')}.json`;
+  // Appended before the click, as the CSV export does: Firefox ignores a click
+  // on a link that is not in the document.
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

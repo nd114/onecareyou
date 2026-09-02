@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { VitalRecord } from '@/hooks/useVitals';
-import { exportVitalsToCSV, exportVitalsToPDF } from '@/lib/vitals-export';
+import { exportVitalsToCSV, exportVitalsToFhir, exportVitalsToPDF } from '@/lib/vitals-export';
 import { toast } from 'sonner';
 
 interface ExportDialogProps {
@@ -60,6 +60,20 @@ export function ExportDialog({ open, onOpenChange, vitals }: ExportDialogProps) 
     onOpenChange(false);
   };
 
+  /**
+   * The same readings as FHIR, which is what an EHR or a health information
+   * network can actually load. CSV needs a person to retype it.
+   */
+  const handleExportFhir = () => {
+    if (filteredVitals.length === 0) {
+      toast.error('No vitals in selected date range');
+      return;
+    }
+    exportVitalsToFhir(filteredVitals);
+    toast.success('FHIR bundle downloaded');
+    onOpenChange(false);
+  };
+
   const formatDateRange = () => {
     if (!dateRange.from && !dateRange.to) return 'All time';
     if (dateRange.from && dateRange.to) {
@@ -79,7 +93,8 @@ export function ExportDialog({ open, onOpenChange, vitals }: ExportDialogProps) 
             Export Vitals
           </DialogTitle>
           <DialogDescription>
-            Download your health data as CSV or PDF
+            Download your health data as a spreadsheet, a printable report, or FHIR
+            for another system
           </DialogDescription>
         </DialogHeader>
 
@@ -174,13 +189,28 @@ export function ExportDialog({ open, onOpenChange, vitals }: ExportDialogProps) 
           </div>
 
           {/* Download Buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" onClick={handleExportCSV} disabled={filteredVitals.length === 0}>
-              Download CSV
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" onClick={handleExportCSV} disabled={filteredVitals.length === 0}>
+                Download CSV
+              </Button>
+              <Button variant="outline" onClick={handleExportPDF} disabled={filteredVitals.length === 0}>
+                Download PDF
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleExportFhir}
+              disabled={filteredVitals.length === 0}
+            >
+              Download FHIR bundle
             </Button>
-            <Button variant="outline" onClick={handleExportPDF} disabled={filteredVitals.length === 0}>
-              Download PDF
-            </Button>
+            <p className="text-xs text-muted-foreground">
+              FHIR is the standard format hospitals and health records systems read. Send this
+              file to a clinic and their system can load your readings without anyone retyping
+              them.
+            </p>
           </div>
         </div>
       </DialogContent>

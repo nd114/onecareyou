@@ -119,7 +119,7 @@ In rough order of value:
 | --- | --- | --- |
 | `Condition` | **Done** — mapping only, see §6.1 | No table. Free text on `profiles`, mapped for export |
 | `AllergyIntolerance` | **Done** — mapping only, see §6.1 | Same |
-| `Observation` | Next | Vitals is a real table, so this is the closest analogue to Appointment. Needs a decision on LOINC coding |
+| `Observation` | **Done** — mapping plus export, see §6.3 | Vitals is a real table. LOINC coding resolved without a decision needed |
 | `MedicationRequest` | After that | Interacts with the drug-interaction checker |
 | `DocumentReference` | Later | Natural fit for QHIN retrieval |
 
@@ -178,6 +178,50 @@ become worthwhile once there are three or four resources — `FhirRepository` is
 abstract class with fourteen methods and `MemoryRepository` as a worked
 reference, so it is a real extension point rather than a hope. One resource does
 not justify it yet.
+
+### 6.3 Observation: the first resource we could code honestly
+
+Vitals is a real table with typed numeric values, so this maps a row rather than
+parsing free text — and it is the first place coding was possible without
+guessing.
+
+**Every LOINC code was read out of the R4 bundle**, not recalled. The codes come
+from `ValueSet/observation-vitalsignresult`; which code belongs to which
+measurement comes from the vital-sign profiles (`bodyweight` → 29463-7,
+`heartrate` → 8867-4, `bodytemp` → 8310-5, `oxygensat` → 2708-6, `bp` → 85354-9
+with components 8480-6 and 8462-4). The test suite re-extracts them from the
+bundle, so the claim stays checkable rather than becoming folklore. UCUM units
+are the spec's spellings from `ValueSet/ucum-vitals-common`, which is why `bpm`
+becomes `/min` and `°C` becomes `Cel`.
+
+The other fourteen types we store are **laboratory results, not vital signs**,
+and get `category: laboratory`. LOINC has codes for them, but those codes are
+not in the FHIR bundles and would have to be typed from memory — the same
+failure as inventing SNOMED for "Diabetes" in different clothes. They carry
+`code.text` and no coding until a terminology source provides one. Units we
+cannot code honestly (`x10³/µL` is not valid UCUM) are emitted as
+`Quantity.unit` with no system, which is what FHIR intends for an uncoded unit.
+
+Blood pressure is a panel with two components, not a number with a spare. `128`
+in `valueQuantity` and `82` in a secondary column is our storage shape, not a
+clinical fact, and it does not survive the mapping.
+
+**Patients can now download their readings as a FHIR bundle** from the vitals
+export dialog, alongside CSV and PDF. That is the first thing on this platform
+another system can read without a bespoke mapping written for us.
+
+### 6.4 What building the export turned up
+
+The bundle was built inline at the download site, where no test could reach it,
+and it carried a `total` field. FHIR's `bdl-1` invariant allows `total` only on
+a `searchset` or `history` bundle — a `collection` is neither. Every Observation
+inside it validated; the file a receiver got did not, and a strict one would have
+rejected the lot.
+
+Found by generating a real bundle and validating it, not by review. The fix was
+to move bundle construction into `src/lib/fhir/observation.ts` where a test
+reaches it, and the lesson generalises: **validate the envelope, not only what
+is in it.** Three tests now fail if the `total` comes back.
 
 ## 7. What this does not change
 
