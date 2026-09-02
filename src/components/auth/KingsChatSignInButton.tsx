@@ -81,9 +81,7 @@ export function KingsChatSignInButton({
     popup.current = window.open("", "_blank", "width=520,height=680");
 
     try {
-      // Cast: the generated types track the live database, so these two RPCs
-      // only appear there once 20260820160000 has been applied.
-      const { data: nonce, error } = await (supabase as any).rpc("kingschat_begin_login");
+      const { data: nonce, error } = await supabase.rpc("kingschat_begin_login");
       if (error || typeof nonce !== "string" || !nonce) {
         finish(error?.message || "Could not start KingsChat sign-in");
         return;
