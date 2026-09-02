@@ -81,9 +81,7 @@ export function KingsChatSignInButton({
     popup.current = window.open("", "_blank", "width=520,height=680");
 
     try {
-      // Cast: the generated types track the live database, so these two RPCs
-      // only appear there once 20260820160000 has been applied.
-      const { data: nonce, error } = await (supabase as any).rpc("kingschat_begin_login");
+      const { data: nonce, error } = await supabase.rpc("kingschat_begin_login");
       if (error || typeof nonce !== "string" || !nonce) {
         finish(error?.message || "Could not start KingsChat sign-in");
         return;
@@ -113,13 +111,13 @@ export function KingsChatSignInButton({
           return;
         }
 
-        const { data: rows, error: pollError } = await (supabase as any).rpc(
+        const { data: rows, error: pollError } = await supabase.rpc(
           "kingschat_claim_login",
           { _nonce: nonce },
         );
         if (pollError) continue; // A dropped poll is not a failed login.
 
-        const result = (Array.isArray(rows) ? rows[0] : rows) as PollResult | undefined;
+        const result = rows?.[0] as PollResult | undefined;
         if (!result) continue;
         if (result.status === "pending") {
           // Give up early if they closed the window without finishing.
