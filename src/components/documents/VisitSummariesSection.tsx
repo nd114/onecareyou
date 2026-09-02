@@ -25,7 +25,7 @@ const SECTIONS: { key: keyof VisitSummary; label: string }[] = [
  * is only one kind.
  */
 export function VisitSummariesSection() {
-  const { visits, isLoading } = useVisitSummaries();
+  const { visits, addendaByVisit, isLoading } = useVisitSummaries();
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Nothing to say when there are none: an empty block here would push the
@@ -100,6 +100,25 @@ export function VisitSummariesSection() {
                     <p className="text-sm text-muted-foreground">
                       Your clinician recorded this visit without written notes.
                     </p>
+                  )}
+
+                  {/* Corrections made after the note was signed. Shown here
+                      rather than folded into the text above, so it is clear
+                      what was said at the time and what was added later. */}
+                  {(addendaByVisit[v.id] ?? []).length > 0 && (
+                    <div className="space-y-2 border-t pt-3">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Added after this visit
+                      </p>
+                      {(addendaByVisit[v.id] ?? []).map((a) => (
+                        <div key={a.id} className="rounded-lg bg-muted/40 p-3">
+                          <p className="text-sm whitespace-pre-wrap">{a.body}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(a.created_at), "d MMM yyyy")}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </CollapsibleContent>
               </CardContent>

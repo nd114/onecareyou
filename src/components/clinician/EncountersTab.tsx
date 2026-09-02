@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { EncounterAddenda } from "./EncounterAddenda";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -255,7 +256,8 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
         ) : (
           <ul className="divide-y">
             {encounters.map((enc) => (
-              <li key={enc.id} className="p-4 flex items-start gap-3">
+              <li key={enc.id} className="p-4">
+                <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm capitalize">
@@ -322,6 +324,11 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                     </>
                   )}
                 </div>
+                </div>
+
+                {/* Once signed, the database refuses edits to the note itself.
+                    Corrections append here, attributed and dated. */}
+                <EncounterAddenda encounterId={enc.id} signedAt={enc.signed_at} />
               </li>
             ))}
           </ul>

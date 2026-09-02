@@ -146,5 +146,32 @@ subquery against `fhir_invoices`, and whether that subquery inherits the invoice
 table's row policies is a thing to test rather than believe. Replacing it with
 `USING (true)` makes the suite fail, which is how we know it is load-bearing.
 
+`signed_notes.test.sql` — a signed note is a record, not a draft:
+
+| Rule | Source |
+| --- | --- |
+| A signed assessment, plan, codes or transcript cannot be rewritten | clinical records integrity |
+| A note cannot be un-signed or back-dated | otherwise every rule above is one UPDATE away |
+| An unsigned note is freely editable, and freezes the moment it is signed | a draft is a draft |
+| Sharing can still be withdrawn after signing | disclosure is not a clinical claim |
+| Retraction marks the note and leaves the text readable | FHIR `entered-in-error`, not a gap |
+| Corrections go in an addendum, by the author or a colleague who can reach the patient | how paper records worked, and why |
+| An addendum cannot be attributed to another clinician | `author_user_id = auth.uid()` |
+| An addendum cannot be edited or deleted, even by its author | a later one corrects it |
+| A patient reads corrections to summaries they were given, and only those | see below |
+
+`signed_at` existed and meant nothing before this: the update policy was
+`(clinician_user_id = auth.uid())` with no reference to it, so an author could
+rewrite a signed assessment leaving nothing behind but a changed `updated_at`.
+Test 1 is that exact attempt.
+
+The patient assertions exist because of something testing found and reasoning
+missed. Patients read summaries through `my_visit_summaries()`, a SECURITY
+DEFINER function, since they hold no direct SELECT on `encounters` — and the
+addendum policy defers to the encounter policies they also do not hold. The
+patient therefore saw the summary and none of its corrections. A companion
+function fixes it, and mirrors the summary rules exactly: signed, shared, not
+retracted.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.
