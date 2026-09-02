@@ -10,13 +10,27 @@ import type { Invoice, InvoiceLineItem, Money } from "@medplum/fhirtypes";
 export type CurrencyCode = NonNullable<Money["currency"]>;
 
 /**
+ * The neutral default, used when a tenant has not chosen one.
+ *
+ * USD because the platform is international rather than a Nigerian product with
+ * international ambitions; a tenant anywhere sets its own in practice settings,
+ * and an issued invoice then keeps the currency it was raised in.
+ */
+export const DEFAULT_CURRENCY: CurrencyCode = "USD";
+
+/**
  * Invoices, as FHIR, and the money arithmetic that goes with them.
  *
- * Amounts are minor units — kobo, cents — as integers, everywhere. `0.1 + 0.2`
- * is not `0.3` in binary floating point, and a rounding error in a balance is a
- * bug somebody has to be refunded for. Nothing in this file holds an amount as
- * a float; formatting to a decimal string happens at the last moment, for
- * display only.
+ * Amounts are minor units — cents, pence, kobo — as integers, everywhere.
+ * `0.1 + 0.2` is not `0.3` in binary floating point, and a rounding error in a
+ * balance is a bug somebody has to be refunded for. Nothing in this file holds
+ * an amount as a float; converting to a decimal happens at the last moment, for
+ * display or for the FHIR resource.
+ *
+ * **The minor unit is not always a hundredth.** JPY and KRW have none, so ¥1000
+ * is stored as 1000; KWD and TND have three, so 1.500 KWD is 1500. Dividing by
+ * 100 unconditionally is right for most of the world and wrong for a tenant in
+ * Tokyo or Kuwait City, so the exponent is asked for rather than assumed.
  */
 
 export type InvoiceStatus = "draft" | "issued" | "balanced" | "cancelled" | "entered-in-error";
@@ -68,24 +82,46 @@ export function balanceMinor(row: Pick<InvoiceRow, "total_minor" | "paid_minor">
 /**
  * Minor units as money the patient recognises.
  *
- * Uses Intl so a Nigerian patient sees ₦ and a US one sees $, and so the
- * thousands separators are the ones they expect. The division by 100 is the one
- * place a decimal appears, and it happens after all arithmetic is done.
+ * Uses Intl so each patient sees their own currency's symbol and separators,
+ * and so the number of decimal places is the currency's rather than a guess.
+ * This is the one place a decimal appears, after all arithmetic is done.
  */
+export function minorUnitDigits(currency: string): number {
+  try {
+    return new Intl.NumberFormat("en", {
+      style: "currency",
+      currency: currency || DEFAULT_CURRENCY,
+    }).resolvedOptions().maximumFractionDigits;
+  } catch {
+    return 2;
+  }
+}
+
+/** Minor units as the decimal amount, using the currency's own exponent. */
+export function toMajor(minor: number | string, currency: string): number {
+  const digits = minorUnitDigits(currency);
+  return toMinor(minor) / 10 ** digits;
+}
+
+/** A decimal amount as minor units, rounded to a whole one. */
+export function toMinorUnits(major: number, currency: string): number {
+  const digits = minorUnitDigits(currency);
+  return Math.round(major * 10 ** digits);
+}
+
 export function formatMoney(minor: number | string, currency: string, locale?: string): string {
-  const amount = toMinor(minor) / 100;
+  const amount = toMajor(minor, currency);
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: currency || "NGN",
-      minimumFractionDigits: 2,
+      currency: currency || DEFAULT_CURRENCY,
     }).format(amount);
   } catch {
     // Intl handles any well-formed three-letter code, prefixing an unfamiliar
     // one — so this catches malformed input only ('', 'zz', 'NOTACODE' all
     // throw RangeError). Showing a bare number beats a blank where an amount
     // should be.
-    return `${currency} ${amount.toFixed(2)}`;
+    return `${currency} ${amount.toFixed(minorUnitDigits(currency))}`;
   }
 }
 
@@ -116,7 +152,7 @@ export function toFhirInvoice(row: InvoiceRow, items: InvoiceItemRow[] = []): In
         type: "base",
         code: item.code ? { text: item.code } : { text: item.description },
         amount: {
-          value: toMinor(item.amount_minor) / 100,
+          value: toMajor(item.amount_minor, row.currency),
           currency: row.currency,
         },
       },
@@ -129,7 +165,7 @@ export function toFhirInvoice(row: InvoiceRow, items: InvoiceItemRow[] = []): In
     status: row.status as Invoice["status"],
     identifier: [{ value: row.invoice_number }],
     subject: { reference: `Patient/${row.patient_user_id}` },
-    totalGross: { value: toMinor(row.total_minor) / 100, currency: row.currency },
+    totalGross: { value: toMajor(row.total_minor, row.currency), currency: row.currency },
   };
 
   if (row.issued_at) invoice.date = row.issued_at;

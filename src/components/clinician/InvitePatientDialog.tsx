@@ -122,7 +122,7 @@ export function InvitePatientDialog({
               <Label htmlFor="patient-name">Patient Name (Optional)</Label>
               <Input
                 id="patient-name"
-                placeholder="John Smith"
+                placeholder="Alex Moreau"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />

@@ -137,7 +137,7 @@ export function EmergencySettingsSection() {
               <Label htmlFor="emergency-name">Contact Name</Label>
               <Input
                 id="emergency-name"
-                placeholder="e.g., John Smith (Spouse)"
+                placeholder="e.g. Alex Moreau (Spouse)"
                 value={emergencyContactName}
                 onChange={(e) => setEmergencyContactName(e.target.value)}
               />

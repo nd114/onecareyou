@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Receipt, Plus, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,10 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { useInvoices } from "@/hooks/useInvoices";
-import { balanceMinor, formatMoney, isOutstanding, lineAmountMinor } from "@/lib/fhir/invoice";
+import {
+  balanceMinor, DEFAULT_CURRENCY, formatMoney, isOutstanding, lineAmountMinor,
+  minorUnitDigits, toMinorUnits, type CurrencyCode,
+} from "@/lib/fhir/invoice";
 
 interface Props {
   patientUserId: string;
@@ -50,6 +53,25 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { invoices, isLoading } = useInvoices(patientUserId);
+
+  // The tenant's currency, not the platform's guess at one. An invoice already
+  // issued keeps whatever it was raised in, which is why this only seeds new ones.
+  const [currency, setCurrency] = useState<CurrencyCode>(DEFAULT_CURRENCY);
+  useEffect(() => {
+    if (!practiceId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("practices")
+        .select("default_currency")
+        .eq("id", practiceId)
+        .maybeSingle();
+      if (!cancelled && data?.default_currency) {
+        setCurrency(data.default_currency as CurrencyCode);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [practiceId]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState("");
@@ -60,9 +82,9 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
 
   const totalMinor = lines.reduce((sum, line) => {
     const qty = Number(line.quantity);
-    const price = Math.round(Number(line.unitPrice) * 100);
-    if (!Number.isFinite(qty) || !Number.isFinite(price)) return sum;
-    return sum + lineAmountMinor(qty, price);
+    const major = Number(line.unitPrice);
+    if (!Number.isFinite(qty) || !Number.isFinite(major)) return sum;
+    return sum + lineAmountMinor(qty, toMinorUnits(major, currency));
   }, 0);
 
   const usable = lines.filter((l) => l.description.trim() && Number(l.unitPrice) > 0);
@@ -84,7 +106,7 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
           practice_id: practiceId ?? null,
           created_by: user.id,
           status: "draft",
-          currency: "NGN",
+          currency,
           note: note.trim() || null,
           due_at: dueDate ? new Date(dueDate).toISOString() : null,
         })
@@ -94,7 +116,7 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
 
       const { error: itemError } = await (supabase as any).from("fhir_invoice_items").insert(
         usable.map((line, index) => {
-          const unit = Math.round(Number(line.unitPrice) * 100);
+          const unit = toMinorUnits(Number(line.unitPrice), currency);
           const qty = Number(line.quantity) || 1;
           return {
             invoice_id: invoice.id,
@@ -183,11 +205,11 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
                     />
                   </div>
                   <div className="col-span-3 space-y-1">
-                    {index === 0 && <Label className="text-xs">Price (₦)</Label>}
+                    {index === 0 && <Label className="text-xs">Price ({currency})</Label>}
                     <Input
                       type="number"
                       min="0"
-                      step="0.01"
+                      step={minorUnitDigits(currency) === 0 ? "1" : `0.${"0".repeat(minorUnitDigits(currency) - 1)}1`}
                       value={line.unitPrice}
                       onChange={(e) =>
                         setLines((prev) =>
@@ -239,7 +261,7 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
 
               <div className="flex justify-between border-t pt-3 font-medium">
                 <span>Total</span>
-                <span className="tabular-nums">{formatMoney(totalMinor, "NGN")}</span>
+                <span className="tabular-nums">{formatMoney(totalMinor, currency)}</span>
               </div>
             </div>
 

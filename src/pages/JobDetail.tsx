@@ -373,7 +373,7 @@ const JobDetail = () => {
                             name="fullName"
                             value={formData.fullName}
                             onChange={handleInputChange}
-                            placeholder="John Doe"
+                            placeholder="Alex Moreau"
                             required
                           />
                         </div>

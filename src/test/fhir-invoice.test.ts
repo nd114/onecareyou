@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   balanceMinor,
+  minorUnitDigits,
+  toMajor,
+  toMinorUnits,
   formatMoney,
   isOutstanding,
   isOverdue,
@@ -22,7 +25,7 @@ const row: InvoiceRow = {
   invoice_number: "INV-ABCD1234",
   issued_at: "2026-09-01T10:00:00.000Z",
   due_at: "2026-09-15T10:00:00.000Z",
-  currency: "NGN",
+  currency: "USD",
   total_minor: "1950000",
   paid_minor: "0",
   platform_fee_minor: "0",
@@ -61,15 +64,34 @@ describe("money is integers, all the way", () => {
 });
 
 describe("formatMoney", () => {
-  it("shows naira for a Nigerian invoice", () => {
-    const out = formatMoney(1950000, "NGN", "en-NG");
-    expect(out).toMatch(/19,500\.00/);
-    expect(out).toMatch(/₦|NGN/);
+  it("shows the tenant's own currency, whichever it is", () => {
+    expect(formatMoney(1950000, "USD", "en-US")).toMatch(/\$19,500\.00/);
+    expect(formatMoney(1950000, "GBP", "en-GB")).toMatch(/£19,500\.00/);
+    expect(formatMoney(1950000, "NGN", "en-NG")).toMatch(/19,500\.00/);
   });
 
-  it("divides by 100 exactly once, at the end", () => {
-    expect(formatMoney(1, "NGN", "en-NG")).toMatch(/0\.01/);
-    expect(formatMoney(100, "NGN", "en-NG")).toMatch(/1\.00/);
+  it("converts minor to major exactly once, at the end", () => {
+    expect(formatMoney(1, "USD", "en-US")).toMatch(/0\.01/);
+    expect(formatMoney(100, "USD", "en-US")).toMatch(/1\.00/);
+  });
+
+  it("uses the currency's own exponent, which is not always two", () => {
+    // JPY has no minor unit, so 1000 stored is ¥1,000 — not ¥10.00. KWD has
+    // three, so 1500 is 1.500. Dividing by 100 everywhere is right for most of
+    // the world and wrong for a tenant in Tokyo or Kuwait City.
+    expect(minorUnitDigits("JPY")).toBe(0);
+    expect(minorUnitDigits("KWD")).toBe(3);
+    expect(minorUnitDigits("USD")).toBe(2);
+    expect(formatMoney(1000, "JPY", "en-US")).toMatch(/1,000/);
+    expect(formatMoney(1000, "JPY", "en-US")).not.toMatch(/10\.00/);
+    expect(formatMoney(1500, "KWD", "en-US")).toMatch(/1\.500/);
+  });
+
+  it("round-trips major to minor and back for every exponent", () => {
+    for (const currency of ["USD", "JPY", "KWD", "NGN"] as const) {
+      expect(toMajor(toMinorUnits(19.5 * (currency === "JPY" ? 100 : 1), currency), currency))
+        .toBeCloseTo(19.5 * (currency === "JPY" ? 100 : 1), 3);
+    }
   });
 
   it("prefixes an unfamiliar but well-formed code, which Intl handles", () => {
@@ -84,10 +106,11 @@ describe("formatMoney", () => {
     expect(formatMoney(1950000, "NOTACODE" as never)).toBe("NOTACODE 19500.00");
   });
 
-  it("defaults a missing currency to the platform's own rather than failing", () => {
+  it("defaults a missing currency to USD rather than failing", () => {
     // The column is NOT NULL with a CHECK, so this only guards a caller that
-    // passes nothing.
-    expect(formatMoney(1950000, "" as never, "en-NG")).toMatch(/₦|NGN/);
+    // passes nothing. USD because the platform is international by default and
+    // a tenant sets its own.
+    expect(formatMoney(1950000, "" as never, "en-US")).toMatch(/\$/);
   });
 });
 
@@ -105,7 +128,7 @@ describe("toFhirInvoice", () => {
     // integer discipline is ours, internally.
     const invoice = toFhirInvoice(row);
     expect(invoice.totalGross?.value).toBe(19500);
-    expect(invoice.totalGross?.currency).toBe("NGN");
+    expect(invoice.totalGross?.currency).toBe("USD");
   });
 
   it("names the patient as the subject", () => {

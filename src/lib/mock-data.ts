@@ -149,7 +149,7 @@ export const mockHealthProfile: HealthProfile = {
 };
 
 export const mockUserProfile = {
-  name: "John Doe",
+  name: "Alex Moreau",
   email: "john.doe@example.com",
   phoneNumber: "+1 555-123-4567",
   emergencyContactName: "Jane Doe",

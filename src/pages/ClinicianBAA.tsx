@@ -647,7 +647,7 @@ const ClinicianBAA = () => {
                             id="practice_city"
                             value={formData.practice_city}
                             onChange={(e) => setFormData({ ...formData, practice_city: e.target.value })}
-                            placeholder="New York"
+                            placeholder="City"
                           />
                         </div>
                         <div className="space-y-2">
@@ -704,7 +704,7 @@ const ClinicianBAA = () => {
                           id="contact_name"
                           value={formData.contact_name}
                           onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                          placeholder="Jane Smith"
+                          placeholder="Jane Evans"
                           required
                         />
                       </div>

@@ -200,7 +200,7 @@ const EnterpriseInquiry = () => {
                             id="contact_name"
                             value={formData.contact_name}
                             onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                            placeholder="Dr. Jane Smith"
+                            placeholder="Dr. Jane Evans"
                             required
                           />
                         </div>

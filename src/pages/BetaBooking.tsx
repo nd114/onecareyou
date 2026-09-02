@@ -342,7 +342,7 @@ export default function BetaBooking() {
                 value={fullName}
                 maxLength={120}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Dr Alex Moreau"
+                placeholder="Dr. Jane Evans"
               />
             </div>
             <div className="sm:col-span-2">

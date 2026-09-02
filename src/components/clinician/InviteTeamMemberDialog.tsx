@@ -81,7 +81,7 @@ export function InviteTeamMemberDialog({ open, onOpenChange, practiceId }: Invit
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Dr. Jane Smith"
+              placeholder="Dr. Jane Evans"
             />
           </div>
 

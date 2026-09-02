@@ -123,7 +123,7 @@ const Contact = () => {
                       <Label htmlFor="name">Full Name *</Label>
                       <Input
                         id="name"
-                        placeholder="John Doe"
+                        placeholder="Alex Moreau"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         required

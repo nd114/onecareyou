@@ -21,6 +21,7 @@ import { PracticeAccessOverviewCard } from '@/components/clinician/PracticeAcces
 import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
 import { PracticeContactCard } from '@/components/clinician/PracticeContactCard';
 import { PracticeRevenueShareCard } from '@/components/clinician/PracticeRevenueShareCard';
+import { PracticeCurrencyCard } from '@/components/clinician/PracticeCurrencyCard';
 import { PracticeStorageCard } from '@/components/clinician/PracticeStorageCard';
 import { Loader2 } from 'lucide-react';
 
@@ -102,6 +103,12 @@ const ClinicianPractice = () => {
           {/* Contact and address - owned by the tenant */}
           <div id="practice-contact" className="mt-6 scroll-mt-20">
             <PracticeContactCard />
+          </div>
+
+          {/* Billing currency — the tenant's, defaulting to USD rather than
+              assuming a market. */}
+          <div id="practice-currency" className="mt-6 scroll-mt-20">
+            <PracticeCurrencyCard />
           </div>
 
           {/* Hospital code (tenant slug) */}

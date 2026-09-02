@@ -129,7 +129,7 @@ const SignUp = () => {
                   <Input
                     id="name"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="Alex Moreau"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className={`pl-10 ${errors.name ? 'border-destructive' : ''}`}

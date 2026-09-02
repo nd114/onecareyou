@@ -50,7 +50,7 @@ export function ReferralDialog({ patientUserId, trigger }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="ref-name">Recipient name</Label>
-              <Input id="ref-name" value={toName} onChange={(e) => setToName(e.target.value)} placeholder="Dr. Jane Smith" />
+              <Input id="ref-name" value={toName} onChange={(e) => setToName(e.target.value)} placeholder="Dr. Priya Nair" />
             </div>
             <div>
               <Label htmlFor="ref-email">Recipient email</Label>

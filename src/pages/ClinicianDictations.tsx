@@ -186,7 +186,7 @@ export default function ClinicianDictations() {
               <Label htmlFor="patient-label" className="text-xs">Patient (label or invite code, optional)</Label>
               <input id="patient-label" className="mt-1 w-full h-9 rounded-md border bg-background px-3 text-sm"
                 value={patientLabel} onChange={(e) => setPatientLabel(e.target.value)}
-                placeholder="e.g. John Doe — 9am follow-up" disabled={recorder.isRecording} />
+                placeholder="e.g. Alex Moreau — 9am follow-up" disabled={recorder.isRecording} />
             </div>
             <div className="flex items-center gap-3">
               <Button onClick={handleRecord} variant={recorder.isRecording ? 'destructive' : 'default'}>
