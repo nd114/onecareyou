@@ -42,6 +42,21 @@ export function RecordCards({ query, patientUserId, patientName }: Props) {
       try {
         const data = await fetchRecords(query, patientUserId);
         if (!cancelled) setRows(data);
+
+        // Reading a patient's record through the assistant is reading their
+        // record. Opening the same data on their record page logs an entry, and
+        // this has to as well, or the assistant becomes the way to look at
+        // somebody's history without leaving a trace. log_record_access takes
+        // the actor from auth.uid() and refuses an entry for a patient the
+        // caller cannot reach, so this can under-report but never forge.
+        void (supabase as any)
+          .rpc("log_record_access", {
+            _patient_user_id: patientUserId,
+            _resource_type: `ai_${query.kind}`,
+            _resource_id: null,
+            _action: AUDIT_ACTION[query.kind],
+          })
+          .then(undefined, (e: unknown) => console.error("Access log failed:", e));
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? "Could not load those records");
       }
@@ -95,6 +110,18 @@ export function RecordCards({ query, patientUserId, patientName }: Props) {
     </div>
   );
 }
+
+/**
+ * The audit action for each kind, from the whitelist log_record_access accepts.
+ * An unrecognised value there silently becomes 'record_viewed', so these are
+ * the real ones rather than descriptive strings that would all collapse.
+ */
+const AUDIT_ACTION: Record<RecordQuery["kind"], string> = {
+  vitals: "vitals_viewed",
+  medications: "medications_viewed",
+  appointments: "record_viewed",
+  invoices: "record_viewed",
+};
 
 const LABEL: Record<RecordQuery["kind"], string> = {
   vitals: "readings",

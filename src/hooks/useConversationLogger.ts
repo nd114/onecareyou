@@ -22,6 +22,8 @@ interface LogMessageInput {
   inputModality?: Modality;
   audioPath?: string | null;
   imagePath?: string | null;
+  /** The patient this message concerned, when it concerned one. */
+  patientUserId?: string | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -59,6 +61,10 @@ export function useConversationLogger(source: 'simple_mode' | 'drawer') {
       input_modality: input.inputModality ?? 'text',
       audio_path: input.audioPath ?? null,
       image_path: input.imagePath ?? null,
+      // Which patient this message was about, when it was about one. Set from
+      // the record queries the assistant resolved, so it reflects what was
+      // actually looked at rather than what was typed.
+      patient_user_id: input.patientUserId ?? null,
       metadata: (input.metadata ?? {}) as never,
     }]);
     if (error) {

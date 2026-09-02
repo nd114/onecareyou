@@ -51,6 +51,7 @@ import { useRecordAccessLog } from '@/hooks/useRecordAccessLog';
 import { summariseAdherence } from '@/lib/adherence';
 import { AppointmentsTab } from '@/components/clinician/AppointmentsTab';
 import { BillingTab } from '@/components/clinician/BillingTab';
+import { AiHistoryForPatient } from '@/components/clinician/AiHistoryForPatient';
 
 const ClinicianPatientDetail = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -423,8 +424,15 @@ const ClinicianPatientDetail = () => {
               />
             </TabsContent>
 
-            <TabsContent value="activity">
+            <TabsContent value="activity" className="space-y-4">
               <PatientActivityTab patientUserId={patient.user_id} />
+              {/* Questions put to the assistant about this patient. They used to
+                  sit in a chat table with no patient reference — a side channel
+                  next to the record rather than part of it. */}
+              <AiHistoryForPatient
+                patientUserId={patient.user_id}
+                patientName={patient.patient_name || 'this patient'}
+              />
             </TabsContent>
 
 

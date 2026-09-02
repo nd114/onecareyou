@@ -33,6 +33,16 @@ interface UseAIChatOptions {
   /** Set false for read-only surfaces (e.g. Simple Mode). */
   allowActions?: boolean;
   /**
+   * Turns a patient name from the assistant into a user id, using whatever
+   * panel the calling surface holds.
+   *
+   * Supplied by the clinician surfaces, which know their patients; omitted by
+   * the patient ones, which have no panel to resolve against. Without it a
+   * message is logged as concerning nobody, which is the right answer rather
+   * than a guess — a name is not an identity.
+   */
+  resolvePatientId?: (name: string) => string | null;
+  /**
    * Names the chat surface (e.g. 'assistant'). When set, the conversation is
    * kept in localStorage under a key scoped to the signed-in account, so it
    * survives closing the drawer without ever being shown to another account.
@@ -208,8 +218,20 @@ export function useAIChat(options: UseAIChatOptions = {}) {
 
       // Record the exchange so it can be read back later. Logging failures are
       // swallowed inside the logger — the chat must never break over it.
-      await logMessage({ role: 'user', content: userMsg.content });
-      await logMessage({ role: 'assistant', content: assistantMsg.content });
+      // A conversation can move between patients, so the reference goes on the
+      // message. It comes from the record queries the assistant actually
+      // resolved rather than from the text, which means it reflects what was
+      // looked at rather than what was mentioned.
+      const askedAbout = queries.map((q) => q.patientName).find(Boolean);
+      const aboutPatient =
+        askedAbout && options.resolvePatientId ? options.resolvePatientId(askedAbout) : null;
+
+      await logMessage({ role: 'user', content: userMsg.content, patientUserId: aboutPatient });
+      await logMessage({
+        role: 'assistant',
+        content: assistantMsg.content,
+        patientUserId: aboutPatient,
+      });
       queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
       return null;
     } catch (err) {
@@ -226,7 +248,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, allowActions, logMessage, queryClient]);
+  }, [messages, isLoading, allowActions, logMessage, queryClient, options.resolvePatientId]);
 
 
   /** Run the actions the assistant proposed — only ever called from an explicit user approval. */

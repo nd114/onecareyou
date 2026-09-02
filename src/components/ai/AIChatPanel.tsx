@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +17,8 @@ import { MarkdownMessage } from './MarkdownMessage';
 import { ProposedActionsCard } from './ProposedActionsCard';
 import { MessageRecordCards } from './MessageRecordCards';
 import { cn } from '@/lib/utils';
+import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
+import { resolvePatient } from '@/lib/ai-record-query';
 
 /**
  * The live assistant conversation, without any container of its own.
@@ -208,8 +210,26 @@ interface AIChatPanelProps {
 
 export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChatPanelProps) {
   const navigate = useNavigate();
+  // Turns a patient name the assistant used into a user id, so a message about
+  // a patient is filed against that patient rather than left in a side channel.
+  // The same panel MessageRecordCards resolves against; for a patient using
+  // their own assistant it is empty, and a message is then logged as concerning
+  // nobody, which is correct rather than a guess.
+  const { records } = useClinicianPatientRecords();
+  const resolvePatientId = useCallback(
+    (name: string) =>
+      resolvePatient(
+        name,
+        (records ?? [])
+          .filter((r) => !!r.linked_user_id)
+          .map((r) => ({ user_id: r.linked_user_id as string, patient_name: r.patient_name })),
+      )?.user_id ?? null,
+    [records],
+  );
+
   const { messages, isLoading, sendMessage, clearChat, loadConversation, approveActions, discardActions } = useAIChat({
     persistSurface: 'assistant',
+    resolvePatientId,
   });
 
   const { hasConsent, grantConsent } = useAIConsent();
