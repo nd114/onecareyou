@@ -15,6 +15,7 @@ import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { MarkdownMessage } from './MarkdownMessage';
 import { ProposedActionsCard } from './ProposedActionsCard';
+import { MessageRecordCards } from './MessageRecordCards';
 import { cn } from '@/lib/utils';
 
 /**
@@ -165,6 +166,9 @@ function MessageBubble({
             compact
           />
         )}
+        {/* Real records, fetched here under the reader's own row policies
+            rather than retyped by the model. See src/lib/ai-record-query.ts. */}
+        {!isUser && <MessageRecordCards message={message} />}
         {message.suggestedRoute && (
           <Button
             size="sm"

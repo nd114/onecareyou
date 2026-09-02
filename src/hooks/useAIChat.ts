@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProposedAction, ActionOutcome, executeAction } from '@/lib/ai-actions';
 import { chatStorageKey } from '@/lib/chat-storage';
 import { useConversationLogger } from '@/hooks/useConversationLogger';
+import { parseRecordQuery, type RecordQuery } from "@/lib/ai-record-query";
 
 
 export interface ChatMessage {
@@ -15,6 +16,12 @@ export interface ChatMessage {
   timestamp: Date;
   /** Actions the assistant wants to take — nothing happens until approved. */
   proposedActions?: ProposedAction[];
+  /**
+   * Records the assistant asked to display. A query, not data: the browser
+   * fetches the rows under the reader's own row policies, so the model never
+   * holds anything it should not see.
+   */
+  recordQueries?: RecordQuery[];
   /** Set once the user approves or discards the proposal. */
   actionState?: 'pending' | 'applying' | 'applied' | 'discarded';
   actionOutcomes?: ActionOutcome[];
@@ -176,6 +183,12 @@ export function useAIChat(options: UseAIChatOptions = {}) {
 
       if (fnError) throw new Error(fnError.message || 'Failed to get response');
 
+      const queries: RecordQuery[] = Array.isArray(data.recordQueries)
+        ? (data.recordQueries as unknown[])
+            .map(parseRecordQuery)
+            .filter((q): q is RecordQuery => q !== null)
+        : [];
+
       const proposed: ProposedAction[] = allowActions && Array.isArray(data.proposedActions)
         ? data.proposedActions
         : [];
@@ -187,6 +200,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
         suggestedRoute: data.suggestedRoute,
         timestamp: new Date(),
         proposedActions: proposed.length > 0 ? proposed : undefined,
+        recordQueries: queries.length > 0 ? queries : undefined,
         actionState: proposed.length > 0 ? 'pending' : undefined,
       };
 

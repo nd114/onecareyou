@@ -35,10 +35,19 @@ const BASE_PROMPT = `You are the OneCare Clinical Assistant, working alongside a
 WHAT YOU DO
 1. Answer questions about the clinician's own panel using the snapshot below (patients, recent vitals, open guidance, unread messages).
 2. Draft work for the clinician: patient messages, care guidance, vital alert thresholds.
-3. Help them navigate the workspace (route map below).
+3. Show them real records — readings, medications, appointments, invoices — with show_records.
+4. Help them navigate the workspace (route map below).
+
+SHOWING RECORDS (prefer this over retyping numbers)
+- When they ask to see readings, medications, appointments or invoices, call show_records.
+- The snapshot below is a summary and may be stale; show_records fetches live rows under the
+  clinician's own permissions and renders them as cards they can act on.
+- Do NOT repeat the values in your reply after calling it — they are on screen. Add a sentence
+  of interpretation instead ("the last three are trending up"), or nothing.
+- show_records only displays. It writes nothing and needs no approval.
 
 HOW TOOLS WORK (critical)
-- Tools NEVER send or save anything. They queue a draft the clinician reviews and approves in the app.
+- The drafting tools NEVER send or save anything. They queue a draft the clinician reviews and approves in the app.
 - Never say something was sent, set, saved or created. Say "I've drafted this — approve it below and it will be sent/saved."
 - Only treat something as done when a SYSTEM NOTE says the clinician approved it and it succeeded. If a SYSTEM NOTE says FAILED, say so plainly.
 - Always pass patient_user_id exactly as it appears in the snapshot. If the patient is not in the snapshot, say you don't have access to them instead of guessing.
@@ -121,6 +130,34 @@ const tools = [
           threshold_secondary: { type: "number", description: "Diastolic threshold, blood pressure only" },
         },
         required: ["patient_user_id", "vital_type", "condition", "threshold_value"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "show_records",
+      description:
+        "Display a patient's actual records to the clinician as cards. Use this whenever they " +
+        "ask to see readings, medications, appointments or invoices — do not retype the values " +
+        "into your reply. You are naming what to show; the app fetches it under the clinician's " +
+        "own permissions and renders it. Say one sentence of interpretation alongside if it helps.",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: {
+            type: "string",
+            enum: ["vitals", "medications", "appointments", "invoices"],
+          },
+          patient_name: { type: "string", description: "The patient whose records to show" },
+          vital_type: {
+            type: "string",
+            description: "For vitals only. The measurement, e.g. hba1c or blood_pressure",
+          },
+          limit: { type: "number", description: "How many, most recent first. Default 5, max 20." },
+        },
+        required: ["kind", "patient_name"],
         additionalProperties: false,
       },
     },
@@ -287,17 +324,48 @@ ${unreadLines || "(none)"}`;
     let message = data.choices?.[0]?.message ?? {};
     const toolCalls = message.tool_calls ?? [];
     const proposedActions: Array<{ id: string; type: string; params: Record<string, unknown> }> = [];
+    // Requests to *display* records. Not actions: nothing is written, and the
+    // browser fetches the rows itself under the clinician's own row policies,
+    // so the model never holds data it should not see. Allowed even on
+    // read-only surfaces for that reason.
+    const recordQueries: Array<Record<string, unknown>> = [];
 
-    if (allowActions && toolCalls.length > 0) {
+    if (toolCalls.length > 0) {
       const toolResults: any[] = [];
       for (const call of toolCalls) {
-        const actionType = ACTION_BY_TOOL[call.function?.name];
+        const toolName = call.function?.name;
+        const actionType = ACTION_BY_TOOL[toolName];
         let params: Record<string, unknown> = {};
         try {
           params = JSON.parse(call.function?.arguments || "{}");
         } catch {
           params = {};
         }
+
+        if (toolName === "show_records") {
+          recordQueries.push(params);
+          toolResults.push({
+            role: "tool",
+            tool_call_id: call.id,
+            content: JSON.stringify({
+              shown: true,
+              note:
+                "The records are displayed to the clinician as cards. Do not repeat the values " +
+                "in your reply; add interpretation only.",
+            }),
+          });
+          continue;
+        }
+
+        if (!allowActions) {
+          toolResults.push({
+            role: "tool",
+            tool_call_id: call.id,
+            content: JSON.stringify({ queued: false, note: "Actions are not available here." }),
+          });
+          continue;
+        }
+
         if (actionType) proposedActions.push({ id: crypto.randomUUID(), type: actionType, params });
         toolResults.push({
           role: "tool",
@@ -322,13 +390,16 @@ ${unreadLines || "(none)"}`;
       message.content ||
       (proposedActions.length > 0
         ? "I've drafted the items below — review them and approve when they look right."
-        : "I couldn't generate a response. Please try again.");
+        : recordQueries.length > 0
+          ? "Here are the records."
+          : "I couldn't generate a response. Please try again.");
 
     const routeMatch = content.match(/\[NAVIGATE:(\/[^\]]+)\]/);
     return json({
       content: content.replace(/\[NAVIGATE:\/[^\]]+\]/g, "").trim(),
       suggestedRoute: routeMatch ? routeMatch[1] : null,
       proposedActions,
+      recordQueries,
     });
   } catch (error) {
     console.error("clinician-ai-chat error", error);
