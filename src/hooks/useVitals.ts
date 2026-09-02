@@ -5,6 +5,7 @@ import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { VitalType, VITAL_CONFIG } from '@/types/health';
 import { toast } from 'sonner';
 import { enqueueWrite, cacheRead, getCachedRead } from '@/lib/offline';
+import { summariseVital } from "@/lib/vital-stats";
 
 export type VitalSource = 'manual' | 'ehr_import' | 'device';
 
@@ -232,27 +233,10 @@ export function useVitals() {
 
   const getVitalStats = (type: VitalType, days: number = 30) => {
     const history = getVitalHistory(type, days);
-    if (history.length === 0) return null;
-
-    const values = history.map(v => v.value);
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    
-    const config = VITAL_CONFIG[type];
-    const trend = history.length >= 2 
-      ? (history[history.length - 1].value - history[0].value) / history[0].value * 100
-      : 0;
-
-    return {
-      average: Math.round(avg * 10) / 10,
-      min,
-      max,
-      count: history.length,
-      trend: Math.round(trend * 10) / 10,
-      inRange: values.filter(v => v >= config.normalMin && v <= config.normalMax).length,
-      outOfRange: values.filter(v => v < config.normalMin || v > config.normalMax).length,
-    };
+    // Extracted to src/lib/vital-stats.ts and tested: this used to compare a
+    // Fahrenheit temperature against a Celsius band, judge a blood pressure on
+    // its systolic half alone, and average readings logged in different units.
+    return summariseVital(type, history);
   };
 
   return {

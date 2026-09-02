@@ -6,6 +6,7 @@ import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { format } from 'date-fns';
 import { Maximize2 } from 'lucide-react';
+import { isReadingOutsideRange } from '@/lib/patient-risk';
 
 interface ExpandedChartModalProps {
   open: boolean;
@@ -47,7 +48,15 @@ export function ExpandedChartModal({ open, onOpenChange, type, data, title }: Ex
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const inRange = values.filter(v => v >= normalRange.min && v <= normalRange.max).length;
+
+    // A blood pressure is judged on both halves. 118/95 is hypertensive, and
+    // checking only the systolic against the band called it in range — the same
+    // bug that was in useVitals. The clinical check reads both and does its own
+    // unit handling, so it takes the stored values rather than the converted
+    // ones. Everything else compares against the band in display units.
+    const inRange = isBloodPressure
+      ? data.filter(v => !isReadingOutsideRange(type, v.value, v.secondary_value, v.unit)).length
+      : values.filter(v => v >= normalRange.min && v <= normalRange.max).length;
     
     return {
       average: Math.round(avg * 10) / 10,
@@ -57,7 +66,7 @@ export function ExpandedChartModal({ open, onOpenChange, type, data, title }: Ex
       inRange,
       outOfRange: values.length - inRange,
     };
-  }, [data, type, convertVitalValue, normalRange]);
+  }, [data, type, convertVitalValue, normalRange, isBloodPressure]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
