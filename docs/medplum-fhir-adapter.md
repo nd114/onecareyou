@@ -2,7 +2,7 @@
 
 **Status:** Appointment shipped; remaining resources scoped below
 **Owner:** Engineering
-**Relates to:** `docs/ehr-integration-plan.md`, `docs/qhin-integration-plan.md`, `docs/sharing-access-consent-model.md`
+**Relates to:** `docs/loinc-and-coding-policy.md`, `docs/ehr-integration-plan.md`, `docs/qhin-integration-plan.md`, `docs/sharing-access-consent-model.md`
 
 ---
 
@@ -185,7 +185,9 @@ Vitals is a real table with typed numeric values, so this maps a row rather than
 parsing free text — and it is the first place coding was possible without
 guessing.
 
-**Every LOINC code was read out of the R4 bundle**, not recalled. The codes come
+**Every LOINC code was read out of the R4 bundle**, not recalled. What is and
+is not coded, and what to say about it to a client, is in
+`docs/loinc-and-coding-policy.md` — read that before any demo. The codes come
 from `ValueSet/observation-vitalsignresult`; which code belongs to which
 measurement comes from the vital-sign profiles (`bodyweight` → 29463-7,
 `heartrate` → 8867-4, `bodytemp` → 8310-5, `oxygensat` → 2708-6, `bp` → 85354-9
