@@ -20,7 +20,7 @@ export type Database = {
           actor_user_id: string
           created_at: string
           id: string
-          ip_address: unknown
+          ip_address: unknown | null
           metadata: Json | null
           resource_id: string | null
           resource_type: string | null
@@ -33,7 +33,7 @@ export type Database = {
           actor_user_id: string
           created_at?: string
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           metadata?: Json | null
           resource_id?: string | null
           resource_type?: string | null
@@ -46,7 +46,7 @@ export type Database = {
           actor_user_id?: string
           created_at?: string
           id?: string
-          ip_address?: unknown
+          ip_address?: unknown | null
           metadata?: Json | null
           resource_id?: string | null
           resource_type?: string | null
@@ -3650,6 +3650,10 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: string
       }
+      add_practice_owner: {
+        Args: never
+        Returns: string
+      }
       admin_access_log_search: {
         Args: { _limit?: number; _search?: string }
         Returns: {
@@ -3667,27 +3671,13 @@ export type Database = {
         Returns: undefined
       }
       admin_create_tenant: {
-        Args: {
-          _address?: string
-          _city?: string
-          _country?: string
-          _email?: string
-          _member_limit?: number
-          _name: string
-          _npi?: string
-          _patient_limit?: number
-          _phone?: string
-          _revenue_share_pct?: number
-          _slug?: string
-          _state?: string
-          _storage_limit_gb?: number
-          _subscription_tier?: string
-          _tenant_type?: string
-          _zip_code?: string
-        }
+        Args: { _address?: string; _city?: string; _country?: string; _email?: string; _member_limit?: number; _name: string; _npi?: string; _patient_limit?: number; _phone?: string; _revenue_share_pct?: number; _slug?: string; _state?: string; _storage_limit_gb?: number; _subscription_tier?: string; _tenant_type?: string; _zip_code?: string }
         Returns: string
       }
-      admin_grant_platform_admin: { Args: { _email: string }; Returns: string }
+      admin_grant_platform_admin: {
+        Args: { _email: string }
+        Returns: string
+      }
       admin_invite_tenant_owner: {
         Args: { _email: string; _practice_id: string }
         Returns: string
@@ -3740,26 +3730,11 @@ export type Database = {
         Returns: undefined
       }
       admin_set_tenant_branding: {
-        Args: {
-          _accent_color?: string
-          _logo_url?: string
-          _practice_id: string
-          _primary_color?: string
-        }
+        Args: { _accent_color?: string; _logo_url?: string; _practice_id: string; _primary_color?: string }
         Returns: undefined
       }
       admin_set_tenant_contact: {
-        Args: {
-          _address?: string
-          _city?: string
-          _country?: string
-          _email?: string
-          _npi?: string
-          _phone?: string
-          _practice_id: string
-          _state?: string
-          _zip_code?: string
-        }
+        Args: { _address?: string; _city?: string; _country?: string; _email?: string; _npi?: string; _phone?: string; _practice_id: string; _state?: string; _zip_code?: string }
         Returns: undefined
       }
       admin_tenant_detail: {
@@ -3827,19 +3802,7 @@ export type Database = {
         }[]
       }
       admin_update_tenant: {
-        Args: {
-          _city?: string
-          _country?: string
-          _is_active?: boolean
-          _member_limit?: number
-          _name?: string
-          _patient_limit?: number
-          _practice_id: string
-          _revenue_share_pct?: number
-          _storage_limit_gb?: number
-          _subscription_tier?: string
-          _tenant_type?: string
-        }
+        Args: { _city?: string; _country?: string; _is_active?: boolean; _member_limit?: number; _name?: string; _patient_limit?: number; _practice_id: string; _revenue_share_pct?: number; _storage_limit_gb?: number; _subscription_tier?: string; _tenant_type?: string }
         Returns: undefined
       }
       bulk_allowlist_clinicians: {
@@ -3853,7 +3816,10 @@ export type Database = {
         Args: { _department_id: string }
         Returns: boolean
       }
-      can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
+      can_manage_practice: {
+        Args: { practice_uuid: string }
+        Returns: boolean
+      }
       can_read_resume_object: {
         Args: { object_name: string }
         Returns: boolean
@@ -3874,14 +3840,20 @@ export type Database = {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
+      deactivate_expired_medication: {
+        Args: never
+        Returns: string
+      }
+      enforce_guidance_patient_update: {
+        Args: never
+        Returns: string
+      }
+      enforce_patient_record_patient_update: {
+        Args: never
+        Returns: string
+      }
       enforce_rate_limit: {
-        Args: {
-          _bucket: string
-          _max: number
-          _message?: string
-          _subject: string
-          _window: string
-        }
+        Args: { _bucket: string; _max: number; _message?: string; _subject: string; _window: string }
         Returns: undefined
       }
       find_institution_by_slug: {
@@ -3906,7 +3878,10 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_current_user_email: { Args: never; Returns: string }
+      get_current_user_email: {
+        Args: never
+        Returns: string
+      }
       get_institution_basic_info: {
         Args: { _practice_ids: string[] }
         Returns: {
@@ -3951,29 +3926,33 @@ export type Database = {
           tenant_type: string
         }[]
       }
-      get_user_storage_bytes: { Args: { _user_id: string }; Returns: number }
+      get_user_storage_bytes: {
+        Args: { _user_id: string }
+        Returns: number
+      }
+      guard_department_lead_changes: {
+        Args: never
+        Returns: string
+      }
+      handle_new_user: {
+        Args: never
+        Returns: string
+      }
       has_practice_capability:
-        | { Args: { _capability: string; _user_id: string }; Returns: boolean }
         | {
-            Args: {
-              _capability: string
-              _practice_id: string
-              _user_id: string
-            }
+            Args: { _capability: string; _user_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: { _capability: string; _practice_id: string; _user_id: string }
             Returns: boolean
           }
       has_practice_role: {
-        Args: {
-          practice_uuid: string
-          required_role: Database["public"]["Enums"]["practice_role"]
-        }
+        Args: { practice_uuid: string; required_role: Database["public"]["Enums"]["practice_role"] }
         Returns: boolean
       }
       has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
+        Args: { _role: Database["public"]["Enums"]["app_role"]; _user_id: string }
         Returns: boolean
       }
       institution_has_patient_access: {
@@ -3989,20 +3968,25 @@ export type Database = {
         Returns: boolean
       }
       is_assigned_to_patient_in_practice: {
-        Args: {
-          _patient_user_id: string
-          _practice_id: string
-          _user_id: string
-        }
+        Args: { _patient_user_id: string; _practice_id: string; _user_id: string }
         Returns: boolean
       }
-      is_department_lead: { Args: { _practice_id: string }; Returns: boolean }
+      is_department_lead: {
+        Args: { _practice_id: string }
+        Returns: boolean
+      }
       is_institution_slug_available: {
         Args: { _practice_id?: string; _slug: string }
         Returns: boolean
       }
-      is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
-      kingschat_begin_login: { Args: never; Returns: string }
+      is_practice_member: {
+        Args: { practice_uuid: string }
+        Returns: boolean
+      }
+      kingschat_begin_login: {
+        Args: never
+        Returns: string
+      }
       kingschat_claim_login: {
         Args: { _nonce: string }
         Returns: {
@@ -4011,34 +3995,31 @@ export type Database = {
           token_hash: string
         }[]
       }
-      led_department_ids: { Args: never; Returns: string[] }
+      led_department_ids: {
+        Args: never
+        Returns: string[]
+      }
       log_platform_admin_action: {
-        Args: {
-          _action: string
-          _details?: Json
-          _target_id: string
-          _target_type: string
-        }
+        Args: { _action: string; _details?: Json; _target_id: string; _target_type: string }
         Returns: undefined
+      }
+      log_practice_share_event: {
+        Args: never
+        Returns: string
       }
       log_record_access:
         | {
-            Args: {
-              _patient_user_id: string
-              _resource_id?: string
-              _resource_type: string
-            }
+            Args: { _action: string; _patient_user_id: string; _resource_id: string; _resource_type: string }
             Returns: undefined
           }
         | {
-            Args: {
-              _action: string
-              _patient_user_id: string
-              _resource_id: string
-              _resource_type: string
-            }
+            Args: { _patient_user_id: string; _resource_id?: string; _resource_type: string }
             Returns: undefined
           }
+      log_record_change: {
+        Args: never
+        Returns: string
+      }
       my_institution_care_team: {
         Args: never
         Returns: {
@@ -4091,6 +4072,10 @@ export type Database = {
           subjective: string
           visit_type: string
         }[]
+      }
+      notify_clinician_on_guidance_change: {
+        Args: never
+        Returns: string
       }
       patient_institution_contact: {
         Args: { _practice_id: string }
@@ -4194,17 +4179,7 @@ export type Database = {
         }[]
       }
       practice_set_contact: {
-        Args: {
-          _address?: string
-          _city?: string
-          _country?: string
-          _email?: string
-          _npi?: string
-          _phone?: string
-          _practice_id: string
-          _state?: string
-          _zip_code?: string
-        }
+        Args: { _address?: string; _city?: string; _country?: string; _email?: string; _npi?: string; _phone?: string; _practice_id: string; _state?: string; _zip_code?: string }
         Returns: undefined
       }
       practice_set_name: {
@@ -4239,9 +4214,18 @@ export type Database = {
           tenant_type: string
         }[]
       }
-      purge_expired_kingschat_attempts: { Args: never; Returns: number }
-      request_client_ip: { Args: never; Returns: string }
-      request_practice_affiliation: { Args: { _slug: string }; Returns: string }
+      purge_expired_kingschat_attempts: {
+        Args: never
+        Returns: number
+      }
+      request_client_ip: {
+        Args: never
+        Returns: string
+      }
+      request_practice_affiliation: {
+        Args: { _slug: string }
+        Returns: string
+      }
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }
         Returns: string
@@ -4250,20 +4234,38 @@ export type Database = {
         Args: { _practice_id: string; _status: string; _user_id: string }
         Returns: undefined
       }
+      supersede_previous_baa: {
+        Args: never
+        Returns: string
+      }
+      sync_storage_ledger_dictation: {
+        Args: never
+        Returns: string
+      }
+      sync_storage_ledger_document: {
+        Args: never
+        Returns: string
+      }
+      throttle_beta_event: {
+        Args: never
+        Returns: string
+      }
+      throttle_enterprise_inquiry: {
+        Args: never
+        Returns: string
+      }
+      throttle_job_application: {
+        Args: never
+        Returns: string
+      }
+      update_updated_at_column: {
+        Args: never
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      practice_role:
-        | "owner"
-        | "admin"
-        | "provider"
-        | "staff"
-        | "clinician"
-        | "nurse"
-        | "front_desk"
-        | "billing"
-        | "read_only"
-        | "sub_admin"
+      practice_role: "owner" | "admin" | "provider" | "staff" | "clinician" | "nurse" | "front_desk" | "billing" | "read_only" | "sub_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4392,18 +4394,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      practice_role: [
-        "owner",
-        "admin",
-        "provider",
-        "staff",
-        "clinician",
-        "nurse",
-        "front_desk",
-        "billing",
-        "read_only",
-        "sub_admin",
-      ],
+      practice_role: ["owner", "admin", "provider", "staff", "clinician", "nurse", "front_desk", "billing", "read_only", "sub_admin"],
     },
   },
 } as const
