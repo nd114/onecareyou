@@ -173,5 +173,17 @@ patient therefore saw the summary and none of its corrections. A companion
 function fixes it, and mirrors the summary rules exactly: signed, shared, not
 retracted.
 
+`fhir_care_plans.test.sql` — what the rest of the record is for:
+
+| Rule | Source |
+| --- | --- |
+| A goal is measurable or it is not — never half a target | half a target renders as a number with no meaning |
+| A goal with no measure at all is allowed | "walk more" is a real thing a clinician says |
+| A plan needs a title, cannot end before it starts, and takes only FHIR statuses | constraints |
+| The patient sees the active plan, not one still being decided | same reasoning as invoice drafts |
+| Goals follow the plan, through an RLS-aware subquery | a plan without its goals is a title |
+| The patient reads but does not write | a plan is what was agreed, not what one side decided |
+| A plan is revoked, never deleted | it is part of the record |
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

@@ -52,6 +52,7 @@ import { summariseAdherence } from '@/lib/adherence';
 import { AppointmentsTab } from '@/components/clinician/AppointmentsTab';
 import { BillingTab } from '@/components/clinician/BillingTab';
 import { AiHistoryForPatient } from '@/components/clinician/AiHistoryForPatient';
+import { CarePlanTab } from '@/components/clinician/CarePlanTab';
 
 const ClinicianPatientDetail = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -395,6 +396,7 @@ const ClinicianPatientDetail = () => {
                 Docs
               </TabsTrigger>
               <TabsTrigger value="appointments">Appointments</TabsTrigger>
+              <TabsTrigger value="careplan">Care plan</TabsTrigger>
               <TabsTrigger value="billing">Billing</TabsTrigger>
               <TabsTrigger value="guidance">Guidance</TabsTrigger>
               <TabsTrigger value="messages" className="flex items-center gap-1">
@@ -668,6 +670,17 @@ const ClinicianPatientDetail = () => {
               {/* FHIR Appointment, in our own database behind the same row
                   policies as everything else. See src/lib/fhir/. */}
               <AppointmentsTab
+                patientUserId={patient.user_id}
+                patientName={patient.patient_name || 'this patient'}
+                practiceId={patient.hospital_id ?? null}
+              />
+            </TabsContent>
+
+            <TabsContent value="careplan">
+              {/* What the readings, medications and appointments are for.
+                  Goals naming a vital are scored against the patient's own
+                  readings — see src/lib/fhir/care-plan.ts. */}
+              <CarePlanTab
                 patientUserId={patient.user_id}
                 patientName={patient.patient_name || 'this patient'}
                 practiceId={patient.hospital_id ?? null}

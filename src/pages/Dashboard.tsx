@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import { PendingInvitationsCard } from '@/components/patient/PendingInvitationsCard';
 import { UpcomingAppointments } from '@/components/patient/UpcomingAppointments';
 import { BillingSummary } from '@/components/patient/BillingSummary';
+import { CarePlanCard } from '@/components/patient/CarePlanCard';
 import { InstitutionIntakeCard } from '@/components/patient/InstitutionIntakeCard';
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 
@@ -125,6 +126,7 @@ const Dashboard = () => {
         <PendingInvitationsCard />
 
         {/* Visits a clinician booked, visible to the person being booked. */}
+        <CarePlanCard />
         <UpcomingAppointments />
         <BillingSummary />
 
