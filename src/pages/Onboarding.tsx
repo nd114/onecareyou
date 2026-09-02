@@ -15,6 +15,7 @@ import { COMMON_ALLERGIES, COMMON_CONDITIONS, BLOOD_TYPES } from "@/types/health
 import { COUNTRY_LIST } from "@/hooks/useEmergencyNumbers";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { toClinicalList } from "@/lib/clinical-lists";
 
 const genderOptions = ["Male", "Female", "Other", "Prefer not to say"];
 
@@ -45,8 +46,8 @@ const Onboarding = () => {
         gender: profile.gender || "",
         bloodType: profile.blood_type || "",
         height: profile.height?.toString() || "",
-        allergies: (profile.allergies as string[]) || [],
-        healthConditions: (profile.health_conditions as string[]) || [],
+        allergies: toClinicalList(profile.allergies),
+        healthConditions: toClinicalList(profile.health_conditions),
         customAllergy: "",
         customCondition: "",
         countryCode: (profile as any).country_code || "",

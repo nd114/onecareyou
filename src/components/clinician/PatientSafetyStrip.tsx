@@ -2,25 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, HeartPulse } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { toClinicalList, wasShared } from '@/lib/clinical-lists';
 
 interface ClinicalProfile {
   user_id: string;
   health_conditions: unknown;
   allergies: unknown;
-}
-
-/** The stored fields are jsonb and have held both arrays and loose strings. */
-function toList(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.map((v) => String(v).trim()).filter(Boolean);
-  }
-  if (typeof value === 'string') {
-    return value
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean);
-  }
-  return [];
 }
 
 /**
@@ -48,10 +35,10 @@ export function PatientSafetyStrip({ patientUserId }: { patientUserId: string })
   if (isLoading || !data) return null;
 
   // null means the category was withheld; an empty list means none recorded.
-  const allergiesShared = data.allergies !== null && data.allergies !== undefined;
-  const conditionsShared = data.health_conditions !== null && data.health_conditions !== undefined;
-  const allergies = toList(data.allergies);
-  const conditions = toList(data.health_conditions);
+  const allergiesShared = wasShared(data.allergies);
+  const conditionsShared = wasShared(data.health_conditions);
+  const allergies = toClinicalList(data.allergies);
+  const conditions = toClinicalList(data.health_conditions);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 mb-6">

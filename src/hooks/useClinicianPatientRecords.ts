@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { toClinicalList } from "@/lib/clinical-lists";
 
 export interface ManagedVital {
   recorded_at: string;
@@ -70,8 +71,12 @@ export function useClinicianPatientRecords() {
 
       return (data || []).map(record => ({
         ...record,
-        allergies: (record.allergies as any) || [],
-        health_conditions: (record.health_conditions as any) || [],
+        // Normalised here rather than at each reader. These are jsonb free text,
+        // and a loose string got as far as ClinicianDataConsentDialog counting
+        // its characters — "22 health condition(s)" in the dialog a patient
+        // consents from — and ManagedRecordFilters calling .map on it.
+        allergies: toClinicalList(record.allergies),
+        health_conditions: toClinicalList(record.health_conditions),
         medications: (record.medications as any) || [],
         vitals_history: (record.vitals_history as any) || [],
         visits: ((record as any).visits as any) || [],

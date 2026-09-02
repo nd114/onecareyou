@@ -111,5 +111,20 @@ structure-definition bundles do not carry, and the delete test runs with the
 privilege deliberately granted so that the refusal has to come from the absence
 of a policy rather than from the grant.
 
+`clinical_lists.test.sql` — conditions and allergies are lists:
+
+| Rule | Source |
+| --- | --- |
+| A loose comma- or semicolon-separated string is recovered as a list | the CSV import writes semicolons, hand entry writes commas |
+| An array is left exactly as it is | normalisation must not churn clean data |
+| Stray separators do not produce blank entries | a blank badge is a bug |
+| An object is kept as a single entry rather than discarded | it is somebody's data |
+| A bare string can no longer be stored, on any of the three tables | CHECK constraint |
+| NULL still means withheld; `[]` still means none recorded | the two mean opposite things to a clinician |
+
+The withheld/empty distinction is the one to protect. "No known allergies" when
+the truth is "you were not told" is the failure it exists to prevent, so the
+constraint allows NULL rather than collapsing it into an empty array.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

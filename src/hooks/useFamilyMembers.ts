@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { toClinicalList } from "@/lib/clinical-lists";
 
 export interface FamilyMember {
   id: string;
@@ -66,8 +67,11 @@ export const useFamilyMembers = () => {
       
       return (data || []).map(member => ({
         ...member,
-        allergies: Array.isArray(member.allergies) ? member.allergies : [],
-        health_conditions: Array.isArray(member.health_conditions) ? member.health_conditions : [],
+        // The previous guard was Array.isArray(...) ? ... : [], which does not
+        // crash but throws the list away: a member whose conditions were stored
+        // as "Diabetes, Hypertension" showed none at all. Recover it instead.
+        allergies: toClinicalList(member.allergies),
+        health_conditions: toClinicalList(member.health_conditions),
       })) as FamilyMember[];
     },
     enabled: !!user,

@@ -115,17 +115,63 @@ constraint, trigger, and both access pathways. It is the pattern the rest follow
 
 In rough order of value:
 
-| Resource | Replaces / adds | Notes |
+| Resource | Status | Notes |
 | --- | --- | --- |
-| `Condition` | Existing conditions table | Already category-gated in the consent model; mapping is mostly mechanical |
-| `AllergyIntolerance` | Existing allergies table | Same |
-| `Observation` | Vitals | Largest win for export; needs a decision on LOINC coding |
-| `MedicationRequest` | Prescriptions | Interacts with the drug-interaction checker |
-| `DocumentReference` | Vault items | Natural fit for QHIN retrieval later |
+| `Condition` | **Done** — mapping only, see §6.1 | No table. Free text on `profiles`, mapped for export |
+| `AllergyIntolerance` | **Done** — mapping only, see §6.1 | Same |
+| `Observation` | Next | Vitals is a real table, so this is the closest analogue to Appointment. Needs a decision on LOINC coding |
+| `MedicationRequest` | After that | Interacts with the drug-interaction checker |
+| `DocumentReference` | Later | Natural fit for QHIN retrieval |
 
-Each one carries a migration, a mapper with the projection rule, a unit suite,
-and rows in `supabase/tests/README.md`. Anything that does not carry all four is
-not done.
+Each one carries a mapper with the projection rule, a unit suite, and rows in
+`supabase/tests/README.md`. A migration too, where there is a table to migrate.
+
+### 6.1 Condition and AllergyIntolerance: mapping, not tables
+
+This document previously said these two would replace "the existing conditions
+table" and that the mapping was "mostly mechanical". Both were wrong, written
+before looking at how the data is actually stored.
+
+There is no conditions table and no allergies table. They are free-text jsonb
+lists on `profiles`, `clinician_patient_records` and `family_members`, read in
+about twenty files. Giving them FHIR-shaped tables would mean migrating dirty
+free text and rewriting all of those, for no clinical gain — the fields are not
+queried, ranked or joined; they are shown.
+
+What is worth having is the mapping, and that is what shipped:
+`src/lib/fhir/clinical.ts` turns the stored lists into real `Condition` and
+`AllergyIntolerance` resources, validated against R4. Export, QHIN and
+write-back get what they need; storage does not move.
+
+**No invented codes.** "Diabetes" in a text box is not a SNOMED concept, and
+emitting `73211009` because the string looked close would put a clinical claim
+nobody made into an exported record. FHIR lets a CodeableConcept carry `text`
+with no `coding`, which is precisely what this data is. Everything comes back
+`unconfirmed`, and `criticality`, `type` and `reaction` are omitted rather than
+guessed — an absent field reads as unknown, a populated one reads as assessed.
+Coding arrives when a terminology service does the mapping and a clinician
+confirms it.
+
+### 6.2 What the mapping turned up
+
+The columns are plain jsonb with no constraint, so a bare string was storable
+where the app reads an array. Three consequences, all verified rather than
+imagined:
+
+- `ClinicianDataConsentDialog` counted the characters of the string and offered
+  the patient **"22 health condition(s)"** to consent to
+- `ManagedRecordFilters` called `.map` on it, which throws
+- `useFamilyMembers` guarded with `Array.isArray(...) ? ... : []`, which does not
+  crash but silently discards the list — a member whose conditions were stored
+  as `"Diabetes, Hypertension"` showed none at all
+
+Fixed in both directions. `normalise_clinical_list` converts what is already
+stored and a CHECK constraint stops it recurring, on all three tables;
+`toClinicalList` normalises at the hook boundary so every reader downstream gets
+a real array. NULL is deliberately still allowed and still means *withheld*,
+which is not the same as an empty list meaning *none recorded* — a clinician
+reading "no known allergies" when the truth is "you were not told" is the
+failure that distinction exists to prevent.
 
 `@medplum/fhir-router` and a `FhirRepository` implementation over these tables
 become worthwhile once there are three or four resources — `FhirRepository` is an

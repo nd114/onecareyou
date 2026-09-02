@@ -168,12 +168,12 @@ describe("toStatusPatch", () => {
     // anything consuming the FHIR never learns it was cancelled.
     const patch = toStatusPatch(toFhirAppointment(booked), "cancelled");
     expect(patch.status).toBe("cancelled");
-    expect((patch.resource as Appointment).status).toBe("cancelled");
+    expect((patch.resource as unknown as Appointment).status).toBe("cancelled");
   });
 
   it("keeps everything else in the resource", () => {
     const patch = toStatusPatch(toFhirAppointment(booked), "fulfilled");
-    const after = patch.resource as Appointment;
+    const after = patch.resource as unknown as Appointment;
     expect(after.participant).toHaveLength(2);
     expect(after.description).toBe(booked.description);
     expect(after.start).toBe(booked.start);
