@@ -202,5 +202,22 @@ share while carrying a colleague's identity and the change was silently
 reverted. That was the guard working; it is asserted now rather than assumed.
 See `docs/independent-clinicians-and-hospitals.md`.
 
+`practice_access_consent.test.sql` — a practice cannot let itself in:
+
+| Rule | Why |
+| --- | --- |
+| A practice cannot record access to a patient who never shared with it | this was possible; test 1 is the attack |
+| An existing access row is not evidence of consent | closing only the door leaves everything already through it working |
+| A patient who shared can be recorded normally, notes included | a tightening that breaks real access is not a fix |
+| Ending the share ends the access, whatever the row says | consent is what moved, not the record |
+| The access row itself survives | it is a record of what a practice did, not a permission |
+
+This suite exists because the platform allowed the attack. A staff member with
+`can_invite_patients` could insert a `practice_patient_access` row for any
+patient at all and immediately read their signed notes and raw ambient
+transcript: the INSERT policy asked for membership and the invite capability,
+and nothing about the patient agreeing. Verified by doing it before the fix, and
+refused after.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.
