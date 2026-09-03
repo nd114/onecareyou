@@ -123,8 +123,8 @@ In rough order of value:
 | `CarePlan` / `Goal` | **Done** — table plus mapper | Goals score against readings the patient already takes |
 | `Invoice` | **Done** — table plus mapper | Minor units, per-tenant currency; see docs/billing-and-payments.md |
 | `Communication` | **Done** — mapping only | Assistant messages filed as `sender.display`, never a Practitioner reference |
-| `MedicationRequest` | Next | Interacts with the drug-interaction checker |
-| `DocumentReference` | Later | Natural fit for QHIN retrieval |
+| `MedicationStatement` | **Done** — mapping plus export, see §6.5 | *Not* `MedicationRequest`; see below |
+| `DocumentReference` | Next | Natural fit for QHIN retrieval, and the last thing the Vault cannot export |
 
 The tables these added are not in the generated Supabase types yet, because
 that file is regenerated from the deployed database and these migrations have
@@ -239,3 +239,51 @@ is in it.** Three tests now fail if the `total` comes back.
 Extraction, QHIN retrieval and EHR write-back still need the work described in
 their own plans. What this gives them is something real to map to and from,
 rather than an approximation of FHIR we would have had to reconcile later.
+
+
+### 6.5 The plan named the wrong resource
+
+This table said `MedicationRequest`. Mapping to it would have put a claim into
+every exported record that nobody made.
+
+A `MedicationRequest` is an **order**: somebody with prescribing authority
+asked for this to be dispensed. Our `medications` table is a list of what a
+person takes — prescriptions alongside paracetamol, vitamin D and a herbal
+remedy, most of it typed in by the patient. `prescriber` is a name in a text
+box, not a reference to an order we hold.
+
+FHIR draws exactly this distinction, and the resource for a record of what a
+patient is actually consuming is `MedicationStatement`, which the specification
+describes as explicitly not a request. That is what `src/lib/fhir/medication.ts`
+emits.
+
+The same honesty rules as §6.1 apply, and one more that only appeared when the
+validator ran: FHIR's `time` primitive requires seconds, so the `08:00` we
+store is not a valid FHIR time. `structuredTimes` pads it. Nothing but running
+the real validator would have found that — the resource looked correct.
+
+What is deliberately *not* claimed:
+
+| Field | Why it is absent |
+| --- | --- |
+| `medicationCodeableConcept.coding` | "Metformin 500mg" in a text box is not an RxNorm concept, and a wrong code reaching an interaction checker is worse than none |
+| `informationSource` | We do not record who added a row, so we cannot say whether the patient or a clinician asserted it |
+| `category` | The value set distinguishes inpatient, outpatient, community and patient-specified; we cannot tell which without knowing who asserted it |
+| structured `timing.repeat.frequency` | "twice daily" is free text. Only `times_of_day`, which is already structured, becomes structured timing |
+
+Type, prescriber and pharmacy have no structured home on MedicationStatement
+and are carried as notes rather than dropped — that a remedy is herbal matters
+to whoever checks interactions next.
+
+### 6.6 The record can now leave
+
+`src/lib/fhir/record-bundle.ts` assembles readings, medications, conditions and
+allergies into one R4 collection bundle, exposed to the patient under Settings
+→ Privacy & data. Before this, the only thing that could leave was vitals.
+
+The counts are shown before the download rather than after, so nobody opens a
+JSON file to find out whether it holds what they expected, and the action is
+placed below the contents for the same reason.
+
+Documents in the Health Vault are still downloaded separately — that is what
+`DocumentReference` is for, and it is now the next resource worth doing.

@@ -62,6 +62,7 @@ import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
 import { AIHistorySection } from '@/components/settings/AIHistorySection';
 import { SharingHistorySection } from '@/components/settings/SharingHistorySection';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
+import { RecordExportSection } from '@/components/settings/RecordExportSection';
 import { StorageUsageCard } from '@/components/StorageUsageCard';
 import { formatDateOnly } from '@/lib/date-only';
 import { useAdminRole } from '@/hooks/useAdminRole';
@@ -542,6 +543,13 @@ const Settings = () => {
           </motion.div>
             </TabsContent>
             <TabsContent value="privacy" className="space-y-6 mt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <RecordExportSection />
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
