@@ -164,8 +164,14 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Desktop Navigation - true page-centered via grid middle column */}
-        <nav className="hidden lg:flex items-center justify-center gap-2 xl:gap-5 min-w-0 overflow-x-auto scrollbar-none">
+        {/*
+          Primary navigation, from md up.
+          It used to appear only at lg, while the mobile tab bar disappeared at
+          md — so every width from 768 to 1023, which is every tablet in
+          portrait, fell back to a hamburger despite having more than enough
+          room for the links. The two breakpoints now meet.
+        */}
+        <nav className="hidden md:flex items-center justify-center gap-2 lg:gap-3 xl:gap-5 min-w-0 overflow-x-auto scrollbar-none">
           {navLinks.map((link) => {
             const isActive = link.pillarKey
               ? activePillar === link.pillarKey

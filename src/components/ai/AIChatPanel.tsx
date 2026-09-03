@@ -205,10 +205,18 @@ interface AIChatPanelProps {
   }) => React.ReactNode;
   /** Called after the assistant's route suggestion is followed (e.g. close the drawer). */
   onAfterNavigate?: () => void;
+  /**
+   * Openers for the empty state. Supplied by the caller so the drawer can
+   * offer questions about the screen you are actually on; falls back to the
+   * general ones when nothing is passed.
+   */
+  starters?: string[];
+  /** Where the person is, in their words — shown in the empty state. */
+  where?: string;
   className?: string;
 }
 
-export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChatPanelProps) {
+export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, className }: AIChatPanelProps) {
   const navigate = useNavigate();
   // Turns a patient name the assistant used into a user id, so a message about
   // a patient is filed against that patient rather than left in a side channel.
@@ -353,13 +361,15 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, className }: AIChat
           <div className="text-center py-12 space-y-3">
             <Bot className="h-12 w-12 mx-auto text-muted-foreground/50" />
             <div>
-              <p className="font-medium text-sm">How can I help?</p>
+              <p className="font-medium text-sm">
+                {where ? `Ask about ${where}` : 'How can I help?'}
+              </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Ask me about health topics or how to use OneCare
+                It can read your record and explain it — and it will say when to ask a person instead.
               </p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center pt-2">
-              {['What is HbA1c?', 'How do I add a vital?', 'What is blood pressure?'].map(q => (
+              {(starters ?? ['What is HbA1c?', 'How do I add a vital?', 'What is blood pressure?']).map(q => (
                 <Badge
                   key={q}
                   variant="outline"

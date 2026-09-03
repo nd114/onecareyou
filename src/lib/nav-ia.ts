@@ -3,7 +3,7 @@
 
 import { FAMILY_HEALTH_ENABLED } from "@/lib/feature-flags";
 
-export type PatientPillarKey = "today" | "health" | "team" | "ai";
+export type PatientPillarKey = "today" | "health" | "team" | "learn";
 export type ClinicianPillarKey = "today" | "patients" | "communicate" | "practice";
 
 export interface NavTab {
@@ -67,15 +67,20 @@ export const PATIENT_PILLARS: PatientPillar[] = [
     ],
   },
   {
-    // Was "Learn", whose "Ask AI" tab was a full-page copy of the assistant that
-    // already floats on every patient screen. The assistant stays one tap away
-    // everywhere; this pillar is now where you read back what you asked it.
-    key: "ai",
-    label: "AI",
-    primary: "/ai",
+    // The Knowledge Base is reference reading — conditions, medicines, what to
+    // ask your doctor. It sat under a pillar called "AI", which taught people
+    // that "AI" is where the reading material lives and made the assistant look
+    // like a section of the app rather than something available everywhere.
+    //
+    // The assistant is not a pillar at all now. It is one tap away on every
+    // screen via the drawer, and past conversations are read back in Settings,
+    // where "what I have asked and what I shared" already lives. /ai still
+    // resolves so existing links and deep links keep working.
+    key: "learn",
+    label: "Learn",
+    primary: "/knowledge-base",
     tabs: [
-      { to: "/ai", label: "Conversations" },
-      { to: "/knowledge-base", label: "Knowledge Base", match: ["/medication-info"] },
+      { to: "/knowledge-base", label: "Health topics", match: ["/medication-info"] },
     ],
   },
 ];
@@ -182,7 +187,8 @@ export function getPatientPillarForRoute(pathname: string): PatientPillarKey | n
     if (!best || score > best.score) best = { key: p.key, score };
   }
   if (pathname.startsWith("/family")) return "team";
-  if (pathname.startsWith("/ai")) return "ai";
+  // /ai is no longer a pillar. It is reached from the assistant drawer and
+  // from Settings, so it highlights nothing in the primary navigation.
   return best?.key || null;
 }
 

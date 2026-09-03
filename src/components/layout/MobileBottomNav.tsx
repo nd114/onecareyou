@@ -3,7 +3,7 @@ import {
   CalendarDays,
   HeartPulse,
   Users,
-  Bot,
+  BookOpen,
   Inbox,
   UserSquare2,
   MessageCircle,
@@ -27,7 +27,7 @@ const PATIENT_ICONS: Record<PatientPillarKey, React.ElementType> = {
   today: CalendarDays,
   health: HeartPulse,
   team: Users,
-  ai: Bot,
+  learn: BookOpen,
 };
 
 const CLINICIAN_ICONS: Record<ClinicianPillarKey, React.ElementType> = {

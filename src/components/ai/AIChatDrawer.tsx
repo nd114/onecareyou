@@ -1,9 +1,11 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Bot, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AIChatPanel, ClearConversationButton } from './AIChatPanel';
 import { ConversationHistoryRail, LoadedHistory } from './ConversationHistoryRail';
+import { assistantContextFor } from '@/lib/assistant-context';
 
 interface AIChatDrawerProps {
   open: boolean;
@@ -14,8 +16,14 @@ interface AIChatDrawerProps {
  * The assistant as a side sheet — for when you are somewhere else in the
  * platform and want to ask something without leaving the page. Past
  * conversations live in a rail on the left, so switching threads is one click.
+ *
+ * It opens knowing where you are. Previously it offered the same three
+ * starters everywhere — "What is HbA1c?" on the bills page — which made it a
+ * thing you had to brief rather than something already with you.
  */
 export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
+  const { pathname } = useLocation();
+  const context = useMemo(() => assistantContextFor(pathname), [pathname]);
   const [showHistory, setShowHistory] = useState(false);
   const loadRef = useRef<((history: LoadedHistory, conversationId?: string) => void) | null>(null);
 
@@ -36,6 +44,8 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
         <AIChatPanel
           className="flex-1 min-w-0"
           onAfterNavigate={() => onOpenChange(false)}
+          starters={context.starters}
+          where={context.where}
           renderHeader={({ hasMessages, clearChat, loadConversation }) => {
             loadRef.current = loadConversation;
             return (
@@ -57,7 +67,7 @@ export function AIChatDrawer({ open, onOpenChange }: AIChatDrawerProps) {
                   {hasMessages && <ClearConversationButton onClear={clearChat} />}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Ask about health concepts or platform features
+                  Looking at {context.where}
                 </p>
               </SheetHeader>
             );

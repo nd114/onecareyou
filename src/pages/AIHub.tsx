@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Header } from '@/components/layout/Header';
-import { SectionTabs } from '@/components/layout/SectionTabs';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { AIChatPanel, ClearConversationButton } from '@/components/ai/AIChatPanel';
 import { StoredConversation } from '@/components/ai/StoredConversation';
@@ -64,9 +63,22 @@ export default function AIHub() {
     <div className="min-h-screen bg-background">
       <SEOHead title="AI Assistant | OneCare" noIndex />
       <Header />
-      <SectionTabs section="ai" variant="patient" />
 
       <main className="container py-6 px-4 max-w-6xl">
+        {/* No pillar tabs: the assistant is not a section of the app any more,
+            it is one tap away on every screen. This page is where you read
+            back what you asked, which is why it says so. */}
+        <div className="mb-6">
+          <p className="eyebrow text-primary/70">Your conversations</p>
+          <h1 className="mt-2 font-display text-2xl leading-snug sm:text-3xl">
+            What you have asked the assistant
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            The assistant itself is on every screen — look for the button in the corner.
+            This is the record of what you asked it, kept so you can read it back.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           {/* Conversation switcher */}
           <Card className="lg:sticky lg:top-6 h-fit min-w-0">
