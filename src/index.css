@@ -260,3 +260,81 @@
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Landing atmosphere
+   Slow emerald and gold fields behind the hero, plus a hairline grid. CSS
+   rather than imagery: sharp at any size, weightless on a phone connection,
+   and it follows the theme. Motion is nearly imperceptible on purpose — a
+   background that draws the eye is competing with the page.
+   --------------------------------------------------------------------------- */
+.oc-aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(56px);
+  will-change: transform;
+}
+
+.oc-aurora-a {
+  width: 44rem; height: 44rem;
+  top: -26rem; left: -19rem;
+  background: radial-gradient(circle at 30% 30%, hsl(var(--emerald-mid) / 0.9), transparent 66%);
+  animation: oc-drift-a 34s ease-in-out infinite alternate;
+}
+
+.oc-aurora-b {
+  width: 36rem; height: 36rem;
+  top: -6rem; right: -17rem;
+  background: radial-gradient(circle at 60% 40%, hsl(var(--gold) / 0.75), transparent 64%);
+  animation: oc-drift-b 42s ease-in-out infinite alternate;
+}
+
+.oc-aurora-c {
+  width: 32rem; height: 32rem;
+  bottom: -16rem; left: 32%;
+  background: radial-gradient(circle at 50% 50%, hsl(var(--emerald) / 0.5), transparent 68%);
+  animation: oc-drift-a 50s ease-in-out infinite alternate-reverse;
+}
+
+.oc-grid {
+  background-image:
+    linear-gradient(hsl(var(--primary) / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.09) 1px, transparent 1px);
+  background-size: 76px 76px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 78%);
+}
+
+@keyframes oc-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(4rem, 2.5rem, 0) scale(1.08); }
+}
+
+@keyframes oc-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.04); }
+  to   { transform: translate3d(-3.5rem, 3rem, 0) scale(1); }
+}
+
+/* A quiet entrance, staggered by the element's own delay. */
+.oc-rise {
+  animation: oc-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes oc-rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-aurora, .oc-rise { animation: none; }
+  .oc-rise { opacity: 1; transform: none; }
+}
+
+/* The hero's own ground: a soft emerald wash so the aurora has something to
+   glow against. Without it the fields wash out on cream and the section reads
+   flat, which is the opposite of the point. */
+.oc-hero-ground {
+  background:
+    radial-gradient(120% 90% at 50% 0%, hsl(var(--emerald-light) / 0.9) 0%, transparent 60%),
+    linear-gradient(180deg, hsl(var(--secondary) / 0.5) 0%, transparent 70%);
+}
