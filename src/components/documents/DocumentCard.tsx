@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Trash2, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, FolderPlus, Stethoscope } from 'lucide-react';
+import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, FolderPlus, Stethoscope } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +46,11 @@ interface DocumentCardProps {
 }
 
 export function DocumentCard({ document: doc, isPremium = false }: DocumentCardProps) {
-  const { deleteDocument, getDownloadUrl, triggerSummarize, folders, moveToFolder } = useHealthDocuments();
+  const { archiveDocument, restoreDocument, getDownloadUrl, triggerSummarize, folders, moveToFolder } =
+    useHealthDocuments();
+  // The page decides whether archived documents are shown at all; the card
+  // only has to offer the right action.
+  const isArchived = Boolean(doc.archived_at);
   // Care records are legal artefacts: preserved, never deletable by either party.
   const isCareRecord = doc.source_context === CARE_RECORD_SOURCE || doc.category === 'care_record';
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
@@ -230,32 +234,54 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                       size="icon"
                       className="h-8 w-8 text-muted-foreground"
                       disabled
-                      title="Care records are preserved permanently and can't be deleted"
+                      title="Care records are preserved permanently"
                     >
                       <Lock className="h-4 w-4" />
                     </Button>
+                  ) : isArchived ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title="Restore to your Vault"
+                      onClick={() => restoreDocument.mutate(doc)}
+                      disabled={restoreDocument.isPending}
+                    >
+                      <ArchiveRestore className="h-4 w-4" />
+                    </Button>
                   ) : (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete document?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete "{doc.title || doc.file_name}" and cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteDocument.mutate(doc)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Archive">
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Archive this document?</AlertDialogTitle>
+                          {/* Nothing is destroyed, so the copy should not imply it is.
+                              What actually changes is who can see it. */}
+                          <AlertDialogDescription>
+                            "{doc.title || doc.file_name}" moves out of your Vault and stops being
+                            included when you share your whole Vault with a clinic. Nothing is
+                            deleted, and you can restore it at any time.
+                            {shareCount > 0 && (
+                              <>
+                                {' '}
+                                It stays visible to the {shareCount === 1 ? 'person' : 'people'} you
+                                shared this exact document with — to change that, remove the share.
+                              </>
+                            )}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => archiveDocument.mutate({ doc })}>
+                            Archive
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>

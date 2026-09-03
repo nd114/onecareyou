@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Bot, MessageSquare, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Header } from '@/components/layout/Header';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { AIChatPanel, ClearConversationButton } from '@/components/ai/AIChatPanel';
 import { StoredConversation } from '@/components/ai/StoredConversation';
+import type { LoadedHistory } from '@/components/ai/ConversationHistoryRail';
 import { useAIConversations, conversationSourceLabel } from '@/hooks/useAIConversations';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -33,6 +34,10 @@ export default function AIHub() {
   const { conversationId } = useParams<{ conversationId: string }>();
   const { conversations, isLoading, remove } = useAIConversations();
   const [selected, setSelected] = useState<string | null>(conversationId ?? null);
+  // Handed to the live panel so a stored thread can be loaded into it. The
+  // panel adopts the conversation id too, so new turns append to the same
+  // conversation rather than starting a second one.
+  const loadRef = useRef<((history: LoadedHistory, id?: string) => void) | null>(null);
 
   // Deep links to /ai/:id open that conversation in the pane.
   useEffect(() => {
@@ -142,7 +147,9 @@ export default function AIHub() {
             <Card className="overflow-hidden min-w-0">
               <AIChatPanel
                 className="h-[calc(100vh-16rem)] min-h-[480px]"
-                renderHeader={({ hasMessages, clearChat }) => (
+                renderHeader={({ hasMessages, clearChat, loadConversation }) => {
+                  loadRef.current = loadConversation;
+                  return (
                   <div className="flex items-center gap-2 border-b px-4 py-3">
                     <Bot className="h-5 w-5 text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -153,7 +160,8 @@ export default function AIHub() {
                     </div>
                     {hasMessages && <ClearConversationButton onClear={clearChat} />}
                   </div>
-                )}
+                  );
+                }}
               />
             </Card>
           ) : (
@@ -161,7 +169,9 @@ export default function AIHub() {
               <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
                 <div className="min-w-0">
                   <p className="font-medium leading-tight truncate">Past conversation</p>
-                  <p className="text-xs text-muted-foreground">Read-only record of what you asked.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Read it back, or carry on where you left off.
+                  </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Button variant="ghost" size="sm" onClick={openLiveChat}>
@@ -195,7 +205,15 @@ export default function AIHub() {
                 </div>
               </div>
               <CardContent className="p-5">
-                <StoredConversation conversationId={selected} />
+                <StoredConversation
+                  conversationId={selected}
+                  onContinue={(history) => {
+                    const id = selected;
+                    setSelected(null);
+                    // The panel mounts on the next render; hand it the history then.
+                    queueMicrotask(() => loadRef.current?.(history, id ?? undefined));
+                  }}
+                />
               </CardContent>
             </Card>
           )}

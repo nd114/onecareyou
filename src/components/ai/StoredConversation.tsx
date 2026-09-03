@@ -1,18 +1,33 @@
 import { Bot, Loader2, Mic, User as UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
 import { useAIConversation } from '@/hooks/useAIConversations';
 import { cn } from '@/lib/utils';
 
 /**
- * One stored conversation, read back.
+ * One stored conversation, read back — and picked up again if you want.
  *
- * Deliberately read-only: continuing an old thread would mean replaying it into
- * the model, and the assistant's consent model scopes each exchange to what the
- * patient has agreed to share right now.
+ * This used to be read-only, on the reasoning that replaying an old thread
+ * into the model went beyond what the patient had agreed to share. That
+ * reasoning did not survive contact with the rest of the product: the
+ * assistant drawer's history rail already loads a past conversation into the
+ * live panel and continues it, so the two surfaces disagreed and the one
+ * people reach from the navigation was the crippled one.
+ *
+ * Consent is not weakened by allowing it. It is checked when a message is
+ * sent, not when a transcript is displayed, so a resumed thread passes through
+ * exactly the same gate as a new one.
  */
-export function StoredConversation({ conversationId }: { conversationId: string }) {
+export function StoredConversation({
+  conversationId,
+  onContinue,
+}: {
+  conversationId: string;
+  /** Hand the transcript back so the caller can resume it in a live panel. */
+  onContinue?: (history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[]) => void;
+}) {
   const { data: messages, isLoading, error } = useAIConversation(conversationId);
 
   if (isLoading) {
@@ -36,6 +51,29 @@ export function StoredConversation({ conversationId }: { conversationId: string 
 
   return (
     <div className="space-y-6">
+      {onContinue && (
+        <div className="flex flex-col items-start justify-between gap-3 rounded-xl border border-primary/15 bg-secondary/40 px-4 py-3 sm:flex-row sm:items-center">
+          <p className="text-sm text-muted-foreground">
+            Pick this up where you left off — the assistant keeps the thread.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full shrink-0 sm:w-auto"
+            onClick={() =>
+              onContinue(
+                messages.map((m) => ({
+                  role: m.role as 'user' | 'assistant',
+                  content: m.content,
+                  createdAt: m.createdAt,
+                })),
+              )
+            }
+          >
+            Continue this conversation
+          </Button>
+        </div>
+      )}
       {messages.map((message) => {
         const isUser = message.role === 'user';
         return (

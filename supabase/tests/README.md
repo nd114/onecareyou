@@ -252,5 +252,20 @@ to INSERT, the table is written to be write-only from outside: an explicit
 to the ambient default, since the notify function reading the row back is
 load-bearing.
 
+`vault_archive.test.sql` — putting a document away without destroying it:
+
+| Rule | Why |
+| --- | --- |
+| A patient can archive their own document | the Vault had no way to tidy anything |
+| The patient still sees what they archived | archiving is tidying, not hiding it from yourself |
+| An archived document drops out of whole-vault sharing | that is what putting it away means to a clinic |
+| Archiving does NOT revoke a document shared one at a time | handing somebody a file is a different act; removing the share is its undo |
+| Archiving is reversible and destroys nothing | a document a clinician has seen must not be able to vanish |
+| A reason without an archive date is refused | it would read as a reason for archiving something that is not archived |
+
+Archive rather than delete, deliberately. The delete that existed on each card
+is gone: a patient tidying their shelf and a patient withdrawing a file from
+somebody are different intentions, and only one of them should be one click.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

@@ -10,6 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { DocumentCard } from '@/components/documents/DocumentCard';
+import type { HealthDocument } from '@/hooks/useHealthDocuments';
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
 import { VisitSummariesSection } from '@/components/documents/VisitSummariesSection';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,8 +32,15 @@ const HealthVault = () => {
 
   const isOverFreeLimit = !isPremium && documents.length >= FREE_DOCUMENT_LIMIT;
 
+  // Archived documents are out of the way by default and one toggle from
+  // being back. Not hidden: a patient who put something away needs to be able
+  // to find it again without being told to contact support.
+  const [showArchived, setShowArchived] = useState(false);
+  const isArchived = (d: HealthDocument) => Boolean(d.archived_at);
+  const archivedCount = useMemo(() => documents.filter(isArchived).length, [documents]);
+
   const filteredDocuments = useMemo(() => {
-    let filtered = documents;
+    let filtered = documents.filter((d) => (showArchived ? isArchived(d) : !isArchived(d)));
     if (activeFolder === '__unfiled__') {
       filtered = filtered.filter((d) => !d.folder);
     } else if (activeFolder !== 'all') {
@@ -151,6 +159,26 @@ const HealthVault = () => {
             />
           </div>
 
+          {/* Archive switch. Kept beside the folders because that is what it
+              is — a place things go, not a destructive action. */}
+          {(archivedCount > 0 || showArchived) && (
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-secondary/40 px-4 py-2.5">
+              <p className="text-sm text-muted-foreground">
+                {showArchived
+                  ? 'Showing your archive. These are not shared with anyone through whole-Vault access.'
+                  : `${archivedCount} document${archivedCount === 1 ? '' : 's'} in your archive`}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setShowArchived((v) => !v)}
+              >
+                {showArchived ? 'Back to Vault' : 'View archive'}
+              </Button>
+            </div>
+          )}
+
           {/* Folders */}
           <div className="mb-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">Folders</p>
@@ -220,9 +248,11 @@ const HealthVault = () => {
             <div className="text-center py-16">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="font-medium mb-2">
-                {documents.length === 0
-                  ? 'No documents yet'
-                  : 'No documents match your search'}
+                {showArchived
+                  ? 'Nothing archived'
+                  : documents.length === 0
+                    ? 'No documents yet'
+                    : 'No documents match your search'}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 {documents.length === 0

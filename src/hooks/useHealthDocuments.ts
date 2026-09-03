@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseExtra } from '@/integrations/supabase/types-extra';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
@@ -49,6 +50,9 @@ export interface HealthDocument {
   source_context: string;
   /** Set when a clinician put this in the Vault; null when the patient did. */
   uploaded_by_user_id: string | null;
+  /** When the patient put this away. Null means active. Archiving destroys nothing. */
+  archived_at: string | null;
+  archived_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -180,6 +184,58 @@ export function useHealthDocuments() {
     },
   });
 
+  /**
+   * Put a document away.
+   *
+   * Archive rather than delete: a document a clinician has already been given
+   * should not be able to vanish from under them, and a patient tidying their
+   * shelf is not the same act as withdrawing a file somebody was handed. The
+   * row and the file both stay exactly where they are.
+   *
+   * Whole-vault sharing stops at an archived document — that rule is in the
+   * RLS policies, not here, so it holds however the row is read.
+   */
+  const archiveDocument = useMutation({
+    mutationFn: async ({ doc, reason }: { doc: HealthDocument; reason?: string }) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabaseExtra
+        .from('health_documents')
+        .update({
+          archived_at: new Date().toISOString(),
+          archived_reason: reason?.trim() ? reason.trim().slice(0, 500) : null,
+        })
+        .eq('id', doc.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['health-documents'] });
+      toast.success('Moved to your archive');
+    },
+    onError: (e: unknown) => {
+      console.error('Archive failed', e);
+      toast.error('Could not archive that document');
+    },
+  });
+
+  const restoreDocument = useMutation({
+    mutationFn: async (doc: HealthDocument) => {
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabaseExtra
+        .from('health_documents')
+        .update({ archived_at: null, archived_reason: null })
+        .eq('id', doc.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['health-documents'] });
+      toast.success('Restored to your Vault');
+    },
+    onError: (e: unknown) => {
+      console.error('Restore failed', e);
+      toast.error('Could not restore that document');
+    },
+  });
+
   const deleteDocument = useMutation({
     mutationFn: async (doc: HealthDocument) => {
       if (!user) throw new Error('Not authenticated');
@@ -264,6 +320,8 @@ export function useHealthDocuments() {
     isLoading,
     moveToFolder,
     uploadDocument,
+    archiveDocument,
+    restoreDocument,
     deleteDocument,
     updateDocument,
     triggerSummarize,
