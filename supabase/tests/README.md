@@ -219,5 +219,20 @@ transcript: the INSERT policy asked for membership and the invite capability,
 and nothing about the patient agreeing. Verified by doing it before the fix, and
 refused after.
 
+`non_clinical_staff.test.sql` — front desk is not a clinician:
+
+| Rule | Why |
+| --- | --- |
+| Front desk and billing read no notes, team notes or readings | a receptionist does not need to know a patient started sertraline |
+| Front desk still sees the appointment; billing still sees the invoice | a rule that only takes things away stops the clinic working |
+| Doctors, nurses, leads and owners are unaffected | quietly removing a nurse's access would be a worse bug than the one fixed |
+| The classifier is an allowlist | a role added later is not clinical until somebody decides |
+| Moving someone to a non-clinical role takes the record away | the role is the control, not a label |
+
+Ten roles existed and meant nothing: `practice_role_permissions` was empty and
+access was decided entirely by `can_view_all_patients`. `src/lib/staff-roles.ts`
+mirrors `practice_role_is_clinical` so the interface agrees with the database —
+if they drift, a receptionist is shown tabs that return nothing.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

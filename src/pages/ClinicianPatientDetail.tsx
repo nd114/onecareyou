@@ -53,8 +53,16 @@ import { AppointmentsTab } from '@/components/clinician/AppointmentsTab';
 import { BillingTab } from '@/components/clinician/BillingTab';
 import { AiHistoryForPatient } from '@/components/clinician/AiHistoryForPatient';
 import { CarePlanTab } from '@/components/clinician/CarePlanTab';
+import { isClinicalRole } from '@/lib/staff-roles';
+import { usePractice } from '@/hooks/usePractice';
 
 const ClinicianPatientDetail = () => {
+  // What this staff member's role is for. The database decides what they can
+  // read; this decides what they are shown, and the two agree by construction
+  // because both consult the same allowlist. See src/lib/staff-roles.ts.
+  const { currentMembership } = usePractice();
+  const clinicalStaff = isClinicalRole(currentMembership?.role);
+
   const { inviteCode } = useParams<{ inviteCode: string }>();
   const navigate = useNavigate();
   const { patients } = useClinicianPatients();
@@ -388,10 +396,17 @@ const ClinicianPatientDetail = () => {
                 corresponding, and the admin around it — and ordered to match.
                 Still one row of tabs, so nothing is buried a level down. */}
             <TabsList className="flex flex-wrap w-full justify-start gap-1 h-auto p-1.5">
-              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-0.5">
-                The record
-              </span>
-              <TabsTrigger value="encounters">Encounters</TabsTrigger>
+              {/* Non-clinical staff — front desk, billing — are not shown the
+                  clinical bands. The database already returns nothing for them
+                  (see practice_role_is_clinical), so leaving the tabs visible
+                  would show a receptionist ten empty screens and read as the
+                  product being broken rather than working. */}
+              {clinicalStaff && (
+                <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-0.5">
+                  The record
+                </span>
+              )}
+{clinicalStaff && (<>              <TabsTrigger value="encounters">Encounters</TabsTrigger>
               <TabsTrigger value="vitals">Vitals</TabsTrigger>
               <TabsTrigger value="medications">Meds</TabsTrigger>
               <TabsTrigger value="adherence">Adherence</TabsTrigger>
@@ -402,14 +417,14 @@ const ClinicianPatientDetail = () => {
               <TabsTrigger value="documents" className="flex items-center gap-1">
                 <FileText className="h-3 w-3" />
                 Docs
-              </TabsTrigger>
+              </TabsTrigger></>)}
 
               <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
                 What happens next
               </span>
-              <TabsTrigger value="careplan">Care plan</TabsTrigger>
+{clinicalStaff && (<>              <TabsTrigger value="careplan">Care plan</TabsTrigger></>)}
               <TabsTrigger value="appointments">Appointments</TabsTrigger>
-              <TabsTrigger value="guidance">Guidance</TabsTrigger>
+{clinicalStaff && (<>              <TabsTrigger value="guidance">Guidance</TabsTrigger></>)}
 
               <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
                 Correspondence
@@ -420,8 +435,8 @@ const ClinicianPatientDetail = () => {
               </TabsTrigger>
               {/* Both are notes; the difference is who reads them, so that is what
                   the labels say. "Notes" and "Internal" said nothing. */}
-              <TabsTrigger value="notes">My notes</TabsTrigger>
-              <TabsTrigger value="internal">Team notes</TabsTrigger>
+{clinicalStaff && (<>              <TabsTrigger value="notes">My notes</TabsTrigger>
+              <TabsTrigger value="internal">Team notes</TabsTrigger></>)}
 
               <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
                 Around the care

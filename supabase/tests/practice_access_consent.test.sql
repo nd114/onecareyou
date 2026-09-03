@@ -37,9 +37,13 @@ BEGIN
   INSERT INTO public.practices (id,name,created_by,tenant_type)
   VALUES (_practice,'General Hospital',_owner,'hospital');
 
+  -- A clinical role on purpose: this suite is about consent, not about which
+  -- roles may read clinical content. non_clinical_staff.test.sql covers that,
+  -- and using front_desk here made this file fail once that split landed —
+  -- for the right reason, which is the two suites meeting rather than a bug.
   INSERT INTO public.practice_members
     (practice_id,user_id,role,status,can_view_all_patients,can_invite_patients)
-  VALUES (_practice,_staff,'front_desk','active',true,true);
+  VALUES (_practice,_staff,'provider','active',true,true);
 
   INSERT INTO public.encounters
     (patient_user_id,clinician_user_id,visit_type,status,signed_at,assessment,scribe_transcript)
