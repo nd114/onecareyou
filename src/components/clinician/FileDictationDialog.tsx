@@ -111,7 +111,7 @@ export function FileDictationDialog({
     const failures: string[] = [];
     try {
       const soap = extracted?.soap ?? {};
-      const { data: encounter, error: encErr } = await (supabase as any)
+      const { data: encounter, error: encErr } = await supabase
         .from("encounters")
         .insert({
           patient_user_id: patientUserId,
@@ -169,7 +169,7 @@ export function FileDictationDialog({
         if (error) failures.push(`Team note: ${error.message}`);
       }
 
-      const { error: linkErr } = await (supabase as any)
+      const { error: linkErr } = await supabase
         .from("clinician_dictations")
         .update({
           patient_user_id: patientUserId,

@@ -90,7 +90,7 @@ export function useClinicianPatients() {
       // vitals / medications / adherence.
       const identityMap = new Map<string, PatientIdentity>();
       if (patientUserIds.length > 0) {
-        const { data: identities, error: identityError } = await (supabase as any).rpc(
+        const { data: identities, error: identityError } = await supabase.rpc(
           'get_patient_identity',
           { patient_ids: patientUserIds },
         );

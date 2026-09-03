@@ -20,6 +20,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MarketingHero } from '@/components/home/marketing';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabaseExtra } from '@/integrations/supabase/db';
 import { supabase } from '@/integrations/supabase/client';
 import { describeSubmissionError } from '@/lib/submission-errors';
 
@@ -64,8 +65,8 @@ const Contact = () => {
     setIsSubmitting(true);
     try {
       const submissionId = crypto.randomUUID();
-      const { error } = await supabase
-        .from('contact_submissions' as never)
+      const { error } = await supabaseExtra
+        .from('contact_submissions')
         .insert({
           id: submissionId,
           submitted_by: user?.id ?? null,
@@ -74,7 +75,7 @@ const Contact = () => {
           inquiry_type: formData.inquiryType,
           subject: formData.subject.trim(),
           message: formData.message.trim(),
-        } as never);
+        });
 
       if (error) throw error;
 

@@ -35,7 +35,7 @@ export function usePracticeAdminAccess() {
     queryKey: ['practice-admin-access', user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('practice_members')
         .select('id, practice_id, role, status')
         .eq('user_id', user!.id)
@@ -78,7 +78,7 @@ export function usePracticeAdminActions(practiceId?: string | null) {
   const setMemberStatus = useMutation({
     mutationFn: async ({ userId, status }: { userId: string; status: 'active' | 'archived' }) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('practice_members')
         .update({ status })
         .eq('practice_id', practiceId)
@@ -95,7 +95,7 @@ export function usePracticeAdminActions(practiceId?: string | null) {
   const setPatientAccess = useMutation({
     mutationFn: async ({ patientUserId, isActive }: { patientUserId: string; isActive: boolean }) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('practice_patient_access')
         .update({ is_active: isActive })
         .eq('practice_id', practiceId)
@@ -162,7 +162,7 @@ export function useArchivedPracticeMembers(practiceId?: string | null) {
     queryKey: ['practice-members', 'archived', practiceId],
     enabled: !!practiceId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('practice_members')
         .select('id, user_id, role, status, created_at')
         .eq('practice_id', practiceId!)

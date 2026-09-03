@@ -1,6 +1,7 @@
 // Phase 1.4 — Encounters / visit records.
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -26,10 +27,10 @@ export interface Encounter {
   signed_at: string | null;
   /** Whether the patient may read this summary once it is signed. */
   shared_with_patient: boolean;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, Json>;
   scribe_transcript: string | null;
   scribe_audio_path: string | null;
-  scribe_draft: Record<string, unknown> | null;
+  scribe_draft: Record<string, Json> | null;
   scribe_generated_at: string | null;
   created_at: string;
   updated_at: string;
@@ -43,7 +44,7 @@ export function useEncounters(patientUserId?: string) {
     queryKey: ["encounters", patientUserId],
     queryFn: async () => {
       if (!patientUserId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("encounters")
         .select("*")
         .eq("patient_user_id", patientUserId)
@@ -57,7 +58,7 @@ export function useEncounters(patientUserId?: string) {
   const create = useMutation({
     mutationFn: async (input: Partial<Encounter> & { patient_user_id: string }) => {
       if (!user) throw new Error("Not authenticated");
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("encounters")
         .insert({
           clinician_user_id: user.id,
@@ -80,7 +81,7 @@ export function useEncounters(patientUserId?: string) {
 
   const update = useMutation({
     mutationFn: async ({ id, ...patch }: Partial<Encounter> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("encounters")
         .update(patch)
         .eq("id", id)
@@ -100,7 +101,7 @@ export function useEncounters(patientUserId?: string) {
    */
   const sign = useMutation({
     mutationFn: async ({ id, sharedWithPatient = true }: { id: string; sharedWithPatient?: boolean }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("encounters")
         .update({
           status: "signed",
@@ -127,7 +128,7 @@ export function useEncounters(patientUserId?: string) {
   /** Changing your mind after signing, in either direction. */
   const setShared = useMutation({
     mutationFn: async ({ id, shared }: { id: string; shared: boolean }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("encounters")
         .update({ shared_with_patient: shared })
         .eq("id", id)

@@ -104,7 +104,7 @@ describe("toAppointmentRow", () => {
     // trigger. Callers that can afford the check should run validateFhir first.
     const row = toAppointmentRow({ ...booked, end: null }, CLINICIAN);
     expect(row.end_time).toBeNull();
-    expect(() => validateFhir(row.resource as Appointment)).toThrow(/app-3|start/i);
+    expect(() => validateFhir(row.resource as unknown as Appointment)).toThrow(/app-3|start/i);
   });
 
   it("carries the tenant, without which one hospital could see another's", () => {

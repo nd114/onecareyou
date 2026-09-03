@@ -116,7 +116,7 @@ export function useClinicianCapabilities() {
     const results = await Promise.all(
       ALL_CAPABILITIES.map(async (cap) => {
         // Cast: the practice-scoped overload is newer than the generated types.
-        const { data, error } = await (supabase as any).rpc("has_practice_capability", {
+        const { data, error } = await supabase.rpc("has_practice_capability", {
           _user_id: user.id,
           _capability: cap,
           _practice_id: memberRow.practice_id,

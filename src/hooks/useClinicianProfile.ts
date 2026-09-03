@@ -68,7 +68,7 @@ export const useClinicianProfile = () => {
           .eq('user_id', user.id)
           .eq('status', 'active')
           .order('created_at', { ascending: true }),
-        (supabase as any).rpc('my_tenant_owner_invitations'),
+        supabase.rpc('my_tenant_owner_invitations'),
       ]);
 
       if (profileRes.error) throw profileRes.error;

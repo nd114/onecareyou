@@ -28,7 +28,7 @@ export const PracticeRevenueShareCard = () => {
     enabled: !!currentPractice?.id,
     queryFn: async () => {
       // Cast: newer than the generated types file (see useAuditLog).
-      const { data, error } = await (supabase as any).rpc(
+      const { data, error } = await supabase.rpc(
         'practice_revenue_share_summary',
         { _practice_id: currentPractice!.id },
       );

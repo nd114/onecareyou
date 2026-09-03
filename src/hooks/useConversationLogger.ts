@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
@@ -24,7 +25,7 @@ interface LogMessageInput {
   imagePath?: string | null;
   /** The patient this message concerned, when it concerned one. */
   patientUserId?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, Json>;
 }
 
 export function useConversationLogger(source: 'simple_mode' | 'drawer') {

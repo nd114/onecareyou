@@ -1,4 +1,8 @@
 import type { Appointment, AppointmentParticipant } from "@medplum/fhirtypes";
+import type {
+  FhirAppointmentInsert,
+  FhirAppointmentUpdate,
+} from "@/integrations/supabase/types-extra";
 
 /**
  * A row of public.fhir_appointments, and the FHIR Appointment it holds.
@@ -104,7 +108,7 @@ export function toFhirAppointment(input: AppointmentInput): Appointment {
 export function toAppointmentRow(
   input: AppointmentInput,
   createdBy: string,
-): Record<string, unknown> {
+): FhirAppointmentInsert {
   const resource = toFhirAppointment(input);
 
   return {
@@ -119,7 +123,7 @@ export function toAppointmentRow(
     description: input.description ?? null,
     visit_type: input.visitType ?? null,
     location_text: input.locationText ?? null,
-    resource: resource as unknown as Record<string, unknown>,
+    resource: resource as unknown as FhirAppointmentInsert["resource"],
     created_by: createdBy,
   };
 }
@@ -170,10 +174,10 @@ export function fromAppointmentRow(row: AppointmentRow): Appointment {
 export function toStatusPatch(
   current: Appointment,
   status: AppointmentStatus,
-): { status: AppointmentStatus; resource: Record<string, unknown> } {
+): FhirAppointmentUpdate {
   return {
     status,
-    resource: { ...current, status } as unknown as Record<string, unknown>,
+    resource: { ...current, status } as unknown as FhirAppointmentUpdate["resource"],
   };
 }
 

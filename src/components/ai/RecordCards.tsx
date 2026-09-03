@@ -49,7 +49,7 @@ export function RecordCards({ query, patientUserId, patientName }: Props) {
         // somebody's history without leaving a trace. log_record_access takes
         // the actor from auth.uid() and refuses an entry for a patient the
         // caller cannot reach, so this can under-report but never forge.
-        void (supabase as any)
+        void supabase
           .rpc("log_record_access", {
             _patient_user_id: patientUserId,
             _resource_type: `ai_${query.kind}`,

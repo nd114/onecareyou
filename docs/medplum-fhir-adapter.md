@@ -120,8 +120,17 @@ In rough order of value:
 | `Condition` | **Done** — mapping only, see §6.1 | No table. Free text on `profiles`, mapped for export |
 | `AllergyIntolerance` | **Done** — mapping only, see §6.1 | Same |
 | `Observation` | **Done** — mapping plus export, see §6.3 | Vitals is a real table. LOINC coding resolved without a decision needed |
-| `MedicationRequest` | After that | Interacts with the drug-interaction checker |
+| `CarePlan` / `Goal` | **Done** — table plus mapper | Goals score against readings the patient already takes |
+| `Invoice` | **Done** — table plus mapper | Minor units, per-tenant currency; see docs/billing-and-payments.md |
+| `Communication` | **Done** — mapping only | Assistant messages filed as `sender.display`, never a Practitioner reference |
+| `MedicationRequest` | Next | Interacts with the drug-interaction checker |
 | `DocumentReference` | Later | Natural fit for QHIN retrieval |
+
+The tables these added are not in the generated Supabase types yet, because
+that file is regenerated from the deployed database and these migrations have
+not been run. `src/integrations/supabase/types-extra.ts` carries hand-written
+types for them in the meantime, read back out of the migrations rather than
+written from memory — see that file for how to retire it.
 
 Each one carries a mapper with the projection rule, a unit suite, and rows in
 `supabase/tests/README.md`. A migration too, where there is a table to migrate.

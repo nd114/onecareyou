@@ -16,7 +16,7 @@ export function NetworkRecordsTab({ patientUserId }: Props) {
   const { data: imports = [], isLoading } = useQuery({
     queryKey: ["qhin-imports", patientUserId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("qhin_imports")
         .select("*")
         .eq("user_id", patientUserId)

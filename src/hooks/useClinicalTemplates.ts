@@ -30,7 +30,7 @@ export function useClinicalTemplates(kind?: TemplateKind) {
   const list = useQuery({
     queryKey: ["clinical-templates", kind ?? "all", practice?.id ?? null],
     queryFn: async () => {
-      let q = (supabase as any)
+      let q = supabase
         .from("clinical_templates")
         .select("*")
         .eq("is_archived", false)
@@ -49,7 +49,7 @@ export function useClinicalTemplates(kind?: TemplateKind) {
         Partial<Pick<ClinicalTemplate, "description" | "body" | "specialty">>,
     ) => {
       if (!user) throw new Error("Not authenticated");
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("clinical_templates")
         .insert({
           owner_user_id: user.id,
@@ -71,7 +71,7 @@ export function useClinicalTemplates(kind?: TemplateKind) {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("clinical_templates")
         .update({ is_archived: true })
         .eq("id", id);

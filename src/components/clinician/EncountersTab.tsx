@@ -63,7 +63,7 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
     queryKey: ["encounter-dictations", patientUserId, encounterIds.length],
     enabled: encounterIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("clinician_dictations")
         .select("encounter_id")
         .in("encounter_id", encounterIds);

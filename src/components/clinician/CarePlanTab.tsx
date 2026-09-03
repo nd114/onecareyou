@@ -2,6 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { Target, Plus, Trash2, Loader2, CheckCircle2, CircleDashed, MinusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseExtra } from '@/integrations/supabase/db';
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -89,7 +90,7 @@ export function CarePlanTab({ patientUserId, patientName, practiceId }: Props) {
     if (!user || !title.trim()) return;
     setSaving(true);
     try {
-      const { data: plan, error } = await (supabase as any)
+      const { data: plan, error } = await supabaseExtra
         .from("fhir_care_plans")
         .insert({
           patient_user_id: patientUserId,
@@ -107,7 +108,7 @@ export function CarePlanTab({ patientUserId, patientName, practiceId }: Props) {
       if (error) throw error;
 
       if (usable.length > 0) {
-        const { error: goalError } = await (supabase as any).from("fhir_care_goals").insert(
+        const { error: goalError } = await supabaseExtra.from("fhir_care_goals").insert(
           usable.map((g, i) => {
             // A measure is all three parts or none — the constraint refuses
             // half a target, because half a target renders as a number with no

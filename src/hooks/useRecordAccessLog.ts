@@ -31,7 +31,7 @@ export function useRecordAccessLog(
 
     void (async () => {
       try {
-        await (supabase as any).rpc('log_record_access', {
+        await supabase.rpc('log_record_access', {
           _patient_user_id: patientUserId,
           _resource_type: resourceType,
           _resource_id: resourceId ?? null,

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseExtra } from '@/integrations/supabase/db';
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -69,7 +70,7 @@ export function useAppointments(patientUserId?: string) {
     queryKey: key,
     enabled: !!user,
     queryFn: async (): Promise<ScheduledAppointment[]> => {
-      let q = (supabase as any)
+      let q = supabaseExtra
         .from("fhir_appointments")
         .select("*")
         .order("start_time", { ascending: true, nullsFirst: false });
@@ -87,7 +88,7 @@ export function useAppointments(patientUserId?: string) {
       // Built as FHIR first, with the columns derived from the resource, so the
       // two cannot drift. The database refuses anything FHIR would reject.
       const row = toAppointmentRow(input, user.id);
-      const { error } = await (supabase as any).from("fhir_appointments").insert(row);
+      const { error } = await supabaseExtra.from("fhir_appointments").insert(row);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -106,7 +107,7 @@ export function useAppointments(patientUserId?: string) {
       const current = (query.data ?? []).find((a) => a.id === id);
       if (!current) throw new Error("That appointment is no longer loaded");
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseExtra
         .from("fhir_appointments")
         .update(toStatusPatch(current.resource, status))
         .eq("id", id);
