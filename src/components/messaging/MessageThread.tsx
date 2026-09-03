@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
-import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Download, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Download, Search, ChevronUp, ChevronDown, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,14 @@ import { useMessages, type Message } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { SaveToVaultDialog } from '@/components/documents/SaveToVaultDialog';
+import { useLongPress } from '@/hooks/useLongPress';
 
 interface Props {
   otherPartyUserId: string | null;
@@ -59,10 +67,35 @@ function groupMessages(messages: Message[]): DaySection[] {
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|heic|avif)$/i;
 
+/**
+ * An attachment in a conversation, and the way to keep it.
+ *
+ * Right-click on a desktop, long-press on a phone. The file sent in a message
+ * lives in the messaging store under that conversation's policies — if the
+ * conversation is archived or the share ends, the patient loses sight of it.
+ * Saving makes a copy in their own Vault that nobody else's decision removes.
+ */
 function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
   const fileName = path.split('/').pop()?.replace(/^[0-9a-f-]{36}-/i, '') ?? 'Attachment';
   const isImage = IMAGE_RE.test(fileName);
+  const longPress = useLongPress(() => setSaveOpen(true));
+
+  /**
+   * Fetched at save time rather than held in memory: most attachments are never
+   * saved, and a signed URL expires in five minutes.
+   */
+  const fetchFile = async (): Promise<File> => {
+    const { data, error } = await supabase.storage
+      .from('message-attachments')
+      .createSignedUrl(path, 60);
+    if (error || !data?.signedUrl) throw new Error('That attachment could not be read');
+    const res = await fetch(data.signedUrl);
+    if (!res.ok) throw new Error('That attachment could not be downloaded');
+    const blob = await res.blob();
+    return new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
+  };
 
   useEffect(() => {
     let active = true;
@@ -77,17 +110,53 @@ function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
     };
   }, [path]);
 
+  const saveDialog = (
+    <SaveToVaultDialog
+      open={saveOpen}
+      onOpenChange={setSaveOpen}
+      getFile={fetchFile}
+      defaultTitle={fileName}
+      defaultCategory={isImage ? 'imaging' : 'other'}
+      sourceContext="message_attachment"
+    />
+  );
+
+  const menu = (children: JSX.Element) => (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onSelect={() => setSaveOpen(true)} className="gap-2">
+            <FolderPlus className="h-3.5 w-3.5" /> Save to my records
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+      {saveDialog}
+    </>
+  );
+
   if (isImage) {
-    return url ? (
-      <a href={url} target="_blank" rel="noreferrer" className="block mt-1">
-        <img src={url} alt={fileName} className="rounded-lg max-h-48 w-auto object-cover" loading="lazy" />
-      </a>
-    ) : (
-      <div className="mt-1 h-24 w-40 rounded-lg bg-background/20 animate-pulse" />
-    );
+    return url
+      ? menu(
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="block mt-1"
+            {...longPress}
+            onClick={(e) => {
+              // A long press already opened the save dialog; opening the image
+              // as well would bury it.
+              if (longPress.consumed()) e.preventDefault();
+            }}
+          >
+            <img src={url} alt={fileName} className="rounded-lg max-h-48 w-auto object-cover" loading="lazy" />
+          </a>,
+        )
+      : <div className="mt-1 h-24 w-40 rounded-lg bg-background/20 animate-pulse" />;
   }
 
-  return (
+  return menu(
     <a
       href={url ?? undefined}
       target="_blank"
@@ -97,11 +166,15 @@ function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
         mine ? 'bg-primary-foreground/15' : 'bg-background/70',
         !url && 'pointer-events-none opacity-70',
       )}
+      {...longPress}
+      onClick={(e) => {
+        if (longPress.consumed()) e.preventDefault();
+      }}
     >
       <FileText className="h-3.5 w-3.5 shrink-0" />
       <span className="truncate max-w-[160px]">{fileName}</span>
       <Download className="h-3.5 w-3.5 shrink-0 opacity-70" />
-    </a>
+    </a>,
   );
 }
 

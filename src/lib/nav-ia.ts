@@ -57,6 +57,11 @@ export const PATIENT_PILLARS: PatientPillar[] = [
     tabs: [
       { to: "/messages", label: "Messages" },
       { to: "/care-circle", label: "Care Circle" },
+      // Bills come from a clinic relationship, so they live with the rest of it
+      // rather than on the dashboard. Kept in the navigation permanently once
+      // the patient is connected: a bill that vanishes when paid is one they
+      // cannot look back at.
+      { to: "/billing", label: "Bills" },
       // Family is hidden — see FAMILY_HEALTH_ENABLED in src/lib/feature-flags.ts.
       ...(FAMILY_HEALTH_ENABLED ? [{ to: "/family", label: "Family" }] : []),
     ],

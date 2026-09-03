@@ -104,6 +104,7 @@ import AdminTenantDetail from "./pages/AdminTenantDetail";
 import TenantHome from "@/components/tenant/TenantHome";
 import LegacyInstitutionRedirect from "@/components/tenant/LegacyInstitutionRedirect";
 import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
+import Billing from "./pages/Billing";
 
 
 
@@ -249,6 +250,11 @@ const App = () => (
             <Route path="/vitals" element={
               <PatientRoute>
                 <Vitals />
+              </PatientRoute>
+            } />
+            <Route path="/billing" element={
+              <PatientRoute>
+                <Billing />
               </PatientRoute>
             } />
             <Route path="/care-circle" element={

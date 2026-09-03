@@ -91,6 +91,7 @@ export function useHealthDocuments() {
       sourceContext = 'direct',
       familyMemberId,
       folder,
+      tags,
     }: {
       file: File;
       title: string;
@@ -101,6 +102,8 @@ export function useHealthDocuments() {
       sourceContext?: string;
       familyMemberId?: string | null;
       folder?: string | null;
+      /** The patient's own words for finding this again later. */
+      tags?: string[];
     }) => {
       if (!user) throw new Error('Not authenticated');
       
@@ -128,7 +131,7 @@ export function useHealthDocuments() {
           category,
           document_date: documentDate || null,
           notes: notes || null,
-          tags: [],
+          tags: tags ?? [],
           source_context: sourceContext,
           folder: folder?.trim() || null,
           family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
