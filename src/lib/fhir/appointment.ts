@@ -1,8 +1,8 @@
 import type { Appointment, AppointmentParticipant } from "@medplum/fhirtypes";
-import type {
-  FhirAppointmentInsert,
-  FhirAppointmentUpdate,
-} from "@/integrations/supabase/types-extra";
+import type { Database } from "@/integrations/supabase/types";
+
+type FhirAppointmentInsert = Database["public"]["Tables"]["fhir_appointments"]["Insert"];
+type FhirAppointmentUpdate = Database["public"]["Tables"]["fhir_appointments"]["Update"];
 
 /**
  * A row of public.fhir_appointments, and the FHIR Appointment it holds.

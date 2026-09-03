@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseExtra } from '@/integrations/supabase/db';
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -30,7 +29,7 @@ export function useEncounterAddenda(encounterId?: string) {
     queryKey: key,
     enabled: !!encounterId,
     queryFn: async (): Promise<EncounterAddendum[]> => {
-      const { data, error } = await supabaseExtra
+      const { data, error } = await supabase
         .from("encounter_addenda")
         .select("*")
         .eq("encounter_id", encounterId)
@@ -46,7 +45,7 @@ export function useEncounterAddenda(encounterId?: string) {
       const text = body.trim();
       if (!text) throw new Error("An addendum needs something in it");
 
-      const { error } = await supabaseExtra.from("encounter_addenda").insert({
+      const { error } = await supabase.from("encounter_addenda").insert({
         encounter_id: encounterId,
         // The insert policy checks this against auth.uid(), so an addendum
         // cannot be filed under anyone else's name.

@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseExtra } from '@/integrations/supabase/db';
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface VisitSummary {
@@ -61,7 +60,7 @@ export function useVisitSummaries() {
     queryKey: ["visit-summary-addenda", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabaseExtra.rpc("my_visit_summary_addenda");
+      const { data, error } = await supabase.rpc("my_visit_summary_addenda");
       if (error) throw error;
       return (data ?? []) as VisitSummaryAddendum[];
     },
