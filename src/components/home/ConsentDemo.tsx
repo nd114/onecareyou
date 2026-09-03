@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Check, Lock, Building2, UserRound, HeartHandshake } from "lucide-react";
+import { Panel, PanelGlyph, PanelHeader, PanelRow, PanelRows } from "@/components/ui/panel";
+import { TogglePill } from "@/components/ui/toggle-pill";
 import { cn } from "@/lib/utils";
 
 /**
@@ -57,90 +59,58 @@ export function ConsentDemo() {
 
   return (
     <div className="relative">
-      <div className="overflow-hidden rounded-2xl border border-primary/15 bg-background/85 shadow-[0_1px_0_hsl(var(--primary)/0.06),0_24px_60px_-30px_hsl(var(--primary)/0.4)] backdrop-blur-sm">
-        <div className="border-b border-primary/10 bg-[hsl(var(--secondary))]/60 px-4 py-3.5 sm:px-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/70">
-            Who can see your record
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {viewers.map((v) => {
-              const Icon = v.icon;
-              return (
-                <button
+      <Panel className="bg-background/85">
+        <PanelHeader
+          eyebrow="Who can see your record"
+          below={
+            <div className="flex flex-wrap gap-2">
+              {viewers.map((v) => (
+                <TogglePill
                   key={v.id}
-                  type="button"
-                  onClick={() => toggle(v.id)}
-                  aria-pressed={v.on}
+                  pressed={v.on}
+                  onPressedChange={() => toggle(v.id)}
+                  label={v.name}
+                  meta={v.role}
+                  icon={v.icon}
                   aria-label={`${v.name}, ${v.role}. ${v.on ? "Sharing. Tap to stop." : "Not sharing. Tap to share."}`}
-                  className={cn(
-                    "group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-left",
-                    "transition-colors duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                    v.on
-                      ? "border-primary/30 bg-primary text-primary-foreground"
-                      : "border-primary/20 text-foreground/55 hover:border-primary/40",
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="text-xs font-medium leading-tight">
-                    {v.name}
-                    <span className={cn("ml-1.5 font-normal", v.on ? "text-primary-foreground/70" : "text-foreground/40")}>
-                      {v.role}
-                    </span>
-                  </span>
-                  <span
-                    className={cn(
-                      "ml-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border transition-colors",
-                      v.on ? "border-primary-foreground/40 bg-primary-foreground/15" : "border-foreground/25",
-                    )}
-                  >
-                    {v.on && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                />
+              ))}
+            </div>
+          }
+        />
 
-        <ul className="divide-y divide-primary/[0.07]">
+        <PanelRows>
           {ROWS.map((row) => {
             const open = visible.has(row.key);
             return (
-              <li key={row.key} className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-3.5">
-                <span
-                  className={cn(
-                    "grid h-6 w-6 shrink-0 place-items-center rounded-full transition-colors duration-300",
-                    open ? "bg-[hsl(var(--emerald-light))] text-primary" : "bg-muted text-foreground/30",
-                  )}
-                >
-                  {open ? <Check className="h-3 w-3" strokeWidth={3} /> : <Lock className="h-3 w-3" />}
-                </span>
-
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium">{row.label}</span>
+              <PanelRow
+                key={row.key}
+                glyph={
+                  <PanelGlyph tone={open ? "active" : "muted"} className="h-6 w-6 [&>svg]:h-3 [&>svg]:w-3">
+                    {open ? <Check strokeWidth={3} /> : <Lock />}
+                  </PanelGlyph>
+                }
+                label={row.label}
+                detail={open ? `${row.value} \u00b7 ${row.detail}` : "\u2022\u2022\u2022\u2022\u2022\u2022 \u00b7 \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"}
+                detailClassName={cn(
+                  "transition-all duration-300",
+                  open ? "blur-0" : "select-none text-foreground/25 blur-[3px]",
+                )}
+                trailing={
                   <span
                     className={cn(
-                      "block text-xs transition-all duration-300",
-                      open ? "text-muted-foreground blur-0" : "select-none text-foreground/25 blur-[3px]",
+                      "text-[11px] font-medium transition-colors duration-300",
+                      open ? "text-primary" : "text-foreground/30",
                     )}
                   >
-                    {open ? `${row.value} · ${row.detail}` : "•••••• · ••••••••••"}
+                    {open ? "Shared" : "Private"}
                   </span>
-                </span>
-
-                <span
-                  className={cn(
-                    "shrink-0 text-[11px] font-medium transition-colors duration-300",
-                    open ? "text-primary" : "text-foreground/30",
-                  )}
-                >
-                  {open ? "Shared" : "Private"}
-                </span>
-              </li>
+                }
+              />
             );
           })}
-        </ul>
-      </div>
+        </PanelRows>
+      </Panel>
 
       <p
         className={cn(

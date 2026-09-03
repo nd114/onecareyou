@@ -16,6 +16,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Panel, PanelBody, PanelEmpty, PanelHeader, PanelRow, PanelRows } from '@/components/ui/panel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
@@ -240,120 +241,97 @@ const Dashboard = () => {
             transition={{ delay: 0.3 }}
             className="lg:col-span-2"
           >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    Today's Regimen
-                  </CardTitle>
-                  <CardDescription>
-                    {total > 0 ? `${taken.length}/${total} doses completed` : 'No doses scheduled'}
-                  </CardDescription>
-                </div>
+            <Panel>
+              <PanelHeader
+                eyebrow="Today's regimen"
+                description={total > 0 ? `${taken.length} of ${total} doses taken` : 'No doses scheduled'}
+              >
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/schedule">View All</Link>
+                  <Link to="/schedule">View all</Link>
                 </Button>
-              </CardHeader>
-              <CardContent>
-                {loadingSchedule ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : entries.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Clock className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                    <p>No doses scheduled for today</p>
-                    {medications.length > 0 && (
-                      <p className="text-sm mt-2">Your medications will appear here once scheduled</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {entries.slice(0, 5).map((entry) => (
-                      <div
-                        key={entry.id}
-                        className={`p-3 sm:p-4 rounded-xl border ${
-                          entry.status === 'taken' 
-                            ? 'bg-emerald-light border-primary/20' 
-                            : 'bg-card border-border'
-                        }`}
-                      >
-                        <div className="flex items-start sm:items-center justify-between gap-3">
-                          <div className="flex items-start sm:items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                            <div className="text-center min-w-[45px] sm:min-w-[60px] flex-shrink-0">
-                              <p className="text-sm sm:text-lg font-semibold">
-                                {format(new Date(entry.scheduled_time), 'HH:mm')}
-                              </p>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-sm sm:text-base truncate">
-                                {entry.medication?.name || 'Unknown'}
-                              </p>
-                              <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
-                                {entry.medication && (
-                                  <>
-                                    <Badge 
-                                      variant="secondary" 
-                                      className={`text-[10px] sm:text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as keyof typeof MEDICATION_TYPE_COLORS] || ''}`}
-                                    >
-                                      {entry.medication.type}
-                                    </Badge>
-                                    <span className="text-xs sm:text-sm text-muted-foreground truncate">
-                                      {entry.medication.dosage}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-shrink-0">
-                            {entry.status === 'taken' ? (
-                              <div className="flex items-center gap-1 sm:gap-2 text-primary">
-                                <Check className="h-4 w-4 sm:h-5 sm:w-5" />
-                                <span className="text-xs sm:text-sm font-medium hidden sm:inline">Taken</span>
-                              </div>
-                            ) : entry.status === 'skipped' ? (
-                              <Badge variant="secondary" className="text-xs">Skipped</Badge>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                className="gradient-primary border-0 h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                                onClick={() => handleMarkTaken(entry.id)}
-                                disabled={markAsTaken.isPending}
-                              >
-                                {markAsTaken.isPending ? (
-                                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Check className="h-3 w-3 sm:hidden" />
-                                    <span className="hidden sm:inline">Mark Taken</span>
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              </PanelHeader>
 
-                {pending.length > 0 && (
-                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl bg-muted/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
-                      <span className="text-xs sm:text-sm text-muted-foreground">
-                        {pending.length} dose{pending.length !== 1 ? 's' : ''} remaining today
-                      </span>
-                    </div>
-                    <Button variant="ghost" size="sm" className="h-8 text-xs sm:text-sm w-full sm:w-auto" asChild>
-                      <Link to="/settings?section=notifications">Enable Reminders</Link>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              {loadingSchedule ? (
+                <PanelEmpty>
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                </PanelEmpty>
+              ) : entries.length === 0 ? (
+                <PanelEmpty className="py-10">
+                  <Clock className="mx-auto mb-3 h-10 w-10 opacity-40" />
+                  <p>No doses scheduled for today</p>
+                  {medications.length > 0 && (
+                    <p className="mt-2 text-xs">Your medications appear here once scheduled</p>
+                  )}
+                </PanelEmpty>
+              ) : (
+                <PanelRows>
+                  {entries.slice(0, 5).map((entry) => (
+                    <PanelRow
+                      key={entry.id}
+                      className={entry.status === 'taken' ? 'bg-[hsl(var(--emerald-light))]/40' : undefined}
+                      glyph={
+                        <span className="w-[46px] text-center text-sm font-semibold tabular-nums sm:w-[56px] sm:text-base">
+                          {format(new Date(entry.scheduled_time), 'HH:mm')}
+                        </span>
+                      }
+                      label={entry.medication?.name || 'Unknown'}
+                      trailing={
+                        entry.status === 'taken' ? (
+                          <span className="flex items-center gap-1.5 text-primary">
+                            <Check className="h-4 w-4" />
+                            <span className="hidden text-xs font-medium sm:inline">Taken</span>
+                          </span>
+                        ) : entry.status === 'skipped' ? (
+                          <Badge variant="secondary" className="text-xs">Skipped</Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="h-8 border-0 px-2 gradient-primary text-xs sm:px-3"
+                            onClick={() => handleMarkTaken(entry.id)}
+                            disabled={markAsTaken.isPending}
+                          >
+                            {markAsTaken.isPending ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <>
+                                <Check className="h-3.5 w-3.5 sm:hidden" />
+                                <span className="hidden sm:inline">Mark taken</span>
+                              </>
+                            )}
+                          </Button>
+                        )
+                      }
+                    >
+                      {entry.medication && (
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] sm:text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as keyof typeof MEDICATION_TYPE_COLORS] || ''}`}
+                          >
+                            {entry.medication.type}
+                          </Badge>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {entry.medication.dosage}
+                          </span>
+                        </span>
+                      )}
+                    </PanelRow>
+                  ))}
+                </PanelRows>
+              )}
+
+              {pending.length > 0 && (
+                <PanelBody className="flex flex-col items-start justify-between gap-2 border-t border-primary/[0.07] bg-secondary/40 sm:flex-row sm:items-center sm:gap-3">
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground sm:gap-3 sm:text-sm">
+                    <Bell className="h-4 w-4 shrink-0" />
+                    {pending.length} dose{pending.length !== 1 ? 's' : ''} remaining today
+                  </span>
+                  <Button variant="ghost" size="sm" className="h-8 w-full text-xs sm:w-auto sm:text-sm" asChild>
+                    <Link to="/settings?section=notifications">Enable reminders</Link>
+                  </Button>
+                </PanelBody>
+              )}
+            </Panel>
           </motion.div>
 
           {/* Quick Tools Sidebar */}
@@ -362,46 +340,49 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Tools</CardTitle>
-                <CardDescription>Access your health features</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {quickLinks.map((link) => (
-                    <Link
-                      key={link.label}
-                      to={link.href}
-                      className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                          <link.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <span className="font-medium">{link.label}</span>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    </Link>
-                  ))}
-                </div>
+            <Panel>
+              <PanelHeader eyebrow="Quick tools" description="Everything else in your record" />
+              <PanelRows>
+                {quickLinks.map((link) => (
+                  <PanelRow
+                    key={link.label}
+                    interactive
+                    className="p-0 sm:p-0"
+                    label={
+                      <Link
+                        to={link.href}
+                        className="flex items-center justify-between gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:px-6 sm:py-3.5"
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
+                            <link.icon className="h-4 w-4 text-primary" />
+                          </span>
+                          <span className="font-medium">{link.label}</span>
+                        </span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </Link>
+                    }
+                  />
+                ))}
+              </PanelRows>
 
-                {profile?.subscription_tier === 'free' && (
-                  <div className="mt-6 p-4 rounded-xl gradient-primary text-primary-foreground">
-                    <p className="font-semibold mb-1">Upgrade to Premium</p>
-                    <p className="text-sm opacity-90 mb-3">
+              {profile?.subscription_tier === 'free' && (
+                <PanelBody className="border-t border-primary/[0.07]">
+                  <div className="rounded-xl p-4 gradient-primary text-primary-foreground">
+                    <p className="mb-1 font-semibold">Upgrade to Premium</p>
+                    <p className="mb-3 text-sm opacity-90">
                       Unlock unlimited medications, family profiles, and AI health insights
                     </p>
                     <Button size="sm" variant="secondary" asChild>
                       <Link to="/pricing">
-                        Learn More
+                        Learn more
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </PanelBody>
+              )}
+            </Panel>
           </motion.div>
         </div>
       </main>

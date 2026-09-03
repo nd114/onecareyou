@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PanelRow, PanelRows } from '@/components/ui/panel';
 import { Input } from '@/components/ui/input';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
@@ -299,55 +300,53 @@ const ClinicianPatients = () => {
                 </div>
               ) : (
                 <>
-                  <div className="divide-y rounded-lg border">
+                  <PanelRows className="overflow-hidden rounded-xl border border-primary/15">
                     {pagedPatients.map((patient) => (
-                      <button
+                      <PanelRow
                         key={patient.id}
-                        type="button"
-                        onClick={() => navigate(`/clinician/patients/${patient.invite_code}`)}
-                        className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="h-9 w-9 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="font-semibold text-primary text-sm">
+                        onSelect={() => navigate(`/clinician/patients/${patient.invite_code}`)}
+                        selectLabel={`Open ${patient.patient_name}`}
+                        glyph={
+                          <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                             {patient.patient_name.charAt(0).toUpperCase()}
                           </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{patient.patient_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {patient.patient_email || 'No email on file'}
-                          </p>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-2 text-right">
-                          {/* Relationship source. With more than one hospital
-                              affiliation these are named, not lumped together. */}
-                          <Badge variant="outline" className="text-xs">
-                            {patient.source === 'hospital'
-                              ? hospitalNames.length > 1
-                                ? patient.hospital_name
-                                : 'Hospital'
-                              : 'Private'}
-                          </Badge>
-                          {patient.source === 'hospital' && !patient.share_active ? (
-                            <Badge variant="secondary" className="text-xs">
-                              Disconnected
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant={patient.clinician_user_id ? 'secondary' : 'outline'}
-                              className="text-xs"
-                            >
-                              {patient.clinician_user_id ? 'Connected' : 'Pending'}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="w-28 sm:w-36 text-right text-xs text-muted-foreground">
-                          {lastActivityLabel(patient.last_accessed_at || patient.created_at)}
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      </button>
+                        }
+                        label={patient.patient_name}
+                        detail={patient.patient_email || 'No email on file'}
+                        trailing={
+                          <span className="flex items-center gap-2">
+                            <span className="hidden items-center gap-2 sm:flex">
+                              {/* Relationship source. With more than one hospital
+                                  affiliation these are named, not lumped together. */}
+                              <Badge variant="outline" className="text-xs">
+                                {patient.source === 'hospital'
+                                  ? hospitalNames.length > 1
+                                    ? patient.hospital_name
+                                    : 'Hospital'
+                                  : 'Private'}
+                              </Badge>
+                              {patient.source === 'hospital' && !patient.share_active ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  Disconnected
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant={patient.clinician_user_id ? 'secondary' : 'outline'}
+                                  className="text-xs"
+                                >
+                                  {patient.clinician_user_id ? 'Connected' : 'Pending'}
+                                </Badge>
+                              )}
+                            </span>
+                            <span className="w-28 text-right text-xs text-muted-foreground sm:w-36">
+                              {lastActivityLabel(patient.last_accessed_at || patient.created_at)}
+                            </span>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          </span>
+                        }
+                      />
                     ))}
-                  </div>
+                  </PanelRows>
 
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between mt-4">

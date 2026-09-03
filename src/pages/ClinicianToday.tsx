@@ -22,6 +22,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Panel, PanelEmpty, PanelGlyph, PanelHeader, PanelRow, PanelRows } from "@/components/ui/panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
@@ -165,123 +166,112 @@ const ClinicianToday = () => {
           </div>
 
           {/* Triage list */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-medium">Queue</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="p-8 flex justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="p-10 text-center">
-                  <CheckCircle2 className="h-8 w-8 text-primary/50 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    You're caught up. Nothing waiting on you.
-                  </p>
-                </div>
-              ) : (
-                <ul className="divide-y">
-                  {filtered.map((item) => {
-                    const Icon = kindIcon(item.kind);
-                    const pb = priorityBadge(item.priority);
-                    return (
-                      <li key={item.id}>
-                        <button
-                          onClick={() => navigate(item.actionRoute)}
-                          className="w-full text-left p-4 hover:bg-muted/40 transition-colors flex items-start gap-3"
+          <Panel>
+            <PanelHeader eyebrow="Queue" />
+            {isLoading ? (
+              <PanelEmpty>
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+              </PanelEmpty>
+            ) : filtered.length === 0 ? (
+              <PanelEmpty className="py-10">
+                <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-primary/50" />
+                You're caught up. Nothing waiting on you.
+              </PanelEmpty>
+            ) : (
+              <PanelRows>
+                {filtered.map((item) => {
+                  const Icon = kindIcon(item.kind);
+                  const pb = priorityBadge(item.priority);
+                  return (
+                    <PanelRow
+                      key={item.id}
+                      onSelect={() => navigate(item.actionRoute)}
+                      selectLabel={`${kindLabel(item.kind)}: ${item.title}`}
+                      glyph={
+                        <PanelGlyph
+                          tone={item.priority === 3 ? "alert" : item.priority === 2 ? "attention" : "muted"}
                         >
-                          <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                              <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                                {kindLabel(item.kind)}
-                              </span>
-                              <Badge className={pb.className + " text-[10px] px-1.5 py-0"}>
-                                {pb.label}
-                              </Badge>
-                              {item.patientName && (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <User className="h-3 w-3" />
-                                  {item.patientName}
-                                </span>
-                              )}
-                            </div>
-                            <div className="font-medium text-sm truncate">
-                              {item.title}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate">
-                              {item.subtitle}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatWhen(item.occurredAt)}
-                            </div>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground self-center flex-shrink-0" />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Open tasks panel */}
-          <Card className="mt-6">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-medium">My tasks</CardTitle>
-              <Badge variant="outline">{openTasks.length} open</Badge>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loadingTasks ? (
-                <div className="p-6 flex justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              ) : openTasks.length === 0 ? (
-                <div className="p-8 text-center text-sm text-muted-foreground">
-                  No open tasks. Click "New task" to add one.
-                </div>
-              ) : (
-                <ul className="divide-y">
-                  {openTasks.map((t) => (
-                    <li key={t.id} className="p-4 flex items-start gap-3">
-                      <button
-                        onClick={() => update.mutate({ id: t.id, status: "done" })}
-                        className="mt-0.5 h-5 w-5 rounded border border-muted-foreground/40 hover:border-primary hover:bg-primary/10 flex items-center justify-center transition-colors flex-shrink-0"
-                        aria-label="Mark done"
-                      >
-                        <CheckCircle2 className="h-4 w-4 text-transparent hover:text-primary" />
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{t.title}</div>
-                        {t.notes && (
-                          <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                            {t.notes}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-                          {t.due_at && (
+                          <Icon />
+                        </PanelGlyph>
+                      }
+                      overline={
+                        <>
+                          <span className="uppercase tracking-wide">{kindLabel(item.kind)}</span>
+                          <Badge className={pb.className + " px-1.5 py-0 text-[10px]"}>
+                            {pb.label}
+                          </Badge>
+                          {item.patientName && (
                             <span className="flex items-center gap-1">
-                              <CalendarClock className="h-3 w-3" />
-                              {new Date(t.due_at).toLocaleString()}
+                              <User className="h-3 w-3" />
+                              {item.patientName}
                             </span>
                           )}
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            {t.priority}
-                          </Badge>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+                        </>
+                      }
+                      label={item.title}
+                      detail={item.subtitle}
+                      trailing={<ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    >
+                      <span className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {formatWhen(item.occurredAt)}
+                      </span>
+                    </PanelRow>
+                  );
+                })}
+              </PanelRows>
+            )}
+          </Panel>
+
+          {/* Open tasks panel */}
+          <Panel className="mt-6">
+            <PanelHeader eyebrow="My tasks">
+              <Badge variant="outline">{openTasks.length} open</Badge>
+            </PanelHeader>
+            {loadingTasks ? (
+              <PanelEmpty>
+                <Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" />
+              </PanelEmpty>
+            ) : openTasks.length === 0 ? (
+              <PanelEmpty>No open tasks. Click "New task" to add one.</PanelEmpty>
+            ) : (
+              <PanelRows>
+                {openTasks.map((t) => (
+                  <PanelRow
+                    key={t.id}
+                    className="items-start"
+                    glyph={
+                      <button
+                        onClick={() => update.mutate({ id: t.id, status: "done" })}
+                        className="group mt-0.5 grid h-7 w-7 place-items-center rounded-full border border-muted-foreground/30 transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        aria-label={`Mark "${t.title}" done`}
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-transparent transition-colors group-hover:text-primary" />
+                      </button>
+                    }
+                    label={t.title}
+                  >
+                    {t.notes && (
+                      <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+                        {t.notes}
+                      </span>
+                    )}
+                    <span className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
+                      {t.due_at && (
+                        <span className="flex items-center gap-1">
+                          <CalendarClock className="h-3 w-3" />
+                          {new Date(t.due_at).toLocaleString()}
+                        </span>
+                      )}
+                      <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                        {t.priority}
+                      </Badge>
+                    </span>
+                  </PanelRow>
+                ))}
+              </PanelRows>
+            )}
+          </Panel>
         </motion.div>
       </main>
 
