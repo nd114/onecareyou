@@ -185,5 +185,22 @@ retracted.
 | The patient reads but does not write | a plan is what was agreed, not what one side decided |
 | A plan is revoked, never deleted | it is part of the record |
 
+`independent_vs_institution.test.sql` — the independent clinician, the hospital,
+and the person who is both:
+
+| Rule | Why it matters |
+| --- | --- |
+| A hospital never inherits a doctor's private list | taking a post must not hand your patients to your employer |
+| A doctor never gains the hospital's list personally | the mirror of the same rule |
+| Leaving the job does not take your own patients with it | otherwise a patient's invitation means nothing |
+| Another hospital's membership grants nothing here | assignments are scoped to their tenant |
+| Ending one relationship never ends the other | a patient can leave either independently |
+| Only the patient changes the terms of a personal share | `guard_provider_share_consent` |
+
+The consent-guard assertions exist because a draft of this suite tried to end a
+share while carrying a colleague's identity and the change was silently
+reverted. That was the guard working; it is asserted now rather than assumed.
+See `docs/independent-clinicians-and-hospitals.md`.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.
