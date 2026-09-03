@@ -27,7 +27,7 @@ export function usePatientInvitations() {
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await (supabase
-        .from('patient_invitations' as any)
+        .from('patient_invitations')
         .select('*')
         .eq('clinician_user_id', user.id)
         .order('created_at', { ascending: false }) as any);
@@ -44,7 +44,7 @@ export function usePatientInvitations() {
     queryFn: async () => {
       if (!user?.email) return [];
       const { data, error } = await (supabase
-        .from('patient_invitations' as any)
+        .from('patient_invitations')
         .select('*')
         .eq('patient_email', user.email)
         .eq('status', 'pending')
@@ -76,7 +76,7 @@ export function usePatientInvitations() {
       const inviteCode = generateInviteCode();
       
       const { data, error } = await (supabase
-        .from('patient_invitations' as any)
+        .from('patient_invitations')
         .insert({
           clinician_user_id: user.id,
           patient_email: email.toLowerCase().trim(),
@@ -109,7 +109,7 @@ export function usePatientInvitations() {
 
       // First, get the invitation details
       const { data: invitation, error: fetchError } = await (supabase
-        .from('patient_invitations' as any)
+        .from('patient_invitations')
         .select('*')
         .eq('id', invitationId)
         .single() as any);
@@ -150,7 +150,7 @@ export function usePatientInvitations() {
 
       // Update invitation status
       const { error: updateError } = await (supabase
-        .from('patient_invitations' as any)
+        .from('patient_invitations')
         .update({
           status: 'accepted',
           accepted_at: new Date().toISOString(),
@@ -161,7 +161,7 @@ export function usePatientInvitations() {
       if (updateError) throw updateError;
 
       // Log the action
-      await (supabase.from('access_audit_logs' as any).insert({
+      await (supabase.from('access_audit_logs').insert({
         action: 'invitation_accepted',
         actor_user_id: user.id,
         target_user_id: inv.clinician_user_id,
@@ -187,7 +187,7 @@ export function usePatientInvitations() {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await (supabase
-        .from('patient_invitations' as any)
+        .from('patient_invitations')
         .update({
           status: 'declined',
           declined_at: new Date().toISOString(),
@@ -211,7 +211,7 @@ export function usePatientInvitations() {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await (supabase
-        .from('patient_invitations' as any)
+        .from('patient_invitations')
         .update({ status: 'expired' })
         .eq('id', invitationId) as any)
         .eq('clinician_user_id', user.id);

@@ -63,7 +63,7 @@ export function usePracticeDepartments(practiceId?: string | null) {
     enabled: !!practiceId,
     queryFn: async (): Promise<Department[]> => {
       const { data, error } = await supabase
-        .from('practice_departments' as any)
+        .from('practice_departments')
         .select('id, practice_id, name, description, is_active, created_at')
         .eq('practice_id', practiceId!)
         .order('name');
@@ -77,7 +77,7 @@ export function usePracticeDepartments(practiceId?: string | null) {
     enabled: !!practiceId,
     queryFn: async (): Promise<DepartmentMember[]> => {
       const { data, error } = await supabase
-        .from('practice_department_members' as any)
+        .from('practice_department_members')
         .select('id, department_id, user_id, is_lead')
         .eq('practice_id', practiceId!);
       if (error) throw error;
@@ -88,7 +88,7 @@ export function usePracticeDepartments(practiceId?: string | null) {
   const createDepartment = useMutation({
     mutationFn: async ({ name, description }: { name: string; description?: string }) => {
       if (!practiceId || !user) throw new Error('No hospital selected');
-      const { error } = await supabase.from('practice_departments' as any).insert({
+      const { error } = await supabase.from('practice_departments').insert({
         practice_id: practiceId,
         name: name.trim(),
         description: description?.trim() || null,
@@ -111,7 +111,7 @@ export function usePracticeDepartments(practiceId?: string | null) {
   const setDepartmentActive = useMutation({
     mutationFn: async ({ departmentId, isActive }: { departmentId: string; isActive: boolean }) => {
       const { error } = await supabase
-        .from('practice_departments' as any)
+        .from('practice_departments')
         .update({ is_active: isActive } as never)
         .eq('id', departmentId);
       if (error) throw error;
@@ -131,7 +131,7 @@ export function usePracticeDepartments(practiceId?: string | null) {
       isLead: boolean;
     }) => {
       if (!practiceId || !user) throw new Error('No hospital selected');
-      const { error } = await supabase.from('practice_department_members' as any).insert({
+      const { error } = await supabase.from('practice_department_members').insert({
         department_id: departmentId,
         practice_id: practiceId,
         user_id: userId,
@@ -155,7 +155,7 @@ export function usePracticeDepartments(practiceId?: string | null) {
   const removeMember = useMutation({
     mutationFn: async (memberRowId: string) => {
       const { error } = await supabase
-        .from('practice_department_members' as any)
+        .from('practice_department_members')
         .delete()
         .eq('id', memberRowId);
       if (error) throw error;
@@ -170,7 +170,7 @@ export function usePracticeDepartments(practiceId?: string | null) {
   const setLead = useMutation({
     mutationFn: async ({ memberRowId, isLead }: { memberRowId: string; isLead: boolean }) => {
       const { error } = await supabase
-        .from('practice_department_members' as any)
+        .from('practice_department_members')
         .update({ is_lead: isLead } as never)
         .eq('id', memberRowId);
       if (error) throw error;
@@ -202,7 +202,7 @@ export function usePracticeStaffOverview(practiceId?: string | null) {
     queryKey: ['practice-staff-overview', practiceId],
     enabled: !!practiceId,
     queryFn: async (): Promise<StaffOverviewRow[]> => {
-      const { data, error } = await (supabase as any).rpc('practice_staff_overview', {
+      const { data, error } = await supabase.rpc('practice_staff_overview', {
         _practice_id: practiceId,
       });
       if (error) throw error;
@@ -219,7 +219,7 @@ export function usePracticePatientOverview(practiceId?: string | null) {
     queryKey: ['practice-patient-overview', practiceId],
     enabled: !!practiceId,
     queryFn: async (): Promise<PatientOverviewRow[]> => {
-      const { data, error } = await (supabase as any).rpc('practice_patient_overview', {
+      const { data, error } = await supabase.rpc('practice_patient_overview', {
         _practice_id: practiceId,
       });
       if (error) throw error;
@@ -239,7 +239,7 @@ export function usePracticePatientOverview(practiceId?: string | null) {
         data: { user },
       } = await supabase.auth.getUser();
       if (!practiceId || !user) throw new Error('No hospital selected');
-      const { error } = await supabase.from('practice_patient_departments' as any).insert({
+      const { error } = await supabase.from('practice_patient_departments').insert({
         practice_id: practiceId,
         department_id: departmentId,
         patient_user_id: patientUserId,

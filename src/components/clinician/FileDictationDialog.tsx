@@ -133,7 +133,7 @@ export function FileDictationDialog({
       // and the clinician needs to know exactly which parts did not land.
       for (const i of pickedVitals) {
         const v = vitals[i];
-        const { error } = await (supabase as any).from("vitals").insert({
+        const { error } = await supabase.from("vitals").insert({
           user_id: patientUserId,
           recorded_by_user_id: user.id,
           source: "clinician",
@@ -148,7 +148,7 @@ export function FileDictationDialog({
 
       for (const i of pickedGuidance) {
         const g = guidance[i];
-        const { error } = await (supabase as any).from("clinician_guidance").insert({
+        const { error } = await supabase.from("clinician_guidance").insert({
           clinician_user_id: user.id,
           patient_user_id: patientUserId,
           title: g.title,
@@ -160,7 +160,7 @@ export function FileDictationDialog({
       }
 
       if (writeNote && note) {
-        const { error } = await (supabase as any).from("internal_notes").insert({
+        const { error } = await supabase.from("internal_notes").insert({
           patient_user_id: patientUserId,
           author_user_id: user.id,
           body: note,

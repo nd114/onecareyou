@@ -73,7 +73,20 @@ async function findShare(clinicianId: string, clinicianEmail: string | undefined
   return data?.[0]?.id ?? null;
 }
 
+/**
+ * Record what the assistant did, on the patient's action rail.
+ *
+ * `actor_user_id` is NOT NULL and the read policy keys off it, so an entry
+ * without one is rejected by the database and would be invisible to the
+ * clinician who caused it even if it were not. It was missing here, and
+ * because the failure was swallowed without a trace every assistant action
+ * went unlogged and looked exactly like one that had been logged.
+ *
+ * Still best-effort — a failed audit write must not undo an action the
+ * clinician already approved — but no longer silent.
+ */
 async function logAction(
+  actorId: string,
   patientId: string,
   action: string,
   summary: string,
@@ -81,7 +94,8 @@ async function logAction(
   refId?: string | null,
 ) {
   try {
-    await (supabase as any).from('patient_action_log').insert({
+    const { error } = await supabase.from('patient_action_log').insert({
+      actor_user_id: actorId,
       patient_user_id: patientId,
       action,
       summary,
@@ -89,8 +103,9 @@ async function logAction(
       ref_id: refId ?? null,
       metadata: { source: 'clinician_assistant', approved: true },
     });
-  } catch {
-    /* audit logging is best-effort and must never block the action */
+    if (error) console.error('patient_action_log insert failed', error);
+  } catch (err) {
+    console.error('patient_action_log insert threw', err);
   }
 }
 
@@ -116,7 +131,7 @@ export async function executeClinicianAction(
           body,
         });
         if (error) return fail(error.message);
-        await logAction(patientId, 'message_sent', `Assistant-drafted message sent: ${body.slice(0, 120)}`, 'messages');
+        await logAction(clinician.id, patientId, 'message_sent', `Assistant-drafted message sent: ${body.slice(0, 120)}`, 'messages');
         return { id: action.id, ok: true, message: 'Message sent.' };
       }
 
@@ -141,7 +156,7 @@ export async function executeClinicianAction(
           .select('id')
           .single();
         if (error) return fail(error.message);
-        await logAction(patientId, 'guidance_sent', `Assistant-drafted guidance: ${title}`, 'clinician_guidance', data?.id);
+        await logAction(clinician.id, patientId, 'guidance_sent', `Assistant-drafted guidance: ${title}`, 'clinician_guidance', data?.id);
         return { id: action.id, ok: true, message: 'Guidance sent to the patient.' };
       }
 
@@ -165,6 +180,7 @@ export async function executeClinicianAction(
           .single();
         if (error) return fail(error.message);
         await logAction(
+          clinician.id,
           patientId,
           'alert_rule_created',
           `Assistant-drafted alert rule: ${vitalType} ${p.condition} ${p.threshold_value}`,

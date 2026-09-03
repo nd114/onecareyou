@@ -139,7 +139,7 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
         const mentioned = draft.mentioned_vitals?.[i];
         const parsed = mentioned && parseMentionedVital(mentioned);
         if (!parsed) continue;
-        const { error } = await (supabase as any).from("vitals").insert({
+        const { error } = await supabase.from("vitals").insert({
           user_id: encounter.patient_user_id,
           recorded_by_user_id: user.id,
           source: "clinician",

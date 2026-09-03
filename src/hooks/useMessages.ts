@@ -159,7 +159,7 @@ export function useMessageThreads(role: 'patient' | 'clinician') {
     queryKey,
     queryFn: async () => {
       if (!user?.id) return [] as MessageThreadSummary[];
-      const { data, error } = await (supabase as any).rpc('my_message_threads', { _role: role });
+      const { data, error } = await supabase.rpc('my_message_threads', { _role: role });
       if (error) throw error;
       return ((data ?? []) as any[]).map((r) => ({
         counterpartyId: r.counterparty_id as string,

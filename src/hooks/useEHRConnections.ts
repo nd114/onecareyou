@@ -44,7 +44,7 @@ export function useEHRConnections() {
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await (supabase
-        .from('ehr_connections' as any)
+        .from('ehr_connections')
         .select('*')
         .eq('clinician_user_id', user.id)
         .order('created_at', { ascending: false }) as any);
@@ -59,7 +59,7 @@ export function useEHRConnections() {
       queryKey: ['ehr-sync-logs', connectionId],
       queryFn: async () => {
         const { data, error } = await (supabase
-          .from('ehr_sync_logs' as any)
+          .from('ehr_sync_logs')
           .select('*')
           .eq('connection_id', connectionId)
           .order('created_at', { ascending: false })
@@ -75,7 +75,7 @@ export function useEHRConnections() {
     mutationFn: async ({ providerType, providerName, fhirBaseUrl }: { providerType: string; providerName: string; fhirBaseUrl?: string }) => {
       if (!user) throw new Error('Not authenticated');
       const { data, error } = await (supabase
-        .from('ehr_connections' as any)
+        .from('ehr_connections')
         .insert({ clinician_user_id: user.id, provider_type: providerType, provider_name: providerName, fhir_base_url: fhirBaseUrl || null })
         .select()
         .single() as any);
@@ -88,7 +88,7 @@ export function useEHRConnections() {
 
   const updateConnection = useMutation({
     mutationFn: async ({ connectionId, updates }: { connectionId: string; updates: Partial<EHRConnection> }) => {
-      const { error } = await (supabase.from('ehr_connections' as any).update(updates).eq('id', connectionId) as any);
+      const { error } = await (supabase.from('ehr_connections').update(updates).eq('id', connectionId) as any);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['ehr-connections'] }); },
@@ -96,7 +96,7 @@ export function useEHRConnections() {
 
   const deleteConnection = useMutation({
     mutationFn: async (connectionId: string) => {
-      const { error } = await (supabase.from('ehr_connections' as any).delete().eq('id', connectionId) as any);
+      const { error } = await (supabase.from('ehr_connections').delete().eq('id', connectionId) as any);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['ehr-connections'] }); toast.success('Connection removed'); },

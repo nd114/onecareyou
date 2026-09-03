@@ -41,7 +41,7 @@ export function useVisitSummaries() {
     queryKey: ["visit-summaries", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("my_visit_summaries");
+      const { data, error } = await supabase.rpc("my_visit_summaries");
       if (error) throw error;
       return (data ?? []) as VisitSummary[];
     },

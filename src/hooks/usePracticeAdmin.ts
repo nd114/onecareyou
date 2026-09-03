@@ -120,7 +120,7 @@ export function usePracticeAdminActions(practiceId?: string | null) {
       departmentId?: string | null;
     }) => {
       if (!practiceId || !user) throw new Error('No hospital selected');
-      const { error } = await (supabase as any).from('practice_patient_assignments').insert({
+      const { error } = await supabase.from('practice_patient_assignments').insert({
         practice_id: practiceId,
         patient_user_id: patientUserId,
         clinician_user_id: clinicianUserId,

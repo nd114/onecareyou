@@ -204,7 +204,7 @@ const ClinicianBAA = () => {
       const fullAddress = buildFullAddress();
       
       const { error } = await supabase
-        .from('baa_agreements' as any)
+        .from('baa_agreements')
         .insert({
           clinician_user_id: user.id,
           practice_name: formData.practice_name,

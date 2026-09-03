@@ -28,7 +28,7 @@ export interface InternalNote {
 async function resolveAuthors(ids: string[]): Promise<Map<string, string>> {
   if (ids.length === 0) return new Map();
   const { data } = (await supabase
-    .from("clinician_profiles_public" as any)
+    .from("clinician_profiles_public")
     .select("user_id, first_name, last_name, title")
     .in("user_id", ids)) as unknown as {
     data: { user_id: string; first_name: string | null; last_name: string | null; title: string | null }[] | null;

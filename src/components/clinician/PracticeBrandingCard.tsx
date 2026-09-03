@@ -51,7 +51,7 @@ export function PracticeBrandingCard() {
         } as any,
       });
       // Also update brand-specific columns
-      await (supabase.from('practices' as any).update({
+      await (supabase.from('practices').update({
         brand_accent_color: accentColor,
         brand_logo_url: logoUrl || null,
       }).eq('id', currentPractice.id) as any);

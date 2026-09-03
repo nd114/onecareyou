@@ -1,9 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-interface SharePermissions {
+/**
+ * A type alias, not an interface: this is written straight into a jsonb
+ * column, and only type aliases get the implicit index signature that makes
+ * them assignable to `Json`.
+ */
+type SharePermissions = {
   vitals: boolean;
   meds: boolean;
   adherence: boolean;
@@ -14,7 +20,7 @@ interface SharePermissions {
    * through document_shares.
    */
   documents?: boolean;
-}
+};
 
 export interface ProviderShare {
   id: string;
@@ -115,7 +121,7 @@ export function useProviderShares() {
 
       const infoMap = new Map<string, ClinicianBasicInfo>();
       if (clinicianIds.length > 0) {
-        const { data: infos, error: infoError } = await (supabase as any).rpc("get_clinician_basic_info", {
+        const { data: infos, error: infoError } = await supabase.rpc("get_clinician_basic_info", {
           clinician_ids: clinicianIds,
         });
         if (infoError) console.error("Failed to resolve clinician names", infoError);
@@ -152,11 +158,11 @@ export function useProviderShares() {
     reason?: string | null;
     providerLabel?: string | null;
     clinicianUserId?: string | null;
-    details?: Record<string, unknown>;
+    details?: Record<string, Json>;
   }) => {
     if (!user) return;
     try {
-      const { error } = await (supabase as any).from("share_events").insert({
+      const { error } = await supabase.from("share_events").insert({
         share_id: input.shareId,
         patient_user_id: user.id,
         clinician_user_id: input.clinicianUserId ?? null,
@@ -390,7 +396,7 @@ export function useShareEvents(shareId?: string) {
     queryKey: ["share-events", user?.id, shareId ?? "all"],
     enabled: !!user,
     queryFn: async () => {
-      let q = (supabase as any).from("share_events").select("*").order("created_at", { ascending: false }).limit(200);
+      let q = supabase.from("share_events").select("*").order("created_at", { ascending: false }).limit(200);
       if (shareId) q = q.eq("share_id", shareId);
       const { data, error } = await q;
       if (error) throw error;

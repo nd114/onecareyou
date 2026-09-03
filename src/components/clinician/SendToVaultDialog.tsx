@@ -69,7 +69,7 @@ export function SendToVaultDialog({ patientUserId, patientName }: Props) {
         .upload(path, file);
       if (uploadError) throw uploadError;
 
-      const { error } = await (supabase as any).from("health_documents").insert({
+      const { error } = await supabase.from("health_documents").insert({
         user_id: patientUserId,
         uploaded_by_user_id: user.id,
         source_context: "clinician_upload",

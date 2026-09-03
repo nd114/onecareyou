@@ -43,7 +43,7 @@ const Messages = () => {
 
       const nameById = new Map<string, string>();
       if (ids.length > 0) {
-        const { data: infos } = await (supabase as any).rpc('get_clinician_basic_info', { clinician_ids: ids });
+        const { data: infos } = await supabase.rpc('get_clinician_basic_info', { clinician_ids: ids });
         for (const i of (infos || []) as {
           user_id: string;
           first_name: string | null;

@@ -6,12 +6,19 @@
  * or may not be there. The only thing we cannot guess is the address.
  */
 
-export interface StaffCsvEntry {
+/**
+ * A type alias rather than an interface on purpose: these entries are sent
+ * straight into a jsonb argument, and TypeScript gives type aliases an
+ * implicit index signature while interfaces get none. As an interface this
+ * is not assignable to `Json`, and the call site needed a cast that switched
+ * off checking for the whole statement.
+ */
+export type StaffCsvEntry = {
   email: string;
   name?: string;
   role?: string;
   note?: string;
-}
+};
 
 export interface StaffCsvResult {
   entries: StaffCsvEntry[];

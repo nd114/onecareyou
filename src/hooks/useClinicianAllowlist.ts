@@ -38,7 +38,7 @@ export function useClinicianAllowlist(practiceId?: string | null) {
     enabled: !!practiceId,
     queryFn: async (): Promise<AllowlistEntry[]> => {
       const { data, error } = await supabase
-        .from('practice_clinician_allowlist' as any)
+        .from('practice_clinician_allowlist')
         .select('id, email, full_name, intended_role, created_at')
         .eq('practice_id', practiceId!)
         .order('created_at', { ascending: false });
@@ -51,7 +51,7 @@ export function useClinicianAllowlist(practiceId?: string | null) {
     queryKey: ['pending-affiliations', practiceId],
     enabled: !!practiceId,
     queryFn: async (): Promise<PendingAffiliation[]> => {
-      const { data, error } = await (supabase as any).rpc('practice_pending_affiliations', {
+      const { data, error } = await supabase.rpc('practice_pending_affiliations', {
         _practice_id: practiceId,
       });
       if (error) throw error;
@@ -64,7 +64,7 @@ export function useClinicianAllowlist(practiceId?: string | null) {
     enabled: !!practiceId,
     queryFn: async (): Promise<string[]> => {
       const { data, error } = await supabase
-        .from('practices' as any)
+        .from('practices')
         .select('allowed_email_domains')
         .eq('id', practiceId!)
         .maybeSingle();
@@ -76,7 +76,7 @@ export function useClinicianAllowlist(practiceId?: string | null) {
   const addEntries = useMutation({
     mutationFn: async (entries: StaffCsvEntry[]) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { data, error } = await (supabase as any).rpc('bulk_allowlist_clinicians', {
+      const { data, error } = await supabase.rpc('bulk_allowlist_clinicians', {
         _practice_id: practiceId,
         _entries: entries,
       });
@@ -97,7 +97,7 @@ export function useClinicianAllowlist(practiceId?: string | null) {
   const removeEntry = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('practice_clinician_allowlist' as any)
+        .from('practice_clinician_allowlist')
         .delete()
         .eq('id', id);
       if (error) throw error;
@@ -112,7 +112,7 @@ export function useClinicianAllowlist(practiceId?: string | null) {
   const setStatus = useMutation({
     mutationFn: async ({ userId, status }: { userId: string; status: string }) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { error } = await (supabase as any).rpc('set_practice_affiliation_status', {
+      const { error } = await supabase.rpc('set_practice_affiliation_status', {
         _practice_id: practiceId,
         _user_id: userId,
         _status: status,
@@ -140,7 +140,7 @@ export function useClinicianAllowlist(practiceId?: string | null) {
         .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
         .filter(Boolean);
       const { error } = await supabase
-        .from('practices' as any)
+        .from('practices')
         .update({ allowed_email_domains: domains } as never)
         .eq('id', practiceId);
       if (error) throw error;

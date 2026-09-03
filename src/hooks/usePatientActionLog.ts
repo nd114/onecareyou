@@ -1,6 +1,7 @@
 // Phase 4.1 — Patient activity timeline (action-rail audit log).
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface PatientActionLogEntry {
@@ -12,7 +13,7 @@ export interface PatientActionLogEntry {
   ref_table: string | null;
   ref_id: string | null;
   summary: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, Json>;
   created_at: string;
 }
 
@@ -24,7 +25,7 @@ export function usePatientActionLog(patientUserId?: string) {
     queryKey: ["patient-action-log", patientUserId],
     queryFn: async () => {
       if (!patientUserId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("patient_action_log")
         .select("*")
         .eq("patient_user_id", patientUserId)
@@ -43,10 +44,10 @@ export function usePatientActionLog(patientUserId?: string) {
       summary?: string;
       ref_table?: string;
       ref_id?: string;
-      metadata?: Record<string, unknown>;
+      metadata?: Record<string, Json>;
     }) => {
       if (!user) return;
-      const { error } = await (supabase as any).from("patient_action_log").insert({
+      const { error } = await supabase.from("patient_action_log").insert({
         actor_user_id: user.id,
         ...input,
       });

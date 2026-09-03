@@ -81,7 +81,7 @@ const EnterpriseInquiry = () => {
     try {
       const inquiryId = crypto.randomUUID();
       const { error } = await supabase
-        .from('enterprise_inquiries' as any)
+        .from('enterprise_inquiries')
         .insert({
           id: inquiryId,
           clinician_user_id: user?.id || null,

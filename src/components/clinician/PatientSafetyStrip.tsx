@@ -24,7 +24,7 @@ export function PatientSafetyStrip({ patientUserId }: { patientUserId: string })
     queryKey: ['patient-clinical-profile', patientUserId],
     enabled: !!patientUserId,
     queryFn: async (): Promise<ClinicalProfile | null> => {
-      const { data, error } = await (supabase as any).rpc('get_patient_clinical_profile', {
+      const { data, error } = await supabase.rpc('get_patient_clinical_profile', {
         patient_ids: [patientUserId],
       });
       if (error) throw error;

@@ -93,7 +93,7 @@ export default function InstitutionStaffSignUp({
 
   const requestAffiliation = async () => {
     if (!slug) return null;
-    const { data, error } = await (supabase as any).rpc('request_practice_affiliation', {
+    const { data, error } = await supabase.rpc('request_practice_affiliation', {
       _slug: slug,
     });
     if (error) throw error;

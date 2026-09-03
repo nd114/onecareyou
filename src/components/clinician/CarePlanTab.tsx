@@ -63,7 +63,7 @@ export function CarePlanTab({ patientUserId, patientName, practiceId }: Props) {
     queryKey: ["care-plan-readings", patientUserId],
     enabled: !!patientUserId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("vitals")
         .select("type, value, secondary_value, unit, recorded_at")
         .eq("user_id", patientUserId)

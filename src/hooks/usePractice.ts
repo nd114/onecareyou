@@ -95,11 +95,11 @@ export function usePractice() {
     queryKey: ['practice-memberships', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await (supabase
-        .from('practice_members' as any)
+      const { data, error } = await supabase
+        .from('practice_members')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'active') as any);
+        .eq('status', 'active');
       if (error) throw error;
       return (data || []) as PracticeMember[];
     },
@@ -117,10 +117,10 @@ export function usePractice() {
       // for non-service-role clients. We explicitly list the safe columns here.
       const SAFE_PRACTICE_COLUMNS =
         'id,name,phone,email,address,city,state,zip_code,country,logo_url,primary_color,patient_limit,member_limit,created_by,created_at,updated_at,is_active';
-      const { data, error } = await (supabase
-        .from('practices' as any)
+      const { data, error } = await supabase
+        .from('practices')
         .select(SAFE_PRACTICE_COLUMNS)
-        .in('id', practiceIds) as any);
+        .in('id', practiceIds);
       if (error) throw error;
       return (data || []) as Practice[];
     },
@@ -187,12 +187,12 @@ export function usePractice() {
     return useQuery({
       queryKey: ['practice-invitations', practiceId],
       queryFn: async () => {
-        const { data, error } = await (supabase
-          .from('practice_invitations' as any)
+        const { data, error } = await supabase
+          .from('practice_invitations')
           .select('*')
           .eq('practice_id', practiceId)
           .eq('status', 'pending')
-          .order('created_at', { ascending: false }) as any);
+          .order('created_at', { ascending: false });
         if (error) throw error;
         return (data || []) as PracticeInvitation[];
       },
@@ -205,11 +205,11 @@ export function usePractice() {
     queryKey: ['my-practice-invitations', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await (supabase
-        .from('practice_invitations' as any)
+      const { data, error } = await supabase
+        .from('practice_invitations')
         .select('*')
         .eq('email', user.email)
-        .eq('status', 'pending') as any);
+        .eq('status', 'pending');
       if (error) throw error;
       return (data || []) as PracticeInvitation[];
     },
@@ -220,11 +220,11 @@ export function usePractice() {
   const createPractice = useMutation({
     mutationFn: async (data: CreatePracticeData) => {
       if (!user) throw new Error('Not authenticated');
-      const { data: practice, error } = await (supabase
-        .from('practices' as any)
+      const { data: practice, error } = await supabase
+        .from('practices')
         .insert({ ...data, created_by: user.id })
         .select('id,name,phone,email,address,city,state,zip_code,country,logo_url,primary_color,patient_limit,member_limit,created_by,created_at,updated_at,is_active')
-        .single() as any);
+        .single();
       if (error) throw error;
       return practice as Practice;
     },
@@ -241,10 +241,10 @@ export function usePractice() {
   // Update practice details
   const updatePractice = useMutation({
     mutationFn: async ({ practiceId, updates }: { practiceId: string; updates: Partial<Practice> }) => {
-      const { error } = await (supabase
-        .from('practices' as any)
+      const { error } = await supabase
+        .from('practices')
         .update(updates)
-        .eq('id', practiceId) as any);
+        .eq('id', practiceId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -265,8 +265,8 @@ export function usePractice() {
       role: PracticeRole;
     }) => {
       if (!user) throw new Error('Not authenticated');
-      const { data, error } = await (supabase
-        .from('practice_invitations' as any)
+      const { data, error } = await supabase
+        .from('practice_invitations')
         .insert({ 
           practice_id: practiceId, 
           email, 
@@ -275,7 +275,7 @@ export function usePractice() {
           invited_by: user.id,
         })
         .select()
-        .single() as any);
+        .single();
       if (error) throw error;
       return data as PracticeInvitation;
     },
@@ -294,16 +294,16 @@ export function usePractice() {
       if (!user) throw new Error('Not authenticated');
       
       // Get invitation details
-      const { data: invitation, error: invError } = await (supabase
-        .from('practice_invitations' as any)
+      const { data: invitation, error: invError } = await supabase
+        .from('practice_invitations')
         .select('*')
         .eq('id', invitationId)
-        .single() as any);
+        .single();
       if (invError) throw invError;
 
       // Add as practice member
-      const { error: memberError } = await (supabase
-        .from('practice_members' as any)
+      const { error: memberError } = await supabase
+        .from('practice_members')
         .insert({
           practice_id: invitation.practice_id,
           user_id: user.id,
@@ -311,14 +311,14 @@ export function usePractice() {
           invited_by: invitation.invited_by,
           status: 'active',
           accepted_at: new Date().toISOString(),
-        }) as any);
+        });
       if (memberError) throw memberError;
 
       // Update invitation status
-      const { error: updateError } = await (supabase
-        .from('practice_invitations' as any)
+      const { error: updateError } = await supabase
+        .from('practice_invitations')
         .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-        .eq('id', invitationId) as any);
+        .eq('id', invitationId);
       if (updateError) throw updateError;
     },
     onSuccess: () => {
@@ -335,10 +335,10 @@ export function usePractice() {
   // Decline an invitation
   const declineInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
-      const { error } = await (supabase
-        .from('practice_invitations' as any)
+      const { error } = await supabase
+        .from('practice_invitations')
         .update({ status: 'declined', declined_at: new Date().toISOString() })
-        .eq('id', invitationId) as any);
+        .eq('id', invitationId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -350,10 +350,10 @@ export function usePractice() {
   // Update member permissions
   const updateMember = useMutation({
     mutationFn: async ({ memberId, updates }: { memberId: string; updates: Partial<PracticeMember> }) => {
-      const { error } = await (supabase
-        .from('practice_members' as any)
+      const { error } = await supabase
+        .from('practice_members')
         .update(updates)
-        .eq('id', memberId) as any);
+        .eq('id', memberId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -365,10 +365,10 @@ export function usePractice() {
   // Remove a member
   const removeMember = useMutation({
     mutationFn: async (memberId: string) => {
-      const { error } = await (supabase
-        .from('practice_members' as any)
+      const { error } = await supabase
+        .from('practice_members')
         .delete()
-        .eq('id', memberId) as any);
+        .eq('id', memberId);
       if (error) throw error;
     },
     onSuccess: () => {
