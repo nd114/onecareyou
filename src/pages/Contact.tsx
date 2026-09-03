@@ -21,7 +21,6 @@ import { Footer } from '@/components/layout/Footer';
 import { MarketingHero } from '@/components/home/marketing';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { supabase } from '@/integrations/supabase/client';
 import { describeSubmissionError } from '@/lib/submission-errors';
 
 /**

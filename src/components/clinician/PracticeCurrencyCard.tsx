@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Coins, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { supabase } from '@/integrations/supabase/client';
 import { usePractice } from "@/hooks/usePractice";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
