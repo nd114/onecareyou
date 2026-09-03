@@ -10,8 +10,18 @@ import {
   Mail,
   MessageCircle,
   FolderDown,
+  MoreHorizontal,
+  RotateCcw,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Panel, PanelBody, PanelEmpty, PanelHeader, PanelRow, PanelRows } from '@/components/ui/panel';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -44,11 +54,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // The revoke confirmation is held here rather than nested inside each row's
+  // menu: a dialog rendered inside a dropdown is dismissed along with the
+  // dropdown, so the confirmation never gets a chance to be read.
+  const [confirmRevoke, setConfirmRevoke] = useState<{ id: string; name: string } | null>(null);
   const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
   const { data: shareEvents = [] } = useShareEvents();
   const { generate: generateCareRecord } = useCareRecordSnapshot();
@@ -281,207 +294,99 @@ const CareCircle = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                Doctors you invited
-              </CardTitle>
-              <CardDescription>
-                Individual clinicians you shared with directly. Staff added by a hospital are listed
-                separately above.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : activeShares.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="h-16 w-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-                    <Users className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">No providers yet</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Invite a healthcare provider to share your health data securely
-                  </p>
-                  <Button className="gradient-primary border-0" onClick={() => setIsDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Invite Provider
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {activeShares.map((share) => (
-                    <div
-                      key={share.id}
-                      className="p-3 sm:p-4 rounded-xl border border-border bg-card hover:shadow-sm transition-shadow"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-base sm:text-lg font-semibold text-primary">
-                              {share.display_name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm sm:text-base truncate">{share.display_name}</p>
-                            {share.display_subtitle && (
-                              <p className="text-xs sm:text-sm text-muted-foreground truncate">{share.display_subtitle}</p>
-                            )}
-                            {share.provider_email && (
-                              <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 truncate">
-                                <Mail className="h-3 w-3 flex-shrink-0" />
-                                <span className="truncate">{share.provider_email}</span>
-                              </p>
-                            )}
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {!share.is_claimed && (
-                                <Badge variant="outline" className="text-[10px] sm:text-xs">Invite pending</Badge>
-                              )}
-                              {share.permissions.vitals && <Badge variant="secondary" className="text-[10px] sm:text-xs">Vitals</Badge>}
-                              {share.permissions.meds && <Badge variant="secondary" className="text-[10px] sm:text-xs">Meds</Badge>}
-                              {share.permissions.adherence && <Badge variant="secondary" className="text-[10px] sm:text-xs">Adherence</Badge>}
-                              {share.permissions.profile && <Badge variant="secondary" className="text-[10px] sm:text-xs">Profile</Badge>}
-                              {share.permissions.documents && (
-                                <Badge variant="secondary" className="text-[10px] sm:text-xs">Whole Vault</Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 self-end sm:self-start flex-shrink-0">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                            onClick={() => copyShareLink(share.invite_code)}
-                          >
-                            <Copy className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                            <span className="hidden sm:inline">Copy Link</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                            onClick={() => {
-                              const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
-                              const subject = `Secure access to my OneCare health record`;
-                              const body = `Hi ${share.display_name},\n\nI'm sharing my health record with you on OneCare. Use the secure link below to view it:\n\n${link}\n\nThanks.`;
-                              const to = share.provider_email ? encodeURIComponent(share.provider_email) : '';
-                              window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                            }}
-                          >
-                            <Mail className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                            <span className="hidden sm:inline">Email</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
-                            onClick={() => {
-                              const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
-                              const text = `Hi ${share.display_name}, I've shared my health data with you on OneCare. View it here: ${link}`;
-                              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                            }}
-                          >
-                            <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                            <span className="hidden sm:inline">WhatsApp</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2 sm:px-3 text-xs sm:text-sm"
-                            disabled={
-                              (generateCareRecord.isPending &&
-                                generateCareRecord.variables?.shareId === share.id) ||
-                              !share.clinician_user_id
-                            }
-                            onClick={() =>
-                              generateCareRecord.mutate({
-                                shareId: share.id,
-                                clinicianUserId: share.clinician_user_id,
-                                clinicianLabel: share.display_name,
-                              })
-                            }
-                            title="Save messages and guidance from this provider to your Health Vault"
-                          >
-                            <FolderDown className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-                            <span className="hidden sm:inline">Save record</span>
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>End sharing with {share.display_name}?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  They stop seeing any new health data straight away. Everything already exchanged — messages,
-                                  guidance and shared documents — stays on your record in the Health Vault, so you always have
-                                  proof of what was advised and when. You can resume sharing later.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  onClick={() => handleRevokeAccess(share.id)}
-                                >
-                                  End sharing
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-0 text-[10px] sm:text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 flex-shrink-0" />
-                          Added {new Date(share.created_at).toLocaleDateString()}
-                        </span>
-                        {share.last_accessed_at && (
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3 flex-shrink-0" />
-                            Last viewed {new Date(share.last_accessed_at).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <Panel>
+            <PanelHeader
+              eyebrow="Doctors you invited"
+              description="Clinicians you shared with directly. Staff added by a hospital are listed separately above."
+            />
 
-              {pastShares.length > 0 && (
-                <div className="mt-8 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-1">Past connections</h3>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Kept for your records. These providers see no new data, but the history you built together is preserved.
-                  </p>
-                  <div className="space-y-3">
-                    {pastShares.map((share) => (
-                      <div key={share.id} className="p-3 rounded-xl border border-dashed border-border bg-muted/30">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{share.display_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Ended {share.revoked_at ? new Date(share.revoked_at).toLocaleDateString() : '—'}
-                              {share.revoke_reason ? ` · ${share.revoke_reason}` : ''}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {isLoading ? (
+              <PanelEmpty className="py-12">
+                <Loader2 className="mx-auto h-7 w-7 animate-spin text-primary" />
+              </PanelEmpty>
+            ) : activeShares.length === 0 ? (
+              <PanelEmpty className="py-12">
+                <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-muted">
+                  <Users className="h-7 w-7 text-muted-foreground" />
+                </span>
+                <p className="font-display text-lg leading-snug text-foreground">Nobody sees this yet</p>
+                <p className="mx-auto mt-2 max-w-sm">
+                  Invite a doctor and choose exactly what they can see. You can end it whenever you want.
+                </p>
+                <Button className="mt-6 border-0 gradient-primary" onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Invite a doctor
+                </Button>
+              </PanelEmpty>
+            ) : (
+              <PanelRows>
+                {activeShares.map((share) => (
+                  <PanelRow
+                    key={share.id}
+                    className="items-start"
+                    glyph={
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-base font-semibold text-primary">
+                        {share.display_name.charAt(0).toUpperCase()}
+                      </span>
+                    }
+                    label={share.display_name}
+                    detail={share.display_subtitle || share.provider_email || undefined}
+                    trailing={
+                      <span className="flex items-center gap-2">
+                        {/* One visible action. The rest were five buttons in a
+                            row, which does not fit a phone and buried the
+                            destructive one among them. */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2 text-xs sm:px-3"
+                          onClick={() => copyShareLink(share.invite_code)}
+                        >
+                          <Copy className="h-3.5 w-3.5 sm:mr-1.5" />
+                          <span className="hidden sm:inline">Copy link</span>
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="h-8 text-xs"
+                              className="h-8 w-8 p-0"
+                              aria-label={`More actions for ${share.display_name}`}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
+                                const subject = `Secure access to my OneCare health record`;
+                                const body = `Hi ${share.display_name},\n\nI'm sharing my health record with you on OneCare. Use the secure link below to view it:\n\n${link}\n\nThanks.`;
+                                const to = share.provider_email ? encodeURIComponent(share.provider_email) : '';
+                                window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                              }}
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Send by email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                const link = `${window.location.origin}/clinician/patient/${share.invite_code}`;
+                                const text = `Hi ${share.display_name}, I've shared my health data with you on OneCare. View it here: ${link}`;
+                                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                              }}
+                            >
+                              <MessageCircle className="mr-2 h-4 w-4" />
+                              Send by WhatsApp
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               disabled={
                                 (generateCareRecord.isPending &&
                                   generateCareRecord.variables?.shareId === share.id) ||
                                 !share.clinician_user_id
                               }
-                              onClick={() =>
+                              onSelect={() =>
                                 generateCareRecord.mutate({
                                   shareId: share.id,
                                   clinicianUserId: share.clinician_user_id,
@@ -489,29 +394,127 @@ const CareCircle = () => {
                                 })
                               }
                             >
-                              <FolderDown className="h-3 w-3 mr-1" />
-                              Save record
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 text-xs"
-                              onClick={() => reshare.mutate({ shareId: share.id })}
+                              <FolderDown className="mr-2 h-4 w-4" />
+                              Save record to Vault
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={() =>
+                                setConfirmRevoke({ id: share.id, name: share.display_name })
+                              }
                             >
-                              Resume sharing
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              End sharing
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </span>
+                    }
+                  >
+                    {share.provider_email && share.display_subtitle && (
+                      <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{share.provider_email}</span>
+                      </span>
+                    )}
 
-            </CardContent>
-          </Card>
+                    <span className="mt-2 flex flex-wrap gap-1">
+                      {!share.is_claimed && (
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">Invite pending</Badge>
+                      )}
+                      {share.permissions.vitals && <Badge variant="secondary" className="text-[10px] sm:text-xs">Vitals</Badge>}
+                      {share.permissions.meds && <Badge variant="secondary" className="text-[10px] sm:text-xs">Meds</Badge>}
+                      {share.permissions.adherence && <Badge variant="secondary" className="text-[10px] sm:text-xs">Adherence</Badge>}
+                      {share.permissions.profile && <Badge variant="secondary" className="text-[10px] sm:text-xs">Profile</Badge>}
+                      {share.permissions.documents && (
+                        <Badge variant="secondary" className="text-[10px] sm:text-xs">Whole Vault</Badge>
+                      )}
+                    </span>
+
+                    <span className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        Added {new Date(share.created_at).toLocaleDateString()}
+                      </span>
+                      {share.last_accessed_at && (
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3 w-3 shrink-0" />
+                          Last viewed {new Date(share.last_accessed_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </span>
+                  </PanelRow>
+                ))}
+              </PanelRows>
+            )}
+          </Panel>
         </motion.div>
 
+        {pastShares.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mt-8"
+          >
+            <Panel>
+              <PanelHeader
+                eyebrow="Past connections"
+                description="Kept for your records. These providers see no new data, but the history you built together is preserved."
+              />
+              <PanelRows>
+                {pastShares.map((share) => (
+                  <PanelRow
+                    key={share.id}
+                    glyph={
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-base font-semibold text-muted-foreground">
+                        {share.display_name.charAt(0).toUpperCase()}
+                      </span>
+                    }
+                    label={share.display_name}
+                    detail={`Ended ${
+                      share.revoked_at ? new Date(share.revoked_at).toLocaleDateString() : '—'
+                    }${share.revoke_reason ? ` · ${share.revoke_reason}` : ''}`}
+                    trailing={
+                      <span className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2 text-xs sm:px-3"
+                          onClick={() => reshare.mutate({ shareId: share.id })}
+                        >
+                          <RotateCcw className="h-3.5 w-3.5 sm:mr-1.5" />
+                          <span className="hidden sm:inline">Resume</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs sm:px-3"
+                          disabled={
+                            (generateCareRecord.isPending &&
+                              generateCareRecord.variables?.shareId === share.id) ||
+                            !share.clinician_user_id
+                          }
+                          onClick={() =>
+                            generateCareRecord.mutate({
+                              shareId: share.id,
+                              clinicianUserId: share.clinician_user_id,
+                              clinicianLabel: share.display_name,
+                            })
+                          }
+                        >
+                          <FolderDown className="h-3.5 w-3.5 sm:mr-1.5" />
+                          <span className="hidden sm:inline">Save record</span>
+                        </Button>
+                      </span>
+                    }
+                  />
+                ))}
+              </PanelRows>
+            </Panel>
+          </motion.div>
+        )}
 
         {/* The full history now lives in Settings, where "who has ever had my
             record" belongs — this page is about who can see you now. A pointer
@@ -523,19 +526,19 @@ const CareCircle = () => {
             transition={{ delay: 0.2 }}
             className="mt-8"
           >
-            <Card>
-              <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
+            <Panel>
+              <PanelBody className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+                <span className="flex min-w-0 items-center gap-3">
                   <Shield className="h-4 w-4 shrink-0 text-primary" />
-                  <p className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     Every change to who can see your record is kept permanently.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" asChild className="shrink-0">
+                  </span>
+                </span>
+                <Button variant="outline" size="sm" asChild className="w-full shrink-0 sm:w-auto">
                   <Link to="/settings#sharing-history">View history</Link>
                 </Button>
-              </CardContent>
-            </Card>
+              </PanelBody>
+            </Panel>
           </motion.div>
         )}
 
@@ -547,30 +550,60 @@ const CareCircle = () => {
           transition={{ delay: 0.3 }}
           className="mt-8"
         >
-          <Card>
-            <CardHeader>
-              <CardTitle>How It Works</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Panel>
+            <PanelHeader eyebrow="How sharing works" />
+            <PanelBody className="py-6">
+              {/* Numbered because it genuinely is a sequence — the order is
+                  what the reader needs, not decoration. */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 {[
-                  { step: 1, title: 'Create Share Link', desc: 'Choose what data to share and generate a secure link' },
-                  { step: 2, title: 'Send to Provider', desc: 'Share the link with your doctor or healthcare team' },
-                  { step: 3, title: 'Provider Accesses Data', desc: 'They can view your health info through our secure portal' },
+                  { step: 1, title: 'You choose what to share', desc: 'Vitals, medications, adherence, profile — each one on or off.' },
+                  { step: 2, title: 'You send them a link', desc: 'By email, WhatsApp, or however you already talk to them.' },
+                  { step: 3, title: 'They see only that', desc: 'And the moment you end it, the database stops returning it to them.' },
                 ].map((item) => (
-                  <div key={item.step} className="text-center">
-                    <div className="h-12 w-12 rounded-full gradient-primary text-primary-foreground font-bold text-lg flex items-center justify-center mx-auto mb-3">
+                  <div key={item.step}>
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[hsl(var(--emerald-light))] font-display text-base text-primary">
                       {item.step}
-                    </div>
-                    <h4 className="font-semibold mb-1">{item.title}</h4>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </span>
+                    <h4 className="mb-1 mt-3 font-display text-base leading-snug">{item.title}</h4>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </PanelBody>
+          </Panel>
         </motion.div>
       </main>
+
+      {/* One dialog for the page. Rendering it inside each row's menu meant it
+          was dismissed together with the menu. */}
+      <AlertDialog
+        open={confirmRevoke !== null}
+        onOpenChange={(open) => !open && setConfirmRevoke(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End sharing with {confirmRevoke?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They stop seeing any new health data straight away. Everything already exchanged —
+              messages, guidance and shared documents — stays on your record in the Health Vault, so
+              you always have proof of what was advised and when. You can resume sharing later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmRevoke) handleRevokeAccess(confirmRevoke.id);
+                setConfirmRevoke(null);
+              }}
+            >
+              End sharing
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

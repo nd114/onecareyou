@@ -41,14 +41,17 @@ visible here because these sit next to the four already converted.
 | --- | --- | --- |
 | `Schedule.tsx` | patient | Dose list — the same shape as the regimen panel already built |
 | `Medications.tsx` | patient | Medication list with per-item actions |
-| `CareCircle.tsx` | patient | **The `TogglePill` case.** People with access, each toggleable — this is the consent demo, in-app |
 | `Vitals.tsx` | patient | Readings per type; the charts stay cards, the reading lists become rows |
 | `ClinicianPatientDetail.tsx` | clinician | 11 cards, the densest surface in the app. Tabs of comparable facts throughout |
 | `ClinicianGuidance.tsx` | clinician | Guidance list |
 | `ClinicianAlerts.tsx` | clinician | Alert list — priority belongs in the glyph, as in the queue |
 
-`CareCircle` is the one to do first if only one gets done. It is the feature
-the homepage argues for, and it is currently a stack of boxes.
+`CareCircle` is **done** — it was the one worth doing first, being the feature
+the homepage argues for. Converting it turned up something the borders were
+hiding: each row carried five inline action buttons, which does not fit a
+phone and put the destructive one in the same visual weight as "copy link".
+They are now one visible action and a menu. Expect similar findings elsewhere;
+the conversion is a reason to look at a surface, not only to restyle it.
 
 ### Tier 2 — regular but not daily
 

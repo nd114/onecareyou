@@ -91,6 +91,7 @@ sets `border-0`, its own radius, or a gradient background is unaffected.
 | `ClinicianToday` — queue | clinician | Card + `divide-y` → panel, with priority carried by the glyph |
 | `ClinicianToday` — my tasks | clinician | Same |
 | `ClinicianPatients` — list | clinician | Bordered `divide-y` → panel rows |
+| `CareCircle` — shares, past connections | patient | The consent demo, in-app. Five inline actions per row collapsed to one plus a menu |
 | everything using `Card` | both | Softened border, radius and shadow |
 
 ## Not yet converted, and why
