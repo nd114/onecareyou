@@ -1,9 +1,10 @@
-import { motion } from 'framer-motion';
-import { SEOHead } from '@/components/seo/SEOHead';
 import { useState } from 'react';
-import { Send, MessageSquare, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, Send } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,145 +15,174 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Panel, PanelBody, PanelHeader } from '@/components/ui/panel';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { toast } from 'sonner';
+import { MarketingHero } from '@/components/home/marketing';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { describeSubmissionError } from '@/lib/submission-errors';
 
-// Contact methods removed - form handles communication directly
-const contactMethods: { icon: any; title: string; description: string; contact: string; href: string; }[] = [];
+/**
+ * The contact form.
+ *
+ * It used to wait 1.5 seconds and tell the sender their message had been sent.
+ * Nothing was sent and nothing was stored. It now writes a row and asks the
+ * notify function to email both sides, following the same shape as the
+ * enterprise inquiry form: the client writes, the function reads the row back
+ * with the service role and sends from what was actually stored.
+ */
 
-const inquiryTypes = [
-  { value: 'general', label: 'General Inquiry' },
-  { value: 'support', label: 'Technical Support' },
-  { value: 'billing', label: 'Billing Question' },
-  { value: 'partnership', label: 'Partnership Opportunity' },
+/** Must match the inquiry types the database will accept. */
+const INQUIRY_TYPES = [
+  { value: 'general', label: 'General enquiry' },
+  { value: 'support', label: 'Technical support' },
+  { value: 'billing', label: 'Billing question' },
+  { value: 'partnership', label: 'Partnership' },
   { value: 'feedback', label: 'Feedback' },
   { value: 'other', label: 'Other' },
-];
+] as const;
+
+const EMPTY = {
+  name: '',
+  email: '',
+  inquiryType: 'general',
+  subject: '',
+  message: '',
+};
 
 const Contact = () => {
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    inquiryType: '',
-    subject: '',
-    message: '',
-  });
+  const [sent, setSent] = useState(false);
+  const [formData, setFormData] = useState(EMPTY);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
+    try {
+      const submissionId = crypto.randomUUID();
+      const { error } = await supabase
+        .from('contact_submissions' as never)
+        .insert({
+          id: submissionId,
+          submitted_by: user?.id ?? null,
+          contact_name: formData.name.trim(),
+          contact_email: formData.email.trim(),
+          inquiry_type: formData.inquiryType,
+          subject: formData.subject.trim(),
+          message: formData.message.trim(),
+        } as never);
 
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
+      if (error) throw error;
 
-    toast.success('Message sent successfully! We\'ll get back to you soon.');
-    setFormData({
-      name: '',
-      email: '',
-      inquiryType: '',
-      subject: '',
-      message: '',
-    });
-    setIsSubmitting(false);
+      // The message is stored either way, so a failed email is not a failed
+      // send — don't block the sender on it or tell them it went wrong.
+      supabase.functions
+        .invoke('notify-contact-submission', { body: { submissionId } })
+        .catch((err) => console.warn('Contact confirmation email failed:', err));
+
+      setSent(true);
+      setFormData(EMPTY);
+    } catch (error) {
+      console.error('Error sending contact message:', error);
+      const { message } = describeSubmissionError(
+        error,
+        'We could not send that. Please try again.',
+      );
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SEOHead
-        title="Contact Us"
-        description="Get in touch with the OneCare team for support, partnerships, billing questions, or feedback. We'd love to hear from you."
+        title="Contact OneCare"
+        description="Questions about your record, your account, or working with us. Reach the OneCare team directly."
         canonical="/contact"
       />
       <Header />
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero py-24">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6"
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span className="text-sm font-medium">Get in Touch</span>
-            </motion.div>
-            
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-              We'd Love to{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Hear From You
-              </span>
-            </h1>
-            
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Have a question, feedback, or just want to say hello? 
-              We're here to help and usually respond within 24 hours.
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
+      <MarketingHero
+        eyebrow="Talk to us"
+        title={
+          <>
+            A real person
+            <br />
+            <span className="text-primary">reads these</span>
+            <span className="text-[hsl(var(--gold))]">.</span>
+          </>
+        }
+        lede="Questions about your record, trouble getting in, or a conversation about bringing a practice across. Tell us which and we will route it properly."
+      />
 
-      {/* Contact Form */}
-      <section className="py-24 bg-muted/30">
-        <div className="container max-w-2xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <Card>
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Send Us a Message</CardTitle>
-                <CardDescription>
-                  Fill out the form below and we'll get back to you as soon as possible.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+      <section className="border-t border-primary/10 bg-[hsl(var(--secondary))]/40">
+        <div className="mx-auto max-w-2xl px-6 py-16 sm:py-20">
+          {sent ? (
+            <Panel>
+              <PanelHeader eyebrow="Message sent" />
+              <PanelBody className="py-10 text-center">
+                <p className="font-display text-xl leading-snug">
+                  It is with us, and a copy is in your inbox.
+                </p>
+                <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+                  If your question is clinical and urgent, please contact your care provider
+                  directly rather than waiting on a reply here.
+                </p>
+                <Button variant="outline" className="mt-7" onClick={() => setSent(false)}>
+                  Send another
+                </Button>
+              </PanelBody>
+            </Panel>
+          ) : (
+            <Panel>
+              <PanelHeader
+                eyebrow="Send a message"
+                description="We answer in the order they arrive."
+              />
+              <PanelBody className="py-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name *</Label>
+                      <Label htmlFor="name">Your name</Label>
                       <Input
                         id="name"
                         placeholder="Alex Moreau"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        maxLength={200}
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address *</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="john@example.com"
+                        placeholder="alex@example.com"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        maxLength={320}
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Inquiry Type *</Label>
+                    <Label htmlFor="inquiry-type">What is it about</Label>
                     <Select
                       value={formData.inquiryType}
                       onValueChange={(value) => setFormData({ ...formData, inquiryType: value })}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select inquiry type" />
+                      <SelectTrigger id="inquiry-type">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {inquiryTypes.map((type) => (
+                        {INQUIRY_TYPES.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             {type.label}
                           </SelectItem>
@@ -162,54 +192,60 @@ const Contact = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="subject">Subject *</Label>
+                    <Label htmlFor="subject">Subject</Label>
                     <Input
                       id="subject"
-                      placeholder="How can we help?"
+                      placeholder="In one line"
                       value={formData.subject}
                       onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      maxLength={300}
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="message">Message *</Label>
+                    <Label htmlFor="message">Message</Label>
                     <Textarea
                       id="message"
-                      placeholder="Tell us more about your inquiry..."
+                      placeholder="What is going on?"
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      rows={5}
+                      rows={6}
+                      maxLength={10000}
                       required
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full gradient-primary border-0"
+                  <Button
+                    type="submit"
+                    className="w-full border-0 gradient-primary"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Sending...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending
                       </>
                     ) : (
                       <>
-                        <Send className="h-4 w-4 mr-2" />
-                        Send Message
+                        <Send className="mr-2 h-4 w-4" />
+                        Send message
                       </>
                     )}
                   </Button>
 
-                  <p className="text-xs text-center text-muted-foreground">
-                    By submitting this form, you agree to our{' '}
-                    <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>.
+                  <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                    Do not put clinical details you would not want in an email here. For anything
+                    urgent, contact your care provider. By sending you agree to our{' '}
+                    <Link to="/privacy" className="underline hover:text-foreground">
+                      Privacy Policy
+                    </Link>
+                    .
                   </p>
                 </form>
-              </CardContent>
-            </Card>
-          </motion.div>
+              </PanelBody>
+            </Panel>
+          )}
         </div>
       </section>
 

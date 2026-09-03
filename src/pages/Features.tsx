@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { breadcrumbSchema } from '@/components/seo/structuredData';
@@ -23,6 +24,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { AuroraField } from '@/components/home/AuroraField';
+import { Eyebrow, HairlineGrid, SectionHeading, ctaPrimary } from '@/components/home/marketing';
 import { FEATURE_MOCKUPS } from '@/components/features/FeatureMockup';
 import walkthroughPoster from '@/assets/patient-walkthrough-poster.jpg.asset.json';
 
@@ -105,41 +108,35 @@ const Features = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero py-24">
-        <div className="container">
+      <section className="oc-hero-ground relative isolate overflow-hidden py-24">
+        <AuroraField />
+        <div className="container relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center"
+            className="mx-auto max-w-3xl text-center"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6"
-            >
-              <Zap className="h-4 w-4" />
-              <span className="text-sm font-medium">Powerful Features</span>
-            </motion.div>
-            
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-              Stay Connected to Your{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Care Team
-              </span>
+            <div className="mb-7 flex justify-center">
+              <Eyebrow>What is in it</Eyebrow>
+            </div>
+
+            <h1 className="mb-6 font-display text-[2.4rem] leading-[1.04] tracking-[-0.02em] sm:text-5xl">
+              Everything you would have had
+              <br />
+              <span className="text-primary">to remember</span>
+              <span className="text-[hsl(var(--gold))]">.</span>
             </h1>
-            
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Discover the tools designed to keep you connected with your healthcare providers 
-              even after leaving the hospital. No more information gaps.
+
+            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Your readings, your medications, your letters and scans, and the people you have
+              let see them. Each of these exists because the alternative was you holding it in
+              your head between appointments.
             </p>
 
-            <Button size="lg" asChild className="gradient-primary border-0">
-              <Link to="/sign-up">
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+            <Link to="/sign-up" className={ctaPrimary}>
+              Start your record
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -172,7 +169,10 @@ const Features = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-80px" }}
                   transition={{ duration: 0.5 }}
-                  className={`grid gap-10 lg:gap-16 items-center lg:grid-cols-2 ${
+                  // Grid items default to min-width:auto, so a column cannot
+                  // shrink below its widest content. Without min-w-0 the
+                  // mockup pushed the whole page 9px wider than a 390px phone.
+                  className={`grid items-center gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0 ${
                     reverse ? "lg:[&>*:first-child]:order-2" : ""
                   }`}
                 >
@@ -207,43 +207,28 @@ const Features = () => {
       </section>
 
       {/* Additional Features */}
-      <section className="py-24 bg-muted/30">
+      <section className="border-y border-primary/10 bg-[hsl(var(--secondary))]/40 py-24">
         <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-              And Much More
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Additional features to support your complete health journey.
-            </p>
-          </motion.div>
+          <SectionHeading
+            className="mb-12"
+            eyebrow="The rest of it"
+            title="The parts you only notice when they are missing"
+            lede="None of these are the reason anyone signs up. All of them are the reason people stay."
+          />
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {additionalFeatures.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="h-full hover-lift">
-                  <CardContent className="pt-6">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                      <feature.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+          <HairlineGrid className="md:grid-cols-2 lg:grid-cols-3">
+            {additionalFeatures.map((feature) => (
+              <Fragment key={feature.title}>
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-[hsl(var(--emerald-light))] text-primary">
+                  <feature.icon className="h-5 w-5" />
+                </span>
+                <h3 className="mb-2 mt-4 font-display text-lg leading-snug">{feature.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {feature.description}
+                </p>
+              </Fragment>
             ))}
-          </div>
+          </HairlineGrid>
         </div>
       </section>
 

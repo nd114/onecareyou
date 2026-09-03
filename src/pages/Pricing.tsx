@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { AuroraField } from '@/components/home/AuroraField';
+import { Eyebrow } from '@/components/home/marketing';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -139,28 +141,23 @@ const Pricing = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero py-24">
-        <div className="container">
+      <section className="oc-hero-ground relative isolate overflow-hidden py-24">
+        <AuroraField />
+        <div className="container relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center"
+            className="mx-auto max-w-3xl text-center"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span className="text-sm font-medium">Simple Pricing</span>
-            </motion.div>
-            
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-              Choose the Plan That{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Fits Your Needs
-              </span>
+            <div className="mb-7 flex justify-center">
+              <Eyebrow>What it costs</Eyebrow>
+            </div>
+
+            <h1 className="mb-6 font-display text-[2.4rem] leading-[1.04] tracking-[-0.02em] sm:text-5xl">
+              Free for the person
+              <br />
+              <span className="text-primary">whose record it is</span>
+              <span className="text-[hsl(var(--gold))]">.</span>
             </h1>
 
             {showAudienceToggle && (
@@ -172,8 +169,10 @@ const Pricing = () => {
               </Tabs>
             )}
             
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Start free and upgrade when you're ready. No hidden fees, cancel anytime.
+            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Keeping your own health record should not be a subscription. Premium adds the
+              heavier tools — unlimited medications, family profiles, lab parsing — and you can
+              leave with your data whenever you like.
             </p>
 
             {/* Billing Toggle */}

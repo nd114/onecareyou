@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { Play, ArrowRight, Clock, Captions, Stethoscope, HeartPulse } from "lucide-react";
@@ -7,6 +7,8 @@ import { SEOHead } from "@/components/seo/SEOHead";
 import { breadcrumbSchema, videoSchema } from "@/components/seo/structuredData";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { AuroraField } from "@/components/home/AuroraField";
+import { Eyebrow, HairlineGrid, SectionHeading } from "@/components/home/marketing";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/brand-constants";
 import { cn } from "@/lib/utils";
@@ -166,21 +168,20 @@ export default function HowItWorks() {
       <Header />
 
       {/* Hero + player */}
-      <section className="relative overflow-hidden pt-16 pb-20">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-32 h-[36rem] bg-[radial-gradient(60%_60%_at_50%_0%,hsl(var(--primary)/0.16),transparent_70%)]"
-        />
+      <section className="oc-hero-ground relative isolate overflow-hidden pb-20 pt-16">
+        <AuroraField />
         <div className="container relative">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl"
           >
-            <p className="eyebrow text-primary mb-4">{tour.eyebrow}</p>
-            <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
+            <div className="mb-7">
+              <Eyebrow>{tour.eyebrow}</Eyebrow>
+            </div>
+            <h1 className="font-display text-[2.4rem] leading-[1.04] tracking-[-0.02em] sm:text-5xl lg:text-[3.6rem]">
               {tour.headline}
-              <span className="block text-accent">{tour.headlineAccent}</span>
+              <span className="block text-primary">{tour.headlineAccent}</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl">{tour.lede}</p>
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
@@ -267,30 +268,26 @@ export default function HowItWorks() {
       </section>
 
       {/* Chapters */}
-      <section className="py-20 bg-muted/30 border-y border-border">
+      <section className="border-y border-primary/10 bg-[hsl(var(--secondary))]/40 py-20">
         <div className="container">
-          <div className="max-w-2xl mb-12">
-            <p className="eyebrow text-primary mb-3">What you'll see</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold">{tour.chaptersTitle}</h2>
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <SectionHeading
+            className="mb-12"
+            eyebrow="What you'll see"
+            title={tour.chaptersTitle}
+          />
+          {/* Numbered because a walkthrough genuinely is a sequence — the
+              order is what the reader needs, not decoration. */}
+          <HairlineGrid key={audience} className="md:grid-cols-2 lg:grid-cols-3">
             {tour.chapters.map((c, i) => (
-              <motion.div
-                key={`${audience}-${c.title}`}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="rounded-2xl border border-primary/12 bg-card p-6"
-              >
-                <span className="font-display text-3xl font-bold text-primary/30">
+              <Fragment key={`${audience}-${c.title}`}>
+                <span className="font-display text-3xl text-primary/30 tabular-nums">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="font-display text-lg font-bold mt-2 mb-2">{c.title}</h3>
-                <p className="text-sm text-muted-foreground">{c.body}</p>
-              </motion.div>
+                <h3 className="mb-2 mt-2 font-display text-lg leading-snug">{c.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{c.body}</p>
+              </Fragment>
             ))}
-          </div>
+          </HairlineGrid>
         </div>
       </section>
 
@@ -298,7 +295,7 @@ export default function HowItWorks() {
       <section className="py-20">
         <div className="container">
           <div className="rounded-3xl border border-primary/20 bg-card/60 p-10 md:p-14 flex flex-col md:flex-row md:items-center gap-8">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[hsl(var(--emerald-light))]">
               {audience === "patients" ? (
                 <Stethoscope className="h-7 w-7 text-primary" />
               ) : (
@@ -306,10 +303,12 @@ export default function HowItWorks() {
               )}
             </div>
             <div className="flex-1">
-              <p className="eyebrow text-primary mb-2">
-                {audience === "patients" ? "Clinician walkthrough" : "Patient walkthrough"}
-              </p>
-              <h2 className="font-display text-2xl md:text-3xl font-bold mb-3">
+              <div className="mb-3">
+                <Eyebrow>
+                  {audience === "patients" ? "Clinician walkthrough" : "Patient walkthrough"}
+                </Eyebrow>
+              </div>
+              <h2 className="mb-3 font-display text-2xl leading-snug md:text-3xl">
                 {audience === "patients"
                   ? "Want the clinician side instead?"
                   : "See what your patients see."}

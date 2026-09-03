@@ -72,9 +72,15 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-              <a href="mailto:support@onecare.you" className="hover:text-foreground transition-colors">
-                support@onecare.you
-              </a>
+                {/* The address has no space to break at, so on a narrow phone
+                    it overflowed its column and clipped. break-all lets it
+                    wrap rather than run off the edge. */}
+                <a
+                  href="mailto:support@onecare.you"
+                  className="break-all transition-colors hover:text-foreground"
+                >
+                  support@onecare.you
+                </a>
               </li>
             </ul>
           </div>

@@ -1,200 +1,242 @@
-import { motion } from 'framer-motion';
+import { Fragment } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+
 import { SEOHead } from '@/components/seo/SEOHead';
 import { organizationSchema, breadcrumbSchema } from '@/components/seo/structuredData';
-import { Link } from 'react-router-dom';
-import { Heart, Shield, Users, Target, Award, Sparkles, ArrowRight, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import {
+  ClosingCta,
+  HairlineGrid,
+  MarketingHero,
+  SectionHeading,
+} from '@/components/home/marketing';
 
-const values = [
+/**
+ * Why the product exists, argued rather than asserted.
+ *
+ * An About page usually lists values, which cost nothing to write and tell a
+ * reader nothing. This one lists decisions and their consequences, and then
+ * lists the things we have decided not to build — which is the part a company
+ * cannot fake, because each refusal closes a revenue line.
+ */
+
+/** Decisions we made early, and what each one costs us. A value with a price. */
+const DECISIONS = [
   {
-    icon: Share2,
-    title: 'Care Continuity',
-    description: 'We believe the care relationship shouldn\'t end when you leave the hospital. Marpe keeps you connected to your providers.',
+    decision: 'The record belongs to the patient, not the practice',
+    consequence:
+      'A clinic cannot take it back, and it does not empty when you change doctors. It also means we cannot sell a hospital the thing hospitals usually buy: exclusive custody of their patients.',
   },
   {
-    icon: Users,
-    title: 'Patient Empowerment',
-    description: 'Every feature puts you in control. Share what you want, with whom you want, when you want.',
+    decision: 'Consent is enforced in the database, not the screen',
+    consequence:
+      'A request for something you did not share comes back empty even if the interface asks for it. This is slower to build and much harder to get quietly wrong.',
   },
   {
-    icon: Target,
-    title: 'Accuracy & Trust',
-    description: 'Our health tracking and medication database are regularly updated and verified for reliability.',
+    decision: 'A signed note cannot be rewritten',
+    consequence:
+      'Corrections are added as addenda and both versions stay. Nobody — including us — can edit history after the fact, which is exactly the property you want and exactly the one that makes support harder.',
   },
   {
-    icon: Award,
-    title: 'Privacy & Security',
-    description: 'Your health data is encrypted and never sold. We comply with healthcare data protection standards.',
+    decision: 'Reception staff are not clinicians',
+    consequence:
+      'Booking and billing roles cannot open clinical notes. Fewer people can see the sensitive part of the record, so onboarding a practice takes more setup, not less.',
   },
 ];
 
-const stats = [
-  { value: 'Growing', label: 'Community' },
-  { value: 'Comprehensive', label: 'Drug Database' },
-  { value: 'PWA', label: 'Mobile-Ready' },
-  { value: '🔒', label: 'Privacy-First' },
+/** The refusals. Each of these is a product somebody has asked us for. */
+const REFUSALS = [
+  {
+    heading: 'We do not sell health data',
+    body: 'Not aggregated, not de-identified, not to researchers, not to insurers. There is no version of this where the number is high enough.',
+  },
+  {
+    heading: 'We do not let a clinic grant itself access',
+    body: 'Access starts with a patient sharing, and only with a patient sharing. An institution cannot add itself to a record because it happens to hold the account.',
+  },
+  {
+    heading: 'We do not lock the exit',
+    body: 'You can take the record out, and closing the account does not mean asking us nicely for a copy first.',
+  },
+  {
+    heading: 'We do not let the assistant practise medicine',
+    body: 'It reads your record and explains it. It says when the answer needs a person, and it does not pretend a guess is a finding.',
+  },
 ];
 
 const About = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SEOHead
-        title="About OneCare — Our Mission to Connect Patients & Providers"
-        description="Learn how OneCare eliminates information asymmetry between patients and providers. Our mission is to ensure continuous care coordination saves lives."
+        title="Why OneCare exists"
+        description="Health records are held by institutions, and the patient is the only person present at all of their own care. OneCare is built on that mismatch — and on decisions we can be held to."
         canonical="/about"
-        jsonLd={[organizationSchema(), breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }])]}
+        jsonLd={[
+          organizationSchema(),
+          breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }]),
+        ]}
       />
       <Header />
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero py-24">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6"
-            >
-              <Heart className="h-4 w-4" />
-              <span className="text-sm font-medium">Our Story</span>
-            </motion.div>
-            
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-              Eliminating{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Information Asymmetry
-              </span>
-            </h1>
-            
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              OneCare was founded to solve a critical gap in healthcare: the disconnect 
-              between patients and providers after leaving the hospital. We believe 
-              continuous care coordination saves lives.
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Mission Section */}
-      <section className="py-24 bg-background">
-        <div className="container">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
-                Our Mission
-              </h2>
-              <p className="text-lg text-muted-foreground mb-6">
-                When patients transition from hospital to home, critical health information 
-                often gets lost. Doctors lose visibility, patients feel isolated, and 
-                preventable complications occur.
-              </p>
-              <p className="text-lg text-muted-foreground mb-6">
-              OneCare bridges this gap by enabling patients to share their health updates (vitals, 
-              medications, and lab results) directly with their care team. No more waiting for 
-              appointments to communicate critical changes.
-              </p>
-              <Button asChild className="gradient-primary border-0">
-                <Link to="/sign-up">
-                  Join Us Today
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="grid grid-cols-2 gap-4"
-            >
-              {stats.map((stat, index) => (
-                <Card key={stat.label} className="text-center hover-lift">
-                  <CardContent className="pt-6">
-                    <p className="text-3xl font-bold text-primary mb-2">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </motion.div>
+      <MarketingHero
+        eyebrow="Why OneCare exists"
+        title={
+          <>
+            Your care is continuous.
+            <br />
+            <span className="text-primary">Your record is not</span>
+            <span className="text-[hsl(var(--gold))]">.</span>
+          </>
+        }
+        lede="Every place that treats you keeps a piece of your history and none of them keep all of it. The one person who was present for all of it has the worst copy — memory, and a folder of letters."
+        primary={{ to: '/sign-up', label: 'Start your record' }}
+        secondary={{ to: '/how-it-works', label: 'See how it works' }}
+        note="Free for patients. Your record stays yours if you ever leave."
+      />
+
+      {/* ---------------------------------------------------------------
+          THE MOMENT — one specific scene, not a category of problem
+          --------------------------------------------------------------- */}
+      <section className="border-y border-primary/10 bg-[hsl(var(--secondary))]/40">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 lg:py-24">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-5">
+              <SectionHeading
+                eyebrow="The gap"
+                title="It shows up in a small question"
+                lede="Not in a crisis. In the ordinary appointment where someone asks what you are taking, and the answer has to come from you."
+              />
+            </div>
+
+            <div className="lg:col-span-7">
+              <figure className="rounded-2xl border border-primary/15 bg-background/85 p-6 shadow-[0_1px_0_hsl(var(--primary)/0.06),0_24px_60px_-30px_hsl(var(--primary)/0.4)] sm:p-8">
+                <blockquote className="font-display text-xl leading-snug sm:text-2xl">
+                  “And what are you on at the moment?”
+                </blockquote>
+                <figcaption className="mt-5 space-y-4 text-sm leading-relaxed text-muted-foreground">
+                  <p>
+                    You name the two you take every day. You forget the one you take on Tuesdays. You
+                    are not sure whether the hospital changed the dose in March or told you to keep
+                    the old one. The letter is somewhere at home.
+                  </p>
+                  <p>
+                    Nothing dramatic happens. A prescription is written on an incomplete picture, a
+                    result is ordered that already exists, an interaction goes unchecked. Multiply
+                    that by every appointment, for everyone, for years.
+                  </p>
+                  <p className="text-foreground">
+                    The information existed. It was simply somewhere else, in a system that had no
+                    reason to talk to the one in front of you.
+                  </p>
+                </figcaption>
+              </figure>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
-              Our Core Values
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              These principles guide everything we do at OneCare.
-            </p>
-          </motion.div>
+      {/* ---------------------------------------------------------------
+          DECISIONS — values with a price attached
+          --------------------------------------------------------------- */}
+      <section className="mx-auto max-w-7xl px-6 py-16 sm:py-20 lg:py-24">
+        <SectionHeading
+          eyebrow="What we decided"
+          title="Four decisions, and what each one costs us"
+          lede="A value nobody pays for is a slogan. These are the ones with a bill attached."
+        />
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
-              <motion.div
-                key={value.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="h-full hover-lift">
-                  <CardContent className="pt-6">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                      <value.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">{value.title}</h3>
-                    <p className="text-sm text-muted-foreground">{value.description}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+        <dl className="mt-12 divide-y divide-primary/10 border-y border-primary/10">
+          {DECISIONS.map(({ decision, consequence }) => (
+            <div key={decision} className="grid gap-3 py-7 sm:grid-cols-12 sm:gap-8">
+              <dt className="font-display text-lg leading-snug sm:col-span-5">{decision}</dt>
+              <dd className="text-sm leading-relaxed text-muted-foreground sm:col-span-7">
+                {consequence}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      {/* ---------------------------------------------------------------
+          REFUSALS — the part that is hard to say and easy to check
+          --------------------------------------------------------------- */}
+      <section className="bg-primary text-primary-foreground">
+        <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 lg:py-24">
+          <SectionHeading
+            tone="light"
+            eyebrow="What we will not build"
+            title="The list matters more than the mission statement"
+            lede="Each of these has been asked for. Writing them down is the only version of a promise that can be held against us later."
+          />
+
+          <div className="mt-12 grid gap-px overflow-hidden rounded-2xl bg-primary-foreground/15 sm:grid-cols-2">
+            {REFUSALS.map(({ heading, body }) => (
+              <div key={heading} className="bg-primary p-6 sm:p-7">
+                <h3 className="font-display text-lg leading-snug text-[hsl(var(--gold))]">
+                  {heading}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-primary-foreground/75">{body}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-background">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto text-center rounded-3xl gradient-primary p-12"
+      {/* ---------------------------------------------------------------
+          WHO IT SERVES
+          --------------------------------------------------------------- */}
+      <section className="mx-auto max-w-7xl px-6 py-16 sm:py-20 lg:py-24">
+        <SectionHeading
+          eyebrow="Who it is for"
+          title="Patient first — which is what makes it work for clinicians"
+          lede="A record the patient maintains is a record that is already there when they walk in, and already up to date between visits."
+        />
+
+        <HairlineGrid className="mt-12 sm:grid-cols-3">
+          {[
+            <Fragment key="People managing something ongoing">
+              <h3 className="font-display text-lg leading-snug">People managing something ongoing</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                A condition, a set of medications, a family member's care. The readings between
+                appointments are the part nobody currently sees.
+              </p>
+            </Fragment>,
+            <Fragment key="Clinicians with their own patients">
+              <h3 className="font-display text-lg leading-snug">Clinicians with their own patients</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Independent practice, or a hospital post, or both. The relationships you built
+                follow you, and the hospital sees only what its patients shared with it.
+              </p>
+            </Fragment>,
+            <Fragment key="Institutions that will be audited">
+              <h3 className="font-display text-lg leading-snug">Institutions that will be audited</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Departments, staff roles that actually restrict, and a consent trail that exists
+                because the system needed it — not because an audit was announced.
+              </p>
+            </Fragment>,
+          ]}
+        </HairlineGrid>
+
+        <p className="mt-8 text-sm text-muted-foreground">
+          Building on the other side of this?{' '}
+          <Link
+            to="/for-clinicians"
+            className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
           >
-            <Sparkles className="h-12 w-12 text-primary-foreground mx-auto mb-4" />
-            <h2 className="font-display text-3xl font-bold text-primary-foreground mb-4">
-              Ready to Get Connected?
-            </h2>
-            <p className="text-lg text-primary-foreground/90 mb-8">
-              Join early adopters who stay connected with their healthcare providers.
-            </p>
-            <Button size="lg" variant="secondary" asChild>
-              <Link to="/sign-up">Create Free Account</Link>
-            </Button>
-          </motion.div>
-        </div>
+            Read the clinician case
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </p>
       </section>
+
+      <ClosingCta
+        title="Start with one thing you already know"
+        lede="A medication you take, or a reading you took this morning. The record builds itself from there."
+        note="Free for patients. No card, no trial clock."
+      />
 
       <Footer />
     </div>

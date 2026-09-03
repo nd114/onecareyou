@@ -234,5 +234,23 @@ access was decided entirely by `can_view_all_patients`. `src/lib/staff-roles.ts`
 mirrors `practice_role_is_clinical` so the interface agrees with the database —
 if they drift, a receptionist is shown tabs that return nothing.
 
+`contact_submissions.test.sql` — a form anyone can post to:
+
+| Rule | Why |
+| --- | --- |
+| Anyone signed out can send a message | the form is on a public page; that is the point |
+| Nobody outside the service role can read one back | otherwise the endpoint hands out everyone else's messages |
+| Nobody outside the service role can edit or delete one | a sender must not be able to alter the record of what they sent |
+| A signed-in sender can only attribute a message to themselves | tested against a real second user, so the policy is what refuses it and not the foreign key |
+| Oversized bodies, malformed addresses, unknown types and unknown statuses are refused | an open write endpoint is otherwise free storage |
+
+The form previously waited 1.5 seconds and told the sender their message had
+been sent. Nothing was sent and nothing was stored. Because anon must be able
+to INSERT, the table is written to be write-only from outside: an explicit
+`REVOKE` takes back the SELECT/UPDATE/DELETE that Supabase grants at
+`CREATE TABLE` time, and `service_role` is granted explicitly rather than left
+to the ambient default, since the notify function reading the row back is
+load-bearing.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.
