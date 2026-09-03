@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Sparkles, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseExtra } from '@/integrations/supabase/db';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export function AiHistoryForPatient({
     queryKey: ["ai-messages-about", patientUserId, user?.id],
     enabled: !!user && !!patientUserId,
     queryFn: async (): Promise<AiMessageRow[]> => {
-      const { data, error } = await supabaseExtra.rpc("ai_messages_about_patient", {
+      const { data, error } = await supabase.rpc("ai_messages_about_patient", {
         _patient_user_id: patientUserId,
       });
       if (error) throw error;

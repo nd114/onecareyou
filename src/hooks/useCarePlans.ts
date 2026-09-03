@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseExtra } from '@/integrations/supabase/db';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { CareGoalRow, CarePlanRow } from "@/lib/fhir/care-plan";
@@ -21,7 +21,7 @@ export function useCarePlans(patientUserId?: string) {
     queryKey: key,
     enabled: !!user,
     queryFn: async (): Promise<CarePlanRow[]> => {
-      let q = supabaseExtra
+      let q = supabase
         .from("fhir_care_plans")
         .select("*, goals:fhir_care_goals(*)")
         .order("created_at", { ascending: false });
@@ -41,7 +41,7 @@ export function useCarePlans(patientUserId?: string) {
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabaseExtra
+      const { error } = await supabase
         .from("fhir_care_plans")
         .update({ status })
         .eq("id", id);
@@ -56,7 +56,7 @@ export function useCarePlans(patientUserId?: string) {
 
   const setGoalAchievement = useMutation({
     mutationFn: async ({ id, achievement }: { id: string; achievement: string }) => {
-      const { error } = await supabaseExtra
+      const { error } = await supabase
         .from("fhir_care_goals")
         .update({ achievement_status: achievement })
         .eq("id", id);

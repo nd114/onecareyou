@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Coins, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseExtra } from '@/integrations/supabase/db';
+import { supabase } from '@/integrations/supabase/client';
 import { usePractice } from "@/hooks/usePractice";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,7 +51,7 @@ export function PracticeCurrencyCard() {
     if (!practiceId) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabaseExtra
+      const { data } = await supabase
         .from("practices")
         .select("default_currency")
         .eq("id", practiceId)
@@ -68,7 +68,7 @@ export function PracticeCurrencyCard() {
   const save = async () => {
     if (!practiceId) return;
     setSaving(true);
-    const { error } = await supabaseExtra
+    const { error } = await supabase
       .from("practices")
       .update({ default_currency: currency })
       .eq("id", practiceId);

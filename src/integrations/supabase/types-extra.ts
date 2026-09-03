@@ -15,7 +15,7 @@ import type { Database, Json } from "./types";
  *
  * **Retiring this file:** once the migrations below are deployed and
  * `types.ts` is regenerated, every table here will exist in the generated
- * types. Then swap `supabaseExtra` back to `supabase` at the call sites and
+ * types. Then swap `supabase` back to `supabase` at the call sites and
  * delete this file and `db.ts`. Nothing else depends on them.
  *
  * Only what the generated types genuinely lack belongs here. Every signature

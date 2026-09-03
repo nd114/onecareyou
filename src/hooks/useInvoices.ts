@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseExtra } from '@/integrations/supabase/db';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -28,7 +28,7 @@ export function useInvoices(patientUserId?: string) {
     queryKey: key,
     enabled: !!user,
     queryFn: async (): Promise<InvoiceRow[]> => {
-      let q = supabaseExtra
+      let q = supabase
         .from("fhir_invoices")
         .select("*, items:fhir_invoice_items(*)")
         .order("issued_at", { ascending: false, nullsFirst: false });
@@ -73,7 +73,7 @@ export function useInvoices(patientUserId?: string) {
       const total = toMinor(invoice.total_minor);
       if (paid > total) throw new Error("That is more than the invoice is for");
 
-      const { error } = await supabaseExtra
+      const { error } = await supabase
         .from("fhir_invoices")
         .update({ paid_minor: paid, status: paid >= total ? "balanced" : invoice.status })
         .eq("id", id);

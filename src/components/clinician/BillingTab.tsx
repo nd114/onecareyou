@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Receipt, Plus, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseExtra } from '@/integrations/supabase/db';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -62,7 +62,7 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
     if (!practiceId) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabaseExtra
+      const { data } = await supabase
         .from("practices")
         .select("default_currency")
         .eq("id", practiceId)
@@ -100,7 +100,7 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
     if (!user || usable.length === 0) return;
     setSaving(true);
     try {
-      const { data: invoice, error } = await supabaseExtra
+      const { data: invoice, error } = await supabase
         .from("fhir_invoices")
         .insert({
           patient_user_id: patientUserId,
@@ -115,7 +115,7 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
         .single();
       if (error) throw error;
 
-      const { error: itemError } = await supabaseExtra.from("fhir_invoice_items").insert(
+      const { error: itemError } = await supabase.from("fhir_invoice_items").insert(
         usable.map((line, index) => {
           const unit = toMinorUnits(Number(line.unitPrice), currency);
           const qty = Number(line.quantity) || 1;
@@ -134,7 +134,7 @@ export function BillingTab({ patientUserId, patientName, practiceId }: Props) {
       // Issued last, deliberately: the total is recalculated by the database
       // while the invoice is still a draft, and issuing freezes it. Doing it in
       // the other order would issue a bill for zero.
-      const { error: issueError } = await supabaseExtra
+      const { error: issueError } = await supabase
         .from("fhir_invoices")
         .update({ status: "issued", issued_at: new Date().toISOString() })
         .eq("id", invoice.id);
