@@ -92,3 +92,60 @@ spare.
 - The drawer is a modal `Sheet`. A non-modal side panel — the ElevenLabs and
   GitHub Copilot pattern, where you keep working with the assistant open — is a
   larger layout change and is not attempted here.
+
+---
+
+## Practice management: a hub, not a pile
+
+`/clinician/practice` carried fifteen cards in one column: an ownership
+invitation, the team, the postal address, the billing currency, the joining
+code, the staff allowlist, departments, shared patients, an access overview,
+revenue share, storage, the subscription, EHR connections, branding. All as
+`Card`, so all the same structural weight, in an order that followed no
+principle — which is the same rigidity problem the panel language was built to
+fix, at page scale.
+
+### The organising principle is how often you touch it
+
+| Section | Touched | Holds |
+| --- | --- | --- |
+| People | Weekly — somebody starts, somebody leaves | Team, staff allowlist, departments |
+| Patient access | When something is wrong | Institution-shared patients, access overview, EHR connections |
+| Practice details | Once, then when the practice moves | Contact, joining code, currency, branding |
+| Plan and usage | Monthly, or when a limit bites | Subscription, storage, revenue share |
+
+Frequency is what actually separates these things. Grouping by "settings vs
+data" or by "who owns it" would put the address next to the subscription,
+which is how the original order happened.
+
+### The rule that shaped the code
+
+Nearly every card on the old page hides itself — `if (!currentPractice) return
+null`, `if (tenant_type !== 'hospital') return null`, and so on. A solo
+clinician saw five of the fifteen; a hospital owner saw all of them. That was
+survivable on one long page and is not survivable in a hub, because **a link
+to an empty page is worse than the pile it replaced.**
+
+So `src/lib/practice-sections.ts` gives each section a predicate over the same
+structural facts the cards check, and the hub asks before it offers. Two
+sections (Patient access, Plan and usage) are always available because each
+names a card that renders unconditionally. Two (People, Practice details) need
+a practice to exist. A clinician with no practice sees two rows, not four with
+half of them dead.
+
+The one place this needed new UI rather than rearrangement: on a plan without
+team management, People would have been blank. It now explains what adding
+colleagues involves and what it costs, which is a real answer to "how do I add
+a colleague" rather than silence.
+
+### Things kept working
+
+- The old `#hash` anchors redirect to the section that absorbed them. Nothing
+  in the app links to them any more, but a bookmark is a real thing, and
+  landing on a page that no longer has your section is a bad way to find out it
+  moved.
+- The Practice tab stays highlighted on every sub-page —
+  `routeMatchScore` already handles the prefix, and a test pins it, because
+  losing the highlight would lose the clinician's place in the app.
+- An unknown section id, or one this clinician has nothing in, redirects to the
+  hub rather than rendering an empty page under a confident heading.

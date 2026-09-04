@@ -1,168 +1,127 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Building2, ChevronRight, Loader2 } from 'lucide-react';
+
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
-import { useClinicianProfile } from '@/hooks/useClinicianProfile';
-import { useClinicianPatients } from '@/hooks/useClinicianPatients';
-import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
-import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { Panel, PanelHeader, PanelRow, PanelRows } from '@/components/ui/panel';
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
-import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection';
-import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
-import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSection';
-import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
-import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
-import { DepartmentsCard } from '@/components/clinician/DepartmentsCard';
-import { ClinicianAllowlistCard } from '@/components/clinician/ClinicianAllowlistCard';
-import { PracticeAccessOverviewCard } from '@/components/clinician/PracticeAccessOverviewCard';
-import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
-import { PracticeContactCard } from '@/components/clinician/PracticeContactCard';
-import { PracticeRevenueShareCard } from '@/components/clinician/PracticeRevenueShareCard';
-import { PracticeCurrencyCard } from '@/components/clinician/PracticeCurrencyCard';
-import { PracticeStorageCard } from '@/components/clinician/PracticeStorageCard';
-import { Loader2 } from 'lucide-react';
+import { usePractice } from '@/hooks/usePractice';
+import { usePracticeTenant } from '@/hooks/usePracticeTenant';
+import { useClinicianProfile } from '@/hooks/useClinicianProfile';
+import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { availableSections, sectionForLegacyAnchor } from '@/lib/practice-sections';
 
+/**
+ * Practice, as a hub rather than a pile.
+ *
+ * This page used to carry fifteen cards in one column — an ownership
+ * invitation, the team, the postal address, the billing currency, the joining
+ * code, the staff allowlist, departments, shared patients, an access overview,
+ * revenue share, storage, the subscription, EHR connections and branding — all
+ * as Cards, so all the same weight, in an order that followed no principle.
+ *
+ * Now it leads with the only things on it that are time-sensitive (an
+ * invitation waiting for an answer is not a setting) and then hands off to
+ * four sections grouped by how often somebody touches them. The grouping and,
+ * more importantly, the rule that a section is only offered when it has
+ * something behind it, live in `@/lib/practice-sections`.
+ */
 const ClinicianPractice = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isClinician, isLoading: isLoadingProfile } = useClinicianProfile();
-  const { patients } = useClinicianPatients();
+  const { currentPractice, currentMembership } = usePractice();
+  const { tenant } = usePracticeTenant(currentPractice?.id);
   const { tier } = useClinicianSubscription();
 
   useSessionTimeout();
 
+  // A bookmark to one of the old anchors should land on the page that absorbed
+  // it, rather than on a hub that no longer has the section they wanted.
   useEffect(() => {
-    if (location.hash) {
-      const id = location.hash.replace('#', '');
-      setTimeout(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
-    }
-  }, [location.hash]);
+    if (!location.hash) return;
+    const section = sectionForLegacyAnchor(location.hash);
+    if (section) navigate(section.path, { replace: true });
+  }, [location.hash, navigate]);
 
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
         <SectionTabs section="practice" variant="clinician" />
-        <main className="container py-8 flex items-center justify-center">
+        <main className="container flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </main>
       </div>
     );
   }
 
-  if (!isClinician) {
-    return null;
-  }
+  if (!isClinician) return null;
+
+  const sections = availableSections({
+    hasPractice: Boolean(currentPractice),
+    isHospital: (tenant?.tenant_type ?? 'practice') === 'hospital',
+    isAdmin: currentMembership?.role === 'owner' || currentMembership?.role === 'admin',
+    canManageTeam: hasFeatureAccess(tier, 'team_management'),
+  });
 
   return (
     <div className="min-h-screen bg-muted/30">
       <ClinicianHeader />
       <SectionTabs section="practice" variant="clinician" />
 
-      <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-3xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+      <main className="container max-w-3xl px-4 py-4 sm:px-6 sm:py-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="mb-6 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Building2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">
-                Practice
+              <h1 className="mb-1 font-display text-2xl font-bold sm:text-3xl">
+                {currentPractice?.name ?? 'Practice'}
               </h1>
-              <p className="text-muted-foreground text-sm">
-                Manage your team, subscription, EHR connections and practice branding.
+              <p className="text-sm text-muted-foreground">
+                Everything about how the practice runs, in four places instead of one long one.
               </p>
             </div>
           </div>
 
-          {/* Ownership invitation from OneCare (if any) */}
-          <div className="mt-2">
-            <TenantOwnerInvitationCard />
-          </div>
+          {/* Anything waiting on an answer. Both of these render nothing when
+              there is nothing pending, so they do not leave a gap. */}
+          <TenantOwnerInvitationCard />
+          <PracticeInvitationsCard />
 
-          {/* Practice Invitations (if any) */}
-          <div className="mt-2">
-            <PracticeInvitationsCard />
-          </div>
+          <Panel className="mt-6">
+            <PanelHeader
+              eyebrow="Manage"
+              description="Grouped by how often you need them, most-touched first."
+            />
+            <PanelRows>
+              {sections.map((section) => (
+                <PanelRow
+                  key={section.id}
+                  label={section.label}
+                  detail={section.summary}
+                  detailClassName="whitespace-normal"
+                  trailing={<ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                  onSelect={() => navigate(section.path)}
+                  selectLabel={`${section.label} — ${section.summary}`}
+                />
+              ))}
+            </PanelRows>
+          </Panel>
 
-
-          {/* Team Management - Pro+ */}
-          {hasFeatureAccess(tier, 'team_management') && (
-            <div id="practice-team" className="mt-6 scroll-mt-20">
-              <PracticeTeamSection />
-            </div>
-          )}
-
-          {/* Contact and address - owned by the tenant */}
-          <div id="practice-contact" className="mt-6 scroll-mt-20">
-            <PracticeContactCard />
-          </div>
-
-          {/* Billing currency — the tenant's, defaulting to USD rather than
-              assuming a market. */}
-          <div id="practice-currency" className="mt-6 scroll-mt-20">
-            <PracticeCurrencyCard />
-          </div>
-
-          {/* Hospital code (tenant slug) */}
-          <div id="hospital-code" className="mt-6 scroll-mt-20">
-            <HospitalCodeCard />
-          </div>
-
-          {/* Who counts as our staff (hospital tenancy) */}
-          <div id="staff-recognition" className="mt-6 scroll-mt-20">
-            <ClinicianAllowlistCard />
-          </div>
-
-          {/* Departments and their sub-admins (hospital tenancy) */}
-          <div id="departments" className="mt-6 scroll-mt-20">
-            <DepartmentsCard />
-          </div>
-
-          {/* Institution-shared patients (hospital tenancy) */}
-          <div id="institution-patients" className="mt-6 scroll-mt-20">
-            <HospitalPatientsCard />
-          </div>
-
-          {/* Who works here, and where each patient sits */}
-          <div id="access-overview" className="mt-6 scroll-mt-20">
-            <PracticeAccessOverviewCard />
-          </div>
-
-          {/* Revenue share (institutional partners only) */}
-          <div id="revenue-share" className="mt-6 scroll-mt-20">
-            <PracticeRevenueShareCard />
-          </div>
-
-          {/* Storage & durability */}
-          <div id="storage" className="mt-6 scroll-mt-20">
-            <PracticeStorageCard />
-          </div>
-
-          {/* Subscription */}
-          <div id="subscription" className="mt-6 scroll-mt-20">
-
-            <SubscriptionManagementCard patientCount={patients.length} />
-          </div>
-
-          {/* EHR Connections */}
-          <div id="ehr-connections" className="mt-6 scroll-mt-20">
-            <EHRConnectionsSection />
-          </div>
-
-          {/* Branding - Enterprise only */}
-          {hasFeatureAccess(tier, 'practice_branding') && (
-            <div id="branding" className="mt-6 scroll-mt-20">
-              <PracticeBrandingCard />
-            </div>
-          )}
+          <p className="mt-6 text-xs text-muted-foreground">
+            Looking for your own details rather than the practice&rsquo;s? They are under your name
+            in the top right. Reports and Compliance have their own tabs above.{' '}
+            <Link to="/clinician/settings" className="underline underline-offset-2">
+              Settings
+            </Link>
+          </p>
         </motion.div>
       </main>
     </div>

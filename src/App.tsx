@@ -35,6 +35,7 @@ import ClinicianSignUp from "./pages/ClinicianSignUp";
 import ClinicianToday from "./pages/ClinicianToday";
 import ClinicianSettings from "./pages/ClinicianSettings";
 import ClinicianPractice from "./pages/ClinicianPractice";
+import ClinicianPracticeSection from "./pages/ClinicianPracticeSection";
 import FamilyDashboard from "./pages/FamilyDashboard";
 import FamilyMemberDetail from "./pages/FamilyMemberDetail";
 import Onboarding from "./pages/Onboarding";
@@ -215,6 +216,14 @@ const App = () => (
             <Route path="/clinician/practice" element={
               <ClinicianRoute>
                 <ClinicianPractice />
+              </ClinicianRoute>
+            } />
+            {/* People, patient access, practice details, plan and usage — see
+                src/lib/practice-sections.ts for the grouping and for why a
+                section is only offered when something in it will render. */}
+            <Route path="/clinician/practice/:sectionId" element={
+              <ClinicianRoute>
+                <ClinicianPracticeSection />
               </ClinicianRoute>
             } />
 
