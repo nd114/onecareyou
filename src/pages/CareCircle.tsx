@@ -31,6 +31,7 @@ import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { grantsPermission } from '@/lib/fhir/access-policy';
 import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
 import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
 import { InstitutionCareTeamCard } from '@/components/patient/InstitutionCareTeamCard';
@@ -72,9 +73,12 @@ const CareCircle = () => {
   const [newShare, setNewShare] = useState({
     providerName: '',
     providerEmail: '',
+    // The canonical vocabulary, shared with institution shares since
+    // 20260908100000_one_share_vocabulary.sql. Older shares carrying 'meds'
+    // and 'profile' are still honoured — `grantsPermission` resolves them.
     permissions: {
       vitals: true,
-      meds: true,
+      medications: true,
       adherence: true,
       profile: false,
       // Off by default: documents stay shared one at a time unless the patient
@@ -99,7 +103,7 @@ const CareCircle = () => {
     setNewShare({
       providerName: '',
       providerEmail: '',
-      permissions: { vitals: true, meds: true, adherence: true, profile: false, documents: false },
+      permissions: { vitals: true, medications: true, adherence: true, profile: false, documents: false },
     });
   };
 
@@ -186,9 +190,15 @@ const CareCircle = () => {
                   <div className="space-y-3">
                     {[
                       { key: 'vitals', label: 'Health Vitals', desc: 'Blood pressure, glucose, etc.' },
-                      { key: 'meds', label: 'Medications', desc: 'Current medication list' },
+                      { key: 'medications', label: 'Medications', desc: 'Current medication list' },
                       { key: 'adherence', label: 'Adherence Data', desc: 'Schedule and compliance' },
-                      { key: 'profile', label: 'Health Profile', desc: 'Allergies, conditions, etc.' },
+                      {
+                        key: 'profile',
+                        label: 'Health Profile',
+                        // Understated before: this opens the whole profile row, so it
+                        // includes the details beside the clinical lists.
+                        desc: 'Conditions and allergies, plus your date of birth, blood type and contact details.',
+                      },
                       {
                         key: 'documents',
                         label: 'My whole Health Vault',
@@ -423,10 +433,10 @@ const CareCircle = () => {
                       {!share.is_claimed && (
                         <Badge variant="outline" className="text-[10px] sm:text-xs">Invite pending</Badge>
                       )}
-                      {share.permissions.vitals && <Badge variant="secondary" className="text-[10px] sm:text-xs">Vitals</Badge>}
-                      {share.permissions.meds && <Badge variant="secondary" className="text-[10px] sm:text-xs">Meds</Badge>}
-                      {share.permissions.adherence && <Badge variant="secondary" className="text-[10px] sm:text-xs">Adherence</Badge>}
-                      {share.permissions.profile && <Badge variant="secondary" className="text-[10px] sm:text-xs">Profile</Badge>}
+                      {grantsPermission(share.permissions, 'vitals') && <Badge variant="secondary" className="text-[10px] sm:text-xs">Vitals</Badge>}
+                      {grantsPermission(share.permissions, 'medications') && <Badge variant="secondary" className="text-[10px] sm:text-xs">Meds</Badge>}
+                      {grantsPermission(share.permissions, 'adherence') && <Badge variant="secondary" className="text-[10px] sm:text-xs">Adherence</Badge>}
+                      {grantsPermission(share.permissions, 'profile') && <Badge variant="secondary" className="text-[10px] sm:text-xs">Profile</Badge>}
                       {share.permissions.documents && (
                         <Badge variant="secondary" className="text-[10px] sm:text-xs">Whole Vault</Badge>
                       )}

@@ -121,11 +121,21 @@ export interface ProviderShare {
   providerName: string;
   providerEmail?: string;
   inviteCode: string;
+  /**
+   * What the share opens. Every key optional, because absent means not
+   * granted — the same rule the database enforces. `meds` is the retired
+   * spelling of `medications`, still on shares already made; read these
+   * through `grantsPermission` rather than by key.
+   */
   permissions: {
-    vitals: boolean;
-    meds: boolean;
-    adherence: boolean;
-    profile: boolean;
+    vitals?: boolean;
+    medications?: boolean;
+    adherence?: boolean;
+    conditions?: boolean;
+    allergies?: boolean;
+    profile?: boolean;
+    documents?: boolean;
+    meds?: boolean;
   };
   isActive: boolean;
   lastAccessedAt?: string;

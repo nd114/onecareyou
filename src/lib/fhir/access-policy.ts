@@ -1,5 +1,10 @@
 import type { ResourceType } from "@medplum/fhirtypes";
 
+import {
+  acceptedShareKeys,
+  shareGrants,
+} from "../../../supabase/functions/_shared/share-permissions";
+
 /**
  * What a share lets somebody see, written as a Medplum AccessPolicy.
  *
@@ -25,17 +30,16 @@ import type { ResourceType } from "@medplum/fhirtypes";
  */
 
 export interface SharePermissionsInput {
-  /** Both pathways. */
+  /** The canonical set, used by both pathways since the vocabularies converged. */
   vitals?: boolean;
-  documents?: boolean;
-  /** Clinician share. */
-  meds?: boolean;
-  adherence?: boolean;
-  profile?: boolean;
-  /** Institution share. */
   medications?: boolean;
+  adherence?: boolean;
   conditions?: boolean;
   allergies?: boolean;
+  documents?: boolean;
+  /** Older spellings, still honoured. `meds` meant medications; `profile` meant both lists. */
+  meds?: boolean;
+  profile?: boolean;
 }
 
 export interface AccessPolicyResourceEntry {
@@ -57,26 +61,21 @@ export interface AccessPolicyProjection {
 const PROJECTION_TAG_SYSTEM = "https://onecare.you/fhir/CodeSystem/policy-origin";
 
 /**
- * The two share pathways speak different vocabularies for the same things.
+ * What a share opens, in one vocabulary.
  *
- * Read out of the live policies and function bodies rather than assumed, and
- * it is the single most surprising thing about the consent model:
+ * The two pathways used to name the same things differently — a clinician
+ * share checked `meds` and `profile`, an institution share checked
+ * `medications` and the separately-grantable `conditions` and `allergies` — so
+ * a permissions object written for one granted nothing at all through the
+ * other. `supabase/migrations/20260908100000_one_share_vocabulary.sql`
+ * converged them: one canonical set, with the old spellings honoured as
+ * aliases so nothing anybody already agreed to changes meaning.
  *
- * | Concept | Clinician share | Institution share |
- * | --- | --- | --- |
- * | Readings | `vitals` | `vitals` |
- * | Medicines | `meds` | `medications` |
- * | Conditions and allergies | `profile` (both together) | `conditions`, `allergies` (separately) |
- * | Dose history | `adherence` | *(not offered)* |
- * | The Vault | `documents` | `documents` |
- *
- * So a patient who grants a hospital `conditions` and a clinician `profile`
- * has granted the same thing under two names, and a share object written for
- * one pathway grants nothing at all through the other. That is worth fixing in
- * the schema, but a projection whose job is to say what somebody can see must
- * describe the model as it is rather than the model as it should be — a policy
- * document that quietly assumed one vocabulary would be wrong about half the
- * shares in the product.
+ * That collapses the `pathway` parameter this file used to need, which existed
+ * only to say which vocabulary a share spoke. It stays in the type as a label
+ * for *who* the share is with — a policy document should say whether it
+ * describes a person or a hospital — but it no longer selects which keys are
+ * read.
  */
 export type SharePathway = "clinician" | "institution";
 
@@ -87,7 +86,14 @@ interface FlagTarget {
   criteria?: string;
 }
 
-const CLINICIAN_FLAGS: Record<string, FlagTarget[]> = {
+/**
+ * The canonical permissions, and the resources each opens.
+ *
+ * Kept in step with the database by
+ * `supabase/tests/access_policy_projection.test.sql`, which reads the keys the
+ * live policies and definer functions check and fails if they differ.
+ */
+const SHARE_FLAGS: Record<string, FlagTarget[]> = {
   vitals: [
     {
       resourceType: "Observation",
@@ -98,21 +104,33 @@ const CLINICIAN_FLAGS: Record<string, FlagTarget[]> = {
   // One table, two resource types: a row the patient entered is a
   // MedicationStatement (what they say they take), and one imported from a
   // hospital is a MedicationRequest (what that hospital prescribed). The
-  // `source` column is what tells them apart, and they are different claims.
-  meds: [
+  // `source` column tells them apart, and they are different claims.
+  medications: [
     { resourceType: "MedicationStatement", description: "Medicines on your list" },
     { resourceType: "MedicationRequest", description: "Prescriptions sent to you by a hospital" },
   ],
+  // Its own grant on both pathways since the convergence. Whether somebody is
+  // taking their medicine is a judgement about them rather than a record of
+  // their care, and a hospital share naming medications used to carry it.
   adherence: [
     {
       resourceType: "Observation",
       description: "Whether you have been taking your doses",
-      criteria: `category=${"therapy"}`,
+      criteria: "category=therapy",
     },
   ],
+  conditions: [{ resourceType: "Condition", description: "Conditions on your profile" }],
+  allergies: [{ resourceType: "AllergyIntolerance", description: "Allergies on your profile" }],
+  // Coarser than the two lists above, and still its own permission rather than
+  // only an alias for them. RLS is row-level, so opening the profiles row on
+  // the strength of 'conditions' would hand over everything else on it — name,
+  // date of birth, blood type, contact details. The two lists are read without
+  // that through get_patient_clinical_profile; this key is the whole row.
   profile: [
-    { resourceType: "Condition", description: "Conditions on your profile" },
-    { resourceType: "AllergyIntolerance", description: "Allergies on your profile" },
+    {
+      resourceType: "Patient",
+      description: "Your profile — name, date of birth, blood type and contact details",
+    },
   ],
   documents: [
     {
@@ -120,10 +138,10 @@ const CLINICIAN_FLAGS: Record<string, FlagTarget[]> = {
       description: "Everything in your Health Vault, apart from anything archived",
       criteria: "status=current",
     },
-    // 'documents' also opens qhin_record_provenance, which is where a record
-    // retrieved from another network records where it came from. Omitting it
-    // would understate the access, which is the dangerous direction for a
-    // document whose job is to say what somebody can see.
+    // 'documents' also opens qhin_record_provenance, where a record retrieved
+    // from another network records where it came from. Omitting it would
+    // understate the access, which is the dangerous direction for a document
+    // whose job is to say what somebody can see.
     {
       resourceType: "Provenance",
       description: "Where records fetched from other hospitals came from",
@@ -131,32 +149,27 @@ const CLINICIAN_FLAGS: Record<string, FlagTarget[]> = {
   ],
 };
 
-const INSTITUTION_FLAGS: Record<string, FlagTarget[]> = {
-  vitals: CLINICIAN_FLAGS.vitals,
-  medications: CLINICIAN_FLAGS.meds,
-  conditions: [{ resourceType: "Condition", description: "Conditions on your profile" }],
-  allergies: [{ resourceType: "AllergyIntolerance", description: "Allergies on your profile" }],
-  documents: CLINICIAN_FLAGS.documents,
-};
+export const PERMISSION_FLAGS: string[] = Object.keys(SHARE_FLAGS).sort();
 
-const FLAGS_BY_PATHWAY: Record<SharePathway, Record<string, FlagTarget[]>> = {
-  clinician: CLINICIAN_FLAGS,
-  institution: INSTITUTION_FLAGS,
-};
+/** Every key a permissions object might legitimately carry, canonical or not. */
+export const ACCEPTED_PERMISSION_KEYS: string[] = acceptedShareKeys();
 
 /**
- * The flags each pathway's policies actually check.
+ * Whether a permissions object grants one permission.
  *
- * `supabase/tests/access_policy_projection.test.sql` reads the same sets out
- * of the live database — from policy expressions *and* from the bodies of the
- * definer functions, because two of them are only checked inside a function —
- * and fails if they disagree with these. A permission added to RLS without
- * being added here would leave the projection understating what a share opens.
+ * Delegates to the shared resolver so the browser, the edge functions and the
+ * database cannot disagree about what a share opens. Read every permission
+ * through this rather than by key: a share written with the canonical name
+ * would otherwise look ungranted to code still checking the retired one, which
+ * is how a Medications tab disappears for somebody who granted medications.
  */
-export const PERMISSION_FLAGS: Record<SharePathway, string[]> = {
-  clinician: Object.keys(CLINICIAN_FLAGS).sort(),
-  institution: Object.keys(INSTITUTION_FLAGS).sort(),
-};
+export function grantsPermission(
+  permissions: SharePermissionsInput | null | undefined,
+  flag: string,
+): boolean {
+  return shareGrants(permissions as Record<string, unknown> | null | undefined, flag);
+}
+
 
 export interface PolicySubject {
   /** Whose record this is about. */
@@ -164,11 +177,10 @@ export interface PolicySubject {
   /** The name the patient gave the share, which is how they will recognise it. */
   shareLabel: string;
   /**
-   * Which share this is. Required rather than defaulted: the two pathways read
-   * different keys, and guessing would produce a policy that describes a share
-   * the patient never made.
+   * Who the share is with. A label on the document rather than a switch: since
+   * the vocabularies converged, both pathways read the same keys.
    */
-  pathway: SharePathway;
+  pathway?: SharePathway;
 }
 
 /**
@@ -182,13 +194,11 @@ export function toAccessPolicy(
   permissions: SharePermissionsInput | null | undefined,
   subject: PolicySubject,
 ): AccessPolicyProjection {
-  const granted = (permissions ?? {}) as Record<string, unknown>;
-  const flags = FLAGS_BY_PATHWAY[subject.pathway];
   const entries: AccessPolicyResourceEntry[] = [];
 
-  for (const flag of Object.keys(flags)) {
-    if (granted[flag] !== true) continue;
-    for (const target of flags[flag]) {
+  for (const flag of Object.keys(SHARE_FLAGS)) {
+    if (!grantsPermission(permissions, flag)) continue;
+    for (const target of SHARE_FLAGS[flag]) {
       entries.push({
         resourceType: target.resourceType,
         criteria: criteriaFor(target, subject.patientUserId),

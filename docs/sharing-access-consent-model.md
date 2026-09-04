@@ -111,3 +111,88 @@ clinician-recorded vitals, medications, visit log, documents and a printable sum
 managed record can later be invited to claim its own account, at which point data carries over and
 the relationship becomes a normal two-way share. Manual adds, CSV imports and EHR imports run
 duplicate detection on phone, email and name+date-of-birth before creating a second profile.
+
+
+---
+
+## One vocabulary (September 2026)
+
+The two sharing pathways grew separately and ended up naming the same things
+differently. That is not cosmetic: a permissions object written for one granted
+nothing at all through the other.
+
+### What was live before
+
+| Concept | Table | Clinician key | Institution key |
+| --- | --- | --- | --- |
+| Readings | `vitals` | `vitals` | `vitals` |
+| Medicines | `medications` | `meds` | `medications` |
+| Dose history | `schedule_entries` | `adherence` | **`medications`** |
+| Conditions | `profiles` | `profile` | `conditions` |
+| Allergies | `profiles` | `profile` | `allergies` |
+| The Vault | `health_documents` | `documents` | `documents` |
+| Record origins | `qhin_record_provenance` | `documents` | *(none)* |
+
+Two of those rows were bugs rather than naming differences.
+
+**Dose history rode on `medications` for institutions.** Whether somebody has
+been taking their medicine is a different fact from what they were prescribed —
+a judgement about the patient rather than a record of their care — and the
+clinician pathway had always asked for it separately. A hospital granted
+`medications` was getting both. It now requires `adherence` on both pathways.
+That is a narrowing, which is the safe direction: **hospitals that need dose
+history will have to be granted it, and existing hospital shares lose it until
+the patient says yes.**
+
+**`profile` was all-or-nothing on the clinician side.** The institution side
+could already separate conditions from allergies, so the finer grain won.
+
+### What it is now
+
+Canonical: `vitals`, `medications`, `adherence`, `conditions`, `allergies`,
+`documents`, and `profile`.
+
+`profile` survives as a permission in its own right, not only an alias. RLS is
+row-level, so opening the `profiles` row hands over name, date of birth, blood
+type and contact details as well as the two clinical lists — a coarser grant
+than `conditions`. The two lists are read without it through
+`get_patient_clinical_profile`. The patient-facing label used to describe
+`profile` as "Allergies, conditions, etc.", which understated it; it now says
+what it actually opens.
+
+### No stored consent was rewritten
+
+`meds` and `profile` are resolved as aliases rather than migrated away.
+Rewriting rows that record what a person agreed to is exactly the operation you
+do not want to get subtly wrong, and there was no need — resolution is a
+function, and a function can accept both names.
+
+### One resolver, four places
+
+`supabase/functions/_shared/share-permissions.ts` imports nothing, so it runs
+in Deno, in the browser bundle and in the test suite; `share_grants` in the
+database mirrors it. Before this, three of the four read permission keys
+directly — `ClinicianPortal` gated its Medications tab on `permissions.meds`,
+and so did `get-shared-patient-data` — which meant a share written with a
+canonical name would have hidden medications entirely from a clinician the
+patient had granted them to.
+
+`src/test/share-permissions.test.ts` covers the resolver;
+`supabase/tests/share_vocabulary.test.sql` covers the SQL; and the two were
+cross-checked by running 105 identical cases through both and diffing the
+answers.
+
+### `=== true`, and nothing looser
+
+The SQL was `(permissions->>key)::boolean`. `->>` yields text, and Postgres
+accepts `'yes'`, `'on'`, `'t'` and `'1'` as boolean literals — so
+`{"vitals": "yes"}` was honoured by the database while the interface, checking
+`=== true`, showed the same share as off. A share the interface calls closed
+and the database calls open is the worst kind of disagreement to have about
+consent. Both ends now require a literal boolean, via `jsonb_typeof`.
+
+The function is also two-valued now. `jsonb_typeof` of a missing key is NULL, so
+an ungranted permission used to answer NULL. A `USING` clause treats NULL as
+false, which is why nothing surfaced it — but `NOT share_grants(...)` would
+have been NULL rather than true, and a three-valued permission function is a
+trap.

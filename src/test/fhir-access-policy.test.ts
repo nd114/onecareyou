@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { PERMISSION_FLAGS, describeAccessPolicy, toAccessPolicy } from "@/lib/fhir/access-policy";
+import {
+  ACCEPTED_PERMISSION_KEYS,
+  PERMISSION_FLAGS,
+  describeAccessPolicy,
+  grantsPermission,
+  toAccessPolicy,
+} from "@/lib/fhir/access-policy";
 
 const subject = { patientUserId: "p-1", shareLabel: "Dr Evans", pathway: "clinician" } as const;
 const hospital = { patientUserId: "p-1", shareLabel: "City General", pathway: "institution" } as const;
@@ -33,8 +39,8 @@ describe("what a share lets somebody see", () => {
 });
 
 describe("the resources each permission opens", () => {
-  it("opens both medication resources for meds, because a prescription is not a statement", () => {
-    const policy = toAccessPolicy({ meds: true }, subject);
+  it("opens both medication resources, because a prescription is not a statement", () => {
+    const policy = toAccessPolicy({ medications: true }, subject);
     expect(policy.resource.map((r) => r.resourceType).sort()).toEqual([
       "MedicationRequest",
       "MedicationStatement",
@@ -129,63 +135,98 @@ describe("the sentence a patient reads", () => {
   });
 });
 
-describe("the two share pathways speak different vocabularies", () => {
-  // Read out of the live policies, not assumed. A clinician share checks
-  // 'meds' and 'profile'; an institution share checks 'medications' and the
-  // separate 'conditions' and 'allergies'. A projection that knew only one
-  // would be wrong about half the shares in the product.
-  it("does not open a clinician share with an institution's keys", () => {
-    const policy = toAccessPolicy({ medications: true, conditions: true }, subject);
-    expect(policy.resource).toEqual([]);
-  });
-
-  it("does not open an institution share with a clinician's keys", () => {
-    const policy = toAccessPolicy({ meds: true, profile: true }, hospital);
-    expect(policy.resource).toEqual([]);
-  });
-
-  it("reaches the same medicines under either name, through the right pathway", () => {
-    const byClinician = toAccessPolicy({ meds: true }, subject);
-    const byHospital = toAccessPolicy({ medications: true }, hospital);
-    expect(byClinician.resource.map((r) => r.resourceType).sort()).toEqual(
-      byHospital.resource.map((r) => r.resourceType).sort(),
-    );
-  });
-
-  it("lets a hospital be given conditions without allergies, which a clinician share cannot express", () => {
-    // 'profile' is all-or-nothing on the clinician side; the institution side
-    // separates them. That asymmetry is real and the projection must show it.
-    const conditionsOnly = toAccessPolicy({ conditions: true }, hospital);
-    expect(conditionsOnly.resource.map((r) => r.resourceType)).toEqual(["Condition"]);
-
-    const both = toAccessPolicy({ profile: true }, subject);
-    expect(both.resource.map((r) => r.resourceType).sort()).toEqual([
-      "AllergyIntolerance",
-      "Condition",
+describe("one vocabulary, and the shares written before it", () => {
+  // The pathways used to name the same things differently, so a permissions
+  // object written for one granted nothing through the other. They converged;
+  // the old spellings are honoured as aliases so nothing anybody agreed to
+  // changes meaning.
+  it("opens the same medicines under either spelling", () => {
+    const canonical = toAccessPolicy({ medications: true }, subject);
+    const legacy = toAccessPolicy({ meds: true }, subject);
+    expect(legacy.resource).toEqual(canonical.resource);
+    expect(legacy.resource.map((r) => r.resourceType).sort()).toEqual([
+      "MedicationRequest",
+      "MedicationStatement",
     ]);
   });
 
-  it("offers dose history on the clinician side only", () => {
-    // No policy checks an 'adherence' key for an institution, so claiming a
-    // hospital share could grant it would overstate what the share does.
-    expect(PERMISSION_FLAGS.clinician).toContain("adherence");
-    expect(PERMISSION_FLAGS.institution).not.toContain("adherence");
+  it("still reads a share written for a hospital when shown as a clinician's", () => {
+    // This is the bug: before convergence, this returned nothing.
+    const asHospital = toAccessPolicy({ medications: true, conditions: true }, hospital);
+    const asClinician = toAccessPolicy({ medications: true, conditions: true }, subject);
+    expect(asClinician.resource).toEqual(asHospital.resource);
+    expect(asClinician.resource.length).toBeGreaterThan(0);
+  });
+
+  it("still honours a share written with 'profile' as both lists", () => {
+    const policy = toAccessPolicy({ profile: true }, subject);
+    expect(policy.resource.map((r) => r.resourceType).sort()).toContain("Condition");
+    expect(policy.resource.map((r) => r.resourceType).sort()).toContain("AllergyIntolerance");
+  });
+
+  it("says 'profile' opens more than the two lists, because it does", () => {
+    // RLS is row-level: opening the profiles row hands over name, date of
+    // birth, blood type and contact details as well. A policy document that
+    // described it as only the clinical lists would understate it.
+    const policy = toAccessPolicy({ profile: true }, subject);
+    const patientEntry = policy.resource.find((r) => r.resourceType === "Patient");
+    expect(patientEntry).toBeDefined();
+    expect(patientEntry?.description).toMatch(/date of birth|contact/i);
+
+    // ...and granting the lists separately does not open the whole row.
+    const listsOnly = toAccessPolicy({ conditions: true, allergies: true }, subject);
+    expect(listsOnly.resource.some((r) => r.resourceType === "Patient")).toBe(false);
+  });
+
+  it("lets conditions be granted without allergies, on either pathway", () => {
+    for (const who of [subject, hospital]) {
+      const policy = toAccessPolicy({ conditions: true }, who);
+      expect(policy.resource.map((r) => r.resourceType)).toEqual(["Condition"]);
+    }
+  });
+
+  it("does not let an alias open something it does not name", () => {
+    // 'meds' is an old name for medications, not a skeleton key.
+    expect(grantsPermission({ meds: true }, "documents")).toBe(false);
+    expect(grantsPermission({ meds: true }, "adherence")).toBe(false);
+    expect(grantsPermission({ profile: true }, "vitals")).toBe(false);
+  });
+
+  it("keeps dose history as its own grant", () => {
+    // Institutions used to get it with 'medications'. Whether somebody takes
+    // their medicine is a judgement about them, not a record of their care.
+    expect(grantsPermission({ medications: true }, "adherence")).toBe(false);
+    expect(grantsPermission({ meds: true }, "adherence")).toBe(false);
+    expect(grantsPermission({ adherence: true }, "adherence")).toBe(true);
+  });
+
+  it("counts only a literal true, matching the database", () => {
+    // share_granted_flag used to be (permissions->>key)::boolean, and Postgres
+    // reads "yes", "on", "t" and 1 as true — so a share the interface showed
+    // as off was one the database honoured. Both ends now require a boolean.
+    for (const loose of ["yes", "true", 1, "on", {}] as unknown[]) {
+      expect(grantsPermission({ vitals: loose } as never, "vitals")).toBe(false);
+    }
+    expect(grantsPermission({ vitals: true }, "vitals")).toBe(true);
   });
 
   it("names exactly the flags the SQL suite checks against the live policies", () => {
-    expect(PERMISSION_FLAGS.clinician).toEqual([
+    expect(PERMISSION_FLAGS).toEqual([
       "adherence",
-      "documents",
-      "meds",
-      "profile",
-      "vitals",
-    ]);
-    expect(PERMISSION_FLAGS.institution).toEqual([
       "allergies",
       "conditions",
       "documents",
       "medications",
+      "profile",
       "vitals",
     ]);
+  });
+
+  it("knows every key a stored share might carry", () => {
+    expect(ACCEPTED_PERMISSION_KEYS).toContain("meds");
+    expect(ACCEPTED_PERMISSION_KEYS).toContain("profile");
+    for (const flag of PERMISSION_FLAGS) {
+      expect(ACCEPTED_PERMISSION_KEYS).toContain(flag);
+    }
   });
 });

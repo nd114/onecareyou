@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { grantsPermission } from '@/lib/fhir/access-policy';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -232,7 +233,7 @@ const ClinicianPortal = () => {
                 Secure Access
               </Badge>
             </div>
-            {user && shareId && patientUserId && data.permissions.vitals && (
+            {user && shareId && patientUserId && grantsPermission(data.permissions, 'vitals') && (
               <AlertThresholdDialog 
                 patientUserId={patientUserId}
                 shareId={shareId}
@@ -271,10 +272,10 @@ const ClinicianPortal = () => {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {data.permissions.vitals && <Badge>Vitals</Badge>}
-                  {data.permissions.meds && <Badge>Medications</Badge>}
-                  {data.permissions.adherence && <Badge>Adherence</Badge>}
-                  {data.permissions.profile && <Badge>Health Profile</Badge>}
+                  {grantsPermission(data.permissions, 'vitals') && <Badge>Vitals</Badge>}
+                  {grantsPermission(data.permissions, 'medications') && <Badge>Medications</Badge>}
+                  {grantsPermission(data.permissions, 'adherence') && <Badge>Adherence</Badge>}
+                  {grantsPermission(data.permissions, 'profile') && <Badge>Health Profile</Badge>}
                 </div>
               </div>
             </CardContent>
@@ -337,16 +338,16 @@ const ClinicianPortal = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Tabs defaultValue={data.permissions.profile ? 'profile' : data.permissions.vitals ? 'vitals' : 'medications'}>
+          <Tabs defaultValue={grantsPermission(data.permissions, 'profile') ? 'profile' : grantsPermission(data.permissions, 'vitals') ? 'vitals' : 'medications'}>
             <TabsList className="mb-6">
-              {data.permissions.profile && <TabsTrigger value="profile">Health Profile</TabsTrigger>}
-              {data.permissions.vitals && <TabsTrigger value="vitals">Vitals</TabsTrigger>}
-              {data.permissions.meds && <TabsTrigger value="medications">Medications</TabsTrigger>}
-              {data.permissions.adherence && <TabsTrigger value="adherence">Adherence</TabsTrigger>}
+              {grantsPermission(data.permissions, 'profile') && <TabsTrigger value="profile">Health Profile</TabsTrigger>}
+              {grantsPermission(data.permissions, 'vitals') && <TabsTrigger value="vitals">Vitals</TabsTrigger>}
+              {grantsPermission(data.permissions, 'medications') && <TabsTrigger value="medications">Medications</TabsTrigger>}
+              {grantsPermission(data.permissions, 'adherence') && <TabsTrigger value="adherence">Adherence</TabsTrigger>}
             </TabsList>
 
             {/* Profile Tab */}
-            {data.permissions.profile && data.profile && (
+            {grantsPermission(data.permissions, 'profile') && data.profile && (
               <TabsContent value="profile">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card>
@@ -434,14 +435,14 @@ const ClinicianPortal = () => {
             )}
 
             {/* Vitals Tab */}
-            {data.permissions.vitals && (
+            {grantsPermission(data.permissions, 'vitals') && (
               <TabsContent value="vitals">
                 <VitalsSummaryView vitals={data.vitals || []} />
               </TabsContent>
             )}
 
             {/* Medications Tab */}
-            {data.permissions.meds && (
+            {grantsPermission(data.permissions, 'medications') && (
               <TabsContent value="medications">
                 <Card>
                   <CardHeader>
@@ -497,7 +498,7 @@ const ClinicianPortal = () => {
             )}
 
             {/* Adherence Tab */}
-            {data.permissions.adherence && (
+            {grantsPermission(data.permissions, 'adherence') && (
               <TabsContent value="adherence">
                 <Card>
                   <CardHeader>

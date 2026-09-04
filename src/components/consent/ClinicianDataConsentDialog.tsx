@@ -94,7 +94,7 @@ export function ClinicianDataConsentDialog({ record, open, onOpenChange }: Props
       const inviteCode = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
       const sharePermissions = {
         vitals: true,
-        meds: true,
+        medications: true,
         adherence: true,
         profile: selectedModel !== 'view_only',
       };

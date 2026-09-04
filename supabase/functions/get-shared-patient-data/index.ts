@@ -1,6 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
+import { shareGrants } from "../_shared/share-permissions.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -14,12 +16,13 @@ const GetSharedPatientDataSchema = z.object({
     .regex(/^[a-zA-Z0-9\-_]+$/, 'Invalid invite code format'),
 });
 
-interface SharePermissions {
-  vitals: boolean;
-  meds: boolean;
-  adherence: boolean;
-  profile: boolean;
-}
+/**
+ * Read through `shareGrants`, never by key: `meds` and `profile` are retired
+ * spellings still present on live shares, and a share written with a canonical
+ * name would look ungranted to code checking the old one — which is how the
+ * Medications tab would vanish for somebody who granted medications.
+ */
+type SharePermissions = Record<string, unknown>;
 
 // Track failed attempts per invite code for rate limiting
 const failedAttempts = new Map<string, { count: number; firstAttempt: number }>();
@@ -179,7 +182,7 @@ Deno.serve(async (req) => {
     };
 
     // Fetch patient profile if permitted
-    if (permissions.profile) {
+    if (shareGrants(permissions, 'profile')) {
       const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('name, date_of_birth, gender, blood_type, height, allergies, health_conditions, emergency_contact_name, emergency_number')
@@ -199,7 +202,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch vitals if permitted
-    if (permissions.vitals) {
+    if (shareGrants(permissions, 'vitals')) {
       const { data: vitals } = await supabaseAdmin
         .from('vitals')
         .select('*')
@@ -211,7 +214,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch medications if permitted
-    if (permissions.meds) {
+    if (shareGrants(permissions, 'medications')) {
       const { data: medications } = await supabaseAdmin
         .from('medications')
         .select('*')
@@ -223,7 +226,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch schedule/adherence if permitted
-    if (permissions.adherence) {
+    if (shareGrants(permissions, 'adherence')) {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       

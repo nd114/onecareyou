@@ -9,17 +9,35 @@ import { toast } from "sonner";
  * column, and only type aliases get the implicit index signature that makes
  * them assignable to `Json`.
  */
+/**
+ * What a share opens.
+ *
+ * Every key is optional, and absent means not granted — the `=== true` rule
+ * the database now enforces too. Making them required would have meant a
+ * caller could not write a share with only the permissions it meant to grant
+ * without spelling out every refusal, and would have made adding a permission
+ * a breaking change at every call site.
+ *
+ * `meds` and `profile` are the older spellings, still stored on live shares
+ * and still honoured. Read them through `grantsPermission` rather than
+ * directly, or a share written with the canonical name will look ungranted.
+ */
 type SharePermissions = {
-  vitals: boolean;
-  meds: boolean;
-  adherence: boolean;
-  profile: boolean;
+  vitals?: boolean;
+  medications?: boolean;
+  adherence?: boolean;
+  conditions?: boolean;
+  allergies?: boolean;
+  /** The whole profile row, which is more than the two clinical lists. */
+  profile?: boolean;
   /**
    * Whole-vault access. Absent or false means the stricter default: this
    * clinician sees only the documents the patient shared one at a time,
    * through document_shares.
    */
   documents?: boolean;
+  /** Retired spelling of `medications`, still present on shares already made. */
+  meds?: boolean;
 };
 
 export interface ProviderShare {

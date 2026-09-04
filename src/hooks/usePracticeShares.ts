@@ -78,6 +78,12 @@ export function useMyInstitutionShares() {
         practice_id: practiceId,
         user_id: user.id,
         share_all: shareAll,
+        // The canonical vocabulary — the same keys a clinician share uses since
+        // 20260908100000_one_share_vocabulary.sql. `adherence` is deliberately
+        // absent from the default: whether somebody is taking their medicine
+        // is a judgement about them rather than a record of their care, and it
+        // used to ride along on `medications` for hospitals without anybody
+        // granting it.
         permissions:
           permissions ?? {
             vitals: true,

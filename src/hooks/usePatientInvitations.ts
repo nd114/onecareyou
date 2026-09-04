@@ -140,7 +140,7 @@ export function usePatientInvitations() {
           provider_email: clinicianProfile?.email,
           clinician_user_id: inv.clinician_user_id,
           invite_code: shareInviteCode,
-          permissions: { vitals: true, meds: true, adherence: true, profile: false },
+          permissions: { vitals: true, medications: true, adherence: true, profile: false },
           is_active: true,
         })
         .select()

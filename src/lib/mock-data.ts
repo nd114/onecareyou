@@ -132,7 +132,7 @@ export const mockProviderShares: ProviderShare[] = [
     providerName: "Dr. Sarah Chen",
     providerEmail: "dr.chen@hospital.com",
     inviteCode: "abc123xyz",
-    permissions: { vitals: true, meds: true, adherence: true, profile: false },
+    permissions: { vitals: true, medications: true, adherence: true, profile: false },
     isActive: true,
     lastAccessedAt: "2024-01-20T10:30:00Z",
     createdAt: "2024-01-15",

@@ -12,7 +12,7 @@
 --   * policy expressions in pg_policies, and
 --   * the bodies of SECURITY DEFINER functions, because 'conditions' and
 --     'allergies' are checked inside `get_patient_clinical_profile` and appear
---     in no policy at all. Reading only pg_policies finds six of the eight keys
+--     in no policy at all. Reading only pg_policies finds four of the six keys
 --     and looks complete, which is how this test was wrong the first time.
 --
 -- Needs a fully-migrated database. Against a partial one the sets below will
@@ -24,11 +24,15 @@ BEGIN;
 DO $$
 DECLARE
   v_found     text[];
+  -- The canonical set, since 20260908100000_one_share_vocabulary.sql. The old
+  -- spellings ('meds', 'profile') are resolved inside share_grants and no
+  -- longer appear in any policy or function, which is itself asserted below.
+  -- 'profile' is not only an alias: it still gates the profiles row itself,
+  -- which carries name, date of birth and contact details as well as the two
+  -- clinical lists. RLS is row-level, so that is a coarser grant than
+  -- 'conditions' and has to stay describable in its own right.
   v_expected  text[] := ARRAY[
-    -- clinician pathway
-    'adherence', 'documents', 'meds', 'profile', 'vitals',
-    -- institution pathway
-    'allergies', 'conditions', 'medications'
+    'adherence', 'allergies', 'conditions', 'documents', 'medications', 'profile', 'vitals'
   ];
   v_extra     text[];
   v_missing   text[];
@@ -57,9 +61,11 @@ BEGIN
            'g'
          ) m
     WHERE p.pronamespace = 'public'::regnamespace
-      -- The helpers themselves take the key as a parameter; only their callers
-      -- name a literal.
+      -- The helpers take the key as a parameter; only their callers name a
+      -- literal. share_grants is where the old spellings are resolved, so the
+      -- literals in it are aliases rather than permissions in their own right.
       AND p.proname NOT LIKE '%\_has\_%\_permission'
+      AND p.proname NOT IN ('share_grants', 'share_granted_flag')
   ) f;
 
   IF v_found IS NULL THEN
@@ -89,13 +95,21 @@ BEGIN
   RAISE NOTICE 'every permission the projection describes is one the database enforces: t';
 
   -- ---------------------------------------------------------------
-  -- The two vocabularies are real, and the projection depends on it
+  -- One vocabulary, and the old spellings only inside share_grants
   -- ---------------------------------------------------------------
-  IF NOT ('meds' = ANY (v_found) AND 'medications' = ANY (v_found)) THEN
+  IF 'meds' = ANY (v_found) THEN
     RAISE EXCEPTION
-      'the two share pathways no longer use different keys for medicines — the projection''s pathway split can be simplified';
+      'a policy still asks for "meds" directly rather than letting share_grants resolve it';
   END IF;
-  RAISE NOTICE 'medicines are still gated by two different keys, one per pathway: t';
+  RAISE NOTICE 'nothing asks for the retired "meds" key directly: t';
+
+  -- ...but share_grants must still resolve them, or every share written before
+  -- the convergence silently stops meaning what it meant.
+  IF NOT public.share_grants('{"meds": true}'::jsonb, 'medications')
+     OR NOT public.share_grants('{"profile": true}'::jsonb, 'conditions') THEN
+    RAISE EXCEPTION 'share_grants no longer resolves the old key names';
+  END IF;
+  RAISE NOTICE 'share_grants still resolves them, so old shares keep working: t';
 
   -- ---------------------------------------------------------------
   -- The tables each key opens, pinned so the descriptions stay true
