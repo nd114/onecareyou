@@ -2906,44 +2906,6 @@ export type Database = {
           },
         ]
       }
-      practice_patient_access: {
-        Row: {
-          added_at: string
-          id: string
-          is_active: boolean | null
-          patient_user_id: string
-          permissions: Json
-          practice_id: string
-          primary_clinician_id: string
-        }
-        Insert: {
-          added_at?: string
-          id?: string
-          is_active?: boolean | null
-          patient_user_id: string
-          permissions?: Json
-          practice_id: string
-          primary_clinician_id: string
-        }
-        Update: {
-          added_at?: string
-          id?: string
-          is_active?: boolean | null
-          patient_user_id?: string
-          permissions?: Json
-          practice_id?: string
-          primary_clinician_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "practice_patient_access_practice_id_fkey"
-            columns: ["practice_id"]
-            isOneToOne: false
-            referencedRelation: "practices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       practice_patient_assignments: {
         Row: {
           assigned_by: string | null
@@ -3101,6 +3063,8 @@ export type Database = {
           is_active: boolean
           permissions: Json
           practice_id: string
+          practice_suspended_at: string | null
+          practice_suspended_by: string | null
           revoke_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
@@ -3115,6 +3079,8 @@ export type Database = {
           is_active?: boolean
           permissions?: Json
           practice_id: string
+          practice_suspended_at?: string | null
+          practice_suspended_by?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -3129,6 +3095,8 @@ export type Database = {
           is_active?: boolean
           permissions?: Json
           practice_id?: string
+          practice_suspended_at?: string | null
+          practice_suspended_by?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
