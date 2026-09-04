@@ -4734,6 +4734,14 @@ export type Database = {
         Args: { _practice_id: string; _status: string; _user_id: string }
         Returns: undefined
       }
+      share_granted_flag: {
+        Args: { flag: string; permissions: Json }
+        Returns: boolean
+      }
+      share_grants: {
+        Args: { permission_key: string; permissions: Json }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
