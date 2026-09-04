@@ -104,14 +104,16 @@ export function usePracticeAdminActions(practiceId?: string | null) {
   const setPatientAccess = useMutation({
     mutationFn: async ({ patientUserId, isActive }: { patientUserId: string; isActive: boolean }) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { error } = await supabase
-        .from('practice_shares')
-        .update({
-          practice_suspended_at: isActive ? null : new Date().toISOString(),
-          practice_suspended_by: isActive ? null : user?.id ?? null,
-        })
-        .eq('practice_id', practiceId)
-        .eq('user_id', patientUserId);
+      // Through the RPC, not a direct UPDATE. The only UPDATE policy a practice
+      // admin has on practice_shares requires is_active = false in its WITH
+      // CHECK — it exists to let a practice end a share — so writing the
+      // suspension columns while leaving is_active true failed with an RLS
+      // violation every time. Both suspending and restoring were broken.
+      const { error } = await supabase.rpc('set_practice_suspension', {
+        _practice_id: practiceId,
+        _patient_user_id: patientUserId,
+        _suspended: !isActive,
+      });
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {

@@ -4734,6 +4734,14 @@ export type Database = {
         Args: { _practice_id: string; _status: string; _user_id: string }
         Returns: undefined
       }
+      set_practice_suspension: {
+        Args: {
+          _patient_user_id: string
+          _practice_id: string
+          _suspended: boolean
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
