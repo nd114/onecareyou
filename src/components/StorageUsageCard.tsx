@@ -6,6 +6,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import {
   PATIENT_STORAGE_GB,
   DURABILITY_POINTS,
+  PATIENT_AUDIO_POINT,
   formatBytes,
   storagePercent,
 } from '@/lib/storage-constants';
@@ -42,7 +43,7 @@ export const StorageUsageCard = () => {
         </div>
 
         <ul className="space-y-1.5 text-xs text-muted-foreground">
-          {DURABILITY_POINTS.map((point) => (
+          {[...DURABILITY_POINTS, PATIENT_AUDIO_POINT].map((point) => (
             <li key={point} className="flex gap-2">
               <span aria-hidden className="text-primary">
                 •

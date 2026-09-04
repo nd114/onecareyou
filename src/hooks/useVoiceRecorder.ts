@@ -1,17 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Minimal MediaRecorder wrapper for Simple Mode voice capture.
+ * Minimal MediaRecorder wrapper.
  *
- * v1 cap: 60 seconds — keeps payloads small and transcription latency
- * acceptable. For longer dictation (clinician visit notes, multi-minute
- * patient reflections) we plan an Otter.ai-style integration that streams
- * audio chunks server-side; this hook is the local-recording primitive both
- * flows will reuse.
+ * Simple Mode's voice capture keeps the original 60-second cap: it is a way to
+ * say one thing, and a long payload there is a mistake rather than a feature.
+ * A patient recording a consultation needs a different limit entirely — an
+ * appointment runs ten or twenty minutes — so the cap is a parameter with the
+ * old value as its default, and Simple Mode is unchanged by construction.
+ *
+ * The cap still exists at every length. A recorder with no limit is one that
+ * runs in somebody's pocket for six hours because they forgot to stop it.
  */
-const MAX_DURATION_MS = 60_000;
+const DEFAULT_MAX_DURATION_MS = 60_000;
 
-export function useVoiceRecorder() {
+export interface VoiceRecorderOptions {
+  /** Hard stop, in milliseconds. Defaults to 60 seconds. */
+  maxDurationMs?: number;
+}
+
+export function useVoiceRecorder(options: VoiceRecorderOptions = {}) {
+  const MAX_DURATION_MS = options.maxDurationMs ?? DEFAULT_MAX_DURATION_MS;
+  // The interval callback closes over whatever `start` captured, and `start`
+  // is memoised for the life of the component. Read the cap through a ref so
+  // a caller that computes its limit (a plan allowance, say) is not silently
+  // held to whatever the first render happened to say.
+  const maxDurationRef = useRef(MAX_DURATION_MS);
+  maxDurationRef.current = MAX_DURATION_MS;
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +77,7 @@ export function useVoiceRecorder() {
       tickRef.current = window.setInterval(() => {
         const elapsed = Date.now() - startedAtRef.current;
         setElapsedMs(elapsed);
-        if (elapsed >= MAX_DURATION_MS) {
+        if (elapsed >= maxDurationRef.current) {
           stopInternal();
         }
       }, 200);

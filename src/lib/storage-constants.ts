@@ -25,14 +25,32 @@ export const STORAGE_PACKS = [
   { gb: 1000, price: 129, label: '1 TB pack' },
 ] as const;
 
-/** Durability commitments we publish to clinicians and patients. */
+/** Durability commitments that hold for everyone. */
 export const DURABILITY_POINTS = [
   'Multi-zone replicated storage with automatic failover',
   'Point-in-time recovery for the database',
   'Weekly independent export to separate storage',
   'Restore drills documented in the compliance pack',
-  'Audio is transcribed then discarded by default — transcripts are kept, not recordings',
 ] as const;
+
+/**
+ * What happens to audio, which is not the same on both sides.
+ *
+ * Clinician dictation is a means to a note: the audio is transcribed and
+ * discarded, and keeping it would mean holding a recording of a patient the
+ * patient never agreed to. A patient recording their own appointment is the
+ * opposite — the audio *is* the thing they wanted, and the transcript is the
+ * convenience — so it stays until they remove it.
+ *
+ * These read as one line each in the storage card. Stating the wrong one is
+ * how a durability promise quietly becomes untrue, so they are separate
+ * constants rather than one sentence hedged to cover both.
+ */
+export const PATIENT_AUDIO_POINT =
+  'Recordings you make are kept until you remove them — the audio and its transcript are both yours';
+
+export const CLINICIAN_AUDIO_POINT =
+  'Dictation audio is transcribed then discarded — the note is kept, the recording is not';
 
 export function formatBytes(bytes: number): string {
   if (!bytes || bytes < 0) return '0 MB';

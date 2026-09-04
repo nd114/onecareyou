@@ -14,6 +14,7 @@ export type DocumentCategory =
   | 'referral'
   | 'visit_note'
   | 'care_record'
+  | 'recording'
   | 'other';
 
 export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; color: string }[] = [
@@ -26,6 +27,9 @@ export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; colo
   { value: 'referral', label: 'Referral', color: 'bg-pink-500/10 text-pink-700 dark:text-pink-300' },
   { value: 'visit_note', label: 'Visit Note', color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' },
   { value: 'care_record', label: 'Care Record', color: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' },
+  // A patient's own recording of an appointment, and its transcript. Filed
+  // like anything else so it shares, archives and downloads the same way.
+  { value: 'recording', label: 'Recording', color: 'bg-rose-500/10 text-rose-700 dark:text-rose-300' },
   { value: 'other', label: 'Other', color: 'bg-muted text-muted-foreground' },
 ];
 

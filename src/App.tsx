@@ -83,6 +83,7 @@ import Sitemap from "./pages/Sitemap";
 import Careers from "./pages/Careers";
 import JobDetail from "./pages/JobDetail";
 import HealthVault from "./pages/HealthVault";
+import Recordings from "./pages/Recordings";
 import Messages from "./pages/Messages";
 import ClinicianMessages from "./pages/ClinicianMessages";
 import Install from "./pages/Install";
@@ -265,6 +266,11 @@ const App = () => (
             <Route path="/health-vault" element={
               <PatientRoute>
                 <HealthVault />
+              </PatientRoute>
+            } />
+            <Route path="/recordings" element={
+              <PatientRoute>
+                <Recordings />
               </PatientRoute>
             } />
             <Route path="/messages" element={

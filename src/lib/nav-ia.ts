@@ -47,6 +47,9 @@ export const PATIENT_PILLARS: PatientPillar[] = [
       { to: "/vitals", label: "Vitals" },
       { to: "/medications", label: "Medications" },
       { to: "/health-vault", label: "Vault" },
+      // Sits next to the Vault because that is where a recording ends up, and
+      // because "what was I actually told" belongs with "what do I have".
+      { to: "/recordings", label: "Recordings" },
       { to: "/adherence-report", label: "Adherence" },
     ],
   },
