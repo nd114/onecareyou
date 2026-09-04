@@ -1954,6 +1954,8 @@ export type Database = {
           ai_category: string | null
           ai_summary: string | null
           ai_tags: Json | null
+          archived_at: string | null
+          archived_reason: string | null
           category: string
           created_at: string
           document_date: string | null
@@ -1977,6 +1979,8 @@ export type Database = {
           ai_category?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          archived_at?: string | null
+          archived_reason?: string | null
           category?: string
           created_at?: string
           document_date?: string | null
@@ -2000,6 +2004,8 @@ export type Database = {
           ai_category?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          archived_at?: string | null
+          archived_reason?: string | null
           category?: string
           created_at?: string
           document_date?: string | null
