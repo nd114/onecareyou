@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { edgeFunctionError } from '@/lib/edge-function-error';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAIConsent } from '@/hooks/useAIConsent';
 import { toast } from 'sonner';
 import {
   RECORDING_NOTICE_VERSION,
@@ -76,8 +78,19 @@ function saveBlobToDevice(blob: Blob, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/**
+ * Said in one place so the pre-flight check and the page agree word for word.
+ *
+ * Names the consequence rather than the setting: "turn on AI processing" tells
+ * somebody what to click, not what it means for their consultation.
+ */
+export const TRANSCRIPTION_NEEDS_CONSENT =
+  'Writing a transcript means sending this recording to a transcription service, so it needs ' +
+  'AI processing turned on in Settings first.';
+
 export function usePatientRecordings() {
   const { user } = useAuth();
+  const { hasConsent: hasAIConsent } = useAIConsent();
   const queryClient = useQueryClient();
 
   const { data: recordings = [], isLoading } = useQuery({
@@ -195,6 +208,12 @@ export function usePatientRecordings() {
       if (!user) throw new Error('Not authenticated');
       if (!recording.audio_document_id) throw new Error('This recording has no audio to transcribe');
 
+      // Asked and answered here rather than only at the server, so somebody
+      // who has not turned AI processing on is told what to do instead of
+      // watching a request go out and come back refused. The function checks
+      // it too — that is the boundary; this is the courtesy.
+      if (!hasAIConsent) throw new Error(TRANSCRIPTION_NEEDS_CONSENT);
+
       await supabase
         .from('patient_recordings')
         .update({ transcript_status: 'pending' })
@@ -212,7 +231,12 @@ export function usePatientRecordings() {
           .from('patient_recordings')
           .update({ transcript_status: 'failed' })
           .eq('id', recording.id);
-        throw error;
+        // `functions.invoke` throws "Edge Function returned a non-2xx status
+        // code" whatever the function said. The reason it actually gave — too
+        // long, nothing audible, consent not given — is in the response body,
+        // and is the only part worth showing anybody.
+        const { message } = await edgeFunctionError(error);
+        throw new Error(message);
       }
       return data as { transcript?: string };
     },
@@ -223,7 +247,13 @@ export function usePatientRecordings() {
     onError: (e: Error) => {
       console.error('Transcription failed', e);
       queryClient.invalidateQueries({ queryKey: ['patient-recordings'] });
-      toast.error('Could not transcribe that recording: ' + e.message);
+      // Two things every failure here has to say: what went wrong, and that
+      // the recording itself is untouched. Somebody who asked for a transcript
+      // and saw an error will assume they have lost the audio too.
+      toast.error(e.message, {
+        description: 'Your recording is safe — only the transcript failed.',
+        duration: 8000,
+      });
     },
   });
 
@@ -426,6 +456,8 @@ export function usePatientRecordings() {
     getAudioUrl,
     downloadAudio,
     downloadTranscript,
+    /** So a menu can explain itself before the patient taps something that will refuse. */
+    canTranscribe: hasAIConsent,
     noticeVersion: RECORDING_NOTICE_VERSION,
   };
 }

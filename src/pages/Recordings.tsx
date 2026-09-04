@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   Archive,
   ArchiveRestore,
@@ -35,7 +36,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Panel, PanelBody, PanelEmpty, PanelGlyph, PanelHeader, PanelRow, PanelRows } from '@/components/ui/panel';
 import { RecordVisitDialog } from '@/components/recordings/RecordVisitDialog';
-import { usePatientRecordings, type PatientRecording } from '@/hooks/usePatientRecordings';
+import {
+  TRANSCRIPTION_NEEDS_CONSENT,
+  usePatientRecordings,
+  type PatientRecording,
+} from '@/hooks/usePatientRecordings';
 import { formatDuration } from '@/lib/recording-consent';
 import { isTranscriptInFlight, transcriptActionLabel } from '@/lib/recording-status';
 
@@ -60,6 +65,7 @@ const Recordings = () => {
     getAudioUrl,
     downloadAudio,
     downloadTranscript,
+    canTranscribe,
   } = usePatientRecordings();
 
   const [recordOpen, setRecordOpen] = useState(false);
@@ -120,6 +126,16 @@ const Recordings = () => {
                 </Button>
               )}
             </PanelHeader>
+
+            {!canTranscribe && list.length > 0 && !showArchived && (
+              <PanelBody className="border-b border-primary/10 bg-secondary/30 text-xs leading-relaxed text-muted-foreground">
+                {TRANSCRIPTION_NEEDS_CONSENT}{' '}
+                <Link to="/settings?section=privacy" className="underline underline-offset-2">
+                  Turn it on
+                </Link>
+                . Recording, playing back and downloading all work without it.
+              </PanelBody>
+            )}
 
             {isLoading ? (
               <PanelBody className="flex justify-center py-10">
@@ -206,6 +222,7 @@ const Recordings = () => {
                                 )}
                               </>
                             ) : (
+                              canTranscribe ? (
                               <DropdownMenuItem
                                 disabled={isTranscriptInFlight(recording)}
                                 onSelect={() => requestTranscript.mutate(recording)}
@@ -213,6 +230,16 @@ const Recordings = () => {
                                 <Sparkles className="mr-2 h-4 w-4" />
                                 {transcriptActionLabel(recording)}
                               </DropdownMenuItem>
+                              ) : (
+                              // Rather than an item that refuses when tapped:
+                              // say what is needed and go straight there.
+                              <DropdownMenuItem asChild>
+                                <Link to="/settings?section=privacy">
+                                  <Sparkles className="mr-2 h-4 w-4" />
+                                  Turn on transcripts
+                                </Link>
+                              </DropdownMenuItem>
+                              )
                             )}
 
                             <DropdownMenuSeparator />
