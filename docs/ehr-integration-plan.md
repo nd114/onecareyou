@@ -90,3 +90,62 @@ These decide the shape of the work and none can be answered from here:
 - Do not treat an EHR record as more authoritative than the patient. Both are sources with
   provenance; the patient's own record is not overwritten by an import.
 - Do not let an integration become a back door around consent. Access still comes from a share.
+
+---
+
+## What actually imports today (September 2026)
+
+Written down because the gap between the plan above and the code was wide
+enough to mislead.
+
+| Resource | Status |
+| --- | --- |
+| `Observation` (vital signs) | Imported by `scheduled-ehr-sync`, with `source`, `external_id` and `ehr_connection_id` set |
+| `MedicationRequest` | Imported by `scheduled-ehr-sync` — added September 2026 |
+| Conditions, allergies, documents, labs | Not imported |
+| `ehr-sync`'s `import_patient` action | **Fetches and counts. Writes nothing.** It logs the sync as `success` with a record count, having imported zero rows. No client calls it — only `test_connection` is ever invoked — so nobody is currently being misled, but the action should either be finished or removed rather than left looking functional. |
+
+### Where the mapping lives
+
+`supabase/functions/_shared/fhir-medication.ts`, and it imports nothing at all.
+That constraint is deliberate: an import-free module runs unchanged under Deno
+and under vitest, so the logic deciding what a patient's medication list says is
+covered by `src/test/fhir-medication-import.test.ts` rather than only ever
+running in production against a real hospital.
+
+`src/lib/fhir/inbound.ts` is the browser-side counterpart. It handles
+`MedicationStatement` (somebody's account of what is being taken) where the
+shared module handles `MedicationRequest` (a hospital's record of what it
+prescribed). Those are different claims and are mapped differently on purpose.
+
+### Rules the medication import follows
+
+- **Refuse rather than guess.** No readable name, no dose, a `proposal` rather
+  than an `order`, a `draft` or `entered-in-error` status — all rejected with a
+  reason, which is written to `ehr_sync_logs.error_details`.
+- **A run that refused anything is `partial`, not `success`.** An import that
+  quietly drops half a prescription list looks exactly like one that worked.
+- **A schedule we cannot express becomes `as_needed` with a warning.** The app
+  holds a fixed frequency vocabulary; FHIR can express far more. Rounding an
+  unmappable schedule to the nearest one we hold would have a patient dosing on
+  a timetable nobody prescribed.
+- **A repeated sync updates, never duplicates.** Enforced by the unique index
+  on `(user_id, ehr_connection_id, external_id)`, asserted in
+  `supabase/tests/medication_provenance.test.sql`. The lookup is explicit rather
+  than an upsert because the index is partial and `ON CONFLICT` cannot infer it.
+
+### What provenance now buys the patient
+
+`medications.source` is `'manual'` for anything they entered and the sending
+system's name otherwise. `isMedicationEditable()` reads it, and:
+
+- the medication card hides Edit and Delete on an imported row, showing
+  "Managed by <hospital> — ask them to change it" instead — a control that
+  exists and then refuses is worse than one that is not there;
+- `/medications/:id/edit` is reachable by URL, so it renders read-only rather
+  than redirecting, which would look like a bug;
+- `useMedications` guards the mutations themselves, because the buttons are not
+  the only caller — the assistant can change a medication too.
+
+Disconnecting a hospital nulls `ehr_connection_id` but keeps `source`, so the
+patient can still see the row was not theirs after the connection is gone.

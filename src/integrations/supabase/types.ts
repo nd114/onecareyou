@@ -2414,7 +2414,9 @@ export type Database = {
           discontinuation_reason: string | null
           discontinued_at: string | null
           dosage: string
+          ehr_connection_id: string | null
           end_date: string | null
+          external_id: string | null
           family_member_id: string | null
           frequency: string
           id: string
@@ -2425,6 +2427,7 @@ export type Database = {
           prescriber: string | null
           quantity: number | null
           refill_date: string | null
+          source: string
           start_date: string
           times_of_day: Json | null
           type: string
@@ -2436,7 +2439,9 @@ export type Database = {
           discontinuation_reason?: string | null
           discontinued_at?: string | null
           dosage: string
+          ehr_connection_id?: string | null
           end_date?: string | null
+          external_id?: string | null
           family_member_id?: string | null
           frequency: string
           id?: string
@@ -2447,6 +2452,7 @@ export type Database = {
           prescriber?: string | null
           quantity?: number | null
           refill_date?: string | null
+          source?: string
           start_date?: string
           times_of_day?: Json | null
           type?: string
@@ -2458,7 +2464,9 @@ export type Database = {
           discontinuation_reason?: string | null
           discontinued_at?: string | null
           dosage?: string
+          ehr_connection_id?: string | null
           end_date?: string | null
+          external_id?: string | null
           family_member_id?: string | null
           frequency?: string
           id?: string
@@ -2469,6 +2477,7 @@ export type Database = {
           prescriber?: string | null
           quantity?: number | null
           refill_date?: string | null
+          source?: string
           start_date?: string
           times_of_day?: Json | null
           type?: string
@@ -2476,6 +2485,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "medications_ehr_connection_id_fkey"
+            columns: ["ehr_connection_id"]
+            isOneToOne: false
+            referencedRelation: "ehr_connections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "medications_family_member_id_fkey"
             columns: ["family_member_id"]

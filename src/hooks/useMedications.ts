@@ -5,6 +5,7 @@ import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { cacheRead, getCachedRead } from '@/lib/offline';
+import { isMedicationEditable } from '@/types/health';
 
 export type Medication = Tables<'medications'>;
 export type MedicationInsert = TablesInsert<'medications'>;
@@ -91,9 +92,30 @@ export const useMedications = () => {
     },
   });
 
+  /**
+   * The same rule vitals have had all along: a row that came from a hospital's
+   * system is that system's record of what it prescribed, and editing it here
+   * would make the two disagree with no way to tell which is right.
+   *
+   * The guard is in the mutation rather than only on the button, because the
+   * button is not the only caller — the assistant can change a medication too.
+   */
+  const guardImported = (id: string, verb: 'change' | 'remove'): boolean => {
+    const existing = medicationsQuery.data?.find((m) => m.id === id);
+    if (existing && !isMedicationEditable(existing)) {
+      toast.error(
+        `This medication came from ${existing.source}, so you cannot ${verb} it here. ` +
+          'Ask them to change it and it will update on the next sync.',
+      );
+      return false;
+    }
+    return true;
+  };
+
   const updateMedication = useMutation({
     mutationFn: async ({ id, ...updates }: MedicationUpdate & { id: string }) => {
       if (!user?.id) throw new Error('Not authenticated');
+      if (!guardImported(id, 'change')) throw new Error('IMPORTED_MEDICATION');
 
       const { data, error } = await supabase
         .from('medications')
@@ -110,7 +132,8 @@ export const useMedications = () => {
       queryClient.invalidateQueries({ queryKey: ['medications', user?.id] });
       toast.success('Medication updated successfully!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      if (error.message === 'IMPORTED_MEDICATION') return; // The guard already said why.
       console.error('Error updating medication:', error);
       toast.error('Failed to update medication');
     },
@@ -119,6 +142,7 @@ export const useMedications = () => {
   const deleteMedication = useMutation({
     mutationFn: async (id: string) => {
       if (!user?.id) throw new Error('Not authenticated');
+      if (!guardImported(id, 'remove')) throw new Error('IMPORTED_MEDICATION');
 
       // First delete related schedule entries
       await supabase
@@ -139,7 +163,8 @@ export const useMedications = () => {
       queryClient.invalidateQueries({ queryKey: ['medications', user?.id] });
       toast.success('Medication deleted successfully!');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      if (error.message === 'IMPORTED_MEDICATION') return; // The guard already said why.
       console.error('Error deleting medication:', error);
       toast.error('Failed to delete medication');
     },

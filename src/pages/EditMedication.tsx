@@ -18,6 +18,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
+import { isMedicationEditable } from '@/types/health';
 import { Switch } from '@/components/ui/switch';
 import { DiscontinueMedicationDialog } from '@/components/medications/DiscontinueMedicationDialog';
 import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
@@ -48,6 +49,12 @@ const EditMedication = () => {
     pharmacy: '',
     is_active: true,
   });
+  /**
+   * An imported medication is read-only, and this page is reachable by URL as
+   * well as by the button that is now hidden for those rows. Redirecting would
+   * look like a bug; saying so does not.
+   */
+  const [importedFrom, setImportedFrom] = useState<string | null>(null);
 
   useEffect(() => {
     const loadMedication = async () => {
@@ -56,6 +63,7 @@ const EditMedication = () => {
       try {
         const medication = await getMedicationById(id);
         if (medication) {
+          if (!isMedicationEditable(medication)) setImportedFrom(medication.source);
           setFormData({
             name: medication.name,
             type: medication.type as MedicationType,
@@ -129,6 +137,51 @@ const EditMedication = () => {
         <SectionTabs section="health" variant="patient" />
         <main className="container py-8 max-w-2xl flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
+
+  if (importedFrom) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <Header />
+        <SectionTabs section="health" variant="patient" />
+        <main className="container py-8 max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>{formData.name}</CardTitle>
+              <CardDescription>
+                This came from {importedFrom}, so it is read-only here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <p className="text-muted-foreground">
+                It is their record of what they prescribed. Changing it here would make the two
+                disagree with no way to tell which is right — ask them to change it, and it will
+                update on the next sync.
+              </p>
+              <dl className="grid gap-2">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Dosage</dt>
+                  <dd className="font-medium">{formData.dosage}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Frequency</dt>
+                  <dd className="font-medium">{formData.frequency}</dd>
+                </div>
+                {formData.instructions && (
+                  <div className="flex justify-between gap-6">
+                    <dt className="text-muted-foreground">Instructions</dt>
+                    <dd className="text-right font-medium">{formData.instructions}</dd>
+                  </div>
+                )}
+              </dl>
+              <Button variant="outline" onClick={() => navigate('/medications')}>
+                Back to medications
+              </Button>
+            </CardContent>
+          </Card>
         </main>
       </div>
     );

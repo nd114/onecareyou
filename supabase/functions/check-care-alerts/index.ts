@@ -155,7 +155,7 @@ serve(async (req) => {
                     <p>You may want to check in with them to ensure they're okay.</p>
                     <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e5e5;" />
                     <p style="color: #666; font-size: 12px;">
-                      This alert was sent because you're set up as a care contact in Marpe.
+                      This alert was sent because you're set up as a care contact in OneCare.
                       You'll receive at most one alert per day for missed doses.
                     </p>
                   </div>

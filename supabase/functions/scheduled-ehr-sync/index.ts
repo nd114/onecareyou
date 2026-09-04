@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
+import {
+  medicationRowFromFhir,
+  type FhirMedicationRequest,
+} from "../_shared/fhir-medication.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -126,6 +130,10 @@ serve(async (req) => {
           .eq('id', connection.id);
 
         let totalImported = 0;
+        let importedMedications = 0;
+        let updatedMedications = 0;
+        const skippedMedications: Array<{ id: string | null; reason: string }> = [];
+        const medicationWarnings: Array<{ id: string | null; warnings: string[] }> = [];
 
         for (const mapping of patientMappings) {
           logStep("Syncing patient", { 
@@ -169,7 +177,7 @@ serve(async (req) => {
               patientId: mapping.fhirPatientId 
             });
 
-            // Convert FHIR observations to Marpe vitals
+            // Convert FHIR observations to OneCare vitals
             for (const obs of observations) {
               const loincCode = obs.code?.coding?.find(c => c.system === 'http://loinc.org')?.code;
               const vitalType = loincCode ? VITAL_LOINC_MAP[loincCode] : null;
@@ -195,7 +203,7 @@ serve(async (req) => {
                     .eq('user_id', mapping.marpeUserId)
                     .eq('type', 'blood_pressure')
                     .eq('recorded_at', recordedAt)
-                    .single();
+                    .maybeSingle();
 
                   if (!existing) {
                     await supabaseClient.from('vitals').insert({
@@ -223,7 +231,7 @@ serve(async (req) => {
                   .eq('user_id', mapping.marpeUserId)
                   .eq('type', vitalType)
                   .eq('recorded_at', recordedAt)
-                  .single();
+                  .maybeSingle();
 
                 if (!existing) {
                   await supabaseClient.from('vitals').insert({
@@ -242,6 +250,106 @@ serve(async (req) => {
               }
             }
 
+            // ---- Medications -------------------------------------------
+            //
+            // Vitals have been imported here since the beginning; medications
+            // never were, so a patient who connected their hospital saw their
+            // blood pressure arrive and their prescriptions not. The mapping
+            // lives in _shared/fhir-medication.ts so it can be tested from the
+            // browser suite rather than only in production.
+            //
+            // Unlike observations these are not date-windowed: a prescription
+            // written a year ago is still live, and asking only for the last
+            // day would import nothing at all.
+            const medUrl =
+              `${connection.fhir_base_url}/MedicationRequest?patient=${mapping.fhirPatientId}` +
+              `&status=active,on-hold&_count=100`;
+
+            const medResponse = await fetch(medUrl, {
+              headers: {
+                'Accept': 'application/fhir+json',
+                'Authorization': accessToken ? `Bearer ${accessToken}` : '',
+              },
+            });
+
+            if (medResponse.ok) {
+              const medBundle = await medResponse.json();
+              const requests: FhirMedicationRequest[] =
+                medBundle.entry?.map((e: any) => e.resource) || [];
+
+              logStep("Fetched medication requests", {
+                count: requests.length,
+                patientId: mapping.fhirPatientId,
+              });
+
+              for (const request of requests) {
+                const { row, warnings, rejected } = medicationRowFromFhir(request, {
+                  userId: mapping.marpeUserId,
+                  sourceLabel: connection.provider_name,
+                  connectionId: connection.id,
+                });
+
+                if (rejected) {
+                  // Refusals are logged rather than swallowed. An import that
+                  // quietly drops half a prescription list looks exactly like
+                  // one that worked.
+                  logStep("Skipped medication", { id: request.id, reason: rejected });
+                  skippedMedications.push({ id: request.id ?? null, reason: rejected });
+                  continue;
+                }
+                if (!row) continue;
+                if (warnings.length) {
+                  logStep("Medication imported with warnings", { id: request.id, warnings });
+                  medicationWarnings.push({ id: request.id ?? null, warnings });
+                }
+
+                // The unique index on (user_id, ehr_connection_id, external_id)
+                // is partial, so ON CONFLICT cannot infer it. Look the row up
+                // instead: a repeated sync must update, never duplicate — a
+                // doubled medication reads as a real second prescription.
+                const { data: existing } = await supabaseClient
+                  .from('medications')
+                  .select('id')
+                  .eq('user_id', row.user_id)
+                  .eq('ehr_connection_id', row.ehr_connection_id)
+                  .eq('external_id', row.external_id)
+                  .maybeSingle();
+
+                if (existing) {
+                  await supabaseClient
+                    .from('medications')
+                    .update({
+                      name: row.name,
+                      dosage: row.dosage,
+                      frequency: row.frequency,
+                      times_of_day: row.times_of_day,
+                      instructions: row.instructions,
+                      prescriber: row.prescriber,
+                      is_active: row.is_active,
+                      source: row.source,
+                    })
+                    .eq('id', existing.id);
+                  updatedMedications++;
+                } else {
+                  const { error: insertError } = await supabaseClient
+                    .from('medications')
+                    .insert(row);
+                  if (insertError) {
+                    logStep("Medication insert failed", { id: request.id, error: insertError.message });
+                    skippedMedications.push({ id: request.id ?? null, reason: insertError.message });
+                  } else {
+                    importedMedications++;
+                    totalImported++;
+                  }
+                }
+              }
+            } else {
+              logStep("Failed to fetch medications", {
+                status: medResponse.status,
+                patientId: mapping.fhirPatientId,
+              });
+            }
+
           } catch (patientError: any) {
             logStep("Patient sync error", { 
               patientId: mapping.fhirPatientId, 
@@ -250,13 +358,17 @@ serve(async (req) => {
           }
         }
 
-        // Log successful sync
+        // Log the sync. 'partial' when anything was refused: a run that threw
+        // away half a prescription list should not be filed under 'success'.
         await supabaseClient.from('ehr_sync_logs').insert({
           connection_id: connection.id,
           sync_type: 'scheduled_import',
-          resource_type: 'Observation',
+          resource_type: 'Observation,MedicationRequest',
           record_count: totalImported,
-          status: 'success',
+          status: skippedMedications.length > 0 ? 'partial' : 'success',
+          error_details: skippedMedications.length > 0 || medicationWarnings.length > 0
+            ? { skippedMedications, medicationWarnings }
+            : null,
         });
 
         // Update connection status
@@ -274,7 +386,10 @@ serve(async (req) => {
           connectionId: connection.id,
           provider: connection.provider_name,
           status: 'success',
-          importedVitals: totalImported,
+          importedVitals: totalImported - importedMedications,
+          importedMedications,
+          updatedMedications,
+          skippedMedications: skippedMedications.length,
         });
 
         logStep("Connection sync complete", { 
@@ -293,7 +408,7 @@ serve(async (req) => {
         await supabaseClient.from('ehr_sync_logs').insert({
           connection_id: connection.id,
           sync_type: 'scheduled_import',
-          resource_type: 'Observation',
+          resource_type: 'Observation,MedicationRequest',
           record_count: 0,
           status: 'failed',
           error_details: { message: error.message },

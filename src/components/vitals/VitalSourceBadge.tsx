@@ -19,7 +19,7 @@ export function VitalSourceBadge({ source, className }: VitalSourceBadgeProps) {
       label: 'You',
       icon: User,
       variant: 'secondary' as const,
-      tooltip: 'Recorded by you in Marpe',
+      tooltip: 'Recorded by you in OneCare',
     },
     ehr_import: {
       label: 'EHR',

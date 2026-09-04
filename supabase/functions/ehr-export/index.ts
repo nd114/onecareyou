@@ -75,10 +75,10 @@ function buildFHIRObservation(
     },
     effectiveDateTime: vital.recorded_at,
     performer: [{
-      display: 'Patient (via Marpe)'
+      display: 'Patient (via OneCare)'
     }],
     note: [{
-      text: `Recorded via Marpe Health App${vital.notes ? ` - ${vital.notes}` : ''}`
+      text: `Recorded via OneCare${vital.notes ? ` - ${vital.notes}` : ''}`
     }]
   };
 

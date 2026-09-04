@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useMedications } from '@/hooks/useMedications';
+import { MedicationSourceBadge } from '@/components/medications/MedicationSourceBadge';
+import { isMedicationEditable } from '@/types/health';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
@@ -262,6 +264,7 @@ const Medications = () => {
                             Discontinued
                           </Badge>
                         )}
+                        <MedicationSourceBadge source={medication.source} />
                       </div>
                     </div>
                   </CardHeader>
@@ -294,6 +297,15 @@ const Medications = () => {
                           <BookOpen className="h-4 w-4" />
                         </Link>
                       </Button>
+                      {/* A control that exists and then refuses is worse than
+                          one that is not there. An imported row says why
+                          instead. */}
+                      {!isMedicationEditable(medication) ? (
+                        <p className="flex-1 self-center text-xs text-muted-foreground">
+                          Managed by {medication.source} — ask them to change it.
+                        </p>
+                      ) : (
+                        <>
                       <Button variant="outline" size="sm" className="flex-1" asChild>
                         <Link to={`/medications/${medication.id}/edit`}>
                           <Edit className="h-4 w-4 mr-2" />
@@ -333,6 +345,8 @@ const Medications = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
