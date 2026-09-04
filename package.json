@@ -23,6 +23,7 @@
     "@medplum/core": "^5.1.36",
     "@medplum/fhir-router": "^5.1.36",
     "@medplum/fhirtypes": "^5.1.36",
+    "@medplum/react-hooks": "^5.1.36",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",

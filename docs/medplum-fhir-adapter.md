@@ -1,6 +1,6 @@
 # Medplum as a Library, Not a Backend
 
-**Status:** Appointment shipped; remaining resources scoped below
+**Status:** Appointment shipped; search semantics and the AccessPolicy projection added; remaining resources scoped below
 **Owner:** Engineering
 **Relates to:** `docs/loinc-and-coding-policy.md`, `docs/ehr-integration-plan.md`, `docs/qhin-integration-plan.md`, `docs/sharing-access-consent-model.md`
 
@@ -125,12 +125,12 @@ In rough order of value:
 | `Communication` | **Done** — mapping only | Assistant messages filed as `sender.display`, never a Practitioner reference |
 | `MedicationStatement` | **Done** — mapping plus export, see §6.5 | *Not* `MedicationRequest`; see below |
 | `DocumentReference` | Next | Natural fit for QHIN retrieval, and the last thing the Vault cannot export |
+| `AccessPolicy` | **Done** — projection only, see §10.2 | Generated from a share's permissions. Never consulted for enforcement |
+| `Subscription` | Declined for now, see §10.3 | Needs the search planner to cover Observation before criteria can be validated |
 
-The tables these added are not in the generated Supabase types yet, because
-that file is regenerated from the deployed database and these migrations have
-not been run. `src/integrations/supabase/types-extra.ts` carries hand-written
-types for them in the meantime, read back out of the migrations rather than
-written from memory — see that file for how to retire it.
+The tables these added are now in the generated Supabase types: the migrations
+have been applied and the file regenerated, so the hand-written
+`types-extra.ts` shim that stood in for them is gone.
 
 Each one carries a mapper with the projection rule, a unit suite, and rows in
 `supabase/tests/README.md`. A migration too, where there is a table to migrate.
@@ -382,3 +382,246 @@ are two people.
 Wiring this into the claim flow, and provenance columns on `medications`. The
 matching itself is done and tested, including against two deliberate
 regressions: auto-linking on a strong match, and stripping dots from emails.
+
+---
+
+## 10. The five remaining Medplum questions
+
+Each of these was asked as "should we take this from Medplum too?". Two are
+now built, one was built and is the subject of §11, and two are declined with
+reasons. Declining is a decision, not a gap, so the reasons are here rather
+than in a backlog.
+
+| | Verdict |
+| --- | --- |
+| **Search parameter semantics** | Built. See §11 — it was also a bug fix |
+| **`@medplum/react-hooks`** | Adopted, narrowly. §10.1 |
+| **AccessPolicy** | Built as a projection, never an authority. §10.2 |
+| **Subscriptions** | Declined for now, with what would change it. §10.3 |
+| **Bots** | Declined. §10.4 |
+
+### 10.1 `@medplum/react-hooks`, not `@medplum/react`
+
+Checked rather than assumed, by reading the published manifests:
+
+- `@medplum/react-hooks` peer-depends on `react` and `@medplum/core`. Nothing
+  else.
+- `@medplum/react` peer-depends on `@mantine/core`, `@mantine/hooks`,
+  `@mantine/notifications`, `@mantine/spotlight`, `jsqr`, `signature_pad`,
+  `react-dom` and `@medplum/react-hooks`.
+
+So the components bring a second design system beside the panel language this
+product deliberately built, and the hooks bring nothing. The hooks are the
+part worth having.
+
+`src/lib/fhir/client.tsx` supplies a `MedplumClient` whose `fetch` is
+`createFhirFetch`, so `useResource`, `useSearchResources` and `useMedplum`
+read our Supabase tables through Medplum's router — no Medplum server, no
+second identity system, and RLS still deciding every row.
+`src/test/fhir-hooks.test.tsx` proves it, including that a refused search
+surfaces as an OperationOutcome rather than an empty list. An empty list reads
+as "no appointments", which is the one answer a refused search must never
+give.
+
+**The cost, measured rather than estimated.** Wiring the provider around the
+whole app takes the main bundle from 3,562 kB to 3,922 kB — **+359 kB raw,
++94 kB gzipped**. Left unimported it costs nothing measurable, because the
+build tree-shakes it out.
+
+So the rule is: available, costed, not yet spent. Nothing in the app reads
+Appointment as FHIR today, and paying 94 kB for zero current benefit would be
+a bad trade. When a screen does, mount `FhirProvider` on that route and lazy-
+load it, rather than globally.
+
+**And the boundary that keeps two caches from lying to each other.** These
+hooks keep their own cache; the rest of the app is on react-query. A resource
+read through both could show two different answers on one screen. So:
+Medplum's hooks are for resources the FHIR repository actually serves —
+Appointment today. Anything read straight from a Supabase table stays on
+react-query.
+
+### 10.2 AccessPolicy: a projection, never an authority
+
+Medplum's `AccessPolicy` describes what a user may read and write. §2 rejected
+adopting it as an authority and that has not changed: consent lives in RLS,
+and a second copy of a rule is a copy that eventually disagrees with the first
+— except here the first copy is the one that actually stops anybody reading
+anything.
+
+But there is a real question the database cannot answer and the product's
+central claim invites: **"what, exactly, can this clinician see?"** RLS can
+enforce that; it cannot state it.
+
+`src/lib/fhir/access-policy.ts` generates the statement from the same
+`permissions` object RLS reads. Every entry is `readonly: true` — a share
+grants sight, never authorship — and every entry is scoped to the one patient,
+because an entry without a patient scope reads as "every patient", which is the
+opposite of what a share is. The document tags itself `projection` and says in
+its own text that access is enforced by database policy, so anyone reading it
+knows editing it changes nothing.
+
+`describeAccessPolicy` says the same thing in a sentence for the patient. The
+empty case is the one worth getting right: "Dr Evans can see nothing" has to be
+said out loud, because a list with no items reads as a screen that failed to
+load.
+
+#### What building it turned up: the two pathways speak different languages
+
+Read out of the live policies and function bodies, not assumed:
+
+| Concept | Clinician share | Institution share |
+| --- | --- | --- |
+| Readings | `vitals` | `vitals` |
+| Medicines | `meds` | `medications` |
+| Conditions and allergies | `profile` — both together | `conditions`, `allergies` — separately |
+| Dose history | `adherence` | *not offered* |
+| The Vault | `documents` | `documents` |
+
+A patient who grants a hospital `conditions` and a clinician `profile` has
+granted the same thing under two names. A permissions object written for one
+pathway grants nothing at all through the other. And `profile` is
+all-or-nothing where the institution side lets conditions and allergies be
+separated.
+
+This is worth fixing in the schema. It is **not** something the projection
+should paper over: a policy document whose job is to say what somebody can see
+has to describe the model as it is, or it is wrong about half the shares in
+the product. So `toAccessPolicy` takes a required `pathway` — required rather
+than defaulted, because guessing would produce a policy describing a share the
+patient never made.
+
+#### The guard that keeps it honest
+
+`supabase/tests/access_policy_projection.test.sql` reads the permission keys
+the live database actually checks and fails if they differ from the ones the
+projection describes. Both directions matter: an enforced key the projection
+omits tells a patient they share less than they do; a described key nothing
+enforces is a different lie.
+
+It has to read two places, not one. `conditions` and `allergies` are checked
+only inside `get_patient_clinical_profile`, a SECURITY DEFINER function, and
+appear in no policy expression at all. Scanning `pg_policies` alone finds six
+of the eight keys and looks complete — which is exactly how the first version
+of this test was wrong.
+
+Verified by breaking it three ways: adding a policy that checks an undescribed
+key, dropping the definer function, and widening `documents` to a third table.
+Each fails with the reason.
+
+### 10.3 Subscriptions: declined for now
+
+FHIR `Subscription` is a good fit on paper — an alert rule really is "tell me
+when a resource matching this criteria changes", and `alert_rules` is that
+idea written informally.
+
+Two things stop it being worth building today.
+
+`useSubscription` in `@medplum/react-hooks` talks to Medplum's own WebSocket
+subscription service. There is no such service here and standing one up is
+§2's question again with a different name. Supabase Realtime already delivers
+change notification, so the transport is solved by something we run.
+
+And the valuable half — expressing the criteria as a FHIR search string —
+depends on that string being *evaluated*, not merely stored. The search
+planner added in §11 can express a subset of FHIR search; an alert rule whose
+criteria falls outside that subset would be one that silently never fires. A
+Subscription resource we can write but not evaluate is documentation wearing a
+resource's clothes.
+
+**What would change this:** the planner covering Observation and
+MedicationRequest as well as Appointment, at which point criteria could be
+validated at configuration time — an alert rule the planner cannot express is
+an alert rule that will never fire, and saying so when it is written is worth
+more than the resource shape is.
+
+### 10.4 Bots: declined
+
+Medplum Bots are user-authored JavaScript executed server-side on resource
+events. The capability is real and the use cases are ones this product has:
+transform an inbound record, fan out a notification, enforce a house rule on
+write.
+
+It is still the wrong thing to adopt here. Executing code somebody wrote in a
+form, inside a process holding every patient's record, is a large security
+surface for a health platform — and the surface is not the sandbox, it is the
+authorisation question underneath it: which patients' rows may that code
+touch, decided by what. RLS answers that for a signed-in user. It cannot
+answer it for a script running as a service.
+
+Edge functions already cover the same ground with the properties that matter:
+they are reviewed, they are deployed deliberately rather than saved from a
+form, they run with a scope chosen at deploy time, and `supabase/functions`
+is in version control where a change to one shows up in a diff.
+
+The one thing Bots have that edge functions do not is the trigger — "run this
+when a resource of this type changes". That is worth wanting, and it is the
+same want as §10.3. It is a Subscription question, not a Bot question.
+
+---
+
+## 11. Search: the semantics, and the bug they exposed
+
+The repository applied `.eq()` for every filter it was handed, whatever
+operator the filter actually carried. `date=ge2026-09-01` became
+`start_time = '2026-09-01'`. Not an error — just the wrong appointments,
+returned confidently. Which is precisely the failure the file's own comment
+said it existed to prevent: *"a search that silently ignores the filter it was
+given is how a clinician ends up looking at another patient's list believing
+it is filtered."*
+
+Planning is now separate from executing. `src/lib/fhir/search.ts` turns a
+`SearchRequest` into concrete clauses and refuses what it cannot express;
+`SupabaseFhirRepository.search` only turns a plan into PostgREST calls. The
+planner touches no network, so the semantics are tested against the
+specification rather than against a live table.
+
+### Parameters are typed, and the type decides the operators
+
+`date=ge2026-09-01` is a real query. `status=ge2026-01-01` is not, and
+coercing it to equality answers a question nobody asked. Each parameter
+declares its type — `reference`, `token`, `string`, `date-period` — and each
+type declares the operators it can carry.
+
+### Dates over a period are not dates over an instant
+
+An Appointment occupies a stretch of time, so FHIR gives `date` interval
+semantics, and the intuitive reading is wrong in the cases that matter most:
+
+| Query | Compares | Why |
+| --- | --- | --- |
+| `date=ge…` | the **end** | an appointment that began yesterday and runs into today is on today |
+| `date=le…` | the **start** | the same rule in reverse |
+| `date=sa…` | the start | "starts after" is about the period, not an intersection |
+| `date=eb…` | the end | likewise |
+| `date=2026-09-10` | both ends of that day | otherwise it matches only an appointment beginning at exactly midnight, which is no appointment at all |
+
+### What else the planner gained
+
+`service-type` as a string parameter with FHIR's starts-with default and
+`:contains` / `:exact` as distinct questions; `:missing`; `_sort` with
+direction; `_offset`; and LIKE-wildcard escaping, so searching for `100%` does
+not run a query the user did not write. The repository's supported-resource
+table is now derived from the search config — two lists of "resources we
+serve" is one list that eventually lies.
+
+### What running it turned up
+
+`parseSearchRequest` behaves differently depending on whether the FHIR
+definitions have been loaded into the global schema:
+
+| | `status=ge2026-01-01` parses as |
+| --- | --- |
+| without `@medplum/definitions` | `{ operator: 'ge', value: '2026-01-01' }` — the prefix rule applied blindly, because nothing says `status` is a token |
+| with them | `{ operator: 'eq', value: 'ge2026-01-01' }` — correct |
+
+`@medplum/definitions` is a devDependency and never ships to the browser (§3),
+so **production runs in the first mode**. That is exactly why the planner's
+type guard has to exist rather than being belt-and-braces. Both halves are
+asserted: the guard in `fhir-search.test.ts`, where no definitions are loaded,
+and the correct parse in `fhir-repository.test.ts`, where they are loaded on
+purpose.
+
+The repository suite's fake Supabase builder now records every comparison verb
+rather than only `eq`, so a test can assert that `gte` reached the query
+builder. A comparison evaluated in JavaScript after the rows come back is one
+RLS never saw.
