@@ -4726,6 +4726,35 @@ export type Database = {
       purge_expired_kingschat_attempts: { Args: never; Returns: number }
       request_client_ip: { Args: never; Returns: string }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
+      search_documents: {
+        Args: { max_results?: number; query: string }
+        Returns: {
+          category: string
+          file_name: string
+          id: string
+          score: number
+          title: string
+        }[]
+      }
+      search_medications: {
+        Args: { max_results?: number; query: string }
+        Returns: {
+          dosage: string
+          id: string
+          name: string
+          score: number
+        }[]
+      }
+      search_normalise: { Args: { value: string }; Returns: string }
+      search_patient_records: {
+        Args: { max_results?: number; query: string }
+        Returns: {
+          id: string
+          patient_email: string
+          patient_name: string
+          score: number
+        }[]
+      }
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }
         Returns: string
@@ -4742,6 +4771,11 @@ export type Database = {
         Args: { permission_key: string; permissions: Json }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      suggest_medication_name: { Args: { query: string }; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
+      unaccent_immutable: { Args: { value: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
