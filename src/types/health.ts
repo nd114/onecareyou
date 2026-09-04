@@ -40,6 +40,29 @@ export interface Medication {
   notes?: string;
   isActive: boolean;
   createdAt: string;
+  /**
+   * Who put this here. 'manual' means the patient; anything else names the
+   * system it came from.
+   *
+   * Vitals have carried this since EHR import was first considered, and
+   * `isVitalEditable` refuses to edit a reading that is not the patient's.
+   * Medications had nothing, so an imported medication and one somebody typed
+   * were the same row and a bad import could not be unwound.
+   */
+  source?: string;
+  /** The row's id in the sending system, so a re-import updates rather than duplicates. */
+  externalId?: string | null;
+}
+
+/**
+ * Whether the patient may change this medication.
+ *
+ * Mirrors `isVitalEditable`. A row that came from a hospital's system is that
+ * system's record of what it prescribed; editing it locally would make the two
+ * disagree with no way to tell which is right.
+ */
+export function isMedicationEditable(medication: { source?: string | null }): boolean {
+  return !medication.source || medication.source === 'manual';
 }
 
 export interface ScheduleEntry {

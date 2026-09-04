@@ -285,5 +285,30 @@ could see a patient's medications and not their encounters, for no reason a
 person could explain. The migration reports the row-level disagreement it found
 as it converges.
 
+`pending_records_confirmation.test.sql` — claiming a record somebody left for you:
+
+| Rule | Why |
+| --- | --- |
+| An unconfirmed address sees no pending record at all | signing up as somebody else's address must not be enough to read their record |
+| A confirmed address is offered the record | the ordinary case still works |
+| The claim view carries no clinical content | if the answer is "not me", everything shown has already gone to the wrong person |
+| Contact details are masked but still recognisable | the screen must confirm, not reveal |
+| A different address is offered nothing | — |
+| A claimed record stops being pending | — |
+
+The policy this replaces granted SELECT on the whole row — allergies,
+conditions, medications, the clinician's notes — to any signed-in user whose
+auth email matched, with no check that the address had been confirmed. RLS is
+row-level, so the interface choosing not to render those columns was never a
+control: they had already been sent.
+
+Whether Supabase demands email confirmation is a project setting the
+application cannot read, so `confirmed_email()` checks it rather than assuming
+it. Note that a policy expression runs as the querying role, which has no
+SELECT on `auth.users` — hence the SECURITY DEFINER wrapper.
+
+**Replaying locally:** the test shim's `auth.users` is minimal. Add
+`email_confirmed_at timestamptz` before running this suite.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

@@ -1,16 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseExtra } from '@/integrations/supabase/types-extra';
 import { useAuth } from '@/contexts/AuthContext';
 
+/**
+ * A record waiting to be claimed, as shown *before* the person confirms it is
+ * theirs.
+ *
+ * Deliberately carries no clinical content. This used to return the whole row
+ * — allergies, conditions, medications, the clinician's notes — to anyone
+ * whose auth email matched, confirmed or not. If the answer to "is this you?"
+ * turns out to be no, everything in this object has already been shown to the
+ * wrong person, so there must be nothing in it worth protecting.
+ *
+ * The clinical content is read after claiming, through the normal policies.
+ */
 export interface PendingClinicianRecord {
   id: string;
   clinician_user_id: string;
+  practice_id: string | null;
   patient_name: string;
+  /** First character and the domain. Enough to recognise, not to learn. */
+  masked_email: string | null;
+  masked_phone: string | null;
   data_sharing_model: string;
-  allergies: string[];
-  health_conditions: string[];
-  medications: { name: string; dosage?: string; frequency?: string }[];
-  notes: string | null;
+  created_at: string;
   clinician_name?: string;
   clinician_practice?: string;
 }
@@ -19,43 +33,39 @@ export function usePendingClinicianRecords() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['pending-clinician-records', user?.email],
+    queryKey: ['pending-clinician-records', user?.id],
     queryFn: async () => {
-      if (!user?.email) return [];
+      if (!user?.id) return [];
 
-      // Find clinician_patient_records that match this patient's email
-      // and haven't been linked yet
-      const { data, error } = await supabase
-        .from('clinician_patient_records')
-        .select('*')
-        .eq('patient_email', user.email)
-        .is('linked_user_id', null)
-        .in('invitation_status', ['not_invited', 'invited']);
-
+      // A function rather than a select: the row carries clinical content and
+      // RLS is row-level, so choosing not to render those columns would not
+      // stop them reaching the browser. This returns only what identifies the
+      // record, and only to an address the caller has confirmed.
+      const { data, error } = await supabaseExtra.rpc('my_pending_clinician_records');
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Fetch clinician names via a SECURITY DEFINER RPC that returns only safe
+      // Clinician names via a SECURITY DEFINER RPC that returns only safe
       // display fields (no Stripe IDs, license, push subscription, etc.).
-      const clinicianIds = [...new Set(data.map(r => r.clinician_user_id))];
-      const { data: clinicians } = await (supabase
-        .rpc('get_clinician_basic_info' as any, { clinician_ids: clinicianIds }) as any);
+      const clinicianIds = [...new Set(data.map((r) => r.clinician_user_id))];
+      const { data: clinicians } = await supabase
+        .rpc('get_clinician_basic_info', { clinician_ids: clinicianIds });
 
       const clinicianMap = new Map(
-        ((clinicians as any[]) || []).map((c: any) => [c.user_id, c])
+        (clinicians ?? []).map((c) => [c.user_id, c]),
       );
 
-      return data.map(record => {
+      return data.map((record) => {
         const clinician = clinicianMap.get(record.clinician_user_id);
         return {
           id: record.id,
           clinician_user_id: record.clinician_user_id,
+          practice_id: record.practice_id ?? null,
           patient_name: record.patient_name,
+          masked_email: record.masked_email ?? null,
+          masked_phone: record.masked_phone ?? null,
           data_sharing_model: record.data_sharing_model,
-          allergies: (record.allergies as any) || [],
-          health_conditions: (record.health_conditions as any) || [],
-          medications: (record.medications as any) || [],
-          notes: record.notes,
+          created_at: record.created_at,
           clinician_name: clinician
             ? `${clinician.title || ''} ${clinician.first_name || ''} ${clinician.last_name || ''}`.trim()
             : 'A healthcare provider',
@@ -63,6 +73,6 @@ export function usePendingClinicianRecords() {
         } as PendingClinicianRecord;
       });
     },
-    enabled: !!user?.email,
+    enabled: !!user?.id,
   });
 }

@@ -48,6 +48,16 @@ export interface PersonDetails {
   phone?: string | null;
   name?: string | null;
   dateOfBirth?: string | null;
+  /**
+   * Whether the person has proved control of that email address.
+   *
+   * Everything about linking on email assumes they have. If confirmation is
+   * off — and whether it is on is a Supabase dashboard setting the application
+   * cannot read — then an unconfirmed address is a claim, not evidence, and
+   * linking on it would hand records to whoever typed it. Checked here rather
+   * than trusted from configuration.
+   */
+  emailConfirmed?: boolean;
 }
 
 export interface ManagedRecordDetails extends PersonDetails {
@@ -173,20 +183,49 @@ export function scoreCandidate(
 const RANK: Record<MatchStrength, number> = { exact: 3, strong: 2, weak: 1, none: 0 };
 
 export interface MatchOutcome {
-  /** Safe to link without asking. Only ever an unambiguous exact email match. */
-  autoLink: MatchCandidate | null;
+  /**
+   * Safe to link without asking. Every record whose email matches a confirmed
+   * address — usually several, because a person is a patient at more than one
+   * practice.
+   */
+  autoLink: MatchCandidate[];
   /** Show these and let the person confirm. Ordered strongest first. */
   propose: MatchCandidate[];
-  /** Set when we found something but deliberately refused to choose. */
-  ambiguous?: string;
+  /** Set when we found something but deliberately refused to act on it. */
+  held?: string;
+}
+
+/**
+ * Which identity details disagree between two records claiming the same person.
+ *
+ * Used to spot the case that actually is suspicious: two records on one email
+ * that describe different people.
+ */
+function conflicts(a: ManagedRecordDetails, b: ManagedRecordDetails): boolean {
+  const nameA = normaliseName(a.name);
+  const nameB = normaliseName(b.name);
+  if (nameA && nameB && nameA !== nameB) return true;
+  const dobA = normaliseDate(a.dateOfBirth);
+  const dobB = normaliseDate(b.dateOfBirth);
+  return Boolean(dobA && dobB && dobA !== dobB);
 }
 
 /**
  * Decide what to do with a set of candidate records.
  *
- * Auto-linking happens only when exactly one record matches on email. Two
- * records with the same email is a data problem at the clinic, and resolving
- * it by picking one would resolve it in the worst possible direction.
+ * **Several records matching on email is the normal case, not an error.** A
+ * person sees a GP and a cardiologist and both hold a record for them; there
+ * is no unique constraint on the email in a managed record and there should
+ * not be. An earlier version of this function refused to link when more than
+ * one matched, which would have left exactly the people with the most records
+ * — the ones seeing several clinicians — with none of them linked.
+ *
+ * What is genuinely suspicious is two records on one address describing
+ * *different people*: a different name, or a different date of birth. That is
+ * a data error somewhere, and linking both would hand somebody another
+ * person's history. Those are held for a human.
+ *
+ * Nothing links at all on an unconfirmed email address.
  */
 export function resolveMatches(
   records: ManagedRecordDetails[],
@@ -198,21 +237,35 @@ export function resolveMatches(
     .sort((a, b) => RANK[b.strength] - RANK[a.strength]);
 
   const exact = scored.filter((c) => c.strength === "exact");
+  const weaker = scored.filter((c) => c.strength !== "exact");
 
-  if (exact.length === 1) {
-    return { autoLink: exact[0], propose: scored.filter((c) => c !== exact[0]) };
-  }
+  if (exact.length === 0) return { autoLink: [], propose: scored };
 
-  if (exact.length > 1) {
+  // An address nobody has proved control of is a claim, not evidence.
+  if (person.emailConfirmed !== true) {
     return {
-      autoLink: null,
+      autoLink: [],
       propose: scored,
-      ambiguous:
-        "More than one record uses this email address, so none was linked automatically. Choose the one that is yours.",
+      held: "Confirm your email address to have these linked to you automatically.",
     };
   }
 
-  return { autoLink: null, propose: scored };
+  const byId = new Map(records.map((r) => [r.id, r]));
+  const matched = exact
+    .map((c) => byId.get(c.recordId))
+    .filter((r): r is ManagedRecordDetails => Boolean(r));
+
+  const disagrees = matched.some((a, i) => matched.slice(i + 1).some((b) => conflicts(a, b)));
+  if (disagrees) {
+    return {
+      autoLink: [],
+      propose: scored,
+      held:
+        "Records under this email address describe different people, so none were linked. Choose the ones that are yours.",
+    };
+  }
+
+  return { autoLink: exact, propose: weaker };
 }
 
 // ---------------------------------------------------------------------------

@@ -165,11 +165,18 @@ export function ClinicianDataConsentDialog({ record, open, onOpenChange }: Props
     }
   };
 
+  /**
+   * What identifies the record, not what is in it.
+   *
+   * This used to count the clinical content — "3 health condition(s)",
+   * "2 medication(s)" — which describes a person who may not be the one
+   * reading it. Masked contact details do the job the screen actually needs:
+   * they let you recognise your own record without telling you anything about
+   * somebody else's.
+   */
   const dataSummary = [
-    record.health_conditions.length > 0 && `${record.health_conditions.length} health condition(s)`,
-    record.medications.length > 0 && `${record.medications.length} medication(s)`,
-    record.allergies.length > 0 && `${record.allergies.length} allergy(ies)`,
-    record.notes && 'Clinical notes',
+    record.masked_email && `Email ${record.masked_email}`,
+    record.masked_phone && `Phone ${record.masked_phone}`,
   ].filter(Boolean);
 
   return (

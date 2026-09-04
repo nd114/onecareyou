@@ -105,40 +105,83 @@ describe("how confident a single candidate is", () => {
 });
 
 describe("choosing between candidates", () => {
-  const other: ManagedRecordDetails = {
-    id: "rec-2", name: "Jane Evans", email: "j.evans@other.example", phone: null, dateOfBirth: null,
+  const CONFIRMED = { emailConfirmed: true };
+
+  const otherPractice: ManagedRecordDetails = {
+    // Same person, second clinic. This is the ordinary case.
+    id: "rec-2", name: "Jane Evans", email: "jane.evans@example.com",
+    phone: null, dateOfBirth: "1984-03-12",
   };
 
-  it("links automatically only on a single exact email", () => {
-    const outcome = resolveMatches([RECORD, other], { email: "jane.evans@example.com", name: "Jane Evans" });
-    expect(outcome.autoLink?.recordId).toBe("rec-1");
+  it("links every clinic that holds a record for the same confirmed address", () => {
+    // A person sees a GP and a cardiologist and both hold a record. Refusing
+    // to link when more than one matched would leave exactly the people with
+    // the most records — those seeing several clinicians — with none linked.
+    const outcome = resolveMatches([RECORD, otherPractice], {
+      ...CONFIRMED, email: "jane.evans@example.com", name: "Jane Evans",
+    });
+    expect(outcome.autoLink.map((c) => c.recordId).sort()).toEqual(["rec-1", "rec-2"]);
+    expect(outcome.held).toBeUndefined();
   });
 
-  it("refuses to choose when two records share the email", () => {
-    // That is a data problem at the clinic, and picking one would resolve it
-    // in the worst possible direction.
-    const duplicate: ManagedRecordDetails = { ...other, id: "rec-3", email: RECORD.email };
-    const outcome = resolveMatches([RECORD, duplicate], { email: "jane.evans@example.com" });
-    expect(outcome.autoLink).toBeNull();
-    expect(outcome.ambiguous).toMatch(/more than one record/i);
-    expect(outcome.propose).toHaveLength(2);
+  it("links nothing on an email nobody has proved they control", () => {
+    // Whether Supabase demands confirmation is a dashboard setting the app
+    // cannot read, so the check lives here rather than being assumed.
+    const outcome = resolveMatches([RECORD], { email: "jane.evans@example.com" });
+    expect(outcome.autoLink).toEqual([]);
+    expect(outcome.held).toMatch(/confirm your email/i);
+    expect(outcome.propose).toHaveLength(1);
+  });
+
+  it("holds when records on one address describe different people", () => {
+    // Two clinics holding "jane.evans@example.com" for a Jane Evans and a Tom
+    // Reyes is a data error somewhere, and linking both hands somebody
+    // another person's history.
+    const someoneElse: ManagedRecordDetails = {
+      id: "rec-9", name: "Tom Reyes", email: "jane.evans@example.com",
+      phone: null, dateOfBirth: "1971-11-02",
+    };
+    const outcome = resolveMatches([RECORD, someoneElse], {
+      ...CONFIRMED, email: "jane.evans@example.com",
+    });
+    expect(outcome.autoLink).toEqual([]);
+    expect(outcome.held).toMatch(/different people/i);
+  });
+
+  it("does not treat a missing name or date of birth as a conflict", () => {
+    // Half the clinics will not have recorded a date of birth. Absence is not
+    // disagreement.
+    const sparse: ManagedRecordDetails = {
+      id: "rec-8", name: null, email: "jane.evans@example.com", phone: null, dateOfBirth: null,
+    };
+    const outcome = resolveMatches([RECORD, sparse], {
+      ...CONFIRMED, email: "jane.evans@example.com",
+    });
+    expect(outcome.autoLink).toHaveLength(2);
   });
 
   it("never links automatically on anything short of an email", () => {
-    const outcome = resolveMatches([RECORD], { phone: "0801 234 5678", name: "Jane Evans", dateOfBirth: "1984-03-12" });
-    expect(outcome.autoLink).toBeNull();
+    const outcome = resolveMatches([RECORD], {
+      ...CONFIRMED, phone: "0801 234 5678", name: "Jane Evans", dateOfBirth: "1984-03-12",
+    });
+    expect(outcome.autoLink).toEqual([]);
     expect(outcome.propose[0].strength).toBe("strong");
   });
 
-  it("proposes strongest first", () => {
-    const weak: ManagedRecordDetails = { id: "rec-4", name: "Jane Evans", email: null, phone: null, dateOfBirth: null };
-    const outcome = resolveMatches([weak, RECORD], { phone: "0801 234 5678", name: "Jane Evans" });
-    expect(outcome.propose.map((c) => c.strength)).toEqual(["strong", "weak"]);
+  it("proposes the weaker matches alongside the linked ones", () => {
+    const weak: ManagedRecordDetails = {
+      id: "rec-4", name: "Jane Evans", email: null, phone: null, dateOfBirth: null,
+    };
+    const outcome = resolveMatches([weak, RECORD], {
+      ...CONFIRMED, email: "jane.evans@example.com", name: "Jane Evans",
+    });
+    expect(outcome.autoLink.map((c) => c.recordId)).toEqual(["rec-1"]);
+    expect(outcome.propose.map((c) => c.recordId)).toEqual(["rec-4"]);
   });
 
   it("proposes nothing when nothing matches", () => {
-    const outcome = resolveMatches([RECORD], { email: "nobody@example.com" });
-    expect(outcome.autoLink).toBeNull();
+    const outcome = resolveMatches([RECORD], { ...CONFIRMED, email: "nobody@example.com" });
+    expect(outcome.autoLink).toEqual([]);
     expect(outcome.propose).toEqual([]);
   });
 });
