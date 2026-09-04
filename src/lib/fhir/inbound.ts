@@ -183,7 +183,15 @@ export function fromFhirObservation(
     const components = observation.component ?? [];
     const systolic = components.find((c) => codesOf(c.code).includes(BP_SYSTOLIC));
     const diastolic = components.find((c) => codesOf(c.code).includes(BP_DIASTOLIC));
-    if (!systolic?.valueQuantity?.value || !diastolic?.valueQuantity?.value) {
+    // `typeof` rather than falsiness: a zero is a reading, not an absence, and
+    // the scalar branch below has always got this right. Refusing a zero here
+    // would be guessing that it means "missing" — the one thing this file
+    // exists not to do. A systolic of 0 is wrong, but it is somebody's data
+    // and the sending system said it.
+    if (
+      typeof systolic?.valueQuantity?.value !== "number" ||
+      typeof diastolic?.valueQuantity?.value !== "number"
+    ) {
       return reject("A blood pressure needs both a systolic and a diastolic reading.");
     }
     value = systolic.valueQuantity.value;

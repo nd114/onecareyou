@@ -2,9 +2,11 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
 import {
+  MEDICATION_STATUSES,
   medicationRowFromFhir,
   type FhirMedicationRequest,
 } from "../_shared/fhir-medication.ts";
+import { bearerHeader, resolveEhrSecret } from "../_shared/ehr-credentials.ts";
 import {
   vitalRowsFrom,
   type FhirObservation,
@@ -126,16 +128,18 @@ serve(async (req) => {
 
             const obsUrl = `${connection.fhir_base_url}/Observation?patient=${mapping.fhirPatientId}&category=vital-signs&date=ge${dateParam}&_count=100`;
             
-            // Note: In production, credentials would be decrypted here
-            // For now, we assume bearer token auth
-            const accessToken = connection.credentials_encrypted; // Simplified - would decrypt
+            // One place resolves the secret, and it says out loud when the
+            // value came from the plain column. `credentials_encrypted` is not
+            // encrypted — see _shared/ehr-credentials.ts and the column
+            // comment — and three functions used to each carry their own
+            // "would decrypt" note about it.
+            const secret = await resolveEhrSecret(connection);
+            const fhirHeaders = {
+              'Accept': 'application/fhir+json',
+              ...bearerHeader(secret),
+            };
 
-            const obsResponse = await fetch(obsUrl, {
-              headers: {
-                'Accept': 'application/fhir+json',
-                'Authorization': accessToken ? `Bearer ${accessToken}` : '',
-              },
-            });
+            const obsResponse = await fetch(obsUrl, { headers: fhirHeaders });
 
             if (!obsResponse.ok) {
               logStep("Failed to fetch observations", { 
@@ -214,13 +218,10 @@ serve(async (req) => {
             // day would import nothing at all.
             const medUrl =
               `${connection.fhir_base_url}/MedicationRequest?patient=${mapping.fhirPatientId}` +
-              `&status=active,on-hold&_count=100`;
+              `&status=${MEDICATION_STATUSES}&_count=100`;
 
             const medResponse = await fetch(medUrl, {
-              headers: {
-                'Accept': 'application/fhir+json',
-                'Authorization': accessToken ? `Bearer ${accessToken}` : '',
-              },
+              headers: fhirHeaders,
             });
 
             if (medResponse.ok) {
@@ -267,6 +268,11 @@ serve(async (req) => {
                   .maybeSingle();
 
                 if (existing) {
+                  // Every mapped field, so a re-sync makes the row match the
+                  // prescription rather than merging into it. is_active is the
+                  // one that matters: this is how a stopped prescription
+                  // actually stops. start_date was left behind before, so a
+                  // re-issued prescription kept the original date.
                   await supabaseClient
                     .from('medications')
                     .update({
@@ -276,6 +282,7 @@ serve(async (req) => {
                       times_of_day: row.times_of_day,
                       instructions: row.instructions,
                       prescriber: row.prescriber,
+                      start_date: row.start_date,
                       is_active: row.is_active,
                       source: row.source,
                     })

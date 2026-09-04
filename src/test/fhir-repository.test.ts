@@ -286,6 +286,20 @@ describe("Medplum's own client, talking to our database", () => {
     expect(results[0].resourceType).toBe("Appointment");
   });
 
+  it("returns 404 for a missing resource, not 400 for everything", async () => {
+    // The status came from `outcome.issue[0].details.text`, which is the human
+    // sentence — Number() of it is NaN, so every failure fell through to 400
+    // and a genuine 404 was indistinguishable from a malformed request.
+    // Medplum encodes the status in `outcome.id` and exposes getStatus for it.
+    const { supabase } = fakeSupabase([]);
+    const fetchFn = createFhirFetch(supabase);
+    const res = (await fetchFn("https://local/fhir/R4/Appointment/does-not-exist")) as Response;
+    expect(res.status).toBe(404);
+
+    const bad = (await fetchFn("https://local/fhir/R4/Appointment?performer=nobody")) as Response;
+    expect(bad.status).toBe(400);
+  });
+
   it("returns an OperationOutcome for a path we do not serve, not a wrong answer", async () => {
     const { supabase } = fakeSupabase([]);
     const medplum = new MedplumClient({

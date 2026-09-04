@@ -7,6 +7,7 @@ import {
 } from "@medplum/fhir-router";
 import {
   OperationOutcomeError,
+  getStatus,
   notFound,
   badRequest,
   allOk,
@@ -350,8 +351,12 @@ export function createFhirFetch(supabase: SupabaseLike) {
         repo,
       );
 
-      const status = Number(outcome.issue?.[0]?.details?.text) || (result ? 200 : 400);
-      return jsonResponse(result ? 200 : status, result ?? outcome);
+      // Medplum encodes the status in `outcome.id` and exposes `getStatus` for
+      // it. Reading `issue[0].details.text` — which is the human sentence —
+      // gave NaN every time, so every failure came back as 400 and a genuine
+      // 404 was indistinguishable from a malformed request.
+      const status = result ? 200 : getStatus(outcome);
+      return jsonResponse(status, result ?? outcome);
     } catch (err) {
       const outcome = (err as { outcome?: unknown })?.outcome ?? {
         resourceType: "OperationOutcome",

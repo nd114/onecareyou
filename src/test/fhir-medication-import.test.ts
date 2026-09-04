@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  MEDICATION_STATUSES,
   defaultTimesFor,
   medicationRowFromFhir,
   type FhirMedicationRequest,
@@ -245,6 +246,34 @@ describe("the duplicated default times", () => {
       // An unknown frequency returns [], which would silently give a patient
       // no dose times at all.
       expect(defaultTimesFor(value).length > 0 || value === "as_needed").toBe(true);
+    }
+  });
+});
+
+describe("a prescription that has been stopped", () => {
+  it("comes back as inactive rather than being refused", () => {
+    for (const status of ["completed", "stopped", "cancelled"]) {
+      const { row, rejected } = medicationRowFromFhir(request({ status }), context);
+      expect(rejected, `${status} should map, not be refused`).toBeUndefined();
+      expect(row?.is_active, `${status} should be inactive`).toBe(false);
+    }
+  });
+
+  it("is asked for by the sync, or that branch is unreachable", () => {
+    // The mapper always handled these; both sync functions asked the server
+    // for `status=active,on-hold`, so they never arrived. A prescription
+    // stopped at the hospital stayed active in OneCare forever, and the
+    // patient's list went on telling them to take it.
+    for (const status of ["active", "on-hold", "completed", "stopped", "cancelled"]) {
+      expect(MEDICATION_STATUSES.split(",")).toContain(status);
+    }
+  });
+
+  it("still refuses the statuses that were never a prescription", () => {
+    // 'draft' was never issued and 'entered-in-error' is a retraction. Both
+    // would show a patient a live prescription that is not one.
+    for (const status of ["draft", "entered-in-error", "unknown"]) {
+      expect(medicationRowFromFhir(request({ status }), context).rejected).toBeDefined();
     }
   });
 });

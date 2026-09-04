@@ -206,3 +206,55 @@ The scheduled sync matched on `(user_id, type, recorded_at)`, so a corrected
 reading resent with a new effective time arrived as a second reading rather
 than replacing the first. Both functions now match on the sending system's own
 id, which is what identity means here.
+
+
+---
+
+## `credentials_encrypted` is not encrypted
+
+Named by an external review, and correct. The column is plain `TEXT`. Nothing
+writes it encrypted and nothing decrypts it: `scheduled-ehr-sync`,
+`ehr-export` and `ehr-webhook` each read it and use it directly, each carrying
+its own comment saying "in production this would be decrypted". It never is.
+
+The name is the only encryption in the system, and a name that claims a
+protection nobody implemented is worse than one that does not, because it
+stops anybody looking.
+
+### What has been done
+
+Not encryption. Doing that properly is a key-management decision — which key,
+where it lives, who rotates it, how live connections migrate without an outage
+— and inventing an answer quietly in a migration would be the same mistake in
+a new place.
+
+What is done instead:
+
+- The column comment says plainly that it is not encrypted.
+- `ehr_connections.credentials_vault_id` exists, so moving a connection's
+  secret into Supabase Vault is a data change rather than a schema change.
+- `supabase/functions/_shared/ehr-credentials.ts` is the single place any
+  function resolves a secret. It reads the vault id first, and when it falls
+  back to the plain column it logs a warning naming the connection — so this
+  shows up in operations rather than only in a comment somebody has to find.
+- A missing vault secret **fails** rather than falling back. Falling back
+  would silently undo the migration for that connection, which is the failure
+  that would make the whole exercise pointless.
+
+### What remains, and it needs a decision
+
+1. Choose the store. Supabase Vault is the obvious answer on this stack:
+   `vault.create_secret()` writes, `vault.decrypted_secrets` reads with the
+   service role, and the key never appears in the schema.
+2. Migrate each connection: create the vault secret from the current value,
+   set `credentials_vault_id`, then null `credentials_encrypted`.
+3. Drop `credentials_encrypted` once no connection still uses it — the warning
+   in the resolver is how you will know.
+4. Decide rotation. A bearer token that never expires is its own problem, and
+   the connection row has nowhere to record when one was last changed.
+
+Until step 3, anybody with read access to the `ehr_connections` table has the
+credentials for every connected hospital. That is the actual exposure, and it
+is worth being precise about: it is not reachable through the API — RLS scopes
+the table to the owning clinician — but it is in every database backup and
+visible to anybody with the service role.

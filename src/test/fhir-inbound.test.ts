@@ -363,3 +363,57 @@ describe("what a person sees before approving an import", () => {
     expect(summary.reasons[0]).toEqual({ reason: "This reading has no date.", count: 2 });
   });
 });
+
+describe("a zero is a reading, not an absence", () => {
+  it("keeps a zero-valued blood pressure component", () => {
+    // The check was `!value`, so a 0 was treated as missing and the whole
+    // reading refused — guessing that zero means absent, which is the one
+    // thing this module exists not to do. A systolic of 0 is wrong, but it is
+    // somebody's data and the sending system said it.
+    const result = fromFhirObservation(
+      {
+        resourceType: "Observation",
+        status: "final",
+        code: { coding: [{ system: "http://loinc.org", code: "85354-9" }] },
+        subject: { reference: `Patient/${PATIENT}` },
+        effectiveDateTime: "2026-09-10T09:00:00.000Z",
+        component: [
+          {
+            code: { coding: [{ system: "http://loinc.org", code: "8480-6" }] },
+            valueQuantity: { value: 0, unit: "mmHg" },
+          },
+          {
+            code: { coding: [{ system: "http://loinc.org", code: "8462-4" }] },
+            valueQuantity: { value: 82, unit: "mmHg" },
+          },
+        ],
+      } as never,
+      PATIENT,
+      SOURCE,
+    );
+    expect(result.rejected).toBeUndefined();
+    expect(result.row?.value).toBe(0);
+    expect(result.row?.secondary_value).toBe(82);
+  });
+
+  it("still refuses a component that has no number at all", () => {
+    const result = fromFhirObservation(
+      {
+        resourceType: "Observation",
+        status: "final",
+        code: { coding: [{ system: "http://loinc.org", code: "85354-9" }] },
+        subject: { reference: `Patient/${PATIENT}` },
+        effectiveDateTime: "2026-09-10T09:00:00.000Z",
+        component: [
+          {
+            code: { coding: [{ system: "http://loinc.org", code: "8480-6" }] },
+            valueQuantity: { unit: "mmHg" },
+          },
+        ],
+      } as never,
+      PATIENT,
+      SOURCE,
+    );
+    expect(result.rejected).toMatch(/systolic and a diastolic/i);
+  });
+});

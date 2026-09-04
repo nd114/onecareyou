@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import {
+  MEDICATION_STATUSES,
   medicationRowFromFhir,
   type FhirMedicationRequest,
 } from "../_shared/fhir-medication.ts";
@@ -280,7 +281,7 @@ serve(async (req) => {
           // Not date-windowed: a prescription written a year ago is still
           // live, and asking only for recent ones would import nothing.
           const medResponse = await fetch(
-            `${fhirBaseUrl}/MedicationRequest?patient=${patientFhirId}&status=active,on-hold&_count=100`,
+            `${fhirBaseUrl}/MedicationRequest?patient=${patientFhirId}&status=${MEDICATION_STATUSES}&_count=100`,
             { headers },
           );
 
@@ -313,6 +314,11 @@ serve(async (req) => {
               if (existing) {
                 await supabaseClient
                   .from('medications')
+                  // Every mapped field, so a re-sync makes the row match the
+                  // prescription rather than merging into it. is_active is the
+                  // one that matters: this is how a stopped prescription
+                  // actually stops. start_date was previously left behind, so
+                  // a re-issued prescription kept the original date.
                   .update({
                     name: row.name,
                     dosage: row.dosage,
@@ -320,6 +326,7 @@ serve(async (req) => {
                     times_of_day: row.times_of_day,
                     instructions: row.instructions,
                     prescriber: row.prescriber,
+                    start_date: row.start_date,
                     is_active: row.is_active,
                     source: row.source,
                   })

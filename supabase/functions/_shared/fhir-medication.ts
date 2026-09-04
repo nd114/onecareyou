@@ -115,6 +115,22 @@ const IGNORED_STATUSES = new Set(['draft', 'entered-in-error', 'unknown']);
 /** Statuses that mean the patient should still be taking it. */
 const ACTIVE_STATUSES = new Set(['active', 'on-hold']);
 
+/**
+ * The statuses a sync has to ask for.
+ *
+ * The mapper has always turned 'completed', 'stopped' and 'cancelled' into
+ * `is_active = false`, but both sync functions asked the server for
+ * `status=active,on-hold` — so those resources never arrived and the branch
+ * was unreachable. A prescription stopped at the hospital stayed active in
+ * OneCare forever, and the patient's list went on telling them to take
+ * something their doctor had stopped.
+ *
+ * Asking for the ended statuses too is what makes stopping a medicine
+ * propagate. It costs one wider query and is the difference between a
+ * medication list that reflects the prescription and one that only ever grows.
+ */
+export const MEDICATION_STATUSES = 'active,on-hold,completed,stopped,cancelled';
+
 export function medicationRowFromFhir(
   resource: FhirMedicationRequest,
   context: MedicationImportContext,
