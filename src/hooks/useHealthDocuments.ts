@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { supabaseExtra } from '@/integrations/supabase/types-extra';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
@@ -198,7 +198,7 @@ export function useHealthDocuments() {
   const archiveDocument = useMutation({
     mutationFn: async ({ doc, reason }: { doc: HealthDocument; reason?: string }) => {
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabaseExtra
+      const { error } = await supabase
         .from('health_documents')
         .update({
           archived_at: new Date().toISOString(),
@@ -220,7 +220,7 @@ export function useHealthDocuments() {
   const restoreDocument = useMutation({
     mutationFn: async (doc: HealthDocument) => {
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabaseExtra
+      const { error } = await supabase
         .from('health_documents')
         .update({ archived_at: null, archived_reason: null })
         .eq('id', doc.id);
