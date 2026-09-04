@@ -21,6 +21,7 @@ import { Footer } from '@/components/layout/Footer';
 import { MarketingHero } from '@/components/home/marketing';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { edgeFunctionError } from '@/lib/edge-function-error';
 import { describeSubmissionError } from '@/lib/submission-errors';
 
 /**
@@ -63,36 +64,36 @@ const Contact = () => {
 
     setIsSubmitting(true);
     try {
-      const submissionId = crypto.randomUUID();
-      const { error } = await supabase
-        .from('contact_submissions')
-        .insert({
-          id: submissionId,
-          submitted_by: user?.id ?? null,
+      // The function writes the row; the browser no longer can. Inserting
+      // here and asking the function to email it made the pair an open mail
+      // relay — anybody could store any text addressed to any inbox and then
+      // ask us to send it from our own domain.
+      const { error } = await supabase.functions.invoke('notify-contact-submission', {
+        body: {
           contact_name: formData.name.trim(),
           contact_email: formData.email.trim(),
           inquiry_type: formData.inquiryType,
           subject: formData.subject.trim(),
           message: formData.message.trim(),
-        });
-
-      if (error) throw error;
-
-      // The message is stored either way, so a failed email is not a failed
-      // send — don't block the sender on it or tell them it went wrong.
-      supabase.functions
-        .invoke('notify-contact-submission', { body: { submissionId } })
-        .catch((err) => console.warn('Contact confirmation email failed:', err));
+        },
+      });
+      if (error) {
+        // The reason the function gave, not "non-2xx status code" — a rate
+        // limit and a bad address are different problems and the sender can
+        // act on both.
+        const { message } = await edgeFunctionError(error);
+        throw new Error(message);
+      }
 
       setSent(true);
       setFormData(EMPTY);
     } catch (error) {
       console.error('Error sending contact message:', error);
-      const { message } = describeSubmissionError(
-        error,
-        'We could not send that. Please try again.',
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : 'We could not send that. Please try again.',
       );
-      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
