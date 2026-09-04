@@ -60,12 +60,16 @@ const ALIASES: Record<string, readonly string[]> = {
 };
 
 /**
- * Asking for 'profile' means asking for the whole profile row. Granting the
- * two lists separately adds up to it; granting one of them does not.
+ * Aliases run one way only, and it matters which.
+ *
+ * A coarse grant implies the fine ones: `profile` was one permission covering
+ * both clinical lists, so it still opens each of them. The reverse does not
+ * hold. `profile` opens the whole profiles row — name, date of birth, blood
+ * type, contact details — because RLS is row-level, so somebody who granted
+ * `conditions` and `allergies` has granted two lists and not those. Treating
+ * the pair as adding up to `profile` would widen a share past what the patient
+ * agreed to, which is the one direction that is never acceptable.
  */
-const IMPLIED_BY_ALL: Record<string, readonly string[]> = {
-  profile: ["conditions", "allergies"],
-};
 
 function isGranted(permissions: Record<string, unknown>, key: string): boolean {
   return permissions[key] === true;
@@ -78,10 +82,7 @@ export function shareGrants(
 ): boolean {
   if (!permissions || typeof permissions !== "object") return false;
   if (isGranted(permissions, permission)) return true;
-  if ((ALIASES[permission] ?? []).some((alias) => isGranted(permissions, alias))) return true;
-  const parts = IMPLIED_BY_ALL[permission];
-  if (parts && parts.every((part) => isGranted(permissions, part))) return true;
-  return false;
+  return (ALIASES[permission] ?? []).some((alias) => isGranted(permissions, alias));
 }
 
 /** Every key a stored share might legitimately carry, canonical or retired. */

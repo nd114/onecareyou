@@ -68,8 +68,11 @@ describe("'profile' is coarser than the two lists", () => {
     expect(shareGrants({ allergies: true }, "profile")).toBe(false);
   });
 
-  it("is granted by both together, which is what it always meant", () => {
-    expect(shareGrants({ conditions: true, allergies: true }, "profile")).toBe(true);
+  it("is not granted by both together either", () => {
+    // Aliases run one way. A coarse grant implies the fine ones — 'profile'
+    // opens each list — but two list grants do not add up to the row they sit
+    // on, which also carries name, date of birth and contact details.
+    expect(shareGrants({ conditions: true, allergies: true }, "profile")).toBe(false);
   });
 });
 

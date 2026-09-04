@@ -45,14 +45,15 @@ BEGIN
   END IF;
   RAISE NOTICE 'conditions can be granted without allergies: t';
 
-  -- Asking for 'profile' means asking for both, so half of it is not enough.
-  IF public.share_grants('{"conditions": true}'::jsonb, 'profile') THEN
-    RAISE EXCEPTION '"profile" was granted by conditions alone';
+  -- Aliases run one way. 'profile' opens each list because it was one grant
+  -- covering both; the reverse must not hold, because 'profile' opens the
+  -- whole profiles row and the two lists are not that row.
+  IF public.share_grants('{"conditions": true}'::jsonb, 'profile')
+     OR public.share_grants('{"conditions": true, "allergies": true}'::jsonb, 'profile') THEN
+    RAISE EXCEPTION
+      'granting the clinical lists opened the whole profile row — name, date of birth and contact details included';
   END IF;
-  IF NOT public.share_grants('{"conditions": true, "allergies": true}'::jsonb, 'profile') THEN
-    RAISE EXCEPTION 'both lists granted separately did not add up to "profile"';
-  END IF;
-  RAISE NOTICE '"profile" needs both lists, and both lists make it: t';
+  RAISE NOTICE 'the two lists do not add up to the row they sit on: t';
 
   -- ---------------------------------------------------------------
   -- Silence is still not consent

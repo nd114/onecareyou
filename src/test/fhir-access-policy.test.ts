@@ -47,11 +47,13 @@ describe("the resources each permission opens", () => {
     ]);
   });
 
-  it("opens the two clinical lists for profile", () => {
-    const policy = toAccessPolicy({ profile: true }, subject);
-    expect(policy.resource.map((r) => r.resourceType).sort()).toEqual([
+  it("opens the two clinical lists for profile, and the row they sit on", () => {
+    // RLS is row-level, so granting the profiles row hands over name, date of
+    // birth, blood type and contact details as well.
+    expect(toAccessPolicy({ profile: true }, subject).resource.map((r) => r.resourceType).sort()).toEqual([
       "AllergyIntolerance",
       "Condition",
+      "Patient",
     ]);
   });
 
@@ -174,6 +176,8 @@ describe("one vocabulary, and the shares written before it", () => {
     expect(patientEntry?.description).toMatch(/date of birth|contact/i);
 
     // ...and granting the lists separately does not open the whole row.
+    // Aliases run one way: a coarse grant implies the fine ones, never the
+    // reverse, or a share widens past what the patient agreed to.
     const listsOnly = toAccessPolicy({ conditions: true, allergies: true }, subject);
     expect(listsOnly.resource.some((r) => r.resourceType === "Patient")).toBe(false);
   });

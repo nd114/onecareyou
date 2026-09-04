@@ -97,14 +97,12 @@ AS $$
       public.share_granted_flag(permissions, permission_key)
       OR public.share_granted_flag(permissions, 'profile')
 
-    -- Asking for 'profile' itself means asking for both, so it is only granted
-    -- when both are.
-    WHEN permission_key = 'profile' THEN
-      public.share_granted_flag(permissions, 'profile')
-      OR (
-        public.share_granted_flag(permissions, 'conditions')
-        AND public.share_granted_flag(permissions, 'allergies')
-      )
+    -- Aliases run one way only. 'profile' still opens each clinical list,
+    -- because it was one permission covering both. The reverse does not hold:
+    -- 'profile' opens the whole profiles row — name, date of birth, blood
+    -- type, contact details — so somebody who granted 'conditions' and
+    -- 'allergies' granted two lists and not those. Treating the pair as adding
+    -- up to 'profile' would widen a share past what the patient agreed to.
 
     ELSE public.share_granted_flag(permissions, permission_key)
   END), false);
