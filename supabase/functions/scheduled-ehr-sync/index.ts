@@ -5,6 +5,11 @@ import {
   medicationRowFromFhir,
   type FhirMedicationRequest,
 } from "../_shared/fhir-medication.ts";
+import {
+  vitalRowsFrom,
+  type FhirObservation,
+  type PatientMapping,
+} from "../_shared/fhir-observation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,35 +20,6 @@ const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SCHEDULED-EHR-SYNC] ${step}${detailsStr}`);
 };
-
-// LOINC codes for vital types
-const VITAL_LOINC_MAP: Record<string, string> = {
-  '85354-9': 'blood_pressure',
-  '8867-4': 'heart_rate',
-  '8310-5': 'temperature',
-  '9279-1': 'respiratory_rate',
-  '2708-6': 'oxygen_saturation',
-  '29463-7': 'weight',
-  '39156-5': 'bmi',
-  '2339-0': 'blood_glucose',
-};
-
-interface FHIRObservation {
-  resourceType: 'Observation';
-  id: string;
-  code: { coding: Array<{ system: string; code: string; display: string }> };
-  valueQuantity?: { value: number; unit: string };
-  effectiveDateTime?: string;
-  component?: Array<{
-    code: { coding: Array<{ system: string; code: string; display: string }> };
-    valueQuantity?: { value: number; unit: string };
-  }>;
-}
-
-interface PatientMapping {
-  fhirPatientId: string;
-  marpeUserId: string;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -133,6 +109,7 @@ serve(async (req) => {
         let importedMedications = 0;
         let updatedMedications = 0;
         const skippedMedications: Array<{ id: string | null; reason: string }> = [];
+        const skippedVitals: Array<{ id: string | null; reason: string }> = [];
         const medicationWarnings: Array<{ id: string | null; warnings: string[] }> = [];
 
         for (const mapping of patientMappings) {
@@ -169,7 +146,7 @@ serve(async (req) => {
             }
 
             const bundle = await obsResponse.json();
-            const observations: FHIRObservation[] = 
+            const observations: FhirObservation[] =
               bundle.entry?.map((e: any) => e.resource) || [];
 
             logStep("Fetched observations", { 
@@ -177,74 +154,48 @@ serve(async (req) => {
               patientId: mapping.fhirPatientId 
             });
 
-            // Convert FHIR observations to OneCare vitals
+            // Convert FHIR observations to OneCare vitals.
+            //
+            // The mapping is in _shared/fhir-observation.ts so this function
+            // and ehr-sync cannot disagree about what a code means — they had
+            // separate copies of the LOINC table, and the copies had already
+            // drifted in how they handled a code neither recognised.
             for (const obs of observations) {
-              const loincCode = obs.code?.coding?.find(c => c.system === 'http://loinc.org')?.code;
-              const vitalType = loincCode ? VITAL_LOINC_MAP[loincCode] : null;
+              const rows = vitalRowsFrom(obs, {
+                userId: mapping.marpeUserId,
+                sourceLabel: connection.provider_name,
+                connectionId: connection.id,
+              });
+              if (rows.length === 0) {
+                skippedVitals.push({
+                  id: obs.id ?? null,
+                  reason: "No vital sign we recognise in this observation",
+                });
+                continue;
+              }
 
-              if (!vitalType) continue;
-
-              // Handle blood pressure specially (has components)
-              if (vitalType === 'blood_pressure' && obs.component) {
-                const systolic = obs.component.find(c => 
-                  c.code?.coding?.some(cd => cd.code === '8480-6')
-                )?.valueQuantity?.value;
-                const diastolic = obs.component.find(c => 
-                  c.code?.coding?.some(cd => cd.code === '8462-4')
-                )?.valueQuantity?.value;
-
-                if (systolic && diastolic) {
-                  // Check if this vital already exists (by recorded_at time)
-                  const recordedAt = obs.effectiveDateTime || new Date().toISOString();
-                  
-                  const { data: existing } = await supabaseClient
-                    .from('vitals')
-                    .select('id')
-                    .eq('user_id', mapping.marpeUserId)
-                    .eq('type', 'blood_pressure')
-                    .eq('recorded_at', recordedAt)
-                    .maybeSingle();
-
-                  if (!existing) {
-                    await supabaseClient.from('vitals').insert({
-                      user_id: mapping.marpeUserId,
-                      type: 'blood_pressure',
-                      value: systolic,
-                      secondary_value: diastolic,
-                      unit: 'mmHg',
-                      recorded_at: recordedAt,
-                      notes: `Synced from ${connection.provider_name}`,
-                      source: 'ehr_import',
-                      external_id: obs.id,
-                      ehr_connection_id: connection.id,
-                    });
-                    totalImported++;
-                  }
-                }
-              } else if (obs.valueQuantity?.value) {
-                const recordedAt = obs.effectiveDateTime || new Date().toISOString();
-                
-                // Check for duplicates
+              for (const row of rows) {
+                // Identity is the sending system's id, not the timestamp. The
+                // previous check compared (user, type, recorded_at), so a
+                // corrected reading resent with a new time arrived as a second
+                // reading rather than replacing the first.
                 const { data: existing } = await supabaseClient
                   .from('vitals')
                   .select('id')
-                  .eq('user_id', mapping.marpeUserId)
-                  .eq('type', vitalType)
-                  .eq('recorded_at', recordedAt)
+                  .eq('user_id', row.user_id)
+                  .eq('ehr_connection_id', connection.id)
+                  .eq('external_id', row.external_id)
+                  .eq('type', row.type)
                   .maybeSingle();
 
-                if (!existing) {
-                  await supabaseClient.from('vitals').insert({
-                    user_id: mapping.marpeUserId,
-                    type: vitalType,
-                    value: obs.valueQuantity.value,
-                    unit: obs.valueQuantity.unit || getDefaultUnit(vitalType),
-                    recorded_at: recordedAt,
-                    notes: `Synced from ${connection.provider_name}`,
-                    source: 'ehr_import',
-                    external_id: obs.id,
-                    ehr_connection_id: connection.id,
-                  });
+                if (existing) {
+                  await supabaseClient.from('vitals').update(row).eq('id', existing.id);
+                } else {
+                  const { error: insertError } = await supabaseClient.from('vitals').insert(row);
+                  if (insertError) {
+                    skippedVitals.push({ id: obs.id ?? null, reason: insertError.message });
+                    continue;
+                  }
                   totalImported++;
                 }
               }
@@ -365,9 +316,9 @@ serve(async (req) => {
           sync_type: 'scheduled_import',
           resource_type: 'Observation,MedicationRequest',
           record_count: totalImported,
-          status: skippedMedications.length > 0 ? 'partial' : 'success',
-          error_details: skippedMedications.length > 0 || medicationWarnings.length > 0
-            ? { skippedMedications, medicationWarnings }
+          status: skippedMedications.length + skippedVitals.length > 0 ? 'partial' : 'success',
+          error_details: skippedMedications.length + skippedVitals.length > 0 || medicationWarnings.length > 0
+            ? { skippedMedications, skippedVitals, medicationWarnings }
             : null,
         });
 
@@ -452,16 +403,3 @@ serve(async (req) => {
     });
   }
 });
-
-function getDefaultUnit(vitalType: string): string {
-  switch (vitalType) {
-    case 'heart_rate': return 'bpm';
-    case 'temperature': return '°C';
-    case 'respiratory_rate': return 'breaths/min';
-    case 'oxygen_saturation': return '%';
-    case 'weight': return 'kg';
-    case 'bmi': return 'kg/m²';
-    case 'blood_glucose': return 'mg/dL';
-    default: return '';
-  }
-}

@@ -103,7 +103,7 @@ enough to mislead.
 | `Observation` (vital signs) | Imported by `scheduled-ehr-sync`, with `source`, `external_id` and `ehr_connection_id` set |
 | `MedicationRequest` | Imported by `scheduled-ehr-sync` — added September 2026 |
 | Conditions, allergies, documents, labs | Not imported |
-| `ehr-sync`'s `import_patient` action | **Fetches and counts. Writes nothing.** It logs the sync as `success` with a record count, having imported zero rows. No client calls it — only `test_connection` is ever invoked — so nobody is currently being misled, but the action should either be finished or removed rather than left looking functional. |
+| `ehr-sync`'s `import_patient` action | **Finished** (September 2026). Imports observations and medication requests for one patient, on demand. |
 
 ### Where the mapping lives
 
@@ -149,3 +149,60 @@ system's name otherwise. `isMedicationEditable()` reads it, and:
 
 Disconnecting a hospital nulls `ehr_connection_id` but keeps `source`, so the
 patient can still see the row was not theirs after the connection is gone.
+
+
+---
+
+## Finishing `import_patient`
+
+It used to fetch a patient, fetch their observations, count them, log the sync
+as `success` with a record count, and write nothing. The comment said "this
+would need patient mapping to a real user_id". A sync that reports success
+having imported zero rows is worse than one that fails, because nobody goes
+looking.
+
+Two questions had to be settled, and both are answered by refusing rather than
+guessing.
+
+**Which OneCare user is this?** Only the connection's `patient_id_mapping`
+says. If the FHIR patient is not linked, the import refuses with a message
+saying so. Matching on name or date of birth is how one person's blood pressure
+ends up in another person's record.
+
+**May this clinician write there?** Owning the EHR connection is not consent.
+The patient's own sharing decides, and the *database* answers — the function
+opens a second client carrying the caller's own JWT and calls
+`clinician_has_patient_access` / `institution_has_patient_access` through it.
+Service-role does the writing afterwards, because the write is legitimately
+cross-user, but it does not get to decide whether it is allowed.
+
+The patient also gets a `patient_action_log` entry saying a hospital put
+something in their record. Noticing a medication you did not add is a bad way
+to find that out.
+
+### One LOINC table, and what having two hid
+
+`ehr-sync` and `scheduled-ehr-sync` each carried their own copy of the
+observation mapping, and the copies had already drifted — one skipped a code
+it did not recognise, the other counted it as imported and wrote nothing. Both
+now use `supabase/functions/_shared/fhir-observation.ts`, which imports nothing
+and so is covered by `src/test/fhir-observation-import.test.ts`.
+
+Writing the test found that **both copies mapped codes to vital types the app
+cannot store**: `respiratory_rate` and `bmi` have no entry in `VITAL_CONFIG` at
+all, so an imported respiratory rate arrived with a generated label, no normal
+range, and therefore no alerting — a reading that looks checked and is not.
+`blood_glucose` only resolved through an alias lookup at read time.
+
+So the shared map holds only types the app can actually hold, under the name it
+uses, and a test asserts it. A hospital sending a respiratory rate now gets a
+line in the skip log rather than a silently useless row. Adding a vital type
+means deciding its clinical ranges and alerting behaviour, which deserves a
+deliberate change rather than arriving as a side effect of an import.
+
+### Deduplication is by external id, not by timestamp
+
+The scheduled sync matched on `(user_id, type, recorded_at)`, so a corrected
+reading resent with a new effective time arrived as a second reading rather
+than replacing the first. Both functions now match on the sending system's own
+id, which is what identity means here.
