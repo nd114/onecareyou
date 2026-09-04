@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { supabaseExtra } from '@/integrations/supabase/types-extra';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
@@ -41,7 +40,7 @@ export function usePendingClinicianRecords() {
       // RLS is row-level, so choosing not to render those columns would not
       // stop them reaching the browser. This returns only what identifies the
       // record, and only to an address the caller has confirmed.
-      const { data, error } = await supabaseExtra.rpc('my_pending_clinician_records');
+      const { data, error } = await supabase.rpc('my_pending_clinician_records');
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
