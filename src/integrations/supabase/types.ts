@@ -4251,6 +4251,7 @@ export type Database = {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
+      confirmed_email: { Args: never; Returns: string }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
       enforce_rate_limit: {
         Args: {
@@ -4448,6 +4449,19 @@ export type Database = {
           last_sender_user_id: string
           total: number
           unread: number
+        }[]
+      }
+      my_pending_clinician_records: {
+        Args: never
+        Returns: {
+          clinician_user_id: string
+          created_at: string
+          data_sharing_model: string
+          id: string
+          masked_email: string
+          masked_phone: string
+          patient_name: string
+          practice_id: string
         }[]
       }
       my_tenant_owner_invitations: {
