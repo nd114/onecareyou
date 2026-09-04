@@ -10,7 +10,6 @@
 // hand-edited.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { supabaseExtra } from '@/integrations/supabase/types-extra';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePractice } from '@/hooks/usePractice';
 import { toast } from 'sonner';
@@ -105,7 +104,7 @@ export function usePracticeAdminActions(practiceId?: string | null) {
   const setPatientAccess = useMutation({
     mutationFn: async ({ patientUserId, isActive }: { patientUserId: string; isActive: boolean }) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { error } = await supabaseExtra
+      const { error } = await supabase
         .from('practice_shares')
         .update({
           practice_suspended_at: isActive ? null : new Date().toISOString(),

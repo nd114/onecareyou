@@ -1954,6 +1954,8 @@ export type Database = {
           ai_category: string | null
           ai_summary: string | null
           ai_tags: Json | null
+          archived_at: string | null
+          archived_reason: string | null
           category: string
           created_at: string
           document_date: string | null
@@ -1977,6 +1979,8 @@ export type Database = {
           ai_category?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          archived_at?: string | null
+          archived_reason?: string | null
           category?: string
           created_at?: string
           document_date?: string | null
@@ -2000,6 +2004,8 @@ export type Database = {
           ai_category?: string | null
           ai_summary?: string | null
           ai_tags?: Json | null
+          archived_at?: string | null
+          archived_reason?: string | null
           category?: string
           created_at?: string
           document_date?: string | null
@@ -2900,44 +2906,6 @@ export type Database = {
           },
         ]
       }
-      practice_patient_access: {
-        Row: {
-          added_at: string
-          id: string
-          is_active: boolean | null
-          patient_user_id: string
-          permissions: Json
-          practice_id: string
-          primary_clinician_id: string
-        }
-        Insert: {
-          added_at?: string
-          id?: string
-          is_active?: boolean | null
-          patient_user_id: string
-          permissions?: Json
-          practice_id: string
-          primary_clinician_id: string
-        }
-        Update: {
-          added_at?: string
-          id?: string
-          is_active?: boolean | null
-          patient_user_id?: string
-          permissions?: Json
-          practice_id?: string
-          primary_clinician_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "practice_patient_access_practice_id_fkey"
-            columns: ["practice_id"]
-            isOneToOne: false
-            referencedRelation: "practices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       practice_patient_assignments: {
         Row: {
           assigned_by: string | null
@@ -3095,6 +3063,8 @@ export type Database = {
           is_active: boolean
           permissions: Json
           practice_id: string
+          practice_suspended_at: string | null
+          practice_suspended_by: string | null
           revoke_reason: string | null
           revoked_at: string | null
           revoked_by: string | null
@@ -3109,6 +3079,8 @@ export type Database = {
           is_active?: boolean
           permissions?: Json
           practice_id: string
+          practice_suspended_at?: string | null
+          practice_suspended_by?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -3123,6 +3095,8 @@ export type Database = {
           is_active?: boolean
           permissions?: Json
           practice_id?: string
+          practice_suspended_at?: string | null
+          practice_suspended_by?: string | null
           revoke_reason?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
@@ -4364,6 +4338,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      institution_has_clinical_access: {
+        Args: { patient_user_id: string }
+        Returns: boolean
+      }
+      institution_has_clinical_permission: {
+        Args: { _category: string; patient_user_id: string }
+        Returns: boolean
+      }
       institution_has_patient_access: {
         Args: { patient_user_id: string }
         Returns: boolean
@@ -4535,6 +4517,10 @@ export type Database = {
           zip_code: string
         }[]
       }
+      practice_has_clinical_access: {
+        Args: { patient_uuid: string }
+        Returns: boolean
+      }
       practice_has_patient_access: {
         Args: { patient_uuid: string }
         Returns: boolean
@@ -4590,6 +4576,10 @@ export type Database = {
           paying_patients: number
           revenue_share_pct: number
         }[]
+      }
+      practice_role_is_clinical: {
+        Args: { _role: Database["public"]["Enums"]["practice_role"] }
+        Returns: boolean
       }
       practice_set_contact: {
         Args: {
