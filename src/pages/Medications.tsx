@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useMedications } from '@/hooks/useMedications';
+import { didYouMean, search } from '@/lib/search';
 import { MedicationSourceBadge } from '@/components/medications/MedicationSourceBadge';
 import { isMedicationEditable } from '@/types/health';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
@@ -47,9 +48,17 @@ const Medications = () => {
   const activeMedications = medications.filter(med => med.is_active);
   const discontinuedMedications = medications.filter(med => !med.is_active);
 
-  const filteredMedications = (showDiscontinued ? medications : activeMedications).filter(med =>
-    med.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Ranked and typo-tolerant rather than a substring filter: drug names are
+  // long and unfamiliar, and "amlodipin" used to answer with an empty list.
+  const searchPool = showDiscontinued ? medications : activeMedications;
+  const searchFields = (med: (typeof medications)[number]) => [
+    med.name,
+    med.dosage,
+    med.instructions,
+    med.prescriber,
+  ];
+  const filteredMedications = search(searchPool, searchQuery, searchFields);
+  const searchSuggestion = didYouMean(searchPool, searchQuery, searchFields);
 
   const medicationLimit = isPremium ? Infinity : FREE_MEDICATION_LIMIT;
   const currentCount = activeMedications.length;
@@ -366,7 +375,26 @@ const Medications = () => {
             </div>
             <h3 className="text-lg font-semibold mb-2">No medications found</h3>
             <p className="text-muted-foreground mb-6">
-              {searchQuery ? 'Try a different search term' : 'Start by adding your first medication'}
+              {searchSuggestion ? (
+                // Offered only when the search found nothing and something was
+                // close. Clicking it runs the search rather than only telling
+                // somebody what they should have typed.
+                <>
+                  Did you mean{' '}
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery(searchSuggestion)}
+                    className="font-medium text-primary underline underline-offset-2"
+                  >
+                    {searchSuggestion}
+                  </button>
+                  ?
+                </>
+              ) : searchQuery ? (
+                'Try a different search term'
+              ) : (
+                'Start by adding your first medication'
+              )}
             </p>
             {!searchQuery && (
               <Button asChild className="gradient-primary border-0">

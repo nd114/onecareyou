@@ -14,6 +14,17 @@ import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialo
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import type { HealthDocument } from '@/hooks/useHealthDocuments';
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
+import { didYouMean, search as searchList } from '@/lib/search';
+
+/** Most important first: a hit in the title outranks one in a summary. */
+const vaultSearchFields = (d: HealthDocument) => [
+  d.title,
+  d.file_name,
+  ...(d.tags ?? []),
+  ...(d.ai_tags ?? []),
+  d.notes,
+  d.ai_summary,
+];
 import { VisitSummariesSection } from '@/components/documents/VisitSummariesSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -62,18 +73,21 @@ const HealthVault = () => {
       filtered = filtered.filter((d) => d.category === activeCategory || d.ai_category === activeCategory);
     }
     if (search.trim()) {
-      const q = search.toLowerCase();
-      filtered = filtered.filter(
-        (d) =>
-          d.title?.toLowerCase().includes(q) ||
-          d.file_name.toLowerCase().includes(q) ||
-          d.ai_summary?.toLowerCase().includes(q) ||
-          d.notes?.toLowerCase().includes(q) ||
-          d.ai_tags?.some((t) => t.toLowerCase().includes(q))
-      );
+      // Ranked, accent- and typo-tolerant, and the title outranks a passing
+      // mention in a summary — a substring filter treated all five fields as
+      // equally important and none of them as ranked.
+      filtered = searchList(filtered, search, vaultSearchFields);
     }
     return filtered;
   }, [documents, activeCategory, activeFolder, search]);
+
+  // Only computed when the search found nothing, which is the only moment the
+  // question helps — offering a correction beside results teaches people to
+  // distrust the results.
+  const vaultSuggestion = useMemo(
+    () => (search.trim() ? didYouMean(documents, search, vaultSearchFields) : null),
+    [documents, search],
+  );
 
   const categoryCounts = useMemo(() => {
     const scoped =
@@ -282,9 +296,23 @@ const HealthVault = () => {
                     : 'No documents match your search'}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                {documents.length === 0
-                  ? 'Upload prescriptions, lab results, discharge summaries, and other health documents to keep them organized and accessible.'
-                  : 'Try adjusting your search terms or category filter.'}
+                {vaultSuggestion ? (
+                  <>
+                    Did you mean{' '}
+                    <button
+                      type="button"
+                      onClick={() => setSearch(vaultSuggestion)}
+                      className="font-medium text-primary underline underline-offset-2"
+                    >
+                      {vaultSuggestion}
+                    </button>
+                    ?
+                  </>
+                ) : documents.length === 0 ? (
+                  'Upload prescriptions, lab results, discharge summaries, and other health documents to keep them organized and accessible.'
+                ) : (
+                  'Try adjusting your search terms or category filter.'
+                )}
               </p>
             </div>
           ) : (

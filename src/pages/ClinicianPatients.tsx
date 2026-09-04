@@ -21,6 +21,7 @@ import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
+import { search } from '@/lib/search';
 import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { AddManagedPatientDialog } from '@/components/clinician/AddManagedPatientDialog';
@@ -78,12 +79,10 @@ const ClinicianPatients = () => {
 
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patients;
-    const searchLower = patientSearch.toLowerCase();
-    return patients.filter(
-      (p) =>
-        (p.patient_name || '').toLowerCase().includes(searchLower) ||
-        (p.patient_email || '').toLowerCase().includes(searchLower)
-    );
+    // Accent- and typo-tolerant, and ranked. A clinician looking for "José"
+    // by typing "Jose" used to get nothing, which on a list of hundreds reads
+    // as "that patient is not here".
+    return search(patients, patientSearch, (p) => [p.patient_name, p.patient_email]);
   }, [patients, patientSearch]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPatients.length / PAGE_SIZE));
@@ -104,13 +103,11 @@ const ClinicianPatients = () => {
     filtered = applyManagedRecordFilters(filtered, managedFilters);
     // Apply search
     if (patientSearch.trim()) {
-      const searchLower = patientSearch.toLowerCase();
-      filtered = filtered.filter(
-        (r) =>
-          r.patient_name.toLowerCase().includes(searchLower) ||
-          (r.patient_email || '').toLowerCase().includes(searchLower) ||
-          (r.tags as string[]).some(t => t.toLowerCase().includes(searchLower))
-      );
+      filtered = search(filtered, patientSearch, (r) => [
+        r.patient_name,
+        r.patient_email,
+        ...((r.tags as string[] | null) ?? []),
+      ]);
     }
     return filtered;
   }, [managedRecords, patientSearch, managedFilters]);
