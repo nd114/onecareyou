@@ -14,6 +14,7 @@
         "@medplum/core": "^5.1.36",
         "@medplum/fhir-router": "^5.1.36",
         "@medplum/fhirtypes": "^5.1.36",
+        "@medplum/react-hooks": "^5.1.36",
         "@radix-ui/react-accordion": "^1.2.11",
         "@radix-ui/react-alert-dialog": "^1.1.14",
         "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -248,6 +249,8 @@
     "@medplum/fhir-router": ["@medplum/fhir-router@5.1.36", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@medplum/fhir-router/-/fhir-router-5.1.36.tgz", { "dependencies": { "@medplum/core": "5.1.36", "@medplum/definitions": "5.1.36", "@medplum/fhirtypes": "5.1.36", "dataloader": "2.2.3", "graphql": "17.0.2" } }, "sha512-HBiKr4A+39bhxM83pXCqtOzsm2irLuu1fRCgJ4HXatjzuE1B/zqZndt/Vu+OJFDsSuhiUjpBKaDgjmvtZMkiFQ=="],
 
     "@medplum/fhirtypes": ["@medplum/fhirtypes@5.1.36", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@medplum/fhirtypes/-/fhirtypes-5.1.36.tgz", {}, "sha512-3tOvOst9lvtQwM3PwGk2OpY6Y2lxqpjOzUNKouWEQCpgSWr4t+GgwF7BmMNG8fKTHYREPf7jfQCmunNQ6bMhIQ=="],
+
+    "@medplum/react-hooks": ["@medplum/react-hooks@5.1.36", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@medplum/react-hooks/-/react-hooks-5.1.36.tgz", { "peerDependencies": { "@medplum/core": "5.1.36", "react": "^18.0.0 || ^19.0.0" } }, "sha512-ArvvRm9/qaA903tjtgp7AS77bXpeWPTZuEITpnYja6wMY4w1jzFtZEp/v0jjqxrwub5IBrBTE8Qnocnpj/jkmQ=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 
