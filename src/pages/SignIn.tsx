@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { homeRouteFor } from '@/lib/home-route';
 
 import { z } from 'zod';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
@@ -39,24 +40,18 @@ const SignIn = () => {
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
-  // Redirect if already logged in - admins land on the console, clinicians on their dashboard
+  // Already signed in? Go where this person belongs. `homeRouteFor` is shared
+  // with the root route so the logo and a sign-in redirect cannot disagree:
+  // admins to the console, hospital owners to their practice, clinicians to
+  // their working day, everyone else to their own record.
   useEffect(() => {
     if (user && !authLoading && !clinicianLoading && !adminLoading) {
-      if (from) {
-        navigate(from, { replace: true });
-      } else if (isAdmin) {
-        navigate('/admin', { replace: true });
-      } else if (isTenantAdmin) {
-        // Runs a hospital: Practice is their tenant console — team, departments,
-        // staff recognition, and any invitation still waiting to be accepted.
-        navigate('/clinician/practice', { replace: true });
-      } else if (isClinician) {
-        navigate('/clinician/dashboard', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+      navigate(from || homeRouteFor({ isAdmin, isTenantAdmin, isClinician }), { replace: true });
     }
-  }, [user, authLoading, clinicianLoading, adminLoading, isAdmin, isClinician, navigate, from]);
+  }, [
+    user, authLoading, clinicianLoading, adminLoading,
+    isAdmin, isTenantAdmin, isClinician, navigate, from,
+  ]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {

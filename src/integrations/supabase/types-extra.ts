@@ -24,9 +24,11 @@ import { supabase } from "./client";
  *
  * Covered migrations:
  *   20260904100000_vault_documents_archive
+ *   20260905100000_one_institution_access_table
  */
 
 type GeneratedDocuments = Database["public"]["Tables"]["health_documents"];
+type GeneratedShares = Database["public"]["Tables"]["practice_shares"];
 
 /**
  * Derived from the generated shape rather than restated, so it stays correct
@@ -49,10 +51,32 @@ type DocumentsWithArchive = {
   Relationships: GeneratedDocuments["Relationships"];
 };
 
+/**
+ * The practice's own suspension switch, moved here when
+ * practice_patient_access was retired. Distinct from `is_active`, which is
+ * the patient's decision — a practice must never be able to write that one.
+ */
+type SharesWithSuspension = {
+  Row: GeneratedShares["Row"] & {
+    practice_suspended_at: string | null;
+    practice_suspended_by: string | null;
+  };
+  Insert: GeneratedShares["Insert"] & {
+    practice_suspended_at?: string | null;
+    practice_suspended_by?: string | null;
+  };
+  Update: GeneratedShares["Update"] & {
+    practice_suspended_at?: string | null;
+    practice_suspended_by?: string | null;
+  };
+  Relationships: GeneratedShares["Relationships"];
+};
+
 export type ExtraDatabase = Omit<Database, "public"> & {
   public: Omit<Database["public"], "Tables"> & {
     Tables: Omit<Database["public"]["Tables"], "health_documents"> & {
       health_documents: DocumentsWithArchive;
+      practice_shares: SharesWithSuspension;
     };
   };
 };

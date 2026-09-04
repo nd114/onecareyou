@@ -267,5 +267,23 @@ Archive rather than delete, deliberately. The delete that existed on each card
 is gone: a patient tidying their shelf and a patient withdrawing a file from
 somebody are different intentions, and only one of them should be one click.
 
+`one_institution_access_table.test.sql` — one answer to one question:
+
+| Rule | Why |
+| --- | --- |
+| `practice_patient_access` is gone, and nothing still reads it | two tables answered the same question and disagreed |
+| A patient's share is now sufficient on its own | the practice's bookkeeping row was never a second consent |
+| Front desk still books, still reads no notes | the role split must survive the merge |
+| A practice can still suspend a patient internally | dropping the table blind would have deleted this feature silently |
+| Suspending does not touch the patient's own decision | different people, different switches |
+| The patient withdrawing ends it whatever the practice says | consent outranks bookkeeping |
+| Both access families give the same answer | the disagreement is the reason for the merge |
+
+`institution_has_patient_permission` read `practice_shares` alone while
+`practice_has_patient_access` required a row in both, so the same staff member
+could see a patient's medications and not their encounters, for no reason a
+person could explain. The migration reports the row-level disagreement it found
+as it converges.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

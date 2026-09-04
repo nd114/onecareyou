@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear } from 'date-fns';
 import { CalendarIcon, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { VitalRecord } from '@/hooks/useVitals';
-import { exportVitalsToCSV, exportVitalsToFhir, exportVitalsToPDF } from '@/lib/vitals-export';
+import { exportVitalsToCSV, exportVitalsToPDF } from '@/lib/vitals-export';
 import { toast } from 'sonner';
 
 interface ExportDialogProps {
@@ -57,20 +58,6 @@ export function ExportDialog({ open, onOpenChange, vitals }: ExportDialogProps) 
       return;
     }
     exportVitalsToPDF(filteredVitals);
-    onOpenChange(false);
-  };
-
-  /**
-   * The same readings as FHIR, which is what an EHR or a health information
-   * network can actually load. CSV needs a person to retype it.
-   */
-  const handleExportFhir = () => {
-    if (filteredVitals.length === 0) {
-      toast.error('No vitals in selected date range');
-      return;
-    }
-    exportVitalsToFhir(filteredVitals);
-    toast.success('FHIR bundle downloaded');
     onOpenChange(false);
   };
 
@@ -198,18 +185,18 @@ export function ExportDialog({ open, onOpenChange, vitals }: ExportDialogProps) 
                 Download PDF
               </Button>
             </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleExportFhir}
-              disabled={filteredVitals.length === 0}
-            >
-              Download FHIR bundle
-            </Button>
+            {/* The raw FHIR download used to sit here as a third peer button.
+                It produces a JSON file, which means nothing to most people
+                next to "CSV" and "PDF", and it covered only vitals. The whole
+                record now exports from Settings, where there is room to say
+                what it is and show what is in it before you download. */}
             <p className="text-xs text-muted-foreground">
-              FHIR is the standard format hospitals and health records systems read. Send this
-              file to a clinic and their system can load your readings without anyone retyping
-              them.
+              Need the format a hospital's own system can read? Your whole record — readings,
+              medications, conditions and allergies — exports as FHIR from{' '}
+              <Link to="/settings" className="font-medium text-primary hover:underline">
+                Settings → Privacy &amp; data
+              </Link>
+              .
             </p>
           </div>
         </div>

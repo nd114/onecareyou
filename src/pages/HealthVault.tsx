@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files } from 'lucide-react';
+import { FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files, FolderPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,6 +18,14 @@ import { VisitSummariesSection } from '@/components/documents/VisitSummariesSect
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FREE_DOCUMENT_LIMIT } from '@/lib/pricing-constants';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const HealthVault = () => {
   const { profile } = useAuth();
@@ -36,6 +46,8 @@ const HealthVault = () => {
   // being back. Not hidden: a patient who put something away needs to be able
   // to find it again without being told to contact support.
   const [showArchived, setShowArchived] = useState(false);
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const isArchived = (d: HealthDocument) => Boolean(d.archived_at);
   const archivedCount = useMemo(() => documents.filter(isArchived).length, [documents]);
 
@@ -181,7 +193,22 @@ const HealthVault = () => {
 
           {/* Folders */}
           <div className="mb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Folders</p>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-xs font-medium text-muted-foreground">Folders</p>
+              {/* Creating a folder used to live inside one document's menu, and
+                  the menu item set state that nothing rendered — so it did
+                  nothing at all. A folder is a Vault-level thing; it belongs
+                  here, next to the folders. */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 px-2 text-xs"
+                onClick={() => { setNewFolderName(''); setShowNewFolder(true); }}
+              >
+                <FolderPlus className="h-3.5 w-3.5" />
+                New folder
+              </Button>
+            </div>
             <div className="flex gap-2 flex-wrap">
               <Badge
                 variant={activeFolder === 'all' ? 'default' : 'outline'}
@@ -275,6 +302,55 @@ const HealthVault = () => {
           )}
         </motion.div>
       </main>
+
+      {/* A folder here is just a label on documents — there is no folder table.
+          Creating one selects it, so the next thing you file goes into it. */}
+      <Dialog open={showNewFolder} onOpenChange={setShowNewFolder}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>New folder</DialogTitle>
+            <DialogDescription>
+              Name it, then move documents into it from each document's menu.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const name = newFolderName.trim();
+              if (!name) return;
+              if (folders.includes(name)) {
+                toast.error('You already have a folder with that name');
+                return;
+              }
+              setActiveFolder(name);
+              setShowNewFolder(false);
+              setNewFolderName('');
+              toast.success(`"${name}" is ready — move documents into it to fill it`);
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="folder-name">Folder name</Label>
+              <Input
+                id="folder-name"
+                autoFocus
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Lab results 2026"
+                maxLength={60}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowNewFolder(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!newFolderName.trim()}>
+                Create folder
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

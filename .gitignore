@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Bulk source data (drug databases, imports). These are working files: they are
+# uploaded through the admin importer, not served to browsers. 67 MB of them
+# were committed under public/ and shipped to every visitor as a public
+# download that nothing in the application referenced.
+public/data/

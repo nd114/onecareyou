@@ -10,6 +10,7 @@
 // hand-edited.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseExtra } from '@/integrations/supabase/types-extra';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePractice } from '@/hooks/usePractice';
 import { toast } from 'sonner';
@@ -92,14 +93,26 @@ export function usePracticeAdminActions(practiceId?: string | null) {
     onError: (e: Error) => toast.error(e.message || 'Could not update this team member'),
   });
 
+  /**
+   * The practice suspending its own staff's access to a patient.
+   *
+   * This used to write practice_patient_access.is_active. That table is gone —
+   * two tables answered "can this hospital see this patient" and disagreed —
+   * and the switch moved onto practice_shares as its own column. It is
+   * deliberately NOT practice_shares.is_active: that one is the patient's
+   * decision, and a practice must never be able to write it.
+   */
   const setPatientAccess = useMutation({
     mutationFn: async ({ patientUserId, isActive }: { patientUserId: string; isActive: boolean }) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { error } = await supabase
-        .from('practice_patient_access')
-        .update({ is_active: isActive })
+      const { error } = await supabaseExtra
+        .from('practice_shares')
+        .update({
+          practice_suspended_at: isActive ? null : new Date().toISOString(),
+          practice_suspended_by: isActive ? null : user?.id ?? null,
+        })
         .eq('practice_id', practiceId)
-        .eq('patient_user_id', patientUserId);
+        .eq('user_id', patientUserId);
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {

@@ -307,10 +307,19 @@ export function useHealthDocuments() {
     },
   });
 
-  const getDownloadUrl = async (filePath: string) => {
+  /**
+   * A link that actually downloads.
+   *
+   * Without the `download` option the signed URL is served inline, so the
+   * browser opens the file in a tab instead of saving it — a PDF renders, and
+   * anything it cannot render is dumped on screen as text. Passing a filename
+   * sets Content-Disposition: attachment, so it saves, with the document's own
+   * name rather than a storage path.
+   */
+  const getDownloadUrl = async (filePath: string, fileName?: string) => {
     const { data } = await supabase.storage
       .from('health-documents')
-      .createSignedUrl(filePath, 3600);
+      .createSignedUrl(filePath, 3600, { download: fileName || true });
     return data?.signedUrl;
   };
 

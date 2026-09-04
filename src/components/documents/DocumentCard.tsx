@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, FolderPlus, Stethoscope } from 'lucide-react';
+import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, Stethoscope } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,8 +59,6 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
-  const [showNewFolder, setShowNewFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
 
   const shareCount = allShareCounts[doc.id] || 0;
 
@@ -69,8 +67,18 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const url = await getDownloadUrl(doc.file_path);
-      if (url) window.open(url, '_blank');
+      const url = await getDownloadUrl(doc.file_path, doc.file_name);
+      if (url) {
+        // A real download rather than window.open: the signed URL now carries
+        // Content-Disposition: attachment, so the file is saved under its own
+        // name instead of being rendered in a tab.
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = doc.file_name;
+        window.document.body.appendChild(link);
+        link.click();
+        window.document.body.removeChild(link);
+      }
     } finally {
       setDownloading(false);
     }
@@ -214,11 +222,6 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                           {doc.folder === f && <Check className="h-3.5 w-3.5 ml-auto" />}
                         </DropdownMenuItem>
                       ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => { setNewFolderName(''); setShowNewFolder(true); }} className="gap-2">
-                        <FolderPlus className="h-3.5 w-3.5" />
-                        New folder…
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
 
