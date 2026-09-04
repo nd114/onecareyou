@@ -14,6 +14,7 @@ import {
 } from "@medplum/core";
 import type { Bundle, Reference, Resource, ResourceType } from "@medplum/fhirtypes";
 import { fromAppointmentRow, toAppointmentRow, type AppointmentRow } from "@/lib/fhir/appointment";
+import { SEARCH_CONFIG, UnsupportedSearch, planSearch, stripReference } from "@/lib/fhir/search";
 
 /**
  * A FHIR repository backed by our own Postgres.
@@ -43,9 +44,13 @@ export interface SupabaseLike {
   from(table: string): any;
 }
 
-const SUPPORTED: Record<string, string> = {
-  Appointment: "fhir_appointments",
-};
+/**
+ * Derived from the search config rather than written twice. Two lists of
+ * "resources we serve" is one list that eventually lies.
+ */
+const SUPPORTED: Record<string, string> = Object.fromEntries(
+  Object.entries(SEARCH_CONFIG).map(([resourceType, config]) => [resourceType, config.table]),
+);
 
 export class SupabaseFhirRepository extends FhirRepository {
   constructor(private readonly supabase: SupabaseLike) {
@@ -114,24 +119,46 @@ export class SupabaseFhirRepository extends FhirRepository {
     );
   }
 
+  /**
+   * Search.
+   *
+   * The planning is in `@/lib/fhir/search` — pure, and tested against the
+   * specification rather than against a live table. This method's only job is
+   * to turn a plan into PostgREST calls, which keeps the part that can be wrong
+   * about FHIR separate from the part that talks to the database.
+   */
   async search<T extends Resource>(searchRequest: SearchRequest<T>): Promise<Bundle<any>> {
-    const table = this.table(searchRequest.resourceType);
-    let query = this.supabase.from(table).select("*");
-
-    for (const filter of searchRequest.filters ?? []) {
-      const column = SEARCH_PARAMS[filter.code];
-      if (!column) {
-        // Refuse rather than return everything. A search that silently ignores
-        // the filter it was given is how a clinician ends up looking at another
-        // patient's list believing it is filtered.
-        throw new OperationOutcomeError(
-          badRequest(`Search parameter '${filter.code}' is not supported`),
-        );
-      }
-      query = query.eq(column, stripReference(String(filter.value)));
+    let plan;
+    try {
+      plan = planSearch(searchRequest as SearchRequest);
+    } catch (e) {
+      if (e instanceof UnsupportedSearch) throw new OperationOutcomeError(badRequest(e.message));
+      throw e;
     }
 
-    if (searchRequest.count) query = query.limit(searchRequest.count);
+    let query = this.supabase.from(plan.table).select("*");
+
+    for (const clause of plan.clauses) {
+      if (clause.op === "is") {
+        query = clause.value === null ? query.is(clause.column, null) : query.not(clause.column, "is", null);
+        continue;
+      }
+      query = query[clause.op](clause.column, clause.value);
+    }
+
+    for (const order of plan.order) {
+      query = query.order(order.column, { ascending: order.ascending });
+    }
+
+    // Offset without a limit is meaningless to PostgREST's range, so an offset
+    // on its own reads to the end rather than silently returning nothing.
+    if (plan.offset !== undefined && plan.limit !== undefined) {
+      query = query.range(plan.offset, plan.offset + plan.limit - 1);
+    } else if (plan.limit !== undefined) {
+      query = query.limit(plan.limit);
+    } else if (plan.offset !== undefined) {
+      query = query.range(plan.offset, plan.offset + 999);
+    }
 
     const { data, error } = await query;
     if (error) throw new OperationOutcomeError(badRequest(error.message));
@@ -233,21 +260,6 @@ export class SupabaseFhirRepository extends FhirRepository {
     // SECURITY DEFINER function, where the database can give one.
     return callback(this);
   }
-}
-
-/** FHIR search parameters we can actually serve, mapped to columns. */
-const SEARCH_PARAMS: Record<string, string> = {
-  patient: "patient_user_id",
-  actor: "patient_user_id",
-  practitioner: "clinician_user_id",
-  status: "status",
-  _id: "id",
-};
-
-/** `Patient/abc` and `abc` both mean the same row. */
-function stripReference(value: string): string {
-  const slash = value.indexOf("/");
-  return slash === -1 ? value : value.slice(slash + 1);
 }
 
 function fromResourceInput(resource: Resource): any {

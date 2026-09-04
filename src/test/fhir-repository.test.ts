@@ -28,12 +28,38 @@ const CLINICIAN = "22222222-2222-2222-2222-222222222222";
  * the real thing; a filter that never reaches Postgres is a filter RLS cannot
  * help with.
  */
+interface FakeCall {
+  table: string;
+  eq: [string, unknown][];
+  limit?: number;
+  /** Every comparison, with the verb, so a test can assert gte was not eq. */
+  ops: { op: string; column: string; value: unknown }[];
+  order: { column: string; ascending: boolean }[];
+  range?: [number, number];
+}
+
 function fakeSupabase(rows: Record<string, unknown>[]) {
-  const calls: { table: string; eq: [string, unknown][]; limit?: number }[] = [];
+  const calls: FakeCall[] = [];
 
   const from = (table: string) => {
-    const call = { table, eq: [] as [string, unknown][], limit: undefined as number | undefined };
+    const call: FakeCall = {
+      table,
+      eq: [] as [string, unknown][],
+      limit: undefined,
+      ops: [],
+      order: [],
+      range: undefined,
+    };
     calls.push(call);
+
+    // Comparisons other than eq are recorded but not applied to the fake rows:
+    // the assertion that matters is that the verb reached the query builder,
+    // because a comparison evaluated in JavaScript after the rows come back is
+    // one RLS never saw.
+    const record = (op: string) => (column: string, value: unknown) => {
+      call.ops.push({ op, column, value });
+      return builder;
+    };
 
     const builder: any = {
       select: () => builder,
@@ -47,6 +73,26 @@ function fakeSupabase(rows: Record<string, unknown>[]) {
       },
       eq: (column: string, value: unknown) => {
         call.eq.push([column, value]);
+        call.ops.push({ op: "eq", column, value });
+        return builder;
+      },
+      neq: record("neq"),
+      gt: record("gt"),
+      gte: record("gte"),
+      lt: record("lt"),
+      lte: record("lte"),
+      ilike: record("ilike"),
+      is: record("is"),
+      not: (column: string, op: string, value: unknown) => {
+        call.ops.push({ op: `not.${op}`, column, value });
+        return builder;
+      },
+      order: (column: string, opts?: { ascending?: boolean }) => {
+        call.order.push({ column, ascending: opts?.ascending !== false });
+        return builder;
+      },
+      range: (from_: number, to: number) => {
+        call.range = [from_, to];
         return builder;
       },
       limit: (n: number) => {
@@ -248,5 +294,93 @@ describe("Medplum's own client, talking to our database", () => {
     });
 
     await expect(medplum.readResource("Patient", "anything")).rejects.toThrow();
+  });
+
+  it("sends a date range to the database as a range, not as equality", async () => {
+    // The regression this guards: every filter used to become .eq() whatever
+    // its operator said, so `date=ge...` silently asked a different question
+    // and answered it confidently.
+    const { supabase, calls } = fakeSupabase([row()]);
+    const medplum = new MedplumClient({
+      baseUrl: "https://local/",
+      fetch: createFhirFetch(supabase) as never,
+    });
+
+    await medplum.searchResources("Appointment", "date=ge2026-09-01&date=le2026-09-30");
+
+    const search = calls[calls.length - 1];
+    expect(search.ops).toEqual([
+      // FHIR interval semantics: on-or-after compares the end, on-or-before
+      // the start, so an appointment straddling either boundary is kept.
+      { op: "gte", column: "end_time", value: "2026-09-01" },
+      { op: "lte", column: "start_time", value: "2026-09-30" },
+    ]);
+    expect(search.ops.some((o) => o.op === "eq")).toBe(false);
+  });
+
+  it("sorts in the database rather than after the rows arrive", async () => {
+    const { supabase, calls } = fakeSupabase([row()]);
+    const medplum = new MedplumClient({
+      baseUrl: "https://local/",
+      fetch: createFhirFetch(supabase) as never,
+    });
+
+    await medplum.searchResources("Appointment", "_sort=-date&_count=5&_offset=10");
+
+    const search = calls[calls.length - 1];
+    expect(search.order).toEqual([{ column: "start_time", ascending: false }]);
+    // Paging has to be a range, not a limit applied to an unsorted read.
+    expect(search.range).toEqual([10, 14]);
+  });
+
+  it("does not reinterpret a token value that happens to start like a date prefix", async () => {
+    // Worth knowing, and found by running this rather than reading about it:
+    // `parseSearchRequest` behaves differently depending on whether the FHIR
+    // definitions have been loaded into the global schema.
+    //
+    //   without them: status=ge2026-01-01 → { operator: 'ge' }  (the prefix
+    //                 rule applied blindly, because nothing says status is a
+    //                 token)
+    //   with them:    status=ge2026-01-01 → { operator: 'eq',
+    //                 value: 'ge2026-01-01' }  (correct)
+    //
+    // `@medplum/definitions` is a devDependency and never ships to the
+    // browser, so production runs in the first mode — which is precisely why
+    // the planner refuses an operator a parameter's type cannot carry. That
+    // guard is asserted directly in fhir-search.test.ts, where no definitions
+    // are loaded. Here the definitions are loaded on purpose, so the
+    // assertion is about the other half: with them, the value stays a literal.
+    validateFhir({
+      resourceType: "Appointment",
+      status: "booked",
+      start: "2026-09-10T09:00:00.000Z",
+      end: "2026-09-10T09:30:00.000Z",
+      participant: [{ status: "accepted", actor: { reference: `Patient/${PATIENT}` } }],
+    } as never);
+
+    const { supabase, calls } = fakeSupabase([row()]);
+    const medplum = new MedplumClient({
+      baseUrl: "https://local/",
+      fetch: createFhirFetch(supabase) as never,
+    });
+
+    const results = await medplum.searchResources("Appointment", "status=ge2026-01-01");
+    expect(results).toHaveLength(0);
+
+    const search = calls[calls.length - 1];
+    expect(search.ops).toEqual([{ op: "eq", column: "status", value: "ge2026-01-01" }]);
+  });
+
+  it("asks the database for rows with no clinician when told :missing", async () => {
+    const { supabase, calls } = fakeSupabase([row()]);
+    const medplum = new MedplumClient({
+      baseUrl: "https://local/",
+      fetch: createFhirFetch(supabase) as never,
+    });
+
+    await medplum.searchResources("Appointment", "practitioner:missing=true");
+
+    const search = calls[calls.length - 1];
+    expect(search.ops).toEqual([{ op: "is", column: "clinician_user_id", value: null }]);
   });
 });
