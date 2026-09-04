@@ -4370,6 +4370,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      institution_has_clinical_access: {
+        Args: { patient_user_id: string }
+        Returns: boolean
+      }
+      institution_has_clinical_permission: {
+        Args: { _category: string; patient_user_id: string }
+        Returns: boolean
+      }
       institution_has_patient_access: {
         Args: { patient_user_id: string }
         Returns: boolean
@@ -4541,6 +4549,10 @@ export type Database = {
           zip_code: string
         }[]
       }
+      practice_has_clinical_access: {
+        Args: { patient_uuid: string }
+        Returns: boolean
+      }
       practice_has_patient_access: {
         Args: { patient_uuid: string }
         Returns: boolean
@@ -4596,6 +4608,10 @@ export type Database = {
           paying_patients: number
           revenue_share_pct: number
         }[]
+      }
+      practice_role_is_clinical: {
+        Args: { _role: Database["public"]["Enums"]["practice_role"] }
+        Returns: boolean
       }
       practice_set_contact: {
         Args: {
