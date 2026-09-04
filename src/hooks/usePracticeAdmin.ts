@@ -10,7 +10,6 @@
 // hand-edited.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePractice } from '@/hooks/usePractice';
 import { toast } from 'sonner';
