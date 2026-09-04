@@ -38,6 +38,17 @@ describe("what someone is told before recording", () => {
     expect(privacy?.body).toMatch(/nobody else|unless you/i);
   });
 
+  it("says a whole-Vault share does not include recordings", () => {
+    // It used to. The audio and transcript are ordinary Vault documents, so
+    // "Clinicians can view whole vault when granted" reached them, and a
+    // patient who turned that on had handed over every recording without
+    // being told. The database was fixed; this holds the sentence that says
+    // so, because the promise and the policy have to agree.
+    const privacy = RECORDING_NOTICE.find((p) => /private|yours/i.test(p.heading));
+    expect(privacy?.body).toMatch(/whole vault/i);
+    expect(privacy?.body).toMatch(/deliberately|specifically|each one/i);
+  });
+
   it("admits that asking for a transcript sends the audio away", () => {
     // "Stays private" stops being true the moment a transcript is produced,
     // because producing one means shipping the audio to something that can

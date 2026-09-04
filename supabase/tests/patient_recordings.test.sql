@@ -127,6 +127,37 @@ BEGIN
   END IF;
   RAISE NOTICE 'no share or practice policy reaches recordings at all: t';
 
+  -- ---------------------------------------------------------------
+  -- A whole-vault share does not hand over the recordings
+  -- ---------------------------------------------------------------
+  -- The recording row has no clinician policy, but the audio and transcript
+  -- are ordinary health_documents. Whole-vault sharing reached them, so a
+  -- patient who turned it on had handed over every recording they had made —
+  -- including consultations with a different clinician, who would then hear
+  -- what the first one said and the patient's own unguarded words.
+  SELECT count(*) INTO v_count
+  FROM pg_policies
+  WHERE schemaname = 'public' AND tablename = 'health_documents'
+    AND policyname IN ('Clinicians can view whole vault when granted',
+                       'Institution team can view shared documents')
+    AND qual LIKE '%patient_recording%';
+  IF v_count <> 2 THEN
+    RAISE EXCEPTION
+      'a whole-vault share still reaches the patient''s recordings — the consent notice says nobody sees them unless the patient chooses to share them';
+  END IF;
+  RAISE NOTICE 'whole-vault sharing does not reach a recording: t';
+
+  -- ...but sharing one deliberately still does, or the feature is unusable.
+  SELECT count(*) INTO v_count
+  FROM pg_policies
+  WHERE schemaname = 'public' AND tablename = 'health_documents'
+    AND policyname = 'Users and shared clinicians can view documents'
+    AND qual LIKE '%document_shares%';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'the per-document share path is gone, so a recording cannot be shared at all';
+  END IF;
+  RAISE NOTICE 'sharing one recording deliberately still works: t';
+
   RAISE NOTICE 'ALL PATIENT RECORDING TESTS PASSED';
 END $$;
 

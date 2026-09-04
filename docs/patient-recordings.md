@@ -73,6 +73,28 @@ clinical record. If they want a clinician to have it, they share the Vault
 document; a clinician discovering they had been recorded by way of a patient
 list would be a bad way to find out.
 
+### The hole that left, and how it is closed
+
+That reasoning was right about the recording row and wrong about everything
+else, because **the audio and the transcript are ordinary `health_documents`
+rows** — which is the whole point of filing them there. "Clinicians can view
+whole vault when granted" reached every non-archived document, so a patient
+who had turned on whole-vault sharing had, without being told, handed over
+every recording they had ever made. Found by an external review, and correct:
+the patient was told one thing and the database did another.
+
+The specific harm is not the general one. A recording of a consultation with
+one clinician becoming visible to a *different* clinician means the second
+hears what the first said, and hears the patient's own unguarded words in a
+room they believed was private. A permission granted months earlier, for
+documents, cannot be read as covering that.
+
+So `20260910120000_recordings_not_in_whole_vault.sql` excludes
+`source_context = 'patient_recording'` from both whole-vault policies. The
+per-document path through `document_shares` is untouched: sharing one
+recording, with one person, today, is exactly the deliberate act the notice
+describes. Both halves are asserted.
+
 ## Failure modes that are handled
 
 - **A stalled transcript.** The edge function can time out, or the tab can be

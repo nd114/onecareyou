@@ -35,8 +35,14 @@
  *
  * Stored alongside each acknowledgement so it stays possible to say what a
  * person actually agreed to, rather than what the current text happens to say.
+ *
+ * v2: v1 said "nobody else sees them unless you choose to share them" while
+ * the database let a whole-Vault share reach every recording. The policy was
+ * fixed and the sentence made specific. Anyone who acknowledged v1 agreed to a
+ * promise the system was not keeping, and their rows still say v1 — which is
+ * the point of storing it.
  */
-export const RECORDING_NOTICE_VERSION = "2026-09-v1";
+export const RECORDING_NOTICE_VERSION = "2026-09-v2";
 
 export interface RecordingNoticePoint {
   /** Short label for the checkbox or bullet. */
@@ -58,7 +64,7 @@ export const RECORDING_NOTICE: RecordingNoticePoint[] = [
   {
     heading: "This is yours, and stays private",
     body:
-      "The recording and its transcript go into your Health Vault. Nobody else sees them unless you choose to share them — not the clinician you recorded, and not us. Asking for a transcript is the one exception: to produce it the audio has to be sent to a transcription service, which is why it is a separate choice you make per recording rather than something that happens by default.",
+      "The recording and its transcript go into your Health Vault. Nobody else sees them unless you share that recording specifically — not the clinician you recorded, and not us. Sharing your whole Vault with somebody does not include your recordings; you have to hand over each one deliberately. Asking for a transcript is the one exception: to produce it the audio has to be sent to a transcription service, which is why it is a separate choice you make per recording rather than something that happens by default.",
   },
   {
     heading: "It is not a medical record",
