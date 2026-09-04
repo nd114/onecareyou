@@ -30,7 +30,19 @@ export interface ChatMessage {
 export type AIChatError = { kind: 'consent_required' | 'rate_limit' | 'unavailable' | 'unknown'; message: string };
 
 interface UseAIChatOptions {
-  /** Set false for read-only surfaces (e.g. Simple Mode). */
+  /**
+   * Whether the assistant may propose changes to the record.
+   *
+   * **Off unless a surface opts in.** It used to default to on and nothing
+   * ever passed it, so every surface could propose writes on the strength of
+   * the general AI consent alone. Agreeing to *use* an assistant is not
+   * agreeing to let it *change* things — those are separate decisions and
+   * they need separate answers.
+   *
+   * A surface turns this on only once the person has given the second
+   * consent. Until that consent exists, nothing sets it, which is the
+   * intended state rather than an oversight.
+   */
   allowActions?: boolean;
   /**
    * Turns a patient name from the assistant into a user id, using whatever
@@ -82,7 +94,7 @@ function loadPersisted(key: string | undefined): ChatMessage[] {
 }
 
 export function useAIChat(options: UseAIChatOptions = {}) {
-  const allowActions = options.allowActions !== false;
+  const allowActions = options.allowActions === true;
   const { user } = useAuth();
   const queryClient = useQueryClient();
   // Every exchange is written to the patient's conversation history, which is

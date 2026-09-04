@@ -287,3 +287,98 @@ placed below the contents for the same reason.
 
 Documents in the Health Vault are still downloaded separately — that is what
 `DocumentReference` is for, and it is now the next resource worth doing.
+
+
+## 8. FHIR coming in
+
+Everything above goes one way: our rows become resources. That is the easy
+direction, because we know what we hold. `src/lib/fhir/inbound.ts` does the
+hard one.
+
+### The rule is refuse rather than guess
+
+A resource we cannot map confidently is **rejected with a reason**, not filed
+under a nearest-fit category. A partially-mapped one carries **warnings**
+naming what was dropped. Silence is the only outcome that is never acceptable,
+because an import that quietly loses half a record looks exactly like one that
+worked.
+
+Concretely, an Observation is refused when it carries no LOINC code we know
+(`"Serum rhubarb" is not a reading we store`), when it has no date, when it has
+no number, when the sender marked it entered-in-error, or when it is a blood
+pressure missing one of its two components — half a blood pressure is not a
+blood pressure.
+
+Units are **kept as sent, never converted**. A weight in pounds stays in pounds
+with a warning, because silently converting is how a number changes without
+anyone deciding to.
+
+### Provenance is mandatory
+
+Every inbound row carries where it came from. Without it an imported record and
+one the patient typed are indistinguishable, and a bad import can never be
+unwound — you would have to ask a person which rows they recognised. `vitals`
+already had `source`/`external_id`/`ehr_connection_id`; `medications` does not
+and will need them before medication import ships.
+
+### Nothing here writes
+
+These are pure functions producing candidate rows, so a person can be shown
+what is about to happen before it does — the same shape as the assistant's
+proposed actions, for the same reason. `summariseImport` deduplicates reasons
+with counts, so five hundred identical failures read as one line and a number.
+
+### The two maps are kept in step by test
+
+`inbound.ts` writes its own code table rather than reversing the outbound one,
+because a reversed lookup would change meaning silently if two vital types ever
+shared a code. The suite round-trips every code and every unit the outbound
+mapper emits, so a code we can write but not read fails there.
+
+## 9. Identity: which of our users is this?
+
+`src/lib/identity-match.ts`. Two ways someone ends up with records waiting for
+them — the clinic added them before they joined, or they joined first and a
+clinic they already attend added them afterwards. Same problem, opposite order.
+
+Before this, matching was an exact email comparison and nothing else, which
+fails on a typo, an old address, or a record that only ever had a phone number.
+
+### The asymmetry that shapes the whole module
+
+A missed match is an inconvenience: somebody does not see their records and
+asks why. **A false match hands one person's medical history to another.**
+Those are not comparable costs, so the module is deliberately reluctant.
+
+| Strength | What it takes | What happens |
+| --- | --- | --- |
+| `exact` | The email matches | Links automatically — but only if it is the *only* exact match |
+| `strong` | Phone, plus name or date of birth | Proposed. Never automatic |
+| `weak` | One non-email signal | Proposed, clearly marked |
+| `none` | — | Not shown |
+
+Name alone is never more than weak. Families share surnames and "John Smith" is
+not an identifier.
+
+Two records sharing an email is a data problem at the clinic, and resolving it
+by picking one would resolve it in the worst possible direction — so neither is
+linked and the person chooses.
+
+### A proposal may not be the leak
+
+The screen that asks "is this you?" shows only what that person supplied —
+name, masked email, masked phone — and nothing clinical. If the answer turns
+out to be no, everything shown has already been shown to the wrong person.
+
+### Deliberately not clever
+
+Normalisation stops short of provider-specific rules. Gmail ignores dots in
+addresses; most domains do not, and applying that everywhere would make
+`a.b@example.com` and `ab@example.com` the same person at a domain where they
+are two people.
+
+### Still to do
+
+Wiring this into the claim flow, and provenance columns on `medications`. The
+matching itself is done and tested, including against two deliberate
+regressions: auto-linking on a strong match, and stripping dots from emails.
