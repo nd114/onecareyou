@@ -309,20 +309,25 @@ const AddMedication = () => {
                   )}
                 </div>
 
-                {/* Time Slots */}
+                {/* Time Slots. A cleared time used to keep showing 09:00 while
+                    the form held nothing, so submit stopped with no visible
+                    reason. An empty box now looks empty and says why. */}
                 {timeSlotsCount > 0 && formData.frequency && (
-                  <div className="space-y-2">
+                  <div className="space-y-2" id="med-times_of_day">
                     <Label>Time Slots</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {Array.from({ length: timeSlotsCount }).map((_, index) => (
                         <Input
                           key={index}
                           type="time"
-                          value={formData.times_of_day[index] || '09:00'}
+                          value={formData.times_of_day[index] ?? ''}
                           onChange={(e) => handleTimeChange(index, e.target.value)}
                         />
                       ))}
                     </div>
+                    {errors.times_of_day && (
+                      <p className="text-sm text-destructive">{errors.times_of_day}</p>
+                    )}
                   </div>
                 )}
 
