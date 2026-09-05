@@ -340,7 +340,7 @@ const HealthVault = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <DocumentCard document={doc} isPremium={isPremium} />
+                  <DocumentCard document={doc} isPremium={isPremium} extraFolders={draftFolders} />
                 </motion.div>
               ))}
             </div>
