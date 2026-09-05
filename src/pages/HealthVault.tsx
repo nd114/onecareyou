@@ -268,7 +268,13 @@ const HealthVault = () => {
             >
               All ({categoryCounts.all || 0})
             </Badge>
-            {DOCUMENT_CATEGORIES.map((cat) => (
+            {/* A filter that finds nothing is not a filter. Twelve chips, five
+                of them "(0)", is a wall to read past on the way to eight
+                documents. The one you are on stays even when it empties, so
+                the row does not shift under your hand. */}
+            {DOCUMENT_CATEGORIES.filter(
+              (cat) => (categoryCounts[cat.value] || 0) > 0 || activeCategory === cat.value,
+            ).map((cat) => (
               <Badge
                 key={cat.value}
                 variant={activeCategory === cat.value ? 'default' : 'outline'}

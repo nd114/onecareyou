@@ -1,10 +1,11 @@
 import { forwardRef, memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { VitalType, resolveVitalConfig } from '@/types/health';
+import { VitalType, resolveVitalConfig, hasNormalRange } from '@/types/health';
 import { TrendingUp, TrendingDown, Minus, LucideIcon } from 'lucide-react';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
+import { vitalStatus } from '@/lib/vital-status';
 
 interface VitalStatsCardProps {
   type: VitalType;
@@ -30,14 +31,11 @@ export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProp
     const normalRange = getNormalRange(type);
     const displayUnit = getDisplayUnit(type);
 
-    const getStatus = (value: number): 'normal' | 'high' | 'low' => {
-      const converted = convertVitalValue(type, value);
-      if (converted.value < normalRange.min) return 'low';
-      if (converted.value > normalRange.max) return 'high';
-      return 'normal';
-    };
-
-    const status = latestVital ? getStatus(latestVital.value) : 'normal';
+    const status = vitalStatus(
+      latestVital ? convertVitalValue(type, latestVital.value).value : null,
+      normalRange,
+      hasNormalRange(type),
+    );
 
     const statusColors = {
       normal: 'bg-status-success/10 text-status-success border-status-success/20',
@@ -51,7 +49,7 @@ export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProp
       low: TrendingDown,
     };
 
-    const StatusIcon = statusIcons[status];
+    const StatusIcon = status ? statusIcons[status] : null;
 
     const formatValue = () => {
       if (!latestVital) return '-';
@@ -75,10 +73,16 @@ export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProp
             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${colorClass}`} />
             </div>
-            <Badge variant="outline" className={`${statusColors[status]} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5`}>
-              <StatusIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-              {status}
-            </Badge>
+            {status && StatusIcon ? (
+              <Badge variant="outline" className={`${statusColors[status]} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5`}>
+                <StatusIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                {status}
+              </Badge>
+            ) : !latestVital ? (
+              <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 text-muted-foreground">
+                No readings
+              </Badge>
+            ) : null}
           </div>
           
           <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{config.label}</p>

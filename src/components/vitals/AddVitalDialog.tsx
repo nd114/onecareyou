@@ -553,8 +553,10 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                     </p>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-4">
+                  {/* Pinned to the bottom of the scrollport: the dialog runs past
+                      the screen once a few measurements are open, and the way
+                      forward should not be the part you go looking for. */}
+                  <div className="flex gap-3 pt-4 sticky bottom-0 -mx-6 -mb-6 border-t bg-background px-6 pb-6 pt-3 shadow-[0_-8px_16px_-16px_rgba(0,0,0,0.4)]">
                     <Button 
                       variant="outline" 
                       className="flex-1" 
@@ -613,7 +615,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                     </CardContent>
                   </Card>
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-3 pt-2 sticky bottom-0 -mx-6 -mb-6 border-t bg-background px-6 pb-6 pt-3 shadow-[0_-8px_16px_-16px_rgba(0,0,0,0.4)]">
                     <Button 
                       variant="outline" 
                       className="flex-1" 
@@ -809,8 +811,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                   )}
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 sticky bottom-0 -mx-6 -mb-6 border-t bg-background px-6 pb-6 pt-3 shadow-[0_-8px_16px_-16px_rgba(0,0,0,0.4)]">
                   <Button 
                     variant="outline" 
                     className="flex-1" 

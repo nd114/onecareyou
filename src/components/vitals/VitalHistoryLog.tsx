@@ -37,9 +37,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, VITAL_CONFIG, hasNormalRange } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
+import { vitalStatus } from '@/lib/vital-status';
 
 interface VitalHistoryLogProps {
   vitals: VitalRecord[];
@@ -193,13 +194,15 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     return getDisplayUnit(vital.type);
   };
 
-  const getStatus = (vital: VitalRecord): 'normal' | 'high' | 'low' => {
-    if (!vital || !vital.type) return 'normal';
-    const normalRange = getNormalRange(vital.type);
-    const converted = convertVitalValue(vital.type, vital.value);
-    if (converted.value < normalRange.min) return 'low';
-    if (converted.value > normalRange.max) return 'high';
-    return 'normal';
+  // Null where there is nothing to claim — a row with no type, or a
+  // measurement with no normal band, such as weight.
+  const getStatus = (vital: VitalRecord) => {
+    if (!vital || !vital.type) return null;
+    return vitalStatus(
+      convertVitalValue(vital.type, vital.value).value,
+      getNormalRange(vital.type),
+      hasNormalRange(vital.type),
+    );
   };
 
   const statusColors = {
@@ -413,9 +416,11 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium">{config.label}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
-                            {status}
-                          </span>
+                          {status && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                              {status}
+                            </span>
+                          )}
                         </div>
                         
                         <p className="text-xl sm:text-2xl font-bold mt-1">
@@ -484,7 +489,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                               return (
                                 <span 
                                   key={v.id} 
-                                  className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}
+                                  className={`px-2 py-0.5 rounded-full text-xs font-medium border ${status ? statusColors[status] : 'bg-muted text-muted-foreground border-border'}`}
                                 >
                                   {VITAL_CONFIG[v.type].label}
                                 </span>
@@ -542,9 +547,11 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                             className="flex items-center justify-between py-2 px-2 sm:px-3 bg-background rounded-lg border gap-2"
                           >
                             <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-                              <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border ${statusColors[status]} flex-shrink-0`}>
-                                {status}
-                              </span>
+                              {status && (
+                                <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border ${statusColors[status]} flex-shrink-0`}>
+                                  {status}
+                                </span>
+                              )}
                               <span className="font-medium text-xs sm:text-sm">{config.label}</span>
                               <span className="text-sm sm:text-lg font-bold">
                                 {formatValue(vital)}

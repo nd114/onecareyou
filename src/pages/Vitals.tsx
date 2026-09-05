@@ -27,6 +27,7 @@ import { EditVitalDialog } from '@/components/vitals/EditVitalDialog';
 import { VitalHistoryLog } from '@/components/vitals/VitalHistoryLog';
 import { ExportDialog } from '@/components/vitals/ExportDialog';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
+import { vitalStatus } from '@/lib/vital-status';
 
 const vitalCards = [
   { type: 'blood_pressure' as VitalType, icon: Heart, color: 'text-rose' },
@@ -217,14 +218,11 @@ const Vitals = () => {
                             const displayUnit = getDisplayUnit(type);
                             const normalRange = getNormalRange(type);
                             
-                            const getStatus = (value: number): 'normal' | 'high' | 'low' => {
-                              const converted = convertVitalValue(type, value);
-                              if (converted.value < normalRange.min) return 'low';
-                              if (converted.value > normalRange.max) return 'high';
-                              return 'normal';
-                            };
-                            
-                            const status = vital ? getStatus(vital.value) : 'normal';
+                            const status = vitalStatus(
+                              vital ? convertVitalValue(type, vital.value).value : null,
+                              normalRange,
+                              hasNormalRange(type),
+                            );
                             
                             const statusColors = {
                               normal: 'bg-status-success/10 text-status-success border-status-success/20',
@@ -264,7 +262,7 @@ const Vitals = () => {
                                         </p>
                                       )}
                                     </div>
-                                    {vital && (
+                                    {status && (
                                       <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium border flex-shrink-0 ${statusColors[status]}`}>
                                         {status}
                                       </span>
