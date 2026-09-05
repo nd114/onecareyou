@@ -93,6 +93,14 @@ export function useEncounters(patientUserId?: string) {
     onSuccess: (enc) => {
       qc.invalidateQueries({ queryKey: ["encounters", enc.patient_user_id] });
     },
+    // A refused update used to fail in silence, which reads as "saved". The
+    // database refuses edits to a signed note on purpose; say so plainly.
+    onError: (e: any) =>
+      toast.error(
+        /signed notes cannot be edited/i.test(e?.message ?? "")
+          ? "This note is signed, so it cannot be edited. Add an addendum instead."
+          : e?.message || "Could not save the encounter",
+      ),
   });
 
   /**

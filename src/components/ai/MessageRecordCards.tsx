@@ -63,12 +63,15 @@ export function MessageRecordCards({ message }: { message: ChatMessage }) {
           );
         }
 
+        const share = patients.find((p) => p.user_id === patient.user_id);
+
         return (
           <RecordCards
             key={i}
             query={query}
             patientUserId={patient.user_id}
             patientName={patient.patient_name ?? undefined}
+            patientHref={share ? `/clinician/patients/${share.invite_code}` : undefined}
           />
         );
       })}
