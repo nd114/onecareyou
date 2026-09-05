@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import kingschatLogo from "@/assets/kingschat-logo.png.asset.json";
+import { safeInternalPath } from "@/lib/safe-path";
 
 interface KingsChatSignInButtonProps {
   label?: string;
@@ -144,7 +145,9 @@ export function KingsChatSignInButton({
             return;
           }
           toast.success("Signed in with KingsChat");
-          navigate(redirectTo ?? "/dashboard", { replace: true });
+          // Safe by construction: every caller passes a literal today, and
+      // nothing here has to stay true for that to remain the case.
+      navigate(safeInternalPath(redirectTo, "/dashboard"), { replace: true });
           return;
         }
         if (result.status === "failed") {

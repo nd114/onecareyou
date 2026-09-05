@@ -17,6 +17,7 @@ import { homeRouteFor } from '@/lib/home-route';
 import { z } from 'zod';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { KingsChatSignInButton } from '@/components/auth/KingsChatSignInButton';
+import { safeInternalPath } from '@/lib/safe-path';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -51,7 +52,12 @@ const SignIn = ({ audience = 'patient' }: { audience?: 'patient' | 'clinician' }
   // easy to miss and gone before you have read it.
   const [formError, setFormError] = useState<string | null>(null);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
+  // Where they were headed before the guard sent them here. It comes from
+  // the URL, so it is not ours to trust — see safeInternalPath.
+  const from = safeInternalPath(
+    (location.state as { from?: { pathname?: unknown } } | null)?.from?.pathname,
+    '',
+  );
 
   // Already signed in? Go where this person belongs. `homeRouteFor` is shared
   // with the root route so the logo and a sign-in redirect cannot disagree:
@@ -102,7 +108,10 @@ const SignIn = ({ audience = 'patient' }: { audience?: 'patient' | 'clinician' }
     }
     
     toast.success('Welcome back!');
-    navigate(from, { replace: true });
+    // Without a remembered destination this used to be navigate(undefined),
+    // which quietly re-navigates to the sign-in page and leaves the effect
+    // above to do the real work a render later.
+    navigate(from || homeRouteFor({ isAdmin, isTenantAdmin, isClinician }), { replace: true });
   };
 
   if (authLoading || clinicianLoading) {

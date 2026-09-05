@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
+import { safeInternalPath } from "@/lib/safe-path";
 
 interface GoogleSignInButtonProps {
   label?: string;
@@ -37,7 +38,9 @@ export function GoogleSignInButton({
 
       // Popup flow: session already set
       toast.success("Signed in with Google");
-      navigate(redirectTo ?? "/dashboard", { replace: true });
+      // Safe by construction: every caller passes a literal today, and
+      // nothing here has to stay true for that to remain the case.
+      navigate(safeInternalPath(redirectTo, "/dashboard"), { replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
       setLoading(false);
