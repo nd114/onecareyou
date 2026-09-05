@@ -230,9 +230,9 @@ const Pricing = () => {
                         {feature.included ? (
                           <Check className="h-5 w-5 text-primary flex-shrink-0" />
                         ) : (
-                          <X className="h-5 w-5 text-muted-foreground/50 flex-shrink-0" />
+                          <X className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                         )}
-                        <span className={`text-sm ${!feature.included ? 'text-muted-foreground/50' : ''}`}>
+                        <span className={`text-sm ${!feature.included ? 'text-muted-foreground line-through' : ''}`}>
                           {feature.text}
                         </span>
                       </li>
@@ -293,9 +293,9 @@ const Pricing = () => {
                         {feature.included ? (
                           <Check className="h-5 w-5 text-primary flex-shrink-0" />
                         ) : (
-                          <X className="h-5 w-5 text-muted-foreground/50 flex-shrink-0" />
+                          <X className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                         )}
-                        <span className={`text-sm ${!feature.included ? 'text-muted-foreground/50' : ''}`}>
+                        <span className={`text-sm ${!feature.included ? 'text-muted-foreground line-through' : ''}`}>
                           {feature.text}
                         </span>
                       </li>

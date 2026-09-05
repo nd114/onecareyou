@@ -190,6 +190,15 @@ export const VITAL_CONFIG: Record<
     category: string;
     normalMin: number;
     normalMax: number;
+    /**
+     * There is no normal band for this measurement that means anything
+     * without knowing the person. Weight is the obvious one: healthy is
+     * 48kg for one adult and 95kg for another. The min/max stay as the
+     * widest plausible values so range checks keep working and nothing is
+     * ever flagged, but no screen should print them — "Normal: 0-999" tells
+     * the reader nothing and reads like a bug, because it is one.
+     */
+    openEnded?: boolean;
     secondaryLabel?: string;
     alternativeUnits?: string[];
   }
@@ -200,6 +209,7 @@ export const VITAL_CONFIG: Record<
     category: "Daily Vitals",
     normalMin: 0,
     normalMax: 999,
+    openEnded: true,
     alternativeUnits: ["lbs"],
   },
   blood_pressure: {
@@ -331,4 +341,15 @@ export function resolveVitalConfig(type: string) {
       normalMax: 0,
     }
   );
+}
+
+/**
+ * Is there a normal band worth showing for this measurement?
+ *
+ * False for the open-ended ones. Everything that draws a band, a reference
+ * line or the words "Normal:" asks this first.
+ */
+export function hasNormalRange(type: string): boolean {
+  const config = resolveVitalConfig(type);
+  return !("openEnded" in config && config.openEnded);
 }

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, VITAL_CONFIG, hasNormalRange } from '@/types/health';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, Upload, FileText, Check, X, Loader2, Shield, Lock, FolderOpen } from 'lucide-react';
@@ -23,6 +23,7 @@ import { performLocalOCR, isOCRSupported, requiresServerProcessing, type OCRProg
 import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 import { Progress } from '@/components/ui/progress';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
+import { vitalPlaceholder } from '@/lib/vital-placeholder';
 
 interface AddVitalDialogProps {
   open: boolean;
@@ -510,7 +511,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                                   id={type}
                                   type="number"
                                   step="0.1"
-                                  placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${normalRange.min}-${normalRange.max}`}
+                                  placeholder={vitalPlaceholder(type, hasBPSecondary, normalRange)}
                                   value={values[type] || ''}
                                   onChange={(e) => setValues({ ...values, [type]: e.target.value })}
                                   className="flex-1"
@@ -526,7 +527,9 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                Normal range: {normalRange.min}–{normalRange.max} {normalRange.unit}
+                                {hasNormalRange(type)
+                                  ? `Normal range: ${normalRange.min}–${normalRange.max} ${normalRange.unit}`
+                                  : `Measured in ${normalRange.unit}`}
                               </p>
                             </div>
                           );

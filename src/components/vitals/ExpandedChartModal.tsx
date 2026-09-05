@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { VitalType, resolveVitalConfig } from '@/types/health';
+import { VitalType, resolveVitalConfig, hasNormalRange } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { format } from 'date-fns';
@@ -22,6 +22,7 @@ export function ExpandedChartModal({ open, onOpenChange, type, data, title }: Ex
 
   const displayUnit = getDisplayUnit(type);
   const normalRange = getNormalRange(type);
+  const showNormalRange = hasNormalRange(type);
 
   const chartData = useMemo(() => {
     return data.map(v => {
@@ -175,18 +176,22 @@ export function ExpandedChartModal({ open, onOpenChange, type, data, title }: Ex
                       }}
                     />
                   )}
-                  <ReferenceLine 
-                    y={normalRange.max} 
-                    stroke="hsl(var(--severity-high))" 
-                    strokeDasharray="5 5" 
-                    label={{ value: `High (${normalRange.max})`, position: 'right', fontSize: 11, fill: 'hsl(var(--severity-high))' }}
-                  />
-                  <ReferenceLine 
-                    y={normalRange.min} 
-                    stroke="hsl(var(--ocean))" 
-                    strokeDasharray="5 5" 
-                    label={{ value: `Low (${normalRange.min})`, position: 'right', fontSize: 11, fill: 'hsl(var(--ocean))' }}
-                  />
+                  {showNormalRange && (
+                    <ReferenceLine
+                      y={normalRange.max}
+                      stroke="hsl(var(--severity-high))"
+                      strokeDasharray="5 5"
+                      label={{ value: `High (${normalRange.max})`, position: 'right', fontSize: 11, fill: 'hsl(var(--severity-high))' }}
+                    />
+                  )}
+                  {showNormalRange && (
+                    <ReferenceLine
+                      y={normalRange.min}
+                      stroke="hsl(var(--ocean))"
+                      strokeDasharray="5 5"
+                      label={{ value: `Low (${normalRange.min})`, position: 'right', fontSize: 11, fill: 'hsl(var(--ocean))' }}
+                    />
+                  )}
                   <Line 
                     type="monotone" 
                     dataKey="value" 
@@ -210,14 +215,17 @@ export function ExpandedChartModal({ open, onOpenChange, type, data, title }: Ex
               </ResponsiveContainer>
             </div>
 
-            {/* Normal Range Info */}
-            <div className="flex items-center justify-center text-sm text-muted-foreground bg-muted/30 rounded-lg py-3">
-              {isBloodPressure ? (
-                <span>Normal Range: Systolic 90–120 {displayUnit}, Diastolic 60–80 {displayUnit}</span>
-              ) : (
-                <span>Normal Range: {normalRange.min}–{normalRange.max} {displayUnit}</span>
-              )}
-            </div>
+            {/* Normal Range Info. Skipped for the measurements that have no
+                normal band worth printing — see hasNormalRange. */}
+            {(isBloodPressure || showNormalRange) && (
+              <div className="flex items-center justify-center text-sm text-muted-foreground bg-muted/30 rounded-lg py-3">
+                {isBloodPressure ? (
+                  <span>Normal Range: Systolic 90–120 {displayUnit}, Diastolic 60–80 {displayUnit}</span>
+                ) : (
+                  <span>Normal Range: {normalRange.min}–{normalRange.max} {displayUnit}</span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

@@ -326,7 +326,7 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
                   </Button>
                 )}
                 {draft.mentioned_medications?.length ? (
-                  <div className="text-[10px] text-muted-foreground/80 pl-6">
+                  <div className="text-[11px] text-muted-foreground pl-6">
                     Medications are not written from here — change them on the patient's list.
                   </div>
                 ) : null}

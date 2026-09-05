@@ -323,7 +323,7 @@ export default function BetaBooking() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-foreground/50 mt-3">Times shown in {timeZone}.</p>
+              <p className="text-xs text-muted-foreground mt-3">Times shown in {timeZone}.</p>
             </>
           )}
         </section>
@@ -456,7 +456,7 @@ export default function BetaBooking() {
                 </span>
               </label>
 
-              <p className="flex items-center gap-2 text-xs text-foreground/50">
+              <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Lock className="h-3 w-3" />
                 Your slot is not confirmed until this is signed.
               </p>

@@ -148,9 +148,9 @@ export function Header() {
   };
 
   return (
-    <header className="safe-top sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-hidden">
+    <header className="safe-top sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {isAuthenticated && !isClinician && <OfflineBanner />}
-      <div className="container max-w-screen-2xl grid h-16 items-center gap-3 lg:gap-5 grid-cols-[auto_1fr_auto]">
+      <div className="container max-w-screen-2xl grid h-16 items-center gap-3 lg:gap-5 grid-cols-[auto_1fr_auto] overflow-x-hidden">
         {/* Logo - sized to content so it never gets clipped */}
         <div className="flex justify-start shrink-0">
           <Link
@@ -423,12 +423,26 @@ export function Header() {
       </div>
 
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu.
+
+          It used to sit in the header's flow, so opening it shoved the page
+          down and closing it snapped it back — a menu that moves the thing you
+          are reading. It hangs below the header now and the page stays put. */}
       {mobileMenuOpen && (
+        <>
+          {/* Tap anywhere else to put it away. */}
+          <div
+            /* Absolute, not fixed: a fixed box resolves top:100% against the
+               viewport and lands off-screen. This hangs off the header, so it
+               covers the page and leaves the close button reachable. */
+            className="lg:hidden absolute inset-x-0 top-full h-screen bg-foreground/10"
+            aria-hidden
+            onClick={() => setMobileMenuOpen(false)}
+          />
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:hidden border-t border-border bg-background"
+          className="lg:hidden absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border bg-background shadow-lg"
         >
 
           <nav className="container py-4 flex flex-col gap-1">
@@ -576,6 +590,7 @@ export function Header() {
             )}
           </nav>
         </motion.div>
+        </>
       )}
     </header>
   );

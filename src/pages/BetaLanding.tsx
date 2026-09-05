@@ -90,7 +90,7 @@ export default function BetaLanding() {
             {BRAND.name}
           </Link>
           <div className="flex items-center gap-2">
-            <span className="eyebrow text-foreground/50 hidden sm:inline">Beta programme</span>
+            <span className="eyebrow text-muted-foreground hidden sm:inline">Beta programme</span>
             <ThemeToggle />
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function BetaLanding() {
           </a>
         </div>
 
-        <p className="mt-4 text-xs text-foreground/55">
+        <p className="mt-4 text-xs text-muted-foreground">
           No cost to take part. {BETA.callLengthMinutes}-minute onboarding call. A
           mutual NDA is signed before access is granted.
         </p>
@@ -161,7 +161,7 @@ export default function BetaLanding() {
             return (
               <div key={a.eyebrow} className="bg-background p-6">
                 <Icon className="h-5 w-5 text-[hsl(var(--gold))] mb-4" strokeWidth={1.75} />
-                <div className="eyebrow text-foreground/50 mb-2">{a.eyebrow}</div>
+                <div className="eyebrow text-muted-foreground mb-2">{a.eyebrow}</div>
                 <h2 className="font-serif-display text-lg font-bold text-primary mb-3">
                   {a.title}
                 </h2>
@@ -258,7 +258,7 @@ export default function BetaLanding() {
       </section>
 
       <footer className="border-t border-primary/10">
-        <div className="mx-auto max-w-3xl px-6 py-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-foreground/55">
+        <div className="mx-auto max-w-3xl px-6 py-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
           <span>
             © {new Date().getFullYear()} {BRAND.name}
           </span>

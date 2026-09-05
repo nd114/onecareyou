@@ -35,6 +35,7 @@ import { grantsPermission } from '@/lib/fhir/access-policy';
 import { useProviderShares, useShareEvents } from '@/hooks/useProviderShares';
 import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
 import { InstitutionCareTeamCard } from '@/components/patient/InstitutionCareTeamCard';
+import { useInstitutionCareTeam } from '@/hooks/useInstitutionCareTeam';
 import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
 import { Loader2 } from 'lucide-react';
 import {
@@ -66,6 +67,12 @@ const CareCircle = () => {
   const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
   const { data: shareEvents = [] } = useShareEvents();
   const { generate: generateCareRecord } = useCareRecordSnapshot();
+  // The hospital care-team card renders nothing until a hospital has
+  // actually put someone on the record, so the sentence below must not
+  // promise a list that is not there.
+  const { byPractice: institutionCareTeam } = useInstitutionCareTeam();
+  const hasInstitutionCareTeam = institutionCareTeam.length > 0;
+
   const activeShares = shares.filter((s) => s.is_active);
   const pastShares = shares.filter((s) => !s.is_active);
 
@@ -307,7 +314,11 @@ const CareCircle = () => {
           <Panel>
             <PanelHeader
               eyebrow="Doctors you invited"
-              description="Clinicians you shared with directly. Staff added by a hospital are listed separately above."
+              description={
+                hasInstitutionCareTeam
+                  ? 'Clinicians you shared with directly. Staff added by a hospital are listed separately above.'
+                  : 'Clinicians you shared with directly.'
+              }
             />
 
             {isLoading ? (

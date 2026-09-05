@@ -188,7 +188,7 @@ PanelRow.displayName = "PanelRow";
  */
 const GLYPH_TONES = {
   active: "bg-[hsl(var(--emerald-light))] text-primary",
-  muted: "bg-muted text-foreground/35",
+  muted: "bg-muted text-muted-foreground",
   attention: "bg-[hsl(var(--gold-light))] text-[hsl(var(--accent-foreground))]",
   alert: "bg-destructive/12 text-destructive",
 } as const;

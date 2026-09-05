@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, VITAL_CONFIG, hasNormalRange } from '@/types/health';
 import { useVitals, VitalRecord } from '@/hooks/useVitals';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
 import { VitalStatsCard } from '@/components/vitals/VitalStatsCard';
@@ -253,9 +253,11 @@ const Vitals = () => {
                                           {displayUnit}
                                         </span>
                                       </p>
-                                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                                        Normal: {Math.round(normalRange.min * 10) / 10}-{Math.round(normalRange.max * 10) / 10}
-                                      </p>
+                                      {hasNormalRange(type) && (
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                                          Normal: {Math.round(normalRange.min * 10) / 10}-{Math.round(normalRange.max * 10) / 10}
+                                        </p>
+                                      )}
                                       {stats && stats.count > 0 && (
                                         <p className="text-[10px] sm:text-xs text-muted-foreground">
                                           {stats.count} readings

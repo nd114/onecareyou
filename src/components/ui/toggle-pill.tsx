@@ -39,7 +39,7 @@ const TogglePill = React.forwardRef<HTMLButtonElement, TogglePillProps>(
         "disabled:cursor-not-allowed disabled:opacity-50",
         pressed
           ? "border-primary/30 bg-primary text-primary-foreground"
-          : "border-primary/20 text-foreground/55 hover:border-primary/40",
+          : "border-primary/20 text-foreground/80 hover:border-primary/40",
         className,
       )}
       {...props}
@@ -51,7 +51,7 @@ const TogglePill = React.forwardRef<HTMLButtonElement, TogglePillProps>(
           <span
             className={cn(
               "ml-1.5 font-normal",
-              pressed ? "text-primary-foreground/70" : "text-foreground/40",
+              pressed ? "text-primary-foreground/80" : "text-muted-foreground",
             )}
           >
             {meta}

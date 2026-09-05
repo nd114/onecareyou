@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { VitalType, resolveVitalConfig, resolveVitalType } from '@/types/health';
+import { VitalType, resolveVitalConfig, resolveVitalType, hasNormalRange } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { format } from 'date-fns';
@@ -24,6 +24,7 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
 
   const displayUnit = getDisplayUnit(resolvedType);
   const normalRange = getNormalRange(resolvedType);
+  const showNormalRange = hasNormalRange(resolvedType);
 
   const chartData = useMemo(() => {
     return data.map(v => {
@@ -118,18 +119,22 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
                     }}
                   />
                 )}
-                <ReferenceLine 
-                  y={normalRange.max} 
-                  stroke="hsl(var(--severity-high))" 
-                  strokeDasharray="5 5" 
-                  label={{ value: 'High', position: 'right', fontSize: 9, fill: 'hsl(var(--severity-high))' }}
-                />
-                <ReferenceLine 
-                  y={normalRange.min} 
-                  stroke="hsl(var(--ocean))" 
-                  strokeDasharray="5 5" 
-                  label={{ value: 'Low', position: 'right', fontSize: 9, fill: 'hsl(var(--ocean))' }}
-                />
+                {showNormalRange && (
+                  <ReferenceLine
+                    y={normalRange.max}
+                    stroke="hsl(var(--severity-high))"
+                    strokeDasharray="5 5"
+                    label={{ value: 'High', position: 'right', fontSize: 9, fill: 'hsl(var(--severity-high))' }}
+                  />
+                )}
+                {showNormalRange && (
+                  <ReferenceLine
+                    y={normalRange.min}
+                    stroke="hsl(var(--ocean))"
+                    strokeDasharray="5 5"
+                    label={{ value: 'Low', position: 'right', fontSize: 9, fill: 'hsl(var(--ocean))' }}
+                  />
+                )}
                 <Line 
                   type="monotone" 
                   dataKey="value" 
@@ -156,8 +161,12 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
             <span>
               {isBloodPressure ? (
                 <>Normal: SYS 90–120, DIA 60–80 {displayUnit}</>
-              ) : (
+              ) : showNormalRange ? (
                 <>Normal: {normalRange.min}–{normalRange.max} {displayUnit}</>
+              ) : (
+                /* Weight has no normal band that means anything without
+                   knowing the person. Say what the chart is instead. */
+                <>Your readings in {displayUnit}</>
               )}
             </span>
             <span className="opacity-0 group-hover:opacity-100 transition-opacity text-primary font-medium">

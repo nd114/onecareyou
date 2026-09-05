@@ -47,7 +47,7 @@ export default function BetaNDA() {
           {NDA_TITLE}
         </h1>
         <NdaBody />
-        <p className="text-xs text-foreground/50 mt-10">
+        <p className="text-xs text-muted-foreground mt-10">
           Questions about this agreement: legal@onecare.you
         </p>
       </div>

@@ -123,7 +123,7 @@ export function ConversationList({
           )}
         </div>
         {thread && c.caption && (
-          <div className="text-[10px] text-muted-foreground/80 mt-0.5">{c.caption}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">{c.caption}</div>
         )}
       </button>
     );

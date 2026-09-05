@@ -9,9 +9,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, VITAL_CONFIG, hasNormalRange } from '@/types/health';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
+import { vitalPlaceholder } from '@/lib/vital-placeholder';
 
 interface EditVitalDialogProps {
   open: boolean;
@@ -163,7 +164,7 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
                 id="editValue"
                 type="number"
                 step="0.1"
-                placeholder={hasBPSecondary ? "Systolic (e.g., 120)" : `e.g., ${normalRange.min}-${normalRange.max}`}
+                placeholder={vitalPlaceholder(vital.type, hasBPSecondary, normalRange)}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 className="flex-1"
@@ -179,7 +180,9 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Normal range: {normalRange.min}–{normalRange.max} {normalRange.unit}
+              {hasNormalRange(vital.type)
+                ? `Normal range: ${normalRange.min}–${normalRange.max} ${normalRange.unit}`
+                : `Measured in ${normalRange.unit}`}
             </p>
           </div>
 
