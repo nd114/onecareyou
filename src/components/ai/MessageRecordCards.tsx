@@ -18,6 +18,9 @@ import type { ChatMessage } from "@/hooks/useAIChat";
  */
 export function MessageRecordCards({ message }: { message: ChatMessage }) {
   const { records } = useClinicianPatientRecords();
+  // The chart page is addressed by the share's invite code, not the account id,
+  // so "Open full record" needs the same list the patient page resolves against.
+  const { patients } = useClinicianPatients();
   const queries = message.recordQueries;
 
   if (!queries || queries.length === 0) return null;
