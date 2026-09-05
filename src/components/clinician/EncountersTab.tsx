@@ -54,6 +54,8 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
   const [shareOnSign, setShareOnSign] = useState(true);
   const [bookFollowUp, setBookFollowUp] = useState(true);
   const { schedule } = useAppointments(patientUserId);
+  /** Opened a signed note: read the record, do not pretend it can be rewritten. */
+  const isLocked = !!active?.signed_at;
 
   // Which of these encounters began as a dictation. A dictation row is
   // readable only by the clinician who recorded it, so a colleague simply gets
@@ -106,6 +108,20 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
   };
 
   const handleSave = async () => {
+    // Signed notes are final in the database. The only field it still accepts
+    // is the follow-up interval, so that is the only thing sent — anything else
+    // would be refused and read to the clinician as a save that vanished.
+    if (active?.signed_at) {
+      await update.mutateAsync({
+        id: active.id,
+        follow_up_in_days: draft.follow_up_in_days ? Number(draft.follow_up_in_days) : null,
+      });
+      setOpen(false);
+      setActive(null);
+      resetDraft();
+      return;
+    }
+
     const payload: any = {
       patient_user_id: patientUserId,
       visit_type: draft.visit_type,
@@ -216,13 +232,30 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{active ? "Edit encounter" : "New encounter"}</DialogTitle>
+              <DialogTitle>
+                {isLocked ? "Visit note" : active ? "Edit encounter" : "New encounter"}
+              </DialogTitle>
             </DialogHeader>
+            {/* A signed note is final in the database, so it must read as final
+                here too — otherwise a correction is typed into fields that can
+                never accept it. The follow-up interval stays editable because
+                it is the one thing signing does not freeze. */}
+            {isLocked && (
+              <p className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                Signed on {active?.signed_at ? format(new Date(active.signed_at), "PP") : "record"} —
+                the note itself can no longer be changed. Add a dated addendum on the encounter
+                instead.
+              </p>
+            )}
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Visit type</Label>
-                  <Select value={draft.visit_type} onValueChange={(v) => setDraft({ ...draft, visit_type: v })}>
+                  <Select
+                    value={draft.visit_type}
+                    disabled={isLocked}
+                    onValueChange={(v) => setDraft({ ...draft, visit_type: v })}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {VISIT_TYPES.map((v) => (
@@ -231,7 +264,7 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                {templates.length > 0 && (
+                {!isLocked && templates.length > 0 && (
                   <div>
                     <Label>Apply template</Label>
                     <Select onValueChange={applyTemplate}>
@@ -247,7 +280,12 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
               </div>
               <div>
                 <Label>Chief complaint</Label>
-                <Input value={draft.chief_complaint} onChange={(e) => setDraft({ ...draft, chief_complaint: e.target.value })} />
+                <Input
+                  value={draft.chief_complaint}
+                  readOnly={isLocked}
+                  className={isLocked ? "bg-muted/50" : undefined}
+                  onChange={(e) => setDraft({ ...draft, chief_complaint: e.target.value })}
+                />
               </div>
               {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
                 <div key={k}>
@@ -255,6 +293,8 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                   <Textarea
                     rows={3}
                     value={(draft as any)[k]}
+                    readOnly={isLocked}
+                    className={isLocked ? "bg-muted/50" : undefined}
                     onChange={(e) => setDraft({ ...draft, [k]: e.target.value })}
                   />
                 </div>
@@ -269,10 +309,12 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setOpen(false)}>
+                {isLocked ? "Close" : "Cancel"}
+              </Button>
               <Button onClick={handleSave} disabled={create.isPending || update.isPending}>
                 {(create.isPending || update.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {active ? "Save changes" : "Start encounter"}
+                {isLocked ? "Save follow-up" : active ? "Save changes" : "Start encounter"}
               </Button>
             </DialogFooter>
           </DialogContent>

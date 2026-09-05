@@ -27,10 +27,19 @@ export function TenantSignInForm({
   brandColor,
   idPrefix = 'tenant',
   footer,
+  onSignedIn,
+  successMessage = 'Welcome back',
 }: {
   brandColor?: string;
   idPrefix?: string;
   footer?: ReactNode;
+  /**
+   * Somewhere the page itself has the next step — a hospital's staff page has a
+   * "join this hospital" card waiting behind sign-in. Leaving for a dashboard
+   * would make that step unreachable, so the page can keep the person here.
+   */
+  onSignedIn?: () => void;
+  successMessage?: string;
 }) {
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -70,8 +79,15 @@ export function TenantSignInForm({
       return;
     }
 
+    toast.success(successMessage);
+
+    if (onSignedIn) {
+      setSubmitting(false);
+      onSignedIn();
+      return;
+    }
+
     const destination = await resolveSignedInDestination();
-    toast.success('Welcome back');
     navigate(destination, { replace: true });
   };
 

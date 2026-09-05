@@ -43,11 +43,20 @@ import { useDocumentShares } from '@/hooks/useDocumentShares';
 interface DocumentCardProps {
   document: HealthDocument;
   isPremium?: boolean;
+  /**
+   * Folder names that exist but hold nothing yet. Folders are derived from the
+   * documents in them, so a freshly named one is invisible here — and then the
+   * only way to fill it is missing from this menu.
+   */
+  extraFolders?: string[];
 }
 
-export function DocumentCard({ document: doc, isPremium = false }: DocumentCardProps) {
-  const { archiveDocument, restoreDocument, getDownloadUrl, triggerSummarize, folders, moveToFolder } =
+export function DocumentCard({ document: doc, isPremium = false, extraFolders = [] }: DocumentCardProps) {
+  const { archiveDocument, restoreDocument, getDownloadUrl, triggerSummarize, folders: usedFolders, moveToFolder } =
     useHealthDocuments();
+  const folders = [...usedFolders, ...extraFolders.filter((f) => !usedFolders.includes(f))].sort(
+    (a, b) => a.localeCompare(b),
+  );
   // The page decides whether archived documents are shown at all; the card
   // only has to offer the right action.
   const isArchived = Boolean(doc.archived_at);

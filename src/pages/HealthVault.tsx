@@ -40,7 +40,18 @@ import {
 
 const HealthVault = () => {
   const { profile } = useAuth();
-  const { documents, folders, isLoading } = useHealthDocuments();
+  const { documents, folders: usedFolders, isLoading } = useHealthDocuments();
+  // A folder is only a label on documents, so an empty one does not exist yet.
+  // Names created here are remembered for this visit so they can be selected,
+  // filed into and seen — instead of vanishing the moment they are made.
+  const [draftFolders, setDraftFolders] = useState<string[]>([]);
+  const folders = useMemo(
+    () =>
+      [...usedFolders, ...draftFolders.filter((f) => !usedFolders.includes(f))].sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [usedFolders, draftFolders],
+  );
   const { checkSubscription, isPremium } = useSubscription();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory | 'all'>('all');
@@ -299,7 +310,9 @@ const HealthVault = () => {
                   ? 'Nothing archived'
                   : documents.length === 0
                     ? 'No documents yet'
-                    : 'No documents match your search'}
+                    : draftFolders.includes(activeFolder)
+                      ? `"${activeFolder}" is empty`
+                      : 'No documents match your search'}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 {vaultSuggestion ? (
@@ -316,6 +329,8 @@ const HealthVault = () => {
                   </>
                 ) : documents.length === 0 ? (
                   'Upload prescriptions, lab results, discharge summaries, and other health documents to keep them organized and accessible.'
+                ) : draftFolders.includes(activeFolder) ? (
+                  'Choose "All documents", then use the folder icon on any document to file it in here. Upload straight into it with the Upload button.'
                 ) : (
                   'Try adjusting your search terms or category filter.'
                 )}
@@ -329,7 +344,7 @@ const HealthVault = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <DocumentCard document={doc} isPremium={isPremium} />
+                  <DocumentCard document={doc} isPremium={isPremium} extraFolders={draftFolders} />
                 </motion.div>
               ))}
             </div>
@@ -344,7 +359,8 @@ const HealthVault = () => {
           <DialogHeader>
             <DialogTitle>New folder</DialogTitle>
             <DialogDescription>
-              Name it, then move documents into it from each document's menu.
+              Name it, then use the folder icon on any document to file it here. An empty folder
+              disappears again, so file something into it to keep it.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -356,10 +372,11 @@ const HealthVault = () => {
                 toast.error('You already have a folder with that name');
                 return;
               }
+              setDraftFolders((prev) => [...prev, name]);
               setActiveFolder(name);
               setShowNewFolder(false);
               setNewFolderName('');
-              toast.success(`"${name}" is ready — move documents into it to fill it`);
+              toast.success(`"${name}" is ready — file documents into it to keep it`);
             }}
             className="space-y-4"
           >
