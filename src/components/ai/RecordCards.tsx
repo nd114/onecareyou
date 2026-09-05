@@ -106,9 +106,9 @@ export function RecordCards({ query, patientUserId, patientName, patientHref }: 
         <RecordRow key={row.id ?? i} kind={query.kind} row={row} />
       ))}
 
-      {patientUserId && (
+      {patientHref && (
         <Button asChild variant="ghost" size="sm" className="h-7 text-xs gap-1">
-          <Link to={`/clinician/patients/${patientUserId}`}>
+          <Link to={patientHref}>
             Open full record <ExternalLink className="h-3 w-3" />
           </Link>
         </Button>
