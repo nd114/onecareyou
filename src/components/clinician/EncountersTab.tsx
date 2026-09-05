@@ -106,6 +106,20 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
   };
 
   const handleSave = async () => {
+    // Signed notes are final in the database. The only field it still accepts
+    // is the follow-up interval, so that is the only thing sent — anything else
+    // would be refused and read to the clinician as a save that vanished.
+    if (active?.signed_at) {
+      await update.mutateAsync({
+        id: active.id,
+        follow_up_in_days: draft.follow_up_in_days ? Number(draft.follow_up_in_days) : null,
+      });
+      setOpen(false);
+      setActive(null);
+      resetDraft();
+      return;
+    }
+
     const payload: any = {
       patient_user_id: patientUserId,
       visit_type: draft.visit_type,
