@@ -23,7 +23,17 @@ const signInSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-const SignIn = () => {
+/**
+ * One sign-in form, two doors.
+ *
+ * /clinician/sign-in fell through to this page unchanged off a hospital host,
+ * so a doctor arriving at the clinician door was told to "sign in to access
+ * your health dashboard" and offered a patient sign-up underneath. The
+ * credentials and the destination are the same either way — the account
+ * decides where you land — but the words should match the door you came in.
+ */
+const SignIn = ({ audience = 'patient' }: { audience?: 'patient' | 'clinician' } = {}) => {
+  const forClinicians = audience === 'clinician';
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, user, loading: authLoading } = useAuth();
@@ -113,8 +123,12 @@ const SignIn = () => {
 
       <SEOHead
         title="Sign In"
-        description="Sign in to your OneCare account to access your health dashboard, medications, vitals, and care team."
-        canonical="/sign-in"
+        description={
+          forClinicians
+            ? 'Sign in to OneCare to see your patients, their alerts and your practice.'
+            : 'Sign in to your OneCare account to access your health dashboard, medications, vitals, and care team.'
+        }
+        canonical={forClinicians ? '/clinician/sign-in' : '/sign-in'}
       />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -133,7 +147,9 @@ const SignIn = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription>
-              Sign in to access your health dashboard
+              {forClinicians
+                ? 'Sign in to your patients, alerts and practice'
+                : 'Sign in to access your health dashboard'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -234,17 +250,32 @@ const SignIn = () => {
             <div className="mt-6 text-center space-y-3">
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
-                <Link to="/sign-up" className="text-primary font-medium hover:underline">
-                  Sign up
+                <Link
+                  to={forClinicians ? '/clinician/sign-up' : '/sign-up'}
+                  className="text-primary font-medium hover:underline"
+                >
+                  {forClinicians ? 'Register your practice' : 'Sign up'}
                 </Link>
               </p>
-              
+
               <div className="flex items-center gap-2 justify-center text-sm">
-                <Stethoscope className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Healthcare provider?</span>
-                <Link to="/clinician/sign-up" className="text-primary font-medium hover:underline">
-                  Register here
-                </Link>
+                {forClinicians ? (
+                  <>
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Here for your own record?</span>
+                    <Link to="/sign-up" className="text-primary font-medium hover:underline">
+                      Start here
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Healthcare provider?</span>
+                    <Link to="/clinician/sign-up" className="text-primary font-medium hover:underline">
+                      Register here
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>

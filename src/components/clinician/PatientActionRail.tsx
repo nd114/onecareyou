@@ -1,23 +1,31 @@
-// Phase 4.1 — Persistent action rail for patient detail.
-// Sticky right-column shortcuts for the most frequent clinician actions.
 import { useState } from "react";
-import { Send, Bell, MessageSquare, FileSignature, Network, ClipboardList, Activity, Share2, StickyNote } from "lucide-react";
+import { ClipboardList, FileSignature, Share2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreateGuidanceDialog } from "@/components/clinician/CreateGuidanceDialog";
-import { CreateAlertRuleDialog } from "@/components/clinician/CreateAlertRuleDialog";
 import { CreateTaskDialog } from "@/components/clinician/CreateTaskDialog";
 import { ReferralDialog } from "@/components/clinician/ReferralDialog";
 
 interface Props {
-  patientId: string;
   patientUserId: string;
-  patientName: string;
   onTabChange?: (tab: string) => void;
 }
 
-export function PatientActionRail({ patientId, patientUserId, patientName, onTabChange }: Props) {
-  const stub = { id: patientId, user_id: patientUserId, patient_name: patientName };
+/**
+ * The things you do to a patient's record that are not already a tab.
+ *
+ * This rail used to carry nine buttons. Two of them — send guidance, set an
+ * alert — were the same two buttons sitting in the page header a few
+ * centimetres above, and four more only switched to a tab that was already on
+ * screen. A shortcut to something you can see is not a shortcut; it is a
+ * second name for the same control, and it made the page look like it had
+ * twenty-four things to do rather than fifteen places to look and a handful
+ * of actions.
+ *
+ * What is left starts something: an encounter, a task, a referral. Guidance
+ * and alerts stay in the header, which is where they are on every width —
+ * this rail only appears from lg up.
+ */
+export function PatientActionRail({ patientUserId, onTabChange }: Props) {
   const [taskOpen, setTaskOpen] = useState(false);
 
   return (
@@ -34,32 +42,6 @@ export function PatientActionRail({ patientId, patientUserId, patientName, onTab
         >
           <FileSignature className="h-4 w-4 mr-2" /> Start encounter
         </Button>
-        <CreateGuidanceDialog
-          patients={[stub]}
-          selectedPatientId={patientUserId}
-          trigger={
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              <Send className="h-4 w-4 mr-2" /> Send guidance
-            </Button>
-          }
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start"
-          onClick={() => onTabChange?.("messages")}
-        >
-          <MessageSquare className="h-4 w-4 mr-2" /> Message
-        </Button>
-        <CreateAlertRuleDialog
-          patients={[stub]}
-          selectedPatientId={patientUserId}
-          trigger={
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-              <Bell className="h-4 w-4 mr-2" /> Set alert
-            </Button>
-          }
-        />
         <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setTaskOpen(true)}>
           <ClipboardList className="h-4 w-4 mr-2" /> Add task
         </Button>
@@ -72,30 +54,6 @@ export function PatientActionRail({ patientId, patientUserId, patientName, onTab
             </Button>
           }
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start"
-          onClick={() => onTabChange?.("internal")}
-        >
-          <StickyNote className="h-4 w-4 mr-2" /> Internal note
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start"
-          onClick={() => onTabChange?.("network")}
-        >
-          <Network className="h-4 w-4 mr-2" /> Network records
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start"
-          onClick={() => onTabChange?.("activity")}
-        >
-          <Activity className="h-4 w-4 mr-2" /> Activity log
-        </Button>
       </CardContent>
     </Card>
   );

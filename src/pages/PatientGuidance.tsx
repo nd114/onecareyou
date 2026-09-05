@@ -210,10 +210,10 @@ const PatientGuidance = () => {
           className="mb-6 sm:mb-8"
         >
           <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-            Healthcare Instructions
+            Instructions
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            View and manage guidance from your healthcare providers
+            What your clinicians have asked you to do, and what you have done about it.
           </p>
         </motion.div>
 

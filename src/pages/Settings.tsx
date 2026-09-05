@@ -429,7 +429,7 @@ const Settings = () => {
                   {(profile as any)?.gender && (
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Gender</p>
-                      <p className="text-sm font-medium">{(profile as any).gender}</p>
+                      <p className="text-sm font-medium capitalize">{(profile as any).gender}</p>
                     </div>
                   )}
                   {(profile as any)?.blood_type && (

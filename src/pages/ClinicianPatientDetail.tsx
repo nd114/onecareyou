@@ -814,12 +814,7 @@ const ClinicianPatientDetail = () => {
           </Tabs>
 
           <aside className="hidden lg:block">
-            <PatientActionRail
-              patientId={patient.id}
-              patientUserId={patient.user_id}
-              patientName={patient.patient_name || 'Patient'}
-              onTabChange={setActiveTab}
-            />
+            <PatientActionRail patientUserId={patient.user_id} onTabChange={setActiveTab} />
           </aside>
         </motion.div>
       </main>

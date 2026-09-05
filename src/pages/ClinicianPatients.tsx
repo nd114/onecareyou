@@ -314,23 +314,45 @@ const ClinicianPatients = () => {
                         trailing={
                           <span className="flex items-center gap-2">
                             <span className="hidden items-center gap-2 sm:flex">
-                              {/* Relationship source. With more than one hospital
-                                  affiliation these are named, not lumped together. */}
-                              <Badge variant="outline" className="text-xs">
+                              {/* Two separate facts — how this person reached
+                                  you, and where the connection stands. Set
+                                  side by side with nothing between them they
+                                  read as one phrase: "Private Connected". */}
+                              <Badge
+                                variant="outline"
+                                className="text-xs"
+                                title={
+                                  patient.source === 'hospital'
+                                    ? 'Assigned to you by a hospital'
+                                    : 'This patient shared their record with you directly'
+                                }
+                              >
                                 {patient.source === 'hospital'
                                   ? hospitalNames.length > 1
                                     ? patient.hospital_name
                                     : 'Hospital'
-                                  : 'Private'}
+                                  : 'Direct'}
                               </Badge>
+                              <span aria-hidden className="text-muted-foreground">
+                                ·
+                              </span>
                               {patient.source === 'hospital' && !patient.share_active ? (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs"
+                                  title="The hospital connection has ended"
+                                >
                                   Disconnected
                                 </Badge>
                               ) : (
                                 <Badge
                                   variant={patient.clinician_user_id ? 'secondary' : 'outline'}
                                   className="text-xs"
+                                  title={
+                                    patient.clinician_user_id
+                                      ? 'Sharing is live — you can see what they granted'
+                                      : 'Invited, but they have not accepted yet'
+                                  }
                                 >
                                   {patient.clinician_user_id ? 'Connected' : 'Pending'}
                                 </Badge>

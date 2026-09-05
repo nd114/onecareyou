@@ -36,7 +36,9 @@ export const PATIENT_PILLARS: PatientPillar[] = [
       { to: "/dashboard", label: "Overview" },
       // "Schedule" reads as an appointment diary. This page is the day's doses.
       { to: "/schedule", label: "Doses" },
-      { to: "/guidance", label: "Catch-up" },
+      // The page this opens is called Instructions, and so is the thing
+      // a clinician sends. One name.
+      { to: "/guidance", label: "Instructions" },
     ],
   },
   {

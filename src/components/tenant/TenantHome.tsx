@@ -61,7 +61,7 @@ export function TenantHome({
   // OneCare pages for whichever door was asked for.
   const fallback =
     mode === 'sign-in' ? (
-      <SignIn />
+      <SignIn audience={audience === 'staff' ? 'clinician' : 'patient'} />
     ) : audience === 'staff' ? (
       <Navigate to="/clinician/sign-up" replace />
     ) : (

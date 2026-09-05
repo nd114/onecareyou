@@ -47,6 +47,7 @@ import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCar
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { usePractice } from '@/hooks/usePractice';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
+import { BRAND } from '@/lib/brand-constants';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
@@ -363,7 +364,19 @@ const ClinicianSettings = () => {
                         className="bg-muted"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">Email cannot be changed here</p>
+                    {/* "Not here" without saying where is a dead end. There
+                        is no self-service email change, so say that. */}
+                    <p className="text-xs text-muted-foreground">
+                      This is the address you sign in with. To move your account to a
+                      different one, email{' '}
+                      <a
+                        href={`mailto:${BRAND.emails.support}`}
+                        className="underline underline-offset-2 hover:text-foreground"
+                      >
+                        {BRAND.emails.support}
+                      </a>
+                      .
+                    </p>
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="phone">Phone Number</Label>
