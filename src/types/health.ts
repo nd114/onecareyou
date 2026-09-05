@@ -351,5 +351,13 @@ export function resolveVitalConfig(type: string) {
  */
 export function hasNormalRange(type: string): boolean {
   const config = resolveVitalConfig(type);
-  return !("openEnded" in config && config.openEnded);
+  if ("openEnded" in config && config.openEnded) return false;
+  // A type this build has no configuration for falls back to 0–0, which is not
+  // a band — it is the absence of one. Treating it as real classified every
+  // value above zero as "high", so an imported BMI of 22 or a respiratory rate
+  // of 16 arrived in red. That is the same failure as a BMI status computed
+  // from a height and weight of zero: a confident category with nothing
+  // underneath it.
+  if (config.normalMin === 0 && config.normalMax === 0) return false;
+  return true;
 }

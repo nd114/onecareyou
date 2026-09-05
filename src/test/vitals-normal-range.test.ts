@@ -17,8 +17,13 @@ describe('hasNormalRange', () => {
     expect(hasNormalRange('glucose')).toBe(true);
   });
 
-  it('answers for a type it has never heard of rather than throwing', () => {
-    expect(hasNormalRange('something_new')).toBe(true);
+  it('claims no band for a type it has never heard of', () => {
+    // The fallback config is 0–0, which is the absence of a band rather than a
+    // band from zero to zero. Read as real, it classified every value above
+    // zero as "high" — an imported BMI of 22 showed in red.
+    expect(hasNormalRange('something_new')).toBe(false);
+    expect(hasNormalRange('bmi')).toBe(false);
+    expect(hasNormalRange('respiratory_rate')).toBe(false);
   });
 
   it('never leaves an open-ended vital with a band a screen could print', () => {
