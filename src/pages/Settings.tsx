@@ -66,6 +66,7 @@ import { RecordExportSection } from '@/components/settings/RecordExportSection';
 import { StorageUsageCard } from '@/components/StorageUsageCard';
 import { formatDateOnly } from '@/lib/date-only';
 import { useAdminRole } from '@/hooks/useAdminRole';
+import { formatDay } from '@/lib/format-date';
 
 
 interface ConsentLogEntry {
@@ -377,7 +378,7 @@ const Settings = () => {
                         </p>
                         {subscription?.subscription_end && (
                           <p className="text-xs text-muted-foreground">
-                            Renews {new Date(subscription.subscription_end).toLocaleDateString()}
+                            Renews {formatDay(subscription.subscription_end)}
                           </p>
                         )}
                       </div>

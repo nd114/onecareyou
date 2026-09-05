@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { formatDayTime } from '@/lib/format-date';
 
 /**
  * Care record snapshots — the Health Vault as system of record.
@@ -38,7 +39,7 @@ const esc = (v: unknown) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '—');
+const fmt = (iso: string | null) => (iso ? formatDayTime(iso) : '—');
 
 function buildHtml(opts: {
   patientLabel: string;
@@ -94,7 +95,7 @@ function buildHtml(opts: {
 <div class="meta">
   Patient: ${esc(opts.patientLabel)}<br/>
   Period covered: ${opts.rangeStart ? fmt(opts.rangeStart) : '—'} to ${opts.rangeEnd ? fmt(opts.rangeEnd) : '—'}<br/>
-  Generated: ${opts.generatedAt.toLocaleString()} · Reason: ${esc(opts.reason)}
+  Generated: ${formatDayTime(opts.generatedAt)} · Reason: ${esc(opts.reason)}
 </div>
 <h2>Guidance and care instructions (${opts.guidance.length})</h2>
 ${
@@ -110,7 +111,7 @@ ${
 }
 <div class="watermark">
   OneCare care record · immutable snapshot · generated for ${esc(opts.patientLabel)} on
-  ${opts.generatedAt.toLocaleString()}. This document is a preserved copy of what was communicated between the
+  ${formatDayTime(opts.generatedAt)}. This document is a preserved copy of what was communicated between the
   patient and ${esc(opts.clinicianLabel)} and cannot be edited by either party.
 </div>
 </body></html>`;

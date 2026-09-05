@@ -30,6 +30,8 @@
  * because permission is given for a conversation, not for a lifetime.
  */
 
+import { formatDayTime } from '@/lib/format-date';
+
 /**
  * Bumped whenever the wording changes materially.
  *
@@ -135,7 +137,7 @@ export function transcriptFileBody(recording: {
   recorded_at: string;
   transcript: string | null;
 }): string {
-  const when = new Date(recording.recorded_at).toLocaleString();
+  const when = formatDayTime(recording.recorded_at);
   return [
     recording.title,
     `Recorded ${when}`,

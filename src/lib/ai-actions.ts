@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { VITAL_CONFIG, VitalType } from '@/types/health';
+import { formatDayTime } from '@/lib/format-date';
 
 /**
  * Approval-gated AI actions.
@@ -43,7 +44,7 @@ export function describeAction(action: ProposedAction): { title: string; detail:
         title: `Record ${label}`,
         detail: [
           `${value} ${cfg?.unit ?? ''}`.trim(),
-          p.recorded_at ? `at ${new Date(p.recorded_at).toLocaleString()}` : 'now',
+          p.recorded_at ? `at ${formatDayTime(p.recorded_at)}` : 'now',
           p.notes ? `— ${p.notes}` : '',
         ]
           .filter(Boolean)
@@ -87,7 +88,7 @@ export function describeAction(action: ProposedAction): { title: string; detail:
         title: `Delete reading: ${cfg?.label ?? p.type}`,
         detail: [
           p.value != null ? `${p.value} ${cfg?.unit ?? ''}`.trim() : '',
-          p.recorded_at ? `recorded ${new Date(p.recorded_at).toLocaleString()}` : 'most recent entry',
+          p.recorded_at ? `recorded ${formatDayTime(p.recorded_at)}` : 'most recent entry',
         ]
           .filter(Boolean)
           .join(' · '),
@@ -421,7 +422,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
         return {
           id: action.id,
           ok: true,
-          message: `${cfg.label} reading from ${new Date(target.recorded_at).toLocaleString()} deleted`,
+          message: `${cfg.label} reading from ${formatDayTime(target.recorded_at)} deleted`,
         };
       }
 

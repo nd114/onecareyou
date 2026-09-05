@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useAdminAccessLog } from '@/hooks/useAdminInsights';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
+import { formatDayTime } from '@/lib/format-date';
 
 /** Cross-tenant, read-only search of the platform access log. */
 export function AdminAuditSearchPanel() {
@@ -57,7 +58,7 @@ export function AdminAuditSearchPanel() {
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {new Date(e.created_at).toLocaleString()}
+                    {formatDayTime(e.created_at)}
                   </span>
                 </div>
               </div>

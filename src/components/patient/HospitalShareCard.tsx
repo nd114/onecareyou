@@ -14,6 +14,7 @@ import {
   type PracticeShare,
 } from '@/hooks/usePracticeShares';
 import { HospitalProfileSheet } from '@/components/patient/HospitalProfileSheet';
+import { formatDay } from '@/lib/format-date';
 
 const SHARE_CATEGORIES = [
   { key: 'vitals', label: 'Vitals & readings' },
@@ -315,7 +316,7 @@ export const HospitalShareCard = () => {
                       <p className="text-xs text-muted-foreground">
                         Ended{' '}
                         {share.revoked_at
-                          ? new Date(share.revoked_at).toLocaleDateString()
+                          ? formatDay(share.revoked_at)
                           : 'previously'}{' '}
                         · records preserved
                       </p>

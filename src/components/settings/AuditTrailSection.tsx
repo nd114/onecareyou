@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Lock, ScrollText, Loader2 } from 'lucide-react';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { formatDayTime } from '@/lib/format-date';
 
 /**
  * Read-only activity & audit trail.
@@ -55,7 +56,7 @@ export function AuditTrailSection() {
                   </div>
                   <div className="text-right shrink-0">
                     <Badge variant="outline" className="font-mono text-[10px]">
-                      {new Date(e.created_at).toLocaleString()}
+                      {formatDayTime(e.created_at)}
                     </Badge>
                   </div>
                 </li>

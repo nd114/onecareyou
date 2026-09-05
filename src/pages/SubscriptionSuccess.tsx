@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { formatDay } from '@/lib/format-date';
 
 const SubscriptionSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -75,7 +76,7 @@ const SubscriptionSuccess = () => {
                   </div>
                   {subscription.subscription_end && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      Your subscription renews on {new Date(subscription.subscription_end).toLocaleDateString()}
+                      Your subscription renews on {formatDay(subscription.subscription_end)}
                     </p>
                   )}
                 </motion.div>

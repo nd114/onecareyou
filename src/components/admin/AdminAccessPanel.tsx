@@ -15,6 +15,7 @@ import {
 import { useAdminOps } from '@/hooks/useAdminOps';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
+import { formatDay } from '@/lib/format-date';
 
 /** Delegate OneCare platform-admin access and review pending tenant owner invitations. */
 export function AdminAccessPanel() {
@@ -92,7 +93,7 @@ export function AdminAccessPanel() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{a.email}</p>
                     <p className="text-xs text-muted-foreground">
-                      Since {new Date(a.created_at).toLocaleDateString()}
+                      Since {formatDay(a.created_at)}
                     </p>
                   </div>
                   {a.user_id === user?.id ? (
@@ -183,7 +184,7 @@ export function AdminAccessPanel() {
                     <p className="text-sm font-medium truncate">{inv.email}</p>
                     <p className="text-xs text-muted-foreground truncate">
                       {inv.practice_name} · invited{' '}
-                      {new Date(inv.created_at).toLocaleDateString()}
+                      {formatDay(inv.created_at)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { useAdminSignups } from '@/hooks/useAdminInsights';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
+import { formatDay } from '@/lib/format-date';
 
 const WINDOWS: Record<string, number | null> = {
   all: null,
@@ -126,7 +127,7 @@ export function AdminSignupsPanel() {
                     {s.is_clinician ? 'Clinician' : 'Patient'}
                   </Badge>
                   <span className="text-xs text-muted-foreground hidden sm:inline">
-                    {new Date(s.created_at).toLocaleDateString()}
+                    {formatDay(s.created_at)}
                   </span>
                 </div>
               </div>

@@ -37,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { BRAND } from '@/lib/brand-constants';
+import { formatDay } from '@/lib/format-date';
 
 // Current BAA version - increment when agreement terms change
 const CURRENT_BAA_VERSION = '1.0';
@@ -259,7 +260,7 @@ const ClinicianBAA = () => {
     const practiceName = baaData?.practice_name || formData.practice_name;
     const contactName = baaData?.contact_name || formData.contact_name;
     const contactEmail = baaData?.contact_email || formData.contact_email;
-    const signedDate = baaData?.signed_at ? format(new Date(baaData.signed_at), 'MMMM d, yyyy') : new Date().toLocaleDateString();
+    const signedDate = formatDay(baaData?.signed_at ?? new Date());
     const version = baaData?.agreement_version || CURRENT_BAA_VERSION;
 
     doc.text(`Signed on: ${signedDate}`, margin, yPos);

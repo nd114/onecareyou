@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { useAdminOps } from '@/hooks/useAdminOps';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
+import { formatDayTime } from '@/lib/format-date';
 
 const ACTION_LABELS: Record<string, string> = {
   create_tenant: 'Created tenant',
@@ -120,7 +121,7 @@ export function AdminActivityPanel() {
                       </p>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {new Date(a.created_at).toLocaleString()}
+                      {formatDayTime(a.created_at)}
                     </span>
                   </div>
                 </div>

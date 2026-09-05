@@ -32,6 +32,7 @@ import { MedicationPhotoGallery } from '@/components/medications/MedicationPhoto
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FREE_MEDICATION_LIMIT } from '@/lib/pricing-constants';
+import { formatDay } from '@/lib/format-date';
 
 const Medications = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -259,7 +260,7 @@ const Medications = () => {
                           <CardTitle className="text-lg">{medication.name}</CardTitle>
                           {!medication.is_active && (
                             <CardDescription className="text-xs text-amber-600 dark:text-amber-400">
-                              Discontinued {medication.discontinued_at ? new Date(medication.discontinued_at).toLocaleDateString() : ''}
+                              Discontinued {medication.discontinued_at ? formatDay(medication.discontinued_at) : ''}
                             </CardDescription>
                           )}
                         </div>

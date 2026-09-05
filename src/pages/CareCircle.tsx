@@ -57,6 +57,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { formatDay } from '@/lib/format-date';
 
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -456,12 +457,12 @@ const CareCircle = () => {
                     <span className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3 shrink-0" />
-                        Added {new Date(share.created_at).toLocaleDateString()}
+                        Added {formatDay(share.created_at)}
                       </span>
                       {share.last_accessed_at && (
                         <span className="flex items-center gap-1">
                           <Eye className="h-3 w-3 shrink-0" />
-                          Last viewed {new Date(share.last_accessed_at).toLocaleDateString()}
+                          Last viewed {formatDay(share.last_accessed_at)}
                         </span>
                       )}
                     </span>
@@ -495,7 +496,7 @@ const CareCircle = () => {
                     }
                     label={share.display_name}
                     detail={`Ended ${
-                      share.revoked_at ? new Date(share.revoked_at).toLocaleDateString() : '—'
+                      share.revoked_at ? formatDay(share.revoked_at) : '—'
                     }${share.revoke_reason ? ` · ${share.revoke_reason}` : ''}`}
                     trailing={
                       <span className="flex items-center gap-2">

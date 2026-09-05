@@ -13,13 +13,7 @@ import { useAlertRules, type AlertLog } from '@/hooks/useAlertRules';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { AlertRulesManager } from '@/components/clinician/AlertRulesManager';
 import { format } from 'date-fns';
-
-const formatAlertType = (type: string): string => {
-  return type
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
+import { formatAlertType } from '@/lib/alert-labels';
 
 const ClinicianAlerts = () => {
   const navigate = useNavigate();

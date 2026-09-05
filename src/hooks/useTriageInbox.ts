@@ -15,6 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMessageThreads } from "@/hooks/useMessages";
 import { usePracticeTasks } from "@/hooks/usePracticeTasks";
 import { useClinicianPatients } from "@/hooks/useClinicianPatients";
+import { formatDay } from '@/lib/format-date';
+import { formatAlertType } from "@/lib/alert-labels";
 
 export type TriageKind = "message" | "alert" | "task";
 
@@ -96,7 +98,7 @@ export function useTriageInbox() {
       out.push({
         id: `alert-${a.id}`,
         kind: "alert",
-        title: a.alert_type?.replace(/_/g, " ") || "Patient alert",
+        title: formatAlertType(a.alert_type),
         subtitle: a.message ?? "Threshold crossed",
         patientUserId: a.patient_user_id,
         patientName: patientNameById.get(a.patient_user_id) ?? "Patient",
@@ -129,9 +131,9 @@ export function useTriageInbox() {
         title: t.title,
         subtitle:
           due && due < now
-            ? `Overdue · ${new Date(due).toLocaleDateString()}`
+            ? `Overdue · ${formatDay(due)}`
             : due
-            ? `Due ${new Date(due).toLocaleDateString()}`
+            ? `Due ${formatDay(due)}`
             : "No due date",
         patientUserId: t.patient_user_id,
         patientName: t.patient_user_id

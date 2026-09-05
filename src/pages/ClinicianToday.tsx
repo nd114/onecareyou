@@ -36,6 +36,7 @@ import { SEOHead } from "@/components/seo/SEOHead";
 import { ClinicianOnboardingCard } from "@/components/clinician/ClinicianOnboardingCard";
 import { PatientLimitBanner } from "@/components/clinician/PatientLimitBanner";
 import { useClinicianPatients } from "@/hooks/useClinicianPatients";
+import { formatDayTime, formatWhen } from '@/lib/format-date';
 
 
 function kindIcon(kind: TriageItem["kind"]) {
@@ -55,19 +56,6 @@ function priorityBadge(p: TriageItem["priority"]) {
   if (p === 2) return { label: "High", className: "bg-orange-500 text-white" };
   if (p === 1) return { label: "Normal", className: "bg-muted text-muted-foreground" };
   return { label: "Info", className: "bg-muted text-muted-foreground" };
-}
-
-function formatWhen(iso: string) {
-  const d = new Date(iso);
-  const diff = Date.now() - d.getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return d.toLocaleDateString();
 }
 
 const ClinicianToday = () => {
@@ -138,7 +126,13 @@ const ClinicianToday = () => {
 
 
 
-          {/* Summary chips */}
+          {/* Summary chips. They count the queue — what needs you now — which
+              is not the same number as "all my open tasks" in the panel
+              further down, and the two disagreeing with no explanation read
+              as a bug. Say what is being counted. */}
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Needs you now
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {[
               { key: "all", label: "Total", value: counts.total, icon: Inbox },
@@ -260,7 +254,7 @@ const ClinicianToday = () => {
                       {t.due_at && (
                         <span className="flex items-center gap-1">
                           <CalendarClock className="h-3 w-3" />
-                          {new Date(t.due_at).toLocaleString()}
+                          {formatDayTime(t.due_at)}
                         </span>
                       )}
                       <Badge variant="outline" className="px-1.5 py-0 text-[10px]">

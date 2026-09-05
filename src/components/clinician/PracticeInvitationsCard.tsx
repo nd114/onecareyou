@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePractice } from '@/hooks/usePractice';
 import { Building2, Check, X, Loader2 } from 'lucide-react';
+import { formatDay } from '@/lib/format-date';
 
 export function PracticeInvitationsCard() {
   const { myInvitations, acceptInvitation, declineInvitation, loadingInvitations } = usePractice();
@@ -32,7 +33,7 @@ export function PracticeInvitationsCard() {
               </p>
               {invitation.expires_at && (
                 <p className="text-xs text-muted-foreground">
-                  Expires: {new Date(invitation.expires_at).toLocaleDateString()}
+                  Expires: {formatDay(invitation.expires_at)}
                 </p>
               )}
             </div>

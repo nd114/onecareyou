@@ -19,6 +19,7 @@ import {
   usePracticePatientOverview,
 } from '@/hooks/usePracticeDepartments';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatDay } from '@/lib/format-date';
 
 
 export const HospitalPatientsCard = () => {
@@ -133,7 +134,7 @@ export const HospitalPatientsCard = () => {
                       {share.patient?.name || share.patient?.email || 'Patient'}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Connected {new Date(share.connected_at).toLocaleDateString()} ·{' '}
+                      Connected {formatDay(share.connected_at)} ·{' '}
                       {share.share_all ? 'Full record' : 'Limited'}
                     </p>
                   </div>

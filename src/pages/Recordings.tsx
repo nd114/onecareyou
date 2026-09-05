@@ -43,6 +43,7 @@ import {
 } from '@/hooks/usePatientRecordings';
 import { formatDuration } from '@/lib/recording-consent';
 import { isTranscriptInFlight, transcriptActionLabel } from '@/lib/recording-status';
+import { formatDayTime } from '@/lib/format-date';
 
 /**
  * The patient's own recordings of their appointments.
@@ -167,7 +168,7 @@ const Recordings = () => {
                     }
                     overline={
                       <>
-                        <span>{new Date(recording.recorded_at).toLocaleString()}</span>
+                        <span>{formatDayTime(recording.recorded_at)}</span>
                         <span>·</span>
                         <span>{formatDuration(recording.duration_seconds)}</span>
                         <TranscriptBadge recording={recording} />

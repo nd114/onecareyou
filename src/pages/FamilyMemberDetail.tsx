@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { EditFamilyMemberDialog } from '@/components/family/EditFamilyMemberDialog';
 import { ageFromDateOnly, formatDateOnly } from '@/lib/date-only';
+import { formatDay } from '@/lib/format-date';
 
 const FamilyMemberDetail = () => {
   const { memberId } = useParams();
@@ -410,7 +411,7 @@ const FamilyMemberDetail = () => {
                               </p>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(vital.recorded_at).toLocaleDateString()}
+                              {formatDay(vital.recorded_at)}
                             </p>
                           </div>
                         ))}

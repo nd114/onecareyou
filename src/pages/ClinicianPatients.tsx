@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InviteToOneCareButton, PatientTagManager } from '@/components/clinician/ManagedRecordActions';
 import { EditManagedRecordDialog } from '@/components/clinician/EditManagedRecordDialog';
 import { ManagedRecordFilterBar, applyManagedRecordFilters, type ManagedRecordFilters } from '@/components/clinician/ManagedRecordFilters';
+import { formatDay } from '@/lib/format-date';
 
 const PAGE_SIZE = 25;
 
@@ -45,7 +46,7 @@ function lastActivityLabel(iso: string | null) {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  return formatDay(iso);
 }
 
 const ClinicianPatients = () => {

@@ -10,6 +10,7 @@ import { formatBytes } from '@/lib/storage-constants';
 import { useAdminTenantDetail } from '@/hooks/useAdminTenantDetail';
 import { AdminTenantBrandingCard } from '@/components/admin/AdminTenantBrandingCard';
 import { AdminTenantContactCard } from '@/components/admin/AdminTenantContactCard';
+import { formatDay } from '@/lib/format-date';
 
 
 const GB = 1024 ** 3;
@@ -140,10 +141,10 @@ export default function AdminTenantDetail() {
                     [
                       'Renews / ends',
                       tenant.subscription_ends_at
-                        ? new Date(tenant.subscription_ends_at).toLocaleDateString()
+                        ? formatDay(tenant.subscription_ends_at)
                         : '—',
                     ],
-                    ['Created', new Date(tenant.created_at).toLocaleDateString()],
+                    ['Created', formatDay(tenant.created_at)],
                   ].map(([label, value]) => (
                     <div key={String(label)} className="flex justify-between gap-3">
                       <span className="text-muted-foreground">{label}</span>
