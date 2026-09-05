@@ -1,4 +1,5 @@
 import { useClinicianPatientRecords, type ClinicianPatientRecord } from "@/hooks/useClinicianPatientRecords";
+import { useClinicianPatients } from "@/hooks/useClinicianPatients";
 import { resolvePatient } from "@/lib/ai-record-query";
 import { RecordCards } from "./RecordCards";
 import type { ChatMessage } from "@/hooks/useAIChat";
@@ -17,6 +18,9 @@ import type { ChatMessage } from "@/hooks/useAIChat";
  */
 export function MessageRecordCards({ message }: { message: ChatMessage }) {
   const { records } = useClinicianPatientRecords();
+  // The chart page is addressed by the share's invite code, not the account id,
+  // so "Open full record" needs the same list the patient page resolves against.
+  const { patients } = useClinicianPatients();
   const queries = message.recordQueries;
 
   if (!queries || queries.length === 0) return null;
@@ -59,12 +63,15 @@ export function MessageRecordCards({ message }: { message: ChatMessage }) {
           );
         }
 
+        const share = patients.find((p) => p.user_id === patient.user_id);
+
         return (
           <RecordCards
             key={i}
             query={query}
             patientUserId={patient.user_id}
             patientName={patient.patient_name ?? undefined}
+            patientHref={share ? `/clinician/patients/${share.invite_code}` : undefined}
           />
         );
       })}

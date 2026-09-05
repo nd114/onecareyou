@@ -380,6 +380,14 @@ export default function InstitutionStaffSignUp({
                 <TenantSignInForm
                   brandColor={primary}
                   idPrefix="staff"
+                  // Signing in here is how a clinician reaches "Join this
+                  // hospital". Leaving for a dashboard makes that unreachable,
+                  // so stay put and let the join card take over.
+                  successMessage={`Signed in — you can now join ${hospitalName}`}
+                  onSignedIn={() => {
+                    /* Nothing to do: the signed-in branch of this page renders
+                       the "Join {hospital}" card as soon as the session lands. */
+                  }}
                   footer={
                     <p className="text-sm text-center text-muted-foreground">
                       New to OneCare?{' '}
