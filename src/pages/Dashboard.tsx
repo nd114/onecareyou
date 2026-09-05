@@ -36,6 +36,7 @@ import { InstitutionIntakeCard } from '@/components/patient/InstitutionIntakeCar
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 
 import { PendingClinicianRecordsBanner } from '@/components/consent/PendingClinicianRecordsBanner';
+import { medicationTypeLabel } from '@/lib/medication-labels';
 
 
 const getQuickLinks = (showAdherence: boolean) => [
@@ -279,7 +280,7 @@ const Dashboard = () => {
                         entry.status === 'taken' ? (
                           <span className="flex items-center gap-1.5 text-primary">
                             <Check className="h-4 w-4" />
-                            <span className="hidden text-xs font-medium sm:inline">Taken</span>
+                            <span className="sr-only sm:not-sr-only text-xs font-medium">Taken</span>
                           </span>
                         ) : entry.status === 'skipped' ? (
                           <Badge variant="secondary" className="text-xs">Skipped</Badge>
@@ -289,12 +290,14 @@ const Dashboard = () => {
                             className="h-8 border-0 px-2 gradient-primary text-xs sm:px-3"
                             onClick={() => handleMarkTaken(entry.id)}
                             disabled={markAsTaken.isPending}
+                            aria-label={`Mark ${entry.medication?.name || 'this dose'} as taken`}
                           >
                             {markAsTaken.isPending ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
                               <>
-                                <Check className="h-3.5 w-3.5 sm:hidden" />
+                                <Check className="mr-1 h-3.5 w-3.5" />
+                                <span className="sm:hidden">Take</span>
                                 <span className="hidden sm:inline">Mark taken</span>
                               </>
                             )}
@@ -308,7 +311,7 @@ const Dashboard = () => {
                             variant="secondary"
                             className={`text-[10px] sm:text-xs ${MEDICATION_TYPE_COLORS[entry.medication.type as keyof typeof MEDICATION_TYPE_COLORS] || ''}`}
                           >
-                            {entry.medication.type}
+                            {medicationTypeLabel(entry.medication.type)}
                           </Badge>
                           <span className="truncate text-xs text-muted-foreground">
                             {entry.medication.dosage}

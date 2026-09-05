@@ -118,7 +118,17 @@ const Recordings = () => {
               description={
                 showArchived
                   ? 'Put away, not deleted. Restore any of these to bring it back.'
-                  : 'Each one is saved in your Health Vault. Nobody else can see them unless you share them.'
+                  : (
+                      <>
+                        Each one is saved in your{' '}
+                        {/* The sentence names where these end up; it should
+                            also be the way to get there. */}
+                        <Link to="/health-vault" className="underline underline-offset-2 hover:text-foreground">
+                          Health Vault
+                        </Link>
+                        . Nobody else can see them unless you share them.
+                      </>
+                    )
               }
             >
               {(showArchived || archived.length > 0) && (

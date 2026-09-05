@@ -23,14 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { DiscontinueMedicationDialog } from '@/components/medications/DiscontinueMedicationDialog';
 import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
 import { Separator } from '@/components/ui/separator';
-
-const medicationTypes: { value: MedicationType; label: string }[] = [
-  { value: 'prescription', label: 'Prescription' },
-  { value: 'otc', label: 'Over-the-Counter' },
-  { value: 'vitamin', label: 'Vitamin' },
-  { value: 'supplement', label: 'Supplement' },
-  { value: 'herbal', label: 'Herbal' },
-];
+import { MEDICATION_TYPES } from '@/lib/medication-labels';
 
 const EditMedication = () => {
   const { id } = useParams<{ id: string }>();
@@ -247,7 +240,7 @@ const EditMedication = () => {
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {medicationTypes.map((type) => (
+                      {MEDICATION_TYPES.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>

@@ -344,12 +344,6 @@ export function ClinicianHeader() {
                     My profile &amp; settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/clinician/why-onecare" className="flex items-center gap-2 cursor-pointer">
-                    <Heart className="h-4 w-4" />
-                    Why OneCare?
-                  </Link>
-                </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
@@ -455,14 +449,6 @@ export function ClinicianHeader() {
             >
               <Settings className="h-4 w-4" />
               My profile &amp; settings
-            </Link>
-            <Link
-              to="/clinician/why-onecare"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
-            >
-              <Heart className="h-4 w-4" />
-              Why OneCare?
             </Link>
 
             {/* Mobile Theme Toggle */}

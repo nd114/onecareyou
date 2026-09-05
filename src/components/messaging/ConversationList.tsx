@@ -150,12 +150,20 @@ export function ConversationList({
           </div>
         ) : (
           <>
+            {/* Two groups, each with a name. The divider used to read "No
+                messages yet" with nothing above it saying what the rows above
+                were, so it looked like an empty state stranded mid-list. */}
+            {active.length > 0 && quiet.length > 0 && (
+              <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/40 border-b">
+                Recent
+              </div>
+            )}
             {active.map(row)}
             {quiet.length > 0 && (
               <>
                 {active.length > 0 && (
                   <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/40 border-b">
-                    No messages yet
+                    Not messaged yet
                   </div>
                 )}
                 {quiet.map(row)}

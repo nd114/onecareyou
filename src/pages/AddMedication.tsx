@@ -31,14 +31,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 import { FREE_MEDICATION_LIMIT } from '@/lib/pricing-constants';
 import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
-
-const medicationTypes: { value: MedicationType; label: string }[] = [
-  { value: 'prescription', label: 'Prescription' },
-  { value: 'otc', label: 'Over-the-Counter' },
-  { value: 'vitamin', label: 'Vitamin' },
-  { value: 'supplement', label: 'Supplement' },
-  { value: 'herbal', label: 'Herbal' },
-];
+import { MEDICATION_TYPES } from '@/lib/medication-labels';
 
 const AddMedication = () => {
   const navigate = useNavigate();
@@ -263,7 +256,7 @@ const AddMedication = () => {
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {medicationTypes.map((type) => (
+                      {MEDICATION_TYPES.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>

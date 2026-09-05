@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FREE_MEDICATION_LIMIT } from '@/lib/pricing-constants';
 import { formatDay } from '@/lib/format-date';
+import { medicationTypeLabel } from '@/lib/medication-labels';
 
 const Medications = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,8 +112,15 @@ const Medications = () => {
                 </Badge>
               )}
               {subscriptionReady && isPremium && (
-                <Badge className="gradient-primary border-0 py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
-                  <Crown className="h-3 w-3 mr-1" />
+                /* A status chip, not an action. It used to carry the same
+                   gradient and padding as the Add button right next to it,
+                   so it read as an upsell you were meant to press — on an
+                   account that already has it. */
+                <Badge
+                  variant="secondary"
+                  className="gap-1 border border-primary/20 bg-primary/10 py-1 px-2.5 text-xs font-medium text-primary"
+                >
+                  <Crown className="h-3 w-3" />
                   Premium
                 </Badge>
               )}
@@ -267,7 +275,7 @@ const Medications = () => {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <Badge className={MEDICATION_TYPE_COLORS[medication.type as MedicationType] || 'bg-muted'}>
-                          {medication.type}
+                          {medicationTypeLabel(medication.type)}
                         </Badge>
                         {!medication.is_active && (
                           <Badge variant="outline" className="text-amber-600 border-amber-600/50 dark:text-amber-400 dark:border-amber-400/50">
