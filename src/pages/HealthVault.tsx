@@ -310,7 +310,9 @@ const HealthVault = () => {
                   ? 'Nothing archived'
                   : documents.length === 0
                     ? 'No documents yet'
-                    : 'No documents match your search'}
+                    : draftFolders.includes(activeFolder)
+                      ? `"${activeFolder}" is empty`
+                      : 'No documents match your search'}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 {vaultSuggestion ? (
@@ -327,6 +329,8 @@ const HealthVault = () => {
                   </>
                 ) : documents.length === 0 ? (
                   'Upload prescriptions, lab results, discharge summaries, and other health documents to keep them organized and accessible.'
+                ) : draftFolders.includes(activeFolder) ? (
+                  'Choose "All documents", then use the folder icon on any document to file it in here. Upload straight into it with the Upload button.'
                 ) : (
                   'Try adjusting your search terms or category filter.'
                 )}
