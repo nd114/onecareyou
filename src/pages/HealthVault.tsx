@@ -40,7 +40,18 @@ import {
 
 const HealthVault = () => {
   const { profile } = useAuth();
-  const { documents, folders, isLoading } = useHealthDocuments();
+  const { documents, folders: usedFolders, isLoading } = useHealthDocuments();
+  // A folder is only a label on documents, so an empty one does not exist yet.
+  // Names created here are remembered for this visit so they can be selected,
+  // filed into and seen — instead of vanishing the moment they are made.
+  const [draftFolders, setDraftFolders] = useState<string[]>([]);
+  const folders = useMemo(
+    () =>
+      [...usedFolders, ...draftFolders.filter((f) => !usedFolders.includes(f))].sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [usedFolders, draftFolders],
+  );
   const { checkSubscription, isPremium } = useSubscription();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory | 'all'>('all');
