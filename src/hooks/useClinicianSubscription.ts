@@ -108,6 +108,11 @@ export function useClinicianSubscription() {
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [subscription, setSubscription] = useState<ClinicianSubscriptionStatus | null>(null);
+  // False until the first check has finished, however it finished. Every
+  // default below — trial, five patients — is a guess, and a guess rendered
+  // as fact is what made "Patient Limit Reached" and the upgrade card flash
+  // up on load and then correct themselves.
+  const [checked, setChecked] = useState(false);
 
   const checkSubscription = useCallback(async () => {
     if (!session) return null;
@@ -132,6 +137,7 @@ export function useClinicianSubscription() {
       return null;
     } finally {
       setCheckingStatus(false);
+      setChecked(true);
     }
   }, [session]);
 
@@ -234,5 +240,11 @@ export function useClinicianSubscription() {
     isTrial: subscription?.is_in_trial || false,
     tier: subscription?.tier || 'trial',
     patientLimit: subscription?.patient_limit || 5,
+    /**
+     * True once the first check has returned, success or failure. Anything
+     * that hides a feature or warns about a limit has to wait for this — the
+     * tier and limit above are defaults until then, not facts.
+     */
+    subscriptionReady: checked,
   };
 }

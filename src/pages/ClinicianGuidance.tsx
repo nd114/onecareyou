@@ -7,7 +7,8 @@ import {
   CheckCircle,
   Loader2,
   Plus,
-  Trash2,
+  Archive,
+  Undo2,
   Search,
   FileText,
   Eye,
@@ -24,14 +25,37 @@ import { useClinicianGuidance } from '@/hooks/useClinicianGuidance';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { CreateGuidanceDialog } from '@/components/clinician/CreateGuidanceDialog';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import type { ClinicianGuidance } from '@/hooks/useClinicianGuidance';
 
 const ClinicianGuidance = () => {
   const navigate = useNavigate();
   const { isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
-  const { clinicianGuidance, isLoading: isLoadingGuidance, deleteGuidance } = useClinicianGuidance();
+  const {
+    clinicianGuidance,
+    archivedGuidance,
+    isLoading: isLoadingGuidance,
+    archiveGuidance,
+    restoreGuidance,
+  } = useClinicianGuidance();
   const { patients } = useClinicianPatients();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
+  // Archiving an instruction a patient may already have acted on is worth a
+  // second's pause, and this used to happen on one click of a bin icon.
+  const [confirmArchive, setConfirmArchive] = useState<ClinicianGuidance | null>(null);
+
+  const list = showArchived ? archivedGuidance : clinicianGuidance;
 
   const isLoading = isLoadingProfile || isLoadingGuidance;
 
@@ -45,15 +69,15 @@ const ClinicianGuidance = () => {
   }, [patients]);
 
   const filteredGuidance = useMemo(() => {
-    if (!searchQuery.trim()) return clinicianGuidance;
+    if (!searchQuery.trim()) return list;
     const query = searchQuery.toLowerCase();
-    return clinicianGuidance.filter(
+    return list.filter(
       (g) =>
         g.title.toLowerCase().includes(query) ||
         g.instruction.toLowerCase().includes(query) ||
         patientNameMap[g.patient_user_id]?.toLowerCase().includes(query)
     );
-  }, [clinicianGuidance, searchQuery, patientNameMap]);
+  }, [list, searchQuery, patientNameMap]);
 
   const pendingCount = clinicianGuidance.filter(g => g.status === 'pending').length;
   const acknowledgedCount = clinicianGuidance.filter(g => g.status === 'acknowledged').length;
@@ -215,9 +239,17 @@ const ClinicianGuidance = () => {
               <div>
                 <CardTitle className="text-base sm:text-lg">Guidance History</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
-                  {clinicianGuidance.length} instruction{clinicianGuidance.length !== 1 ? 's' : ''} sent
+                  {showArchived
+                    ? `${archivedGuidance.length} archived`
+                    : `${clinicianGuidance.length} instruction${clinicianGuidance.length !== 1 ? 's' : ''} sent`}
                 </CardDescription>
               </div>
+              <div className="flex items-center gap-2">
+              {(showArchived || archivedGuidance.length > 0) && (
+                <Button variant="ghost" size="sm" onClick={() => setShowArchived((v) => !v)}>
+                  {showArchived ? 'Back to guidance' : `Archived (${archivedGuidance.length})`}
+                </Button>
+              )}
               <CreateGuidanceDialog
                 trigger={
                   <Button 
@@ -236,9 +268,10 @@ const ClinicianGuidance = () => {
                   patient_email: p.patient_email,
                 }))}
               />
+              </div>
             </CardHeader>
             <CardContent>
-              {clinicianGuidance.length > 0 && (
+              {list.length > 0 && (
                 <div className="mb-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -252,7 +285,7 @@ const ClinicianGuidance = () => {
                 </div>
               )}
 
-              {clinicianGuidance.length === 0 ? (
+              {list.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">No guidance sent yet</h3>
@@ -307,15 +340,30 @@ const ClinicianGuidance = () => {
                             </div>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteGuidance.mutate(guidance.id)}
-                          disabled={deleteGuidance.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {showArchived ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => restoreGuidance.mutate(guidance)}
+                            disabled={restoreGuidance.isPending}
+                          >
+                            <Undo2 className="mr-1.5 h-4 w-4" />
+                            Restore
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => setConfirmArchive(guidance)}
+                            disabled={archiveGuidance.isPending}
+                            aria-label={`Archive "${guidance.title}"`}
+                            title="Archive this instruction"
+                          >
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -325,6 +373,35 @@ const ClinicianGuidance = () => {
           </Card>
         </motion.div>
       </main>
+
+      {/* Archiving withdraws an instruction the patient may already have acted
+          on, so it says what actually happens and offers the way back. */}
+      <AlertDialog
+        open={!!confirmArchive}
+        onOpenChange={(open) => !open && setConfirmArchive(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive this instruction?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{confirmArchive?.title}” leaves your list and the patient's. Nothing is
+              deleted — the instruction, their acknowledgement and anything they
+              completed stay on the record, and you can restore it from Archived.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmArchive) archiveGuidance.mutate(confirmArchive.id);
+                setConfirmArchive(null);
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -336,6 +336,11 @@ export const useAlertRules = (patientUserId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alert-logs'] });
+      // Today's queue reads the same rows under its own key. Without this it
+      // kept showing an alert that had just been acknowledged until its own
+      // sixty-second poll came round — so the thing you had just dealt with
+      // was still sitting there asking to be dealt with.
+      queryClient.invalidateQueries({ queryKey: ['triage-alerts'] });
       toast.success('Alert acknowledged');
     },
     onError: (error: Error) => {

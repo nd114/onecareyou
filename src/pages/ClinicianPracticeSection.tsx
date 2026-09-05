@@ -44,7 +44,7 @@ const ClinicianPracticeSection = () => {
   const { patients } = useClinicianPatients();
   const { currentPractice, currentMembership } = usePractice();
   const { tenant } = usePracticeTenant(currentPractice?.id);
-  const { tier } = useClinicianSubscription();
+  const { tier, subscriptionReady } = useClinicianSubscription();
 
   useSessionTimeout();
 
@@ -98,7 +98,20 @@ const ClinicianPracticeSection = () => {
           <div className="space-y-6">
             {section.id === 'people' && (
               <>
-                {context.canManageTeam ? <PracticeTeamSection /> : <TeamUpgradeCard />}
+                {/* Which of these is right depends on the plan, and the plan
+                    is "trial" by default until the first check returns — so
+                    this used to show the upgrade card for a moment on every
+                    visit, including to practices that already have the
+                    feature. Neither is shown until the answer is known. */}
+                {!subscriptionReady ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : context.canManageTeam ? (
+                  <PracticeTeamSection />
+                ) : (
+                  <TeamUpgradeCard />
+                )}
                 <ClinicianAllowlistCard />
                 <DepartmentsCard />
               </>
@@ -117,7 +130,9 @@ const ClinicianPracticeSection = () => {
                 <PracticeContactCard />
                 <HospitalCodeCard />
                 <PracticeCurrencyCard />
-                {hasFeatureAccess(tier, 'practice_branding') && <PracticeBrandingCard />}
+                {subscriptionReady && hasFeatureAccess(tier, 'practice_branding') && (
+                  <PracticeBrandingCard />
+                )}
               </>
             )}
 

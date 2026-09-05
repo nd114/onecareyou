@@ -10,7 +10,15 @@ interface PatientLimitBannerProps {
 
 export function PatientLimitBanner({ patientCount }: PatientLimitBannerProps) {
   const navigate = useNavigate();
-  const { tier, patientLimit, isTrial } = useClinicianSubscription();
+  const { tier, patientLimit, isTrial, subscriptionReady } = useClinicianSubscription();
+
+  // Until the first check returns, tier is "trial" and the limit is 5 by
+  // default — so on Today and Patients this drew "Patient Limit Reached" in
+  // red for a moment on every load, then corrected itself. A warning that
+  // appears and withdraws is worse than no warning.
+  if (!subscriptionReady) {
+    return null;
+  }
 
   // Don't show for enterprise (unlimited)
   if (tier === 'enterprise' || patientLimit === 999999) {

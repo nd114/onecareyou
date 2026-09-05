@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { ARCHIVED_STATUS, isArchivedGuidance, statusFromHistory } from '@/lib/guidance-status';
 
 export interface ClinicianGuidance {
   id: string;
@@ -191,13 +192,27 @@ export const useClinicianGuidance = (patientUserId?: string) => {
     },
   });
 
-  const deleteGuidance = useMutation({
+  /**
+   * Withdrawing an instruction, rather than destroying it.
+   *
+   * This was a hard DELETE: one click on a bin icon took the instruction, the
+   * patient's acknowledgement, the completion record and — through the
+   * notifications table's ON DELETE CASCADE — the notification trail with it,
+   * with no confirmation and no way back. It also vanished from the patient's
+   * screen, so an instruction they may have acted on left no trace on either
+   * side.
+   *
+   * The row is marked instead. It leaves the active lists, the clinician can
+   * see it again under Archived, and restoring puts it back in the state it
+   * was in — see statusFromHistory.
+   */
+  const archiveGuidance = useMutation({
     mutationFn: async (id: string) => {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase
         .from('clinician_guidance')
-        .delete()
+        .update({ status: ARCHIVED_STATUS })
         .eq('id', id)
         .eq('clinician_user_id', user.id);
 
@@ -205,19 +220,51 @@ export const useClinicianGuidance = (patientUserId?: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinician-guidance'] });
-      toast.success('Guidance removed');
+      queryClient.invalidateQueries({ queryKey: ['patient-guidance'] });
+      toast.success('Guidance archived', {
+        description: 'It is out of your list and the patient\'s. Restore it from Archived.',
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to remove guidance');
+      toast.error(error.message || 'Failed to archive guidance');
     },
   });
 
-  const pendingGuidance = patientGuidance.filter(g => g.status === 'pending');
+  const restoreGuidance = useMutation({
+    mutationFn: async (guidance: ClinicianGuidance) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('clinician_guidance')
+        .update({ status: statusFromHistory(guidance) })
+        .eq('id', guidance.id)
+        .eq('clinician_user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clinician-guidance'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-guidance'] });
+      toast.success('Guidance restored');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to restore guidance');
+    },
+  });
+
+  // Archived rows are out of every working list, on both sides, but still on
+  // the record.
+  const activeClinicianGuidance = clinicianGuidance.filter((g) => !isArchivedGuidance(g));
+  const archivedGuidance = clinicianGuidance.filter((g) => isArchivedGuidance(g));
+  const activePatientGuidance = patientGuidance.filter((g) => !isArchivedGuidance(g));
+
+  const pendingGuidance = activePatientGuidance.filter(g => g.status === 'pending');
   const pendingCount = pendingGuidance.length;
 
   return {
-    clinicianGuidance,
-    patientGuidance,
+    clinicianGuidance: activeClinicianGuidance,
+    archivedGuidance,
+    patientGuidance: activePatientGuidance,
     pendingGuidance,
     pendingCount,
     isLoading: isLoadingClinician || isLoadingPatient,
@@ -225,6 +272,7 @@ export const useClinicianGuidance = (patientUserId?: string) => {
     updateGuidance,
     acknowledgeGuidance,
     completeGuidance,
-    deleteGuidance,
+    archiveGuidance,
+    restoreGuidance,
   };
 };
