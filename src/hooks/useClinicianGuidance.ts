@@ -221,8 +221,9 @@ export const useClinicianGuidance = (patientUserId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinician-guidance'] });
       queryClient.invalidateQueries({ queryKey: ['patient-guidance'] });
-      toast.success('Guidance archived', {
-        description: 'It is out of your list and the patient\'s. Restore it from Archived.',
+      toast.success('Instruction withdrawn', {
+        description:
+          'Off your active list and the patient\'s, and kept in their history. Restore it from Archived.',
       });
     },
     onError: (error: Error) => {
@@ -252,10 +253,15 @@ export const useClinicianGuidance = (patientUserId?: string) => {
     },
   });
 
-  // Archived rows are out of every working list, on both sides, but still on
-  // the record.
+  // Archived rows leave the clinician's working list, but not the record.
   const activeClinicianGuidance = clinicianGuidance.filter((g) => !isArchivedGuidance(g));
   const archivedGuidance = clinicianGuidance.filter((g) => isArchivedGuidance(g));
+
+  // The patient keeps all of it. An instruction from a clinician is
+  // professional counsel someone may have acted on, so it belongs in their
+  // record permanently — a patient asked in two years why they changed a dose
+  // needs to be able to point at who told them to and when. Withdrawing it
+  // takes it off the active list; it does not take it out of their history.
   const activePatientGuidance = patientGuidance.filter((g) => !isArchivedGuidance(g));
 
   const pendingGuidance = activePatientGuidance.filter(g => g.status === 'pending');

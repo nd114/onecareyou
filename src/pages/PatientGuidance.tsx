@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { isArchivedGuidance } from '@/lib/guidance-status';
 
 interface GuidanceItem {
   id: string;
@@ -62,6 +63,20 @@ const PatientGuidance = () => {
   const pendingGuidance = guidance.filter(g => g.status === 'pending');
   const acknowledgedGuidance = guidance.filter(g => g.status === 'acknowledged');
   const completedGuidance = guidance.filter(g => g.status === 'completed');
+
+  /**
+   * Everything that is no longer waiting on you, and stays yours.
+   *
+   * An instruction from a clinician is professional counsel you may have acted
+   * on. Someone asked in two years why they changed a dose has to be able to
+   * point at who told them to and when — so finishing one does not remove it,
+   * and neither does the clinician withdrawing it. Withdrawn items are marked
+   * as such rather than hidden: "your doctor took this back" is itself part of
+   * the history.
+   */
+  const pastGuidance = [...completedGuidance, ...guidance.filter(isArchivedGuidance)].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -125,6 +140,13 @@ const PatientGuidance = () => {
             <Badge variant={getPriorityColor(item.priority)} className="text-[10px] sm:text-xs">
               {item.priority}
             </Badge>
+            {/* Withdrawn is not the same as done, and the difference is part of
+                the history rather than something to hide. */}
+            {isArchivedGuidance(item) && (
+              <Badge variant="outline" className="text-[10px] sm:text-xs">
+                Withdrawn by your clinician
+              </Badge>
+            )}
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">
             {item.instruction}
@@ -150,7 +172,7 @@ const PatientGuidance = () => {
               </span>
             )}
             {item.clinician_practice && (
-              <span className="text-muted-foreground italic hidden sm:inline truncate">
+              <span className="text-muted-foreground italic truncate">
                 {item.clinician_practice}
               </span>
             )}
@@ -267,7 +289,7 @@ const PatientGuidance = () => {
               </TabsTrigger>
               <TabsTrigger value="completed" className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
-                Completed
+                Past instructions
               </TabsTrigger>
             </TabsList>
 
@@ -326,23 +348,25 @@ const PatientGuidance = () => {
             <TabsContent value="completed">
               <Card>
                 <CardHeader>
-                  <CardTitle>Completed</CardTitle>
+                  <CardTitle>Past instructions</CardTitle>
                   <CardDescription>
-                    Instructions you've finished
+                    Everything you have been told to do, who told you, and when. Kept for
+                    good — finishing an instruction does not remove it, and neither does
+                    the clinician withdrawing it.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {completedGuidance.length === 0 ? (
+                  {pastGuidance.length === 0 ? (
                     <div className="text-center py-8">
                       <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="font-semibold mb-2">No completed items yet</h3>
+                      <h3 className="font-semibold mb-2">Nothing here yet</h3>
                       <p className="text-sm text-muted-foreground">
-                        Completed instructions will appear here.
+                        Instructions you finish stay here as a record you can look back on.
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {completedGuidance.map(item => renderGuidanceCard(item, false))}
+                      {pastGuidance.map(item => renderGuidanceCard(item, false))}
                     </div>
                   )}
                 </CardContent>

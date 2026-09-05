@@ -1,6 +1,6 @@
 import { VitalRecord } from '@/hooks/useVitals';
-import { VITAL_CONFIG, VitalType } from '@/types/health';
-import { describeNormalRange, describeReadingStatus } from '@/lib/patient-risk';
+import { VITAL_CONFIG, VitalType, resolveVitalConfig } from '@/types/health';
+import { describeNormalRange, describeReadingStatus, normaliseReading } from '@/lib/patient-risk';
 import { format } from 'date-fns';
 import { toFhirBundle } from '@/lib/fhir/observation';
 
@@ -22,7 +22,7 @@ export function exportVitalsToCSV(vitals: VitalRecord[], filename: string = 'vit
   };
 
   const rows = vitals.map(vital => {
-    const config = VITAL_CONFIG[vital.type];
+    const config = resolveVitalConfig(vital.type);
     return [
       config.label,
       formatValue(vital),
@@ -51,6 +51,68 @@ export function exportVitalsToCSV(vitals: VitalRecord[], filename: string = 'vit
 }
 
 // PDF Export
+export interface ExportVitalSummary {
+  type: string;
+  unit: string;
+  count: number;
+  average: string;
+  min: number;
+  max: number;
+  inRangePercent: number;
+  normalRange: string;
+}
+
+/**
+ * The per-type summary that heads every export.
+ *
+ * Pulled out of the PDF builder so the arithmetic can be tested. Two things
+ * here were wrong and both reached a document a patient may hand to a
+ * clinician: values were averaged in whatever unit each reading was recorded
+ * in, and the config was looked up without a fallback so a single reading of
+ * an unrecognised type took the whole export down.
+ */
+export function summariseVitalsForExport(vitals: VitalRecord[]): ExportVitalSummary[] {
+  const vitalsByType = vitals.reduce((acc, vital) => {
+    if (!acc[vital.type]) acc[vital.type] = [];
+    acc[vital.type].push(vital);
+    return acc;
+  }, {} as Record<VitalType, VitalRecord[]>);
+
+  return Object.entries(vitalsByType).map(([type, records]) => {
+    // resolveVitalConfig rather than a bare lookup: one reading of a type this
+    // build has no entry for made config undefined and config.label throw.
+    const config = resolveVitalConfig(type);
+    /**
+     * Converted to one unit before any arithmetic.
+     *
+     * These were raw values. A patient who logged 98.6 °F on one day and 37 °C
+     * on another — the same temperature twice — got an average of 67.8 °C,
+     * printed to one decimal place. The on-screen summary has always converted
+     * first, so the two disagreed and the document was the wrong one.
+     */
+    const values = records.map((r) => normaliseReading(type, r.value, r.unit ?? config.unit));
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    // Graded the same way as the Status column on each row. These two used to
+    // disagree inside one document: rows against the clinical thresholds, this
+    // summary against VITAL_CONFIG's target band, which is a tighter number and
+    // labelled "normal range" here as though it were the same thing.
+    const inRange = records.filter(
+      (r) => describeReadingStatus(r.type, r.value, r.secondary_value, r.unit) === 'Normal',
+    ).length;
+
+    return {
+      type: config.label,
+      unit: config.unit,
+      count: records.length,
+      average: avg.toFixed(1),
+      min: Math.min(...values),
+      max: Math.max(...values),
+      inRangePercent: Math.round((inRange / records.length) * 100),
+      normalRange: describeNormalRange(type),
+    };
+  });
+}
+
 export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vitals-export') {
   // Against the clinical action thresholds, not VITAL_CONFIG's target band —
   // this report is read by a clinician, and it used to disagree with their own
@@ -65,39 +127,7 @@ export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vit
     return vital.value.toString();
   };
 
-  // Group vitals by type for summary
-  const vitalsByType = vitals.reduce((acc, vital) => {
-    if (!acc[vital.type]) acc[vital.type] = [];
-    acc[vital.type].push(vital);
-    return acc;
-  }, {} as Record<VitalType, VitalRecord[]>);
-
-  // Calculate statistics for summary
-  const summaryStats = Object.entries(vitalsByType).map(([type, records]) => {
-    const config = VITAL_CONFIG[type as VitalType];
-    const values = records.map(r => r.value);
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    // Graded the same way as the Status column on each row. These two used to
-    // disagree inside one document: rows against the clinical thresholds, this
-    // summary against VITAL_CONFIG's target band, which is a tighter number and
-    // labelled "normal range" here as though it were the same thing.
-    const inRange = records.filter(
-      (r) => describeReadingStatus(r.type, r.value, r.secondary_value, r.unit) === 'Normal',
-    ).length;
-
-    return {
-      type: config.label,
-      unit: config.unit,
-      count: records.length,
-      average: avg.toFixed(1),
-      min,
-      max,
-      inRangePercent: Math.round((inRange / records.length) * 100),
-      normalRange: describeNormalRange(type),
-    };
-  });
+  const summaryStats = summariseVitalsForExport(vitals);
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -248,7 +278,7 @@ export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vit
           </thead>
           <tbody>
             ${vitals.map(vital => {
-              const config = VITAL_CONFIG[vital.type];
+              const config = resolveVitalConfig(vital.type);
               const status = getStatus(vital);
               const statusClass = status === 'Normal' ? 'status-normal' : status === 'High' ? 'status-high' : 'status-low';
               return `

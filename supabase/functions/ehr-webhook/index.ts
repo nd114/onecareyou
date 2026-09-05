@@ -12,17 +12,23 @@ const logStep = (step: string, details?: any) => {
   console.log(`[EHR-WEBHOOK] ${step}${detailsStr}`);
 };
 
-// LOINC codes for vital types
-const VITAL_LOINC_MAP: Record<string, string> = {
-  '85354-9': 'blood_pressure',
-  '8867-4': 'heart_rate',
-  '8310-5': 'temperature',
-  '9279-1': 'respiratory_rate',
-  '2708-6': 'oxygen_saturation',
-  '29463-7': 'weight',
-  '39156-5': 'bmi',
-  '2339-0': 'blood_glucose',
-};
+/**
+ * LOINC codes for vital types — the shared map, not a third copy of it.
+ *
+ * This file used to carry its own, and it had drifted: 39156-5 to bmi and
+ * 9279-1 to respiratory_rate, neither of which VITAL_CONFIG holds. Rows of a
+ * type the app cannot configure arrive with no reference range, so nothing can
+ * grade them and — until the fix in src/types/health.ts — everything above
+ * zero was graded "high" anyway. An imported BMI of 22 showed in red.
+ *
+ * It also mapped 2339-0 to 'blood_glucose' while the rest of the app calls it
+ * 'glucose', so those rows landed under a type no screen queries.
+ *
+ * One map, in _shared, so this cannot drift again.
+ */
+import { VITAL_LOINC } from "../_shared/fhir-observation.ts";
+
+const VITAL_LOINC_MAP = VITAL_LOINC;
 
 interface FHIRObservation {
   resourceType: 'Observation';
@@ -315,15 +321,20 @@ serve(async (req) => {
   }
 });
 
+/**
+ * Only the types the app can actually store. The entries for respiratory_rate,
+ * bmi and blood_glucose went with the map above — the first two are types
+ * VITAL_CONFIG has no entry for, and the third was this file's own name for
+ * what everything else calls 'glucose'.
+ */
 function getDefaultUnit(vitalType: string): string {
   switch (vitalType) {
+    case 'blood_pressure': return 'mmHg';
     case 'heart_rate': return 'bpm';
     case 'temperature': return '°C';
-    case 'respiratory_rate': return 'breaths/min';
     case 'oxygen_saturation': return '%';
     case 'weight': return 'kg';
-    case 'bmi': return 'kg/m²';
-    case 'blood_glucose': return 'mg/dL';
+    case 'glucose': return 'mg/dL';
     default: return '';
   }
 }
