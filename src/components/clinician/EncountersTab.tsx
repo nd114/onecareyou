@@ -264,7 +264,12 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
               </div>
               <div>
                 <Label>Chief complaint</Label>
-                <Input value={draft.chief_complaint} onChange={(e) => setDraft({ ...draft, chief_complaint: e.target.value })} />
+                <Input
+                  value={draft.chief_complaint}
+                  readOnly={isLocked}
+                  className={isLocked ? "bg-muted/50" : undefined}
+                  onChange={(e) => setDraft({ ...draft, chief_complaint: e.target.value })}
+                />
               </div>
               {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
                 <div key={k}>
@@ -272,6 +277,8 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
                   <Textarea
                     rows={3}
                     value={(draft as any)[k]}
+                    readOnly={isLocked}
+                    className={isLocked ? "bg-muted/50" : undefined}
                     onChange={(e) => setDraft({ ...draft, [k]: e.target.value })}
                   />
                 </div>
@@ -286,10 +293,12 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setOpen(false)}>
+                {isLocked ? "Close" : "Cancel"}
+              </Button>
               <Button onClick={handleSave} disabled={create.isPending || update.isPending}>
                 {(create.isPending || update.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {active ? "Save changes" : "Start encounter"}
+                {isLocked ? "Save follow-up" : active ? "Save changes" : "Start encounter"}
               </Button>
             </DialogFooter>
           </DialogContent>
