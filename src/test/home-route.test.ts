@@ -18,7 +18,14 @@ describe("home, once you are signed in", () => {
   });
 
   it("sends a hospital admin to the practice they run", () => {
-    expect(homeRouteFor({ isTenantAdmin: true, isClinician: true })).toBe("/clinician/practice");
+    // Clinical work wins over administrative work: somebody running a clinic
+    // sees patients every day and changes the billing currency twice a year.
+    expect(homeRouteFor({ isTenantAdmin: true, isClinician: true })).toBe("/clinician/today");
+  });
+
+  it("still sends a non-clinical practice administrator to Practice", () => {
+    // For a practice manager it is the daily work, not the occasional errand.
+    expect(homeRouteFor({ isTenantAdmin: true })).toBe("/clinician/practice");
   });
 
   it("sends a platform admin to the console", () => {
@@ -29,7 +36,7 @@ describe("home, once you are signed in", () => {
     // Someone can hold several. A platform admin who also sees patients
     // belongs on the console, not in a patient list.
     expect(homeRouteFor({ isAdmin: true, isTenantAdmin: true, isClinician: true })).toBe("/admin");
-    expect(homeRouteFor({ isTenantAdmin: true, isClinician: true })).toBe("/clinician/practice");
+    expect(homeRouteFor({ isTenantAdmin: true, isClinician: true })).toBe("/clinician/today");
   });
 });
 

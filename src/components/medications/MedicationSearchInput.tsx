@@ -21,6 +21,8 @@ export function MedicationSearchInput({
   className,
 }: MedicationSearchInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
+  /** The suggestion most recently chosen, so focusing does not reopen the list. */
+  const justSelectedRef = useRef<string | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -48,6 +50,9 @@ export function MedicationSearchInput({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
+    // Typing again means they are looking for something else, so the list is
+    // wanted once more.
+    justSelectedRef.current = null;
     setShowSuggestions(true);
     setHighlightedIndex(-1);
   };
@@ -55,6 +60,11 @@ export function MedicationSearchInput({
   const handleSelectSuggestion = (suggestion: MedicationSuggestion) => {
     onChange(suggestion.name);
     setShowSuggestions(false);
+    // Remembered so the refocus below does not immediately reopen the list.
+    // `onFocus` opens whenever the value is two characters or more, and after
+    // a selection it always is — so the dropdown reappeared over the Type
+    // field and stayed until the patient clicked somewhere else.
+    justSelectedRef.current = suggestion.name;
     onSelectSuggestion?.(suggestion);
     inputRef.current?.focus();
   };
@@ -106,7 +116,12 @@ export function MedicationSearchInput({
           ref={inputRef}
           value={value}
           onChange={handleInputChange}
-          onFocus={() => value.length >= 2 && setShowSuggestions(true)}
+          onFocus={() => {
+            // Not reopened for the value they just picked. Comparing the value
+            // rather than using a timer means there is no race to lose.
+            if (justSelectedRef.current === value) return;
+            if (value.length >= 2) setShowSuggestions(true);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="pl-10"

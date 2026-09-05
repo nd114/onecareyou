@@ -22,13 +22,24 @@ export interface HomeRouteRoles {
 }
 
 /**
- * Checked most-specific first: a platform admin who also happens to be a
- * clinician belongs on the console, not in a patient list.
+ * A platform admin belongs on the console, and then clinical work wins over
+ * administrative work.
+ *
+ * The order used to put `isTenantAdmin` above `isClinician`, so a clinician who
+ * owns their practice — which is what most practice owners are — was dropped on
+ * the admin page every morning. An external review caught it, and it is the
+ * same mistake the practice page itself used to make: optimising for the rare
+ * task. Somebody running a clinic changes the billing currency perhaps twice a
+ * year and sees patients every day.
+ *
+ * A tenant admin who is *not* a clinician — a practice manager, an
+ * administrator — still lands on Practice, because for them it is the daily
+ * work rather than the occasional errand.
  */
 export function homeRouteFor(roles: HomeRouteRoles): string {
   if (roles.isAdmin) return '/admin';
-  if (roles.isTenantAdmin) return '/clinician/practice';
   if (roles.isClinician) return '/clinician/today';
+  if (roles.isTenantAdmin) return '/clinician/practice';
   return '/dashboard';
 }
 

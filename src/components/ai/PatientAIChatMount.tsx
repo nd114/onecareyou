@@ -23,8 +23,12 @@ import { AIChatFAB } from './AIChatFAB';
  * - Onboarding and install are single-purpose flows where a floating button
  *   competes with the one action the screen is asking for.
  * - Auth screens have no record to talk about yet.
+ * - The assistant's own page, because a button whose job is to take you
+ *   somewhere you already are is furniture.
  */
 const NOT_HERE = [
+  '/ai',
+  '/assist',
   '/clinician',
   '/admin',
   '/practice-admin',

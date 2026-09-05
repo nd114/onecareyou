@@ -26,9 +26,12 @@ export function FabStack({ children }: { children: ReactNode }) {
       className={cn(
         'fixed right-4 sm:right-6 z-50 flex flex-col items-end gap-3 pointer-events-none',
         raised
-          ? 'bottom-24 sm:bottom-24'
-          // Raise above the mobile bottom nav (~60px) on small screens.
-          : 'bottom-20 sm:bottom-6',
+          ? 'bottom-[calc(6rem+env(safe-area-inset-bottom))] sm:bottom-24'
+          // Above the mobile tab bar, which is 4rem plus the home indicator on
+          // a notched device. A fixed 5rem cleared the bar on a flat screen
+          // and rode up over its labels on a phone with an indicator, because
+          // the inset was not counted.
+          : 'bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-6',
       )}
       aria-hidden={false}
     >

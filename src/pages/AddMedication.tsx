@@ -19,6 +19,11 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { MEDICATION_FREQUENCIES, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
 import { useMedications } from '@/hooks/useMedications';
+import {
+  firstMedicationError,
+  validateMedicationDraft,
+  type MedicationFormErrors,
+} from '@/lib/medication-form';
 import { MedicationSearchInput } from '@/components/medications/MedicationSearchInput';
 import { MedicationSuggestion } from '@/hooks/useMedicationDatabase';
 import { MedicationScanner } from '@/components/medications/MedicationScanner';
@@ -50,6 +55,11 @@ const AddMedication = () => {
     prescriber: '',
     pharmacy: '',
   });
+  const [errors, setErrors] = useState<MedicationFormErrors>({});
+
+  /** Clear a field's error as soon as they fix it, rather than on next submit. */
+  const clearError = (field: keyof MedicationFormErrors) =>
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
 
   // Check subscription on mount
   useEffect(() => {
@@ -79,16 +89,37 @@ const AddMedication = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Type and Frequency are Radix Selects, not native <select> elements, so
+    // the form's `required` never applied to them and the browser never
+    // checked. The form saved with both empty, defaulted the type to
+    // 'prescription' — a claim about who told the patient to take it — and
+    // stored a blank frequency, which means no dose times, which means the
+    // medicine never once reminds them. Checked here because there is nowhere
+    // else it can be.
+    const found = validateMedicationDraft({
+      name: formData.name,
+      type: formData.type,
+      dosage: formData.dosage,
+      frequency: formData.frequency,
+      times_of_day: formData.times_of_day,
+    });
+    setErrors(found);
+    const first = firstMedicationError(found);
+    if (first) {
+      document.getElementById(`med-${first}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     // Enforce free tier limit
     if (isAtLimit) {
       toast.error('You\'ve reached your free medication limit. Upgrade to Premium for unlimited medications.');
       return;
     }
-    
+
     await addMedication.mutateAsync({
       name: formData.name,
-      type: formData.type || 'prescription',
+      type: formData.type as MedicationType,
       dosage: formData.dosage,
       frequency: formData.frequency,
       times_of_day: formData.times_of_day,
@@ -195,11 +226,14 @@ const AddMedication = () => {
                 </div>
 
                 {/* Medication Name with Search */}
-                <div className="space-y-2">
+                <div className="space-y-2" id="med-name">
                   <Label htmlFor="name">Medication Name *</Label>
                   <MedicationSearchInput
                     value={formData.name}
-                    onChange={(name) => setFormData({ ...formData, name })}
+                    onChange={(name) => {
+                      setFormData({ ...formData, name });
+                      clearError('name');
+                    }}
                     onSelectSuggestion={(med: MedicationSuggestion) => {
                       // Auto-fill dosage if common dosages available
                       if (med.commonDosages.length > 0) {
@@ -212,16 +246,20 @@ const AddMedication = () => {
                     }}
                     placeholder="Search medications, vitamins, supplements..."
                   />
+                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                 </div>
 
                 {/* Type */}
-                <div className="space-y-2">
+                <div className="space-y-2" id="med-type">
                   <Label>Medication Type *</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value as MedicationType })}
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, type: value as MedicationType });
+                      clearError('type');
+                    }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger aria-invalid={!!errors.type} className={errors.type ? 'border-destructive' : undefined}>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -232,28 +270,37 @@ const AddMedication = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
                 </div>
 
                 {/* Dosage */}
-                <div className="space-y-2">
+                <div className="space-y-2" id="med-dosage">
                   <Label htmlFor="dosage">Dosage *</Label>
                   <Input
                     id="dosage"
                     placeholder="e.g., 500mg, 1 tablet"
                     value={formData.dosage}
-                    onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                    required
+                    onChange={(e) => {
+                      setFormData({ ...formData, dosage: e.target.value });
+                      clearError('dosage');
+                    }}
+                    aria-invalid={!!errors.dosage}
+                    className={errors.dosage ? 'border-destructive' : undefined}
                   />
+                  {errors.dosage && <p className="text-sm text-destructive">{errors.dosage}</p>}
                 </div>
 
                 {/* Frequency */}
-                <div className="space-y-2">
+                <div className="space-y-2" id="med-frequency">
                   <Label>Frequency *</Label>
                   <Select
                     value={formData.frequency}
-                    onValueChange={handleFrequencyChange}
+                    onValueChange={(value) => {
+                      handleFrequencyChange(value);
+                      clearError('frequency');
+                    }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger aria-invalid={!!errors.frequency} className={errors.frequency ? 'border-destructive' : undefined}>
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                     <SelectContent>
@@ -264,6 +311,9 @@ const AddMedication = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.frequency && (
+                    <p className="text-sm text-destructive">{errors.frequency}</p>
+                  )}
                 </div>
 
                 {/* Time Slots */}

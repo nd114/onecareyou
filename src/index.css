@@ -188,10 +188,18 @@
    * every page sits underneath it. Applied to the app shell rather than each
    * page, so a new page cannot forget it. 4rem is the bar; the inset is the
    * home indicator on notched devices.
+   *
+   * The extra 5rem is the floating buttons. They sit in the bottom-right
+   * corner over whatever content is there, and a review found them hiding the
+   * things that matter most in a list row — the "Taken" checkmark, a dosage,
+   * a status badge — because those are right-aligned too. Padding by the tab
+   * bar alone left no way to scroll a row out from under them. This does not
+   * stop a FAB overlapping mid-scroll, which is what a FAB is; it means every
+   * row can be brought somewhere it is readable.
    */
   @media (max-width: 767px) {
     body[data-app-chrome='mobile-nav'] {
-      padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+      padding-bottom: calc(9rem + env(safe-area-inset-bottom));
     }
   }
 

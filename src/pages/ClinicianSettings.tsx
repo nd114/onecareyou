@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft,
   Bell,
@@ -45,6 +45,7 @@ import { PracticeTeamSection } from '@/components/clinician/PracticeTeamSection'
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { usePractice } from '@/hooks/usePractice';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 
 const ClinicianSettings = () => {
@@ -78,6 +79,8 @@ const ClinicianSettings = () => {
   // Session timeout for HIPAA compliance
   useSessionTimeout();
   const { tier } = useClinicianSubscription();
+  // The tenant's own name, which is what patients see and what branding uses.
+  const { currentPractice } = usePractice();
 
   const [profileForm, setProfileForm] = useState({
     first_name: clinicianProfile?.first_name || '',
@@ -402,14 +405,41 @@ const ClinicianSettings = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {/* Two fields used to hold a practice name — this one on the
+                      clinician's own profile, and practices.name on the tenant
+                      — both editable, in different places, silently diverging.
+                      A review found one account showing "Mitchell's Private
+                      Care" here and "Mitchell Medical Group" on Practice.
+                      Whoever belongs to a practice sees the practice's name and
+                      is told where to change it; only somebody with no practice
+                      still types one, because for them there is nothing else. */}
                   <div className="space-y-2">
                     <Label htmlFor="practice_name">Practice/Hospital Name</Label>
-                    <Input
-                      id="practice_name"
-                      value={profileForm.practice_name}
-                      onChange={(e) => setProfileForm({ ...profileForm, practice_name: e.target.value })}
-                      placeholder="City General Hospital"
-                    />
+                    {currentPractice ? (
+                      <>
+                        <Input id="practice_name" value={currentPractice.name} disabled readOnly />
+                        <p className="text-xs text-muted-foreground">
+                          This is your practice&rsquo;s name, and it is what patients see. Change it
+                          in{' '}
+                          <Link
+                            to="/clinician/practice/details"
+                            className="underline underline-offset-2"
+                          >
+                            Practice &rsaquo; Practice details
+                          </Link>
+                          .
+                        </p>
+                      </>
+                    ) : (
+                      <Input
+                        id="practice_name"
+                        value={profileForm.practice_name}
+                        onChange={(e) =>
+                          setProfileForm({ ...profileForm, practice_name: e.target.value })
+                        }
+                        placeholder="City General Hospital"
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Specialty</Label>

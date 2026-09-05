@@ -447,12 +447,12 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
       </div>
 
       {readOnly ? (
-        <div className="border-t px-4 py-3 text-xs text-muted-foreground bg-muted/30">
+        <div className="shrink-0 border-t px-4 py-3 text-xs text-muted-foreground bg-muted/30">
           {readOnlyNotice ??
             'This connection has ended. The conversation is kept for your records, but new messages can’t be sent.'}
         </div>
       ) : (
-      <div className="border-t px-3 pt-3 pb-2">
+      <div className="shrink-0 border-t px-3 pt-3 pb-2">
 
         {file && (
           <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/50 px-2 py-1.5 text-xs">

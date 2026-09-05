@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare } from 'lucide-react';
+import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { MessageThread } from '@/components/messaging/MessageThread';
 import { ConversationList, type Conversation } from '@/components/messaging/ConversationList';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,14 +47,16 @@ const ClinicianMessages = () => {
   }, [counterparties, threadSummaries, selected]);
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    /* Same column as the patient side: chrome takes what it needs, the
+       conversation pane takes the rest, and nothing here counts pixels. */
+    <div className="flex h-[100dvh] flex-col bg-muted/30">
       <Helmet>
         <title>Messages | OneCare for Clinicians</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <ClinicianHeader />
       <SectionTabs section="communicate" variant="clinician" />
-      <main className="container px-4 sm:px-6 py-6 sm:py-8">
+      <main className="container flex min-h-0 flex-1 flex-col px-4 sm:px-6 pt-6 sm:pt-8 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="font-display text-2xl sm:text-3xl font-bold flex items-center gap-2">
             <MessageSquare className="h-6 w-6 text-primary" />
@@ -73,8 +77,17 @@ const ClinicianMessages = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 h-[calc(100vh-220px)] min-h-[500px]">
-            <Card className="overflow-hidden flex flex-col">
+          /* Master/detail on a phone, same as the patient side and for the
+             same reason: stacked panes put the composer about two screens
+             down. A clinician answering a message on a ward is exactly the
+             person who cannot scroll for it. */
+          <div className="grid min-h-[360px] flex-1 grid-cols-1 gap-4 md:grid-cols-[280px_1fr]">
+            <Card
+              className={cn(
+                'flex flex-col overflow-hidden',
+                selected ? 'hidden md:flex' : 'flex',
+              )}
+            >
               <ConversationList
                 conversations={counterparties}
                 threads={threadSummaries}
@@ -85,18 +98,29 @@ const ClinicianMessages = () => {
                 emptyLabel="No conversations yet."
               />
             </Card>
-            <Card className="overflow-hidden flex flex-col">
-              <CardHeader className="py-3 px-4 border-b">
+            <Card
+              className={cn('flex flex-col overflow-hidden', selected ? 'flex' : 'hidden md:flex')}
+            >
+              <CardHeader className="flex flex-row items-center gap-2 border-b px-4 py-3 space-y-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="-ml-2 h-8 w-8 md:hidden"
+                  onClick={() => setSelected(null)}
+                  aria-label="Back to conversations"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
                 <CardTitle className="text-sm font-medium">
                   {selected ? selected.name : 'Select a conversation'}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0 flex-1 flex flex-col">
+              <CardContent className="flex flex-1 flex-col p-0 overflow-hidden">
                 <MessageThread
                   otherPartyUserId={selected?.id || null}
                   otherPartyName={selected?.name || ''}
                   role="clinician"
-                  className="h-full"
+                  className="h-full min-h-0"
                 />
               </CardContent>
             </Card>
