@@ -355,7 +355,8 @@ const HealthVault = () => {
           <DialogHeader>
             <DialogTitle>New folder</DialogTitle>
             <DialogDescription>
-              Name it, then move documents into it from each document's menu.
+              Name it, then use the folder icon on any document to file it here. An empty folder
+              disappears again, so file something into it to keep it.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -367,10 +368,11 @@ const HealthVault = () => {
                 toast.error('You already have a folder with that name');
                 return;
               }
+              setDraftFolders((prev) => [...prev, name]);
               setActiveFolder(name);
               setShowNewFolder(false);
               setNewFolderName('');
-              toast.success(`"${name}" is ready — move documents into it to fill it`);
+              toast.success(`"${name}" is ready — file documents into it to keep it`);
             }}
             className="space-y-4"
           >
