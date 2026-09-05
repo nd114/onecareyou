@@ -79,8 +79,15 @@ export function TenantSignInForm({
       return;
     }
 
+    toast.success(successMessage);
+
+    if (onSignedIn) {
+      setSubmitting(false);
+      onSignedIn();
+      return;
+    }
+
     const destination = await resolveSignedInDestination();
-    toast.success('Welcome back');
     navigate(destination, { replace: true });
   };
 
