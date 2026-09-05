@@ -153,7 +153,14 @@ export function Header() {
       <div className="container max-w-screen-2xl grid h-16 items-center gap-3 lg:gap-5 grid-cols-[auto_1fr_auto]">
         {/* Logo - sized to content so it never gets clipped */}
         <div className="flex justify-start shrink-0">
-          <Link to="/" className="flex items-center gap-2">
+          <Link
+            to="/"
+            aria-label="OneCare home"
+            /* Without a ring of its own the link fell back to the browser's
+               outline, which boxes the icon, the wordmark and the Beta pill
+               in one black rectangle. */
+            className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
             <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
                 <Heart className="h-5 w-5 text-primary-foreground" />

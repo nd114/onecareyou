@@ -12,7 +12,11 @@ export function AuthHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container max-w-screen-2xl flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <Link
+          to="/"
+          aria-label="OneCare home"
+          className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
             <Heart className="h-5 w-5 text-primary-foreground" />
           </div>

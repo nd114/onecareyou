@@ -160,7 +160,11 @@ export function ClinicianHeader() {
       <div className="container flex h-16 items-center">
         {/* Logo - fixed width for symmetry */}
         <div className="flex-1 flex justify-start">
-          <Link to="/clinician/dashboard" className="flex items-center gap-2">
+          <Link
+            to="/clinician/dashboard"
+            aria-label="OneCare home"
+            className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
               <Heart className="h-5 w-5 text-primary-foreground" />
             </div>

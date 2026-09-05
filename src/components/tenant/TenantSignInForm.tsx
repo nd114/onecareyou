@@ -39,10 +39,15 @@ export function TenantSignInForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // A rejected sign-in used to arrive as a toast in the far corner of the
+  // screen and then leave again. The person is looking at the password box;
+  // that is where the answer goes, and it stays until they try again.
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setFormError(null);
     const result = schema.safeParse(form);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -56,7 +61,7 @@ export function TenantSignInForm({
     setSubmitting(true);
     const { error } = await signIn(form.email, form.password);
     if (error) {
-      toast.error(
+      setFormError(
         error.message.toLowerCase().includes('invalid login')
           ? 'That email and password do not match an account.'
           : error.message,
@@ -84,7 +89,15 @@ export function TenantSignInForm({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {formError && (
+          <p
+            role="alert"
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {formError}
+          </p>
+        )}
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}-signin-email`}>Email</Label>
           <div className="relative">

@@ -23,6 +23,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 import { describeSubmissionError } from '@/lib/submission-errors';
+import {
+  validateContactDraft,
+  firstContactError,
+  type ContactField,
+} from '@/lib/contact-form';
 
 /**
  * The contact form.
@@ -57,10 +62,22 @@ const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [formData, setFormData] = useState(EMPTY);
+  const [errors, setErrors] = useState<Partial<Record<ContactField, string>>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    const found = validateContactDraft(formData, INQUIRY_TYPES.map((t) => t.value));
+    setErrors(found);
+    const first = firstContactError(found);
+    if (first) {
+      document.getElementById(first === 'inquiryType' ? 'inquiry-type' : first)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -87,6 +104,7 @@ const Contact = () => {
 
       setSent(true);
       setFormData(EMPTY);
+      setErrors({});
     } catch (error) {
       console.error('Error sending contact message:', error);
       toast.error(
@@ -146,7 +164,7 @@ const Contact = () => {
                 description="We answer in the order they arrive."
               />
               <PanelBody className="py-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="name">Your name</Label>
@@ -156,8 +174,15 @@ const Contact = () => {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         maxLength={200}
-                        required
+                        aria-invalid={!!errors.name}
+                        aria-describedby={errors.name ? 'name-error' : undefined}
+                        className={errors.name ? 'border-destructive' : undefined}
                       />
+                      {errors.name && (
+                        <p id="name-error" className="text-sm text-destructive">
+                          {errors.name}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
@@ -168,8 +193,15 @@ const Contact = () => {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         maxLength={320}
-                        required
+                        aria-invalid={!!errors.email}
+                        aria-describedby={errors.email ? 'email-error' : undefined}
+                        className={errors.email ? 'border-destructive' : undefined}
                       />
+                      {errors.email && (
+                        <p id="email-error" className="text-sm text-destructive">
+                          {errors.email}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -179,7 +211,12 @@ const Contact = () => {
                       value={formData.inquiryType}
                       onValueChange={(value) => setFormData({ ...formData, inquiryType: value })}
                     >
-                      <SelectTrigger id="inquiry-type">
+                      <SelectTrigger
+                        id="inquiry-type"
+                        aria-invalid={!!errors.inquiryType}
+                        aria-describedby={errors.inquiryType ? 'inquiry-type-error' : undefined}
+                        className={errors.inquiryType ? 'border-destructive' : undefined}
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -190,6 +227,11 @@ const Contact = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.inquiryType && (
+                      <p id="inquiry-type-error" className="text-sm text-destructive">
+                        {errors.inquiryType}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -200,8 +242,15 @@ const Contact = () => {
                       value={formData.subject}
                       onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                       maxLength={300}
-                      required
+                      aria-invalid={!!errors.subject}
+                      aria-describedby={errors.subject ? 'subject-error' : undefined}
+                      className={errors.subject ? 'border-destructive' : undefined}
                     />
+                    {errors.subject && (
+                      <p id="subject-error" className="text-sm text-destructive">
+                        {errors.subject}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -213,8 +262,15 @@ const Contact = () => {
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       rows={6}
                       maxLength={10000}
-                      required
+                      aria-invalid={!!errors.message}
+                      aria-describedby={errors.message ? 'message-error' : undefined}
+                      className={errors.message ? 'border-destructive' : undefined}
                     />
+                    {errors.message && (
+                      <p id="message-error" className="text-sm text-destructive">
+                        {errors.message}
+                      </p>
+                    )}
                   </div>
 
                   <Button

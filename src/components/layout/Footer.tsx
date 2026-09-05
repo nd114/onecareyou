@@ -9,7 +9,11 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
+            <Link
+              to="/"
+              aria-label="OneCare home"
+              className="flex items-center gap-2 mb-4 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
                 <Heart className="h-5 w-5 text-primary-foreground" />
               </div>

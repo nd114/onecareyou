@@ -53,6 +53,12 @@ export function KingsChatSignInButton({
   redirectTo,
 }: KingsChatSignInButtonProps) {
   const [loading, setLoading] = useState(false);
+  // The logo is served from the preview host's asset store. Anywhere that
+  // store is not mounted the request 404s and the browser draws its
+  // broken-image glyph on a sign-in button, which reads as "this is broken"
+  // about the whole login. Drop the image instead; the label already names
+  // the service.
+  const [logoBroken, setLogoBroken] = useState(false);
   const navigate = useNavigate();
   const cancelled = useRef(false);
   const popup = useRef<Window | null>(null);
@@ -167,8 +173,16 @@ export function KingsChatSignInButton({
     >
       {loading ? (
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : (
-        <img src={kingschatLogo.url} alt="" aria-hidden="true" className="mr-2 h-4 w-4" />
+      ) : logoBroken ? null : (
+        <img
+          src={kingschatLogo.url}
+          alt=""
+          aria-hidden="true"
+          width={16}
+          height={16}
+          className="mr-2 h-4 w-4"
+          onError={() => setLogoBroken(true)}
+        />
       )}
       {label}
     </Button>

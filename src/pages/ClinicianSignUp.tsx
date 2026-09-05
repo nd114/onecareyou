@@ -198,7 +198,7 @@ const ClinicianSignUp = () => {
           </CardHeader>
           <CardContent>
             {step === 'account' ? (
-              <form onSubmit={handleAccountSubmit} className="space-y-4">
+              <form onSubmit={handleAccountSubmit} className="space-y-4" noValidate>
                 {/* Title and Name Row */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
@@ -324,7 +324,7 @@ const ClinicianSignUp = () => {
                 </Button>
               </form>
             ) : (
-              <form onSubmit={handleProfileSubmit} className="space-y-4">
+              <form onSubmit={handleProfileSubmit} className="space-y-4" noValidate>
                 <Button
                   type="button"
                   variant="ghost"

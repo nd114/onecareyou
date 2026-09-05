@@ -37,6 +37,9 @@ const SignIn = () => {
   });
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  // Why the sign-in was refused stays on the form. A toast in the corner is
+  // easy to miss and gone before you have read it.
+  const [formError, setFormError] = useState<string | null>(null);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
@@ -57,6 +60,7 @@ const SignIn = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setFormError(null);
     
     // Validate form
     const result = signInSchema.safeParse(formData);
@@ -77,11 +81,11 @@ const SignIn = () => {
     
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        toast.error('Invalid email or password');
+        setFormError('That email and password do not match an account.');
       } else if (error.message.includes('Email not confirmed')) {
-        toast.error('Please confirm your email before signing in');
+        setFormError('Confirm your email address before signing in — check your inbox.');
       } else {
-        toast.error(error.message);
+        setFormError(error.message);
       }
       setIsLoading(false);
       return;
@@ -133,7 +137,15 @@ const SignIn = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {formError && (
+                <p
+                  role="alert"
+                  className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                >
+                  {formError}
+                </p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
