@@ -27,9 +27,15 @@ interface Props {
   query: RecordQuery;
   patientUserId: string;
   patientName?: string;
+  /**
+   * Where the patient's chart lives. The record page is keyed by the share's
+   * invite code, not the account id, so the caller resolves it — and when it
+   * cannot, no link is offered rather than one that dead-ends.
+   */
+  patientHref?: string;
 }
 
-export function RecordCards({ query, patientUserId, patientName }: Props) {
+export function RecordCards({ query, patientUserId, patientName, patientHref }: Props) {
   const [rows, setRows] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
