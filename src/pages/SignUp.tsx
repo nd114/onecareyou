@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { KingsChatSignInButton } from '@/components/auth/KingsChatSignInButton';
+import { passwordStrength } from '@/lib/password-strength';
 
 const signUpSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
@@ -35,6 +36,7 @@ const SignUp = () => {
     confirmPassword: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const strength = passwordStrength(formData.password);
   const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already logged in
@@ -173,11 +175,38 @@ const SignUp = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                {/* The rule used to arrive after you pressed the button, and
+                    the placeholder that carried it disappeared as soon as you
+                    started typing. */}
+                {formData.password.length > 0 && !errors.password && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1" aria-hidden>
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className={`h-1 flex-1 rounded-full ${
+                            i < strength.score
+                              ? strength.score === 1
+                                ? 'bg-severity-high'
+                                : strength.score === 2
+                                  ? 'bg-[hsl(var(--gold))]'
+                                  : 'bg-status-success'
+                              : 'bg-muted'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground" aria-live="polite">
+                      {strength.hint}
+                    </p>
+                  </div>
+                )}
                 {errors.password && (
                   <p className="text-sm text-destructive">{errors.password}</p>
                 )}

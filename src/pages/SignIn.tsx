@@ -122,7 +122,7 @@ const SignIn = ({ audience = 'patient' }: { audience?: 'patient' | 'clinician' }
       <div className="flex-1 gradient-hero flex items-center justify-center p-4">
 
       <SEOHead
-        title="Sign In"
+        title={forClinicians ? 'Clinician sign in' : 'Sign In'}
         description={
           forClinicians
             ? 'Sign in to OneCare to see your patients, their alerts and your practice.'

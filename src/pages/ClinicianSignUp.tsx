@@ -381,8 +381,13 @@ const ClinicianSignUp = () => {
                       className="pl-10"
                     />
                   </div>
+                  {/* "Helps verify your credentials" did not say what turns
+                      on, or what happens if you leave it blank. Both are worth
+                      knowing before you type a licence number into a form. */}
                   <p className="text-xs text-muted-foreground">
-                    Optional - helps verify your credentials
+                    Optional. Accounts without one work exactly the same and show as
+                    "Trust-based" rather than "Verified"; patients still choose what you
+                    can see either way. You can add it later in Settings.
                   </p>
                 </div>
                 

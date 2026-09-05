@@ -358,14 +358,29 @@ const CareCircle = () => {
                         {/* One visible action. The rest were five buttons in a
                             row, which does not fit a phone and buried the
                             destructive one among them. */}
+                        {/* Below sm this is a bare icon, so it needs a name
+                            of its own — and an invite nobody has claimed yet
+                            is exactly the row where you came to find it. */}
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-8 px-2 text-xs sm:px-3"
                           onClick={() => copyShareLink(share.invite_code)}
+                          title={
+                            share.is_claimed
+                              ? `Copy the link for ${share.display_name}`
+                              : `Copy the invite link to send to ${share.display_name} again`
+                          }
+                          aria-label={
+                            share.is_claimed
+                              ? `Copy the link for ${share.display_name}`
+                              : `Copy the invite link for ${share.display_name}`
+                          }
                         >
                           <Copy className="h-3.5 w-3.5 sm:mr-1.5" />
-                          <span className="hidden sm:inline">Copy link</span>
+                          <span className="hidden sm:inline">
+                            {share.is_claimed ? 'Copy link' : 'Copy invite'}
+                          </span>
                         </Button>
 
                         <DropdownMenu>
