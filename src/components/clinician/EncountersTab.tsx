@@ -54,6 +54,8 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
   const [shareOnSign, setShareOnSign] = useState(true);
   const [bookFollowUp, setBookFollowUp] = useState(true);
   const { schedule } = useAppointments(patientUserId);
+  /** Opened a signed note: read the record, do not pretend it can be rewritten. */
+  const isLocked = !!active?.signed_at;
 
   // Which of these encounters began as a dictation. A dictation row is
   // readable only by the clinician who recorded it, so a colleague simply gets
