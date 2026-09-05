@@ -78,6 +78,8 @@ import ClinicianPatientDetail from "./pages/ClinicianPatientDetail";
 import ClinicianPatients from "./pages/ClinicianPatients";
 import ClinicianGuidance from "./pages/ClinicianGuidance";
 import ClinicianAlerts from "./pages/ClinicianAlerts";
+import ClinicianSchedule from "./pages/ClinicianSchedule";
+import ClinicianInvoices from "./pages/ClinicianInvoices";
 import ClinicianPatientImport from "./pages/ClinicianPatientImport";
 import ClinicianManagedRecord from "./pages/ClinicianManagedRecord";
 
@@ -187,6 +189,19 @@ const App = () => (
             <Route path="/clinician/alerts" element={
               <ClinicianRoute>
                 <ClinicianAlerts />
+              </ClinicianRoute>
+            } />
+            {/* The practice diary and the practice ledger. The per-patient
+                tabs answer "what about this person"; these answer "what about
+                today" and "who owes us what", which no screen could. */}
+            <Route path="/clinician/schedule" element={
+              <ClinicianRoute>
+                <ClinicianSchedule />
+              </ClinicianRoute>
+            } />
+            <Route path="/clinician/invoices" element={
+              <ClinicianRoute>
+                <ClinicianInvoices />
               </ClinicianRoute>
             } />
             <Route path="/clinician/messages" element={

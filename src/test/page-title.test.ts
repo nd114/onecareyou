@@ -19,6 +19,13 @@ describe('matchesPattern', () => {
 });
 
 describe('pageNameForRoute', () => {
+  it('names the practice-wide diary and ledger from the navigation', () => {
+    expect(pageNameForRoute('/clinician/schedule')).toBe('Schedule');
+    expect(pageNameForRoute('/clinician/invoices')).toBe('Invoices');
+    // …and does not confuse them with the patient's own /schedule.
+    expect(pageNameForRoute('/schedule')).toBe('Doses');
+  });
+
   it('uses the name the navigation already gives a screen', () => {
     expect(pageNameForRoute('/vitals')).toBe('Vitals');
     expect(pageNameForRoute('/health-vault')).toBe('Vault');
@@ -70,6 +77,7 @@ describe('pageTitleForRoute', () => {
       '/settings', '/messages', '/guidance',
       '/clinician/today', '/clinician/patients', '/clinician/messages',
       '/clinician/practice', '/clinician/settings', '/clinician/guidance',
+      '/clinician/schedule', '/clinician/invoices',
     ]) {
       expect(pageTitleForRoute(path), path).not.toBeNull();
     }

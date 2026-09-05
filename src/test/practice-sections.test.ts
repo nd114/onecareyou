@@ -143,4 +143,17 @@ describe("where the sub-pages sit in the navigation", () => {
     expect(getActiveNavTab(practiceTabs, "/clinician/reports")?.to).toBe("/clinician/reports");
     expect(getActiveNavTab(practiceTabs, "/clinician/compliance")?.to).toBe("/clinician/compliance");
   });
+
+  it("puts the practice-wide diary and ledger in the right pillars", () => {
+    // A route in the wrong pillar highlights nothing, and the sub-nav above
+    // the page silently belongs to somewhere else.
+    expect(getClinicianPillarForRoute("/clinician/schedule")).toBe("today");
+    expect(getClinicianPillarForRoute("/clinician/invoices")).toBe("practice");
+    expect(getActiveNavTab(practiceTabs, "/clinician/invoices")?.to).toBe("/clinician/invoices");
+  });
+
+  it("does not let the practice pages swallow /clinician/practice itself", () => {
+    expect(getActiveNavTab(practiceTabs, "/clinician/practice")?.to).toBe("/clinician/practice");
+    expect(getActiveNavTab(practiceTabs, "/clinician/invoices")?.to).not.toBe("/clinician/practice");
+  });
 });

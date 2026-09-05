@@ -97,6 +97,9 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     primary: "/clinician/today",
     tabs: [
       { to: "/clinician/today", label: "Today", match: ["/clinician/dashboard"] },
+      // The diary across every patient. Appointments were reachable only from
+      // inside one patient at a time, so a working day had no single view.
+      { to: "/clinician/schedule", label: "Schedule" },
       { to: "/clinician/alerts", label: "Alert rules" },
     ],
 
@@ -131,6 +134,8 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     primary: "/clinician/practice",
     tabs: [
       { to: "/clinician/practice", label: "Overview" },
+      // Billing had the same problem the schedule did: one patient at a time.
+      { to: "/clinician/invoices", label: "Invoices" },
       { to: "/clinician/reports", label: "Reports" },
       // Audit and the BAA are things you reach *because* of compliance, not
       // three peers in a row. Both keep their routes — deep links and the
