@@ -1,4 +1,5 @@
 import { useClinicianPatientRecords, type ClinicianPatientRecord } from "@/hooks/useClinicianPatientRecords";
+import { useClinicianPatients } from "@/hooks/useClinicianPatients";
 import { resolvePatient } from "@/lib/ai-record-query";
 import { RecordCards } from "./RecordCards";
 import type { ChatMessage } from "@/hooks/useAIChat";
