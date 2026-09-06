@@ -37,6 +37,7 @@ import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInv
 
 import { PendingClinicianRecordsBanner } from '@/components/consent/PendingClinicianRecordsBanner';
 import { medicationTypeLabel } from '@/lib/medication-labels';
+import { GettingStartedCard } from '@/components/patient/GettingStartedCard';
 
 
 const getQuickLinks = (showAdherence: boolean) => [
@@ -108,9 +109,12 @@ const Dashboard = () => {
             Welcome back, {userName}! 👋
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Here's your health overview for today, <span className="font-semibold text-foreground">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+            Here's your health overview for today, <span className="font-semibold text-foreground">{format(new Date(), 'EEEE, MMMM d')}</span>
           </p>
         </motion.div>
+
+        {/* What to do first, for as long as there is a first thing to do. */}
+        <GettingStartedCard />
 
         {/* An institution owner invited by OneCare may land here before accepting;
             accepting moves them to their administrative dashboard. */}
