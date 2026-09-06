@@ -2,7 +2,14 @@ import { useMemo } from 'react';
 import { AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { assessPatientRisk, type RiskLevel, type RiskSeverity, type RiskVital } from '@/lib/patient-risk';
+import {
+  assessPatientRisk,
+  explainRiskLevel,
+  type RiskLevel,
+  type RiskSeverity,
+  type RiskVital,
+} from '@/lib/patient-risk';
+import { resolveVitalConfig } from '@/types/health';
 import { cn } from '@/lib/utils';
 
 interface PatientRiskIndicatorProps {
@@ -107,6 +114,13 @@ export function PatientRiskIndicator({
         )}
       </div>
 
+      {/* The rule that produced the level, against this patient's counts. It
+          was two lines of code and nowhere on screen, so "High risk" above two
+          moderate findings and nothing critical looked like the badge knew
+          something it had not shown. A score a clinician cannot check is one
+          they learn to skip. */}
+      <p className="text-sm">{explainRiskLevel(risk)}</p>
+
       {risk.factors.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Every recorded reading is within its normal range, and doses are being taken.
@@ -127,6 +141,16 @@ export function PatientRiskIndicator({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Nothing was concluded about these, which is not the same as their
+          being fine. Left unsaid, a cholesterol with no reference band leaves
+          the badge reading Stable and the clinician none the wiser. */}
+      {risk.unassessed.length > 0 && (
+        <p className="text-xs text-muted-foreground border-t pt-2">
+          Not assessed: {risk.unassessed.map((t) => resolveVitalConfig(t).label).join(', ')} — no reference range here, so
+          nothing above covers {risk.unassessed.length === 1 ? 'it' : 'them'}.
+        </p>
       )}
     </div>
   );

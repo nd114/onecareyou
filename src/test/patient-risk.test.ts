@@ -3,6 +3,7 @@ import {
   assessPatientRisk,
   describeNormalRange,
   describeReadingStatus,
+  explainRiskLevel,
   isReadingOutsideRange,
   normaliseReading,
   type RiskVital,
@@ -229,5 +230,77 @@ describe("describeNormalRange", () => {
 
   it("says nothing rather than inventing a range it does not have", () => {
     expect(describeNormalRange("weight")).toBe("—");
+  });
+});
+
+describe("explaining the level", () => {
+  const at = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+
+  it("names the critical finding when one drove it", () => {
+    const risk = assessPatientRisk([
+      { type: "heart_rate", value: 165, unit: "bpm", recorded_at: at(0) },
+    ]);
+    expect(risk.level).toBe("high");
+    expect(explainRiskLevel(risk)).toBe("High because 1 finding is critical.");
+  });
+
+  it("says so when the level is high on volume rather than severity", () => {
+    // Two moderate findings, nothing critical — the case where a clinician
+    // would otherwise be looking for a critical value that is not there.
+    const risk = assessPatientRisk([
+      { type: "heart_rate", value: 110, unit: "bpm", recorded_at: at(0) },
+      { type: "oxygen_saturation", value: 93, unit: "%", recorded_at: at(0) },
+    ]);
+    expect(risk.level).toBe("high");
+    expect(risk.highCount).toBe(0);
+    expect(explainRiskLevel(risk)).toContain("two or more moves the level up");
+  });
+
+  it("tells a clinician what would take moderate to high", () => {
+    const risk = assessPatientRisk([
+      { type: "heart_rate", value: 110, unit: "bpm", recorded_at: at(0) },
+    ]);
+    expect(risk.level).toBe("medium");
+    expect(explainRiskLevel(risk)).toContain("Two would make it high");
+  });
+
+  it("distinguishes a clean assessment from an empty one", () => {
+    const clean = assessPatientRisk([
+      { type: "heart_rate", value: 72, unit: "bpm", recorded_at: at(0) },
+    ]);
+    expect(explainRiskLevel(clean)).toBe("Stable: nothing assessed fell outside its normal range.");
+  });
+});
+
+describe("what was and was not looked at", () => {
+  const at = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+
+  it("lists a measurement with no band as unassessed rather than fine", () => {
+    // A cholesterol of 400 has no reference band here. Left silent it reads as
+    // an all-clear, which is the most convincing kind of wrong answer.
+    const risk = assessPatientRisk([
+      { type: "heart_rate", value: 72, unit: "bpm", recorded_at: at(0) },
+      { type: "cholesterol_total", value: 400, unit: "mg/dL", recorded_at: at(0) },
+    ]);
+
+    expect(risk.level).toBe("low");
+    expect(risk.assessed).toContain("heart_rate");
+    expect(risk.unassessed).toContain("cholesterol_total");
+    expect(risk.assessed).not.toContain("cholesterol_total");
+  });
+
+  it("counts a blood pressure as assessed", () => {
+    const risk = assessPatientRisk([
+      { type: "blood_pressure", value: 120, secondary_value: 80, unit: "mmHg", recorded_at: at(0) },
+    ]);
+    expect(risk.assessed).toEqual(["blood_pressure"]);
+    expect(risk.unassessed).toEqual([]);
+  });
+
+  it("resolves an alias to the measurement it stands for", () => {
+    const risk = assessPatientRisk([
+      { type: "spo2", value: 98, unit: "%", recorded_at: at(0) },
+    ]);
+    expect(risk.assessed).toEqual(["oxygen_saturation"]);
   });
 });

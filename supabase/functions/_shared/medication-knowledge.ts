@@ -314,6 +314,12 @@ export function severityFromDescription(description: string): InteractionSeverit
   return "moderate";
 }
 
+/** The bits of an RxNav interaction concept this reads. */
+interface RxNavConcept {
+  minConceptItem?: { name?: string };
+  sourceConceptItem?: { url?: string };
+}
+
 export interface RxNormInteraction {
   drug1: string;
   drug2: string;
@@ -342,9 +348,7 @@ export function interactionsFromRxNav(payload: unknown): RxNormInteraction[] {
         if (!description) continue;
 
         const concepts = Array.isArray(pair.interactionConcept) ? pair.interactionConcept : [];
-        const drugs = (concepts as Array<Record<string, any>>).map(
-          (c) => c?.minConceptItem?.name,
-        );
+        const drugs = (concepts as RxNavConcept[]).map((c) => c?.minConceptItem?.name);
 
         interactions.push({
           drug1: typeof drugs[0] === "string" ? drugs[0] : "Unknown",
@@ -352,7 +356,7 @@ export function interactionsFromRxNav(payload: unknown): RxNormInteraction[] {
           severity: severityFromDescription(description),
           description,
           source: sourceName,
-          sourceUrl: (concepts as Array<Record<string, any>>)[0]?.sourceConceptItem?.url,
+          sourceUrl: (concepts as RxNavConcept[])[0]?.sourceConceptItem?.url,
         });
       }
     }
@@ -651,7 +655,7 @@ export type FetchLike = (url: string) => Promise<{
  * digits, spaces and hyphens goes.
  */
 export function searchSafeName(name: string): string {
-  return name.replace(/[^A-Za-z0-9 \-]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  return name.replace(/[^A-Za-z0-9 -]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
 }
 
 /** The openFDA label for a drug, by brand or generic name. */

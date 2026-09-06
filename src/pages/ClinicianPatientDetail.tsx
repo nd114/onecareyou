@@ -244,28 +244,6 @@ const ClinicianPatientDetail = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <CreateGuidanceDialog
-                patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
-                selectedPatientId={patient.user_id}
-                trigger={
-                  <Button variant="outline">
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Guidance
-                  </Button>
-                }
-              />
-              <CreateAlertRuleDialog
-                patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
-                selectedPatientId={patient.user_id}
-                trigger={
-                  <Button className="gradient-primary border-0">
-                    <Bell className="h-4 w-4 mr-2" />
-                    Set Alert
-                  </Button>
-                }
-              />
-            </div>
           </div>
 
           {/* Permission Badges */}
@@ -289,6 +267,42 @@ const ClinicianPatientDetail = () => {
             </div>
           )}
         </motion.div>
+
+        {/* Follows the clinician down the chart: the actions, and once the
+            header above has scrolled away, whose chart this is. */}
+        <PatientActionRail
+          patientName={patient.patient_name || 'Unknown patient'}
+          patientUserId={patient.user_id}
+          isClinicalStaff={!!clinicalStaff}
+          onJump={setActiveTab}
+          riskChip={
+            <PatientRiskIndicator vitals={vitals} adherenceRate={adherenceRate || undefined} />
+          }
+          guidanceAction={
+            <CreateGuidanceDialog
+              patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
+              selectedPatientId={patient.user_id}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Send className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Send guidance</span>
+                </Button>
+              }
+            />
+          }
+          alertAction={
+            <CreateAlertRuleDialog
+              patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
+              selectedPatientId={patient.user_id}
+              trigger={
+                <Button size="sm" className="gradient-primary border-0">
+                  <Bell className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Set alert</span>
+                </Button>
+              }
+            />
+          }
+        />
 
         {/* Quick Stats */}
         <motion.div
@@ -813,9 +827,6 @@ const ClinicianPatientDetail = () => {
             </TabsContent>
           </Tabs>
 
-          <aside className="hidden lg:block">
-            <PatientActionRail patientUserId={patient.user_id} onTabChange={setActiveTab} />
-          </aside>
         </motion.div>
       </main>
     </div>

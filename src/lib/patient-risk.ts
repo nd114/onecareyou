@@ -41,6 +41,17 @@ export interface RiskAssessment {
   factors: RiskFactor[];
   highCount: number;
   mediumCount: number;
+  /** Measurements that were weighed against a reference band. */
+  assessed: string[];
+  /**
+   * Measurements on record that no band covers, so nothing was concluded about
+   * them either way.
+   *
+   * Without this a clinician cannot tell "we looked and it was fine" from "we
+   * never looked". A cholesterol of 400 with no band leaves the badge reading
+   * Stable, and silence is the most convincing kind of wrong answer.
+   */
+  unassessed: string[];
 }
 
 interface Band {
@@ -380,6 +391,15 @@ export function assessPatientRisk(
   const highCount = factors.filter((f) => f.severity === "high").length;
   const mediumCount = factors.filter((f) => f.severity === "medium").length;
 
+  const assessed: string[] = [];
+  const unassessed: string[] = [];
+  for (const type of Object.keys(latestByType)) {
+    const key = type === "blood_pressure" ? "systolic" : type;
+    (BANDS[key] ? assessed : unassessed).push(type);
+  }
+  assessed.sort();
+  unassessed.sort();
+
   let level: RiskLevel = "low";
   if (highCount > 0 || mediumCount >= 2) level = "high";
   else if (mediumCount > 0) level = "medium";
@@ -388,5 +408,34 @@ export function assessPatientRisk(
   const order: Record<RiskSeverity, number> = { high: 0, medium: 1, low: 2 };
   factors.sort((a, b) => order[a.severity] - order[b.severity]);
 
-  return { level, factors, highCount, mediumCount };
+  return { level, factors, highCount, mediumCount, assessed, unassessed };
+}
+
+/**
+ * Why the level came out where it did.
+ *
+ * The rule is two lines of code and was nowhere on screen, so a clinician
+ * looking at "High risk" above two moderate findings and nothing critical had no
+ * way to tell whether the badge was reading the findings or something it had not
+ * shown them. A score a clinician cannot check is a score they will learn to
+ * ignore — which is worse than not showing one.
+ */
+export function explainRiskLevel(assessment: RiskAssessment): string {
+  const { level, highCount, mediumCount, factors } = assessment;
+
+  if (level === "high") {
+    return highCount > 0
+      ? `High because ${highCount} ${highCount === 1 ? "finding is" : "findings are"} critical.`
+      : `High because ${mediumCount} findings are outside their normal range — two or more moves the level up even with nothing critical.`;
+  }
+
+  if (level === "medium") {
+    return `Moderate because ${mediumCount} ${mediumCount === 1 ? "finding sits" : "findings sit"} outside the normal range. Two would make it high.`;
+  }
+
+  if (factors.length > 0) {
+    return `Stable: ${factors.length} ${factors.length === 1 ? "note" : "notes"} worth reading, none outside a normal range.`;
+  }
+
+  return "Stable: nothing assessed fell outside its normal range.";
 }

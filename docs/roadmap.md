@@ -149,6 +149,26 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
   One threshold set on many patients at once, replacing rather than duplicating an existing rule;
   a malformed CSV is now rejected with the specific problem named instead of importing sideways.
 
+- **The chart says whose chart it is.** A patient's record is fifteen tabs deep, and two things
+  scrolled away together: the actions, which sat in the page header, and the patient's name.
+  Somebody writing an encounter note two screens down had nothing on screen naming the patient, and
+  wrong-patient documentation does not need an unusual sequence of events to happen. An action rail
+  now sticks under the header carrying Send guidance, Set alert and jumps to the tabs a clinician
+  reaches for, and reveals the name and risk chip the moment the header above leaves the viewport.
+  It sits in the normal flow rather than floating, which keeps it clear of the mobile tab bar — the
+  collision between bottom nav, FAB stack and sticky sub-tabs that item 1 flags. Rendering it caught
+  what reading it did not: at 390px the name was crushed to a single letter by the buttons beside
+  it, which is the one thing the strip exists for, so below `sm` the name takes the room and the
+  chip stands down. It replaces an `lg`-and-up sidebar card that carried Start encounter, Add task
+  and Refer — all three are in its menu, and reachable on a phone now, which they never were.
+- **The risk badge now shows its working.** "High risk" over two moderate findings and nothing
+  critical looked like the badge knew something it had not shown — the rule that produces the level
+  was two lines of code and nowhere on screen, and a score a clinician cannot check is one they
+  learn to skip. The panel states it against this patient's counts ("High because 3 findings are
+  outside their normal range — two or more moves the level up even with nothing critical"), and
+  names what it did **not** weigh: a measurement with no reference band, a total cholesterol of 400
+  among them, used to leave the badge reading Stable with nothing saying it had never been
+  considered. 10 assertions on top of the engine's existing 38, plus 3 on the rail.
 - **A Coverage tab that says who is falling through the gaps.** The rosters already answered "who
   works here" and "who are our patients"; nothing answered the question an administrator actually
   has, which is who is between the two. The tab reports patients sharing their record with the
@@ -283,7 +303,7 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    now closed by default and rejects any callback without `state`, so the requirement is enforced
    in code rather than recorded in a document (August 2026). Whoever builds the linking design has
    to build the issuing half first, which was the point.
-8. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
+8. **QHIN Network Records tab** — the remaining half of clinician depth phase 4, held with the QHIN live connection below since it has nothing to show without one.
 9. **Health news feed** filtered against the patient's own medications and conditions.
 10. **WhatsApp transport** behind the existing provider interface.
 11. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
