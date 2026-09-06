@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { edgeFunctionError } from '@/lib/edge-function-error';
 
 interface EHRConfigDialogProps {
   open: boolean;
@@ -57,7 +58,7 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
         },
       });
 
-      if (error) throw error;
+      if (error) throw new Error((await edgeFunctionError(error)).message);
 
       if (data.success) {
         setTestResult({

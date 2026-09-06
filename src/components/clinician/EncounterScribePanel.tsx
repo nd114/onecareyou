@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Encounter } from "@/hooks/useEncounters";
 import { toast } from "sonner";
+import { edgeFunctionError } from '@/lib/edge-function-error';
 
 export interface ScribeDraft {
   chief_complaint?: string;
@@ -84,7 +85,7 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
         body: { encounterId: encounter.id, audioPath: path },
       });
       if (data?.error) throw new Error(data.error);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error((await edgeFunctionError(error)).message);
       setTranscript(data.transcript ?? "");
       setDraft((data.draft ?? {}) as ScribeDraft);
       toast.success("Draft ready — review before applying");

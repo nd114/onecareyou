@@ -92,7 +92,10 @@ export function useEHRConnections() {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['ehr-connections'] }); },
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not update that connection');
+    },
+});
 
   const deleteConnection = useMutation({
     mutationFn: async (connectionId: string) => {

@@ -136,7 +136,10 @@ export function usePracticeTasks(opts: UsePracticeTasksOptions = {}) {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["practice-tasks"] }),
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not delete that task');
+    },
+});
 
   return {
     tasks: tasksQuery.data ?? [],

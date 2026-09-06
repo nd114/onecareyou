@@ -24,6 +24,7 @@ import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 import { Progress } from '@/components/ui/progress';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { vitalPlaceholder } from '@/lib/vital-placeholder';
+import { edgeFunctionError } from '@/lib/edge-function-error';
 
 interface AddVitalDialogProps {
   open: boolean;
@@ -206,7 +207,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
             body: requestBody
           });
 
-          if (error) throw new Error(error.message || 'Failed to process lab report');
+          if (error) throw new Error((await edgeFunctionError(error)).message);
           if (!data.success) throw new Error(data.error || 'Failed to extract vitals from report');
 
           if (data.extractedVitals?.length > 0) {
@@ -277,7 +278,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
 
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to process lab report');
+        throw new Error((await edgeFunctionError(error)).message);
       }
 
       if (!data.success) {

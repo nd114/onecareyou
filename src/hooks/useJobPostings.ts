@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { JobListing } from "@/lib/job-listings";
+import { toast } from 'sonner';
 
 export interface JobPosting {
   id: string;
@@ -100,7 +101,10 @@ export function useJobMutations() {
       if (error) throw error;
     },
     onSuccess: invalidate,
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not create that job');
+    },
+});
 
   const updateJob = useMutation({
     mutationFn: async ({ id, ...input }: Partial<JobPostingInput> & { id: string }) => {
@@ -108,7 +112,10 @@ export function useJobMutations() {
       if (error) throw error;
     },
     onSuccess: invalidate,
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not update that job');
+    },
+});
 
   const deleteJob = useMutation({
     mutationFn: async (id: string) => {
@@ -116,7 +123,10 @@ export function useJobMutations() {
       if (error) throw error;
     },
     onSuccess: invalidate,
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not delete that job');
+    },
+});
 
   return { createJob, updateJob, deleteJob };
 }

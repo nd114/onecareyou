@@ -75,7 +75,10 @@ export function useReferrals(patientUserId?: string) {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["referrals"] }),
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not update that referral');
+    },
+});
 
   return { ...query, create, updateStatus };
 }

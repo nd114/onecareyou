@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Monitor,
   ShieldCheck,
+  LifeBuoy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -363,6 +364,16 @@ export function Header() {
                           Settings
                         </Link>
                       </DropdownMenuItem>
+                      {/* The Help Centre was linked from the marketing footer
+                          and nowhere else. The app shell has no footer, so once
+                          you were signed in — which is when you need help — it
+                          was unreachable. */}
+                      <DropdownMenuItem asChild>
+                        <Link to="/help" className="flex items-center gap-2">
+                          <LifeBuoy className="h-4 w-4" />
+                          Help &amp; support
+                        </Link>
+                      </DropdownMenuItem>
                     </>
                   )}
                   {isClinician && (
@@ -520,6 +531,13 @@ export function Header() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Settings
+                </Link>
+                <Link
+                  to="/help"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Help &amp; support
                 </Link>
                 <button
                   onClick={() => {

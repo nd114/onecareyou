@@ -8,6 +8,7 @@ import { DOCUMENT_CATEGORIES } from '@/hooks/useHealthDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { edgeFunctionError } from '@/lib/edge-function-error';
 
 interface SharedDocumentsTabProps {
   patientUserId: string;
@@ -92,7 +93,7 @@ export function SharedDocumentsTab({
           ? { documentId, providerShareId: shareId }
           : { documentShareId: rowId },
       });
-      if (error) throw error;
+      if (error) throw new Error((await edgeFunctionError(error)).message);
       if (data?.signedUrl) {
         window.open(data.signedUrl, '_blank');
       }

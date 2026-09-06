@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 /**
  * The patient's own AI conversations.
@@ -99,7 +100,10 @@ export function useAIConversations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
     },
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not delete that conversation');
+    },
+});
 
   return {
     conversations: list.data ?? [],

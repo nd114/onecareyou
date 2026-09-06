@@ -78,7 +78,10 @@ export function useClinicalTemplates(kind?: TemplateKind) {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["clinical-templates"] }),
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not delete that template');
+    },
+});
 
   return { templates: list.data ?? [], isLoading: list.isLoading, create, remove };
 }

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const APPLICATION_STATUSES = [
   'pending',
@@ -88,7 +89,10 @@ export function useApplicationMutations() {
       if (error) throw error;
     },
     onSuccess: invalidate,
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not update that application');
+    },
+});
 
   /** Archiving is reversible and never deletes the application record. */
   const setArchived = useMutation({
@@ -100,7 +104,10 @@ export function useApplicationMutations() {
       if (error) throw error;
     },
     onSuccess: invalidate,
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not archive that application');
+    },
+});
 
   return { updateApplication, setArchived };
 }

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
+import { edgeFunctionError } from '@/lib/edge-function-error';
 
 export type DocumentCategory = 
   | 'lab_result'
@@ -175,7 +176,10 @@ export function useHealthDocuments() {
       const { data, error } = await supabase.functions.invoke('summarize-health-document', {
         body: { documentId },
       });
-      if (error) throw error;
+      // The function explains itself — no AI consent, document too large, not
+      // a readable format. Rethrowing the raw error replaces all of that with
+      // "Edge Function returned a non-2xx status code".
+      if (error) throw new Error((await edgeFunctionError(error)).message);
       return data;
     },
     onSuccess: () => {

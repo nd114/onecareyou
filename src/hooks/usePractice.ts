@@ -372,6 +372,9 @@ export function usePractice() {
       queryClient.invalidateQueries({ queryKey: ['my-practice-invitations'] });
       toast.success('Invitation declined');
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Could not decline that invitation');
+    },
   });
 
   // Update member permissions
@@ -387,6 +390,9 @@ export function usePractice() {
       queryClient.invalidateQueries({ queryKey: ['practice-members'] });
       toast.success('Member updated');
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Could not update that member');
+    },
   });
 
   // Remove a member
@@ -401,6 +407,9 @@ export function usePractice() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practice-members'] });
       toast.success('Member removed');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Could not remove that member');
     },
   });
 

@@ -9,6 +9,7 @@ import {
   Users,
   Bell,
   Settings,
+  LifeBuoy,
   LayoutDashboard,
   FileText,
   LogOut,
@@ -344,6 +345,15 @@ export function ClinicianHeader() {
                     My profile &amp; settings
                   </Link>
                 </DropdownMenuItem>
+                {/* Linked from the marketing footer and nowhere else, which the
+                    app shell does not render — so help was unreachable from
+                    inside the product. */}
+                <DropdownMenuItem asChild>
+                  <Link to="/help" className="flex items-center gap-2 cursor-pointer">
+                    <LifeBuoy className="h-4 w-4" />
+                    Help &amp; support
+                  </Link>
+                </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
@@ -449,6 +459,14 @@ export function ClinicianHeader() {
             >
               <Settings className="h-4 w-4" />
               My profile &amp; settings
+            </Link>
+            <Link
+              to="/help"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
+            >
+              <LifeBuoy className="h-4 w-4" />
+              Help &amp; support
             </Link>
 
             {/* Mobile Theme Toggle */}

@@ -124,7 +124,10 @@ export function useInternalNotes(patientUserId?: string, visibility?: NoteVisibi
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not pin that note');
+    },
+});
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
@@ -135,7 +138,10 @@ export function useInternalNotes(patientUserId?: string, visibility?: NoteVisibi
       qc.invalidateQueries({ queryKey: key });
       toast.success("Note deleted");
     },
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not remove that note');
+    },
+});
 
   return { ...query, create, update, togglePin, remove };
 }

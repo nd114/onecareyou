@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
+import { toast } from 'sonner';
 
 export interface ClinicianGuidanceNotification {
   id: string;
@@ -157,7 +158,10 @@ export const useClinicianNotifications = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinician-notification-preferences'] });
     },
-  });
+      onError: (error: Error) => {
+      toast.error(error.message || 'Could not save your notification preferences');
+    },
+});
 
   const unreadNotifications = notifications.filter(n => !n.is_read);
   const unreadCount = unreadNotifications.length;
