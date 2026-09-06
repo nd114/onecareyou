@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
+// Every import path goes through one mapper. This file used to carry its own
+// LOINC map and unit defaults and both had drifted — 39156-5 to bmi and
+// 9279-1 to respiratory_rate, neither of which VITAL_CONFIG holds, and 2339-0
+// to blood_glucose where the rest of the app says glucose.
+import { vitalRowsFrom, type FhirObservation } from "../_shared/fhir-observation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,23 +17,6 @@ const logStep = (step: string, details?: any) => {
   console.log(`[EHR-WEBHOOK] ${step}${detailsStr}`);
 };
 
-/**
- * LOINC codes for vital types — the shared map, not a third copy of it.
- *
- * This file used to carry its own, and it had drifted: 39156-5 to bmi and
- * 9279-1 to respiratory_rate, neither of which VITAL_CONFIG holds. Rows of a
- * type the app cannot configure arrive with no reference range, so nothing can
- * grade them and — until the fix in src/types/health.ts — everything above
- * zero was graded "high" anyway. An imported BMI of 22 showed in red.
- *
- * It also mapped 2339-0 to 'blood_glucose' while the rest of the app calls it
- * 'glucose', so those rows landed under a type no screen queries.
- *
- * One map, in _shared, so this cannot drift again.
- */
-import { VITAL_LOINC } from "../_shared/fhir-observation.ts";
-
-const VITAL_LOINC_MAP = VITAL_LOINC;
 
 interface FHIRObservation {
   resourceType: 'Observation';
@@ -195,72 +183,38 @@ serve(async (req) => {
             continue;
           }
 
-          // Get vital type from LOINC code
-          const loincCode = obs.code?.coding?.find(c => c.system === 'http://loinc.org')?.code;
-          const vitalType = loincCode ? VITAL_LOINC_MAP[loincCode] : null;
-          if (!vitalType) continue;
+          // One mapper for every import path. This loop used to be its own,
+          // and had drifted in four ways that all mattered: it ignored
+          // observation.status, so a reading the sending system had retracted
+          // as 'entered-in-error' was imported anyway; it read only
+          // effectiveDateTime, so a resource carrying effectivePeriod or
+          // issued got stamped with the time it arrived rather than the time
+          // it was taken; it required obs.component for a blood pressure and
+          // silently dropped any other shape; and its duplicate check used
+          // .single(), which errors when nothing matches, so the guard worked
+          // by accident and logged a PostgREST error every time it ran.
+          const rows = vitalRowsFrom(obs as unknown as FhirObservation, {
+            userId: mapping.marpeUserId,
+            sourceLabel: connection.provider_name,
+            connectionId: connection.id,
+          });
 
-          const recordedAt = obs.effectiveDateTime || new Date().toISOString();
-
-          // Handle blood pressure (has components)
-          if (vitalType === 'blood_pressure' && obs.component) {
-            const systolic = obs.component.find(c => 
-              c.code?.coding?.some(cd => cd.code === '8480-6')
-            )?.valueQuantity?.value;
-            const diastolic = obs.component.find(c => 
-              c.code?.coding?.some(cd => cd.code === '8462-4')
-            )?.valueQuantity?.value;
-
-            if (systolic && diastolic) {
-              // Check for duplicates
-              const { data: existing } = await supabaseClient
-                .from('vitals')
-                .select('id')
-                .eq('user_id', mapping.marpeUserId)
-                .eq('type', 'blood_pressure')
-                .eq('recorded_at', recordedAt)
-                .single();
-
-              if (!existing) {
-                await supabaseClient.from('vitals').insert({
-                  user_id: mapping.marpeUserId,
-                  type: 'blood_pressure',
-                  value: systolic,
-                  secondary_value: diastolic,
-                  unit: 'mmHg',
-                  recorded_at: recordedAt,
-                  notes: `Real-time sync from ${connection.provider_name}`,
-                  source: 'ehr_import',
-                  external_id: obs.id,
-                  ehr_connection_id: connection.id,
-                });
-                importedCount++;
-              }
-            }
-          } else if (obs.valueQuantity?.value) {
-            // Check for duplicates
-            const { data: existing } = await supabaseClient
+          for (const row of rows) {
+            // Duplicates are the database's job now — skip_duplicate_vital
+            // discards a reading already recorded for that person at that
+            // instant, on every path rather than only the ones that remembered
+            // to check. A discarded insert returns no row, which is how this
+            // counts only what was actually stored.
+            const { data: inserted, error: insertError } = await supabaseClient
               .from('vitals')
-              .select('id')
-              .eq('user_id', mapping.marpeUserId)
-              .eq('type', vitalType)
-              .eq('recorded_at', recordedAt)
-              .single();
+              .insert(row)
+              .select('id');
 
-            if (!existing) {
-              await supabaseClient.from('vitals').insert({
-                user_id: mapping.marpeUserId,
-                type: vitalType,
-                value: obs.valueQuantity.value,
-                unit: obs.valueQuantity.unit || getDefaultUnit(vitalType),
-                recorded_at: recordedAt,
-                notes: `Real-time sync from ${connection.provider_name}`,
-                source: 'ehr_import',
-                external_id: obs.id,
-                ehr_connection_id: connection.id,
-              });
-              importedCount++;
+            if (insertError) {
+              logStep("Could not store observation", { error: insertError.message });
+              continue;
             }
+            if (inserted && inserted.length > 0) importedCount++;
           }
         }
 
@@ -321,20 +275,4 @@ serve(async (req) => {
   }
 });
 
-/**
- * Only the types the app can actually store. The entries for respiratory_rate,
- * bmi and blood_glucose went with the map above — the first two are types
- * VITAL_CONFIG has no entry for, and the third was this file's own name for
- * what everything else calls 'glucose'.
- */
-function getDefaultUnit(vitalType: string): string {
-  switch (vitalType) {
-    case 'blood_pressure': return 'mmHg';
-    case 'heart_rate': return 'bpm';
-    case 'temperature': return '°C';
-    case 'oxygen_saturation': return '%';
-    case 'weight': return 'kg';
-    case 'glucose': return 'mg/dL';
-    default: return '';
-  }
 }

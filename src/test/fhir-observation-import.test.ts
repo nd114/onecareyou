@@ -203,3 +203,79 @@ describe("what the old map got wrong", () => {
     expect(row.unit).toBe("mmol/L");
   });
 });
+
+/**
+ * The webhook was the last import path running its own copy of all this.
+ *
+ * ehr-webhook had its own LOINC map, its own unit defaults and its own loop.
+ * These are the four things that loop did differently, each of which reached
+ * the record.
+ */
+describe("what the webhook's own loop got wrong", () => {
+  it("does not import a reading the sender retracted", () => {
+    // The webhook never looked at status, so an observation the hospital had
+    // withdrawn as entered-in-error was imported as though it stood.
+    const rows = vitalRowsFrom(
+      observation({ status: "entered-in-error", valueQuantity: { value: 180, unit: "bpm" } }),
+      context,
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it("takes the time the reading was taken, not the time it arrived", () => {
+    // It read only effectiveDateTime. A resource carrying effectivePeriod or
+    // issued got stamped with the moment the webhook fired instead.
+    const period = vitalRowsFrom(
+      observation({ effectiveDateTime: undefined, effectivePeriod: { start: "2026-09-29T07:00:00Z" } }),
+      context,
+    );
+    expect(period[0].recorded_at).toBe("2026-09-29T07:00:00Z");
+
+    const issued = vitalRowsFrom(
+      observation({ effectiveDateTime: undefined, issued: "2026-09-28T06:00:00Z" }),
+      context,
+    );
+    expect(issued[0].recorded_at).toBe("2026-09-28T06:00:00Z");
+  });
+
+  it("reads a blood pressure sent as components, and refuses one sent as half", () => {
+    const bp = vitalRowsFrom(
+      observation({
+        code: { coding: [{ system: "http://loinc.org", code: "85354-9" }] },
+        valueQuantity: undefined,
+        component: [
+          { code: { coding: [{ code: "8480-6" }] }, valueQuantity: { value: 128, unit: "mmHg" } },
+          { code: { coding: [{ code: "8462-4" }] }, valueQuantity: { value: 82, unit: "mmHg" } },
+        ],
+      }),
+      context,
+    );
+    expect(bp).toHaveLength(1);
+    expect(bp[0]).toMatchObject({ type: "blood_pressure", value: 128, secondary_value: 82 });
+  });
+
+  it("refuses the two types the webhook's own map used to send through", () => {
+    // 39156-5 and 9279-1 have no VITAL_CONFIG entry, so a row of either
+    // arrives with no reference range and gets graded against nothing.
+    for (const code of ["39156-5", "9279-1"]) {
+      const rows = vitalRowsFrom(
+        observation({ code: { coding: [{ system: "http://loinc.org", code }] } }),
+        context,
+      );
+      expect(rows, code).toEqual([]);
+    }
+  });
+
+  it("writes glucose under the name the app queries", () => {
+    // The webhook wrote 'blood_glucose'; every screen asks for 'glucose'.
+    const rows = vitalRowsFrom(
+      observation({
+        code: { coding: [{ system: "http://loinc.org", code: "2339-0" }] },
+        valueQuantity: { value: 96, unit: "mg/dL" },
+      }),
+      context,
+    );
+    expect(rows[0].type).toBe("glucose");
+    expect(VITAL_CONFIG[rows[0].type as keyof typeof VITAL_CONFIG]).toBeDefined();
+  });
+});
