@@ -16,14 +16,7 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
-
-function toCsv(rows: any[], headers: string[]): string {
-  const lines = [headers.join(",")];
-  for (const r of rows) {
-    lines.push(headers.map((h) => JSON.stringify((r as any)[h] ?? "")).join(","));
-  }
-  return lines.join("\n");
-}
+import { toCsv } from "@/lib/csv";
 
 /**
  * Saves one file.

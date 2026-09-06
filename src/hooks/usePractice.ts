@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { edgeFunctionError } from '@/lib/edge-function-error';
 
 export type PracticeRole = 'owner' | 'admin' | 'provider' | 'staff';
 
@@ -277,14 +278,40 @@ export function usePractice() {
         .select()
         .single();
       if (error) throw error;
-      return data as PracticeInvitation;
+
+      // The row on its own reaches nobody. Before this the toast said
+      // "Invitation sent" and nothing had been: a colleague with an existing
+      // account under that exact address would eventually notice a badge in
+      // their header, and a colleague without one — most of the reason to
+      // invite anybody — heard nothing, ever.
+      const { error: mailError } = await supabase.functions.invoke(
+        'notify-practice-invite',
+        { body: { invitation_id: data.id } },
+      );
+
+      return {
+        invitation: data as PracticeInvitation,
+        // The invitation stands either way; what changes is what we claim.
+        emailed: !mailError,
+        mailReason: mailError ? (await edgeFunctionError(mailError)).message : null,
+      };
     },
-    onSuccess: () => {
+    onSuccess: ({ invitation, emailed, mailReason }) => {
       queryClient.invalidateQueries({ queryKey: ['practice-invitations'] });
-      toast.success('Invitation sent');
+      if (emailed) {
+        toast.success('Invitation sent', {
+          description: `${invitation.email} has been emailed how to join.`,
+        });
+      } else {
+        toast.warning('Invitation created, but not emailed', {
+          description:
+            (mailReason ? `${mailReason}. ` : '') +
+            `Ask ${invitation.email} to sign up with that address — the invitation will be waiting.`,
+        });
+      }
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to send invitation');
+      toast.error(error.message || 'Failed to create invitation');
     },
   });
 

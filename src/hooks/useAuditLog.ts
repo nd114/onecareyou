@@ -60,7 +60,13 @@ export function usePracticeAuditLog(
   });
 }
 
-export function useAuditLog(opts?: { patientId?: string; action?: string; limit?: number }) {
+export function useAuditLog(opts?: {
+  patientId?: string;
+  action?: string;
+  limit?: number;
+  /** Skip the query entirely — for a page showing the tenant view instead. */
+  enabled?: boolean;
+}) {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["audit-log", opts?.patientId ?? null, opts?.action ?? null, opts?.limit ?? 200],
@@ -76,6 +82,6 @@ export function useAuditLog(opts?: { patientId?: string; action?: string; limit?
       if (error) throw error;
       return (data ?? []) as AuditEntry[];
     },
-    enabled: !!user,
+    enabled: !!user && opts?.enabled !== false,
   });
 }

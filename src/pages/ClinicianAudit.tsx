@@ -10,32 +10,37 @@ import { Badge } from "@/components/ui/badge";
 import { useAuditLog, usePracticeAuditLog } from "@/hooks/useAuditLog";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { SEOHead } from "@/components/seo/SEOHead";
-import { format } from "date-fns";
 import { Navigate } from "react-router-dom";
-
-function toCsv(rows: any[]): string {
-  if (rows.length === 0) return "";
-  const headers = ["created_at", "actor_label", "user_id", "action", "resource_type", "resource_id", "patient_user_id", "ip_address"];
-  const lines = [headers.join(",")];
-  for (const r of rows) {
-    lines.push(headers.map((h) => JSON.stringify((r as any)[h] ?? "")).join(","));
-  }
-  return lines.join("\n");
-}
+import { toCsv } from "@/lib/csv";
+import { formatDayTime } from "@/lib/format-date";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { format } from "date-fns";
 
 export default function ClinicianAudit() {
   const { can, practiceId, loading: capsLoading } = useClinicianCapabilities();
   const [query, setQuery] = useState("");
+  // The tenant view filters server-side, so every keystroke was its own RPC
+  // fetching up to 500 rows — the list flickered while you typed.
+  const search = useDebouncedValue(query, 250);
 
   // Inside a tenant this is the hospital's own access log — every member's
   // actions, not just the viewer's. A solo clinician with no tenant keeps the
   // personal view, which is all their own activity anyway.
   const isTenantView = !!practiceId;
+
+  // Inside a tenant this is the hospital's own access log — every member's
+  // actions, not just the viewer's. A solo clinician with no tenant keeps the
+  // personal view, which is all their own activity anyway.
   const { data: tenantEntries = [], isLoading: loadingTenant } = usePracticeAuditLog(
-    practiceId,
-    { search: query, limit: 500 },
+    isTenantView ? practiceId : null,
+    { search, limit: 500 },
   );
-  const { data: ownEntries = [], isLoading: loadingOwn } = useAuditLog({ limit: 500 });
+  // Only the view actually on screen is fetched. Both ran before, so a tenant
+  // admin pulled 500 personal rows on every visit and threw them away.
+  const { data: ownEntries = [], isLoading: loadingOwn } = useAuditLog({
+    limit: 500,
+    enabled: !isTenantView,
+  });
   const isLoading = isTenantView ? loadingTenant : loadingOwn;
 
   const entries = useMemo(
@@ -82,7 +87,16 @@ export default function ClinicianAudit() {
   }, [isTenantView, entries, query]);
 
   const exportCsv = () => {
-    const csv = toCsv(filtered);
+    const csv = toCsv(filtered, [
+      "created_at",
+      "actor_label",
+      "user_id",
+      "action",
+      "resource_type",
+      "resource_id",
+      "patient_user_id",
+      "ip_address",
+    ]);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -167,7 +181,7 @@ export default function ClinicianAudit() {
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="outline" className="text-xs">{e.action}</Badge>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {format(new Date(e.created_at), "MMM d, HH:mm")}
+                        {formatDayTime(e.created_at)}
                       </span>
                     </div>
                     <p className="mt-1.5 text-sm truncate">{e.actor_label}</p>
@@ -195,7 +209,7 @@ export default function ClinicianAudit() {
                     {filtered.map((e) => (
                       <tr key={e.id} className="border-b border-border/50 hover:bg-muted/40">
                         <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
-                          {format(new Date(e.created_at), "MMM d, HH:mm")}
+                          {formatDayTime(e.created_at)}
                         </td>
                         <td className="py-2 pr-3 truncate max-w-[14rem]">{e.actor_label}</td>
                         <td className="py-2 pr-3">
