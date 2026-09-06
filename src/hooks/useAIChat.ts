@@ -22,6 +22,12 @@ export interface ChatMessage {
    * holds anything it should not see.
    */
   recordQueries?: RecordQuery[];
+  /**
+   * What the assistant read this answer out of — an FDA label, an interaction
+   * check. Shown under the reply so a patient can take the source to their
+   * pharmacist rather than the chat bubble.
+   */
+  knowledgeSources?: string[];
   /** Set once the user approves or discards the proposal. */
   actionState?: 'pending' | 'applying' | 'applied' | 'discarded';
   actionOutcomes?: ActionOutcome[];
@@ -215,12 +221,17 @@ export function useAIChat(options: UseAIChatOptions = {}) {
         ? data.proposedActions
         : [];
 
+      const sources: string[] = Array.isArray(data.knowledgeSources)
+        ? (data.knowledgeSources as unknown[]).filter((s): s is string => typeof s === 'string')
+        : [];
+
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: data.content,
         suggestedRoute: data.suggestedRoute,
         timestamp: new Date(),
+        knowledgeSources: sources.length > 0 ? sources : undefined,
         proposedActions: proposed.length > 0 ? proposed : undefined,
         recordQueries: queries.length > 0 ? queries : undefined,
         actionState: proposed.length > 0 ? 'pending' : undefined,

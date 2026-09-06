@@ -2,6 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUser } from "../_shared/auth.ts";
+import {
+  condense,
+  interactionsFromRxNav,
+} from "../_shared/medication-knowledge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -173,15 +177,10 @@ const INTERNATIONAL_BRAND_MAPPING: Record<string, string> = {
   'benadryl': 'diphenhydramine',
 };
 
-// Clean HTML from label text
-const cleanLabelText = (text: string | undefined): string => {
-  if (!text) return '';
-  return text
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .substring(0, 2000);
-};
+// Clean HTML from label text. `condense` marks the cut, so a warnings section
+// that runs past the budget no longer stops mid-sentence as though the label
+// ended there.
+const cleanLabelText = (text: string | undefined): string => condense(text ?? '', 2000);
 
 // Look up international brand name to get generic equivalent from hardcoded mapping
 function getGenericFromHardcodedMapping(brandName: string): string | null {
@@ -533,62 +532,9 @@ async function checkInteractions(drugNames: string[]) {
       return [];
     }
     
-    const interactionData = await interactionResponse.json();
-    
-    const interactions: any[] = [];
-    
-    if (interactionData.fullInteractionTypeGroup) {
-      for (const group of interactionData.fullInteractionTypeGroup) {
-        for (const interactionType of group.interactionType || []) {
-          for (const pair of interactionType.interactionPair || []) {
-            // Extract drug names from the interaction
-            const drugs = pair.interactionConcept.map((c: any) => c.minConceptItem.name);
-            
-            // Determine severity based on description keywords
-            let severity: 'high' | 'moderate' | 'low' = 'moderate';
-            const desc = pair.description.toLowerCase();
-            
-            if (
-              desc.includes('contraindicated') ||
-              desc.includes('avoid') ||
-              desc.includes('serious') ||
-              desc.includes('severe') ||
-              desc.includes('fatal') ||
-              desc.includes('death') ||
-              desc.includes('life-threatening') ||
-              desc.includes('do not use') ||
-              desc.includes('serotonin syndrome') ||
-              desc.includes('qt prolongation') ||
-              desc.includes('bleeding')
-            ) {
-              severity = 'high';
-            } else if (
-              desc.includes('minor') ||
-              desc.includes('unlikely') ||
-              desc.includes('theoretical') ||
-              desc.includes('not clinically significant')
-            ) {
-              severity = 'low';
-            }
-
-            interactions.push({
-              drug1: drugs[0] || 'Unknown',
-              drug2: drugs[1] || 'Unknown',
-              severity,
-              description: pair.description,
-              source: group.sourceName,
-              sourceUrl: pair.interactionConcept[0]?.sourceConceptItem?.url,
-            });
-          }
-        }
-      }
-    }
-    
-    // Sort by severity
-    return interactions.sort((a, b) => {
-      const order = { high: 0, moderate: 1, low: 2 };
-      return order[a.severity as keyof typeof order] - order[b.severity as keyof typeof order];
-    });
+    // One parser, shared with the patient assistant, so the grading a patient
+    // sees on the medications page is the grading the assistant answers with.
+    return interactionsFromRxNav(await interactionResponse.json());
   } catch (err) {
     console.error('Error fetching drug interactions:', err);
     throw err;

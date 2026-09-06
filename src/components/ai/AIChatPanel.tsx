@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import {
-  Send, Loader2, Mic, MicOff, SquarePen, ArrowRight, Bot, User, AlertTriangle, Paperclip,
+  Send, Loader2, Mic, MicOff, SquarePen, ArrowRight, Bot, User, AlertTriangle, Paperclip, BookOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,6 +171,14 @@ function MessageBubble({
         {/* Real records, fetched here under the reader's own row policies
             rather than retyped by the model. See src/lib/ai-record-query.ts. */}
         {!isUser && <MessageRecordCards message={message} />}
+        {/* Where the answer was read. A patient can take a named FDA label to
+            their pharmacist; they cannot take a chat bubble. */}
+        {!isUser && message.knowledgeSources && message.knowledgeSources.length > 0 && (
+          <p className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+            <BookOpen className="mt-0.5 h-3 w-3 flex-shrink-0" aria-hidden="true" />
+            <span>Read from {message.knowledgeSources.join(' · ')}</span>
+          </p>
+        )}
         {message.suggestedRoute && (
           <Button
             size="sm"

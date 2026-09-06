@@ -149,6 +149,23 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
   One threshold set on many patients at once, replacing rather than duplicating an existing rule;
   a malformed CSV is now rejected with the specific problem named instead of importing sideways.
 
+- **The assistant answers about medicines from the label, not from memory.** A patient asking
+  "what are the side effects of my metformin?" or "can I take ibuprofen with my lisinopril?" used to
+  get an answer out of the model's own recollection, with nothing behind it and nothing to cite —
+  while the medications page answered the same question from RxNorm plus the offline table, under a
+  rule that the app never says "safe" while any source disagrees. Two answers to one question, and
+  only one of them grounded. The assistant now has two lookups (`look_up_medication`,
+  `check_interactions`) that read the FDA label and both interaction sources before it replies, and
+  the reply carries the source underneath it. Every gap is stated rather than left blank: the tool
+  hands back "the label does not answer this" so a missing section is a fact the model was given,
+  not a hole it fills in. A failed interaction check reads as a failed check, never as nothing found.
+  Missed-dose guidance is extracted as the label's own sentences rather than falling back to the
+  dosage section — which on a prescriber's label is a titration table, and handing that to an
+  assistant told not to discuss doses is handing it the doses. The knowledge itself moved to one
+  import-free module read by the page, the drug lookup and the assistant alike; two bugs fell out of
+  the merge, a name normalisation that dropped separators (so "Vitamin-K" missed the warfarin
+  warning that "Vitamin K" raised) and an interaction check that reported "clear" for a single drug
+  it had never checked. 37 assertions.
 - **Security review and red-team pass.** Seven findings, three of them serious, each reproduced as a
   real caller against a replay of the migration history before being fixed: any patient could set
   their own `subscription_tier` to premium; any hospital admin could rewrite their own commercial
@@ -253,10 +270,9 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    to build the issuing half first, which was the point.
 8. **Enterprise management depth** — provider/patient rosters, coverage and caseload views, owner KPI reports.
 9. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
-10. **AI medication knowledge base** for the patient assistant (interactions, side effects, missed doses; no dosage changes, no diagnosis).
-11. **Health news feed** filtered against the patient's own medications and conditions.
-12. **WhatsApp transport** behind the existing provider interface.
-13. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
+10. **Health news feed** filtered against the patient's own medications and conditions.
+11. **WhatsApp transport** behind the existing provider interface.
+12. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
 
 ## Deferred (with reasons)
 
