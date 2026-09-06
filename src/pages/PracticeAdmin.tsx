@@ -28,6 +28,7 @@ import { InviteTeamMemberDialog } from '@/components/clinician/InviteTeamMemberD
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 import { DepartmentsCard } from '@/components/clinician/DepartmentsCard';
+import { CoverageCard } from '@/components/clinician/CoverageCard';
 import { PracticeContactCard } from '@/components/clinician/PracticeContactCard';
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
@@ -61,7 +62,7 @@ const PracticeAdmin = () => {
   const { data: invitations = [] } = usePracticeInvitations(practiceId || '');
   const { staff, isLoading: loadingStaff } = usePracticeStaffOverview(practiceId);
   const { patients, isLoading: loadingPatients } = usePracticePatientOverview(practiceId);
-  const { departments } = usePracticeDepartments(practiceId);
+  const { departments, members: departmentMembers } = usePracticeDepartments(practiceId);
   const { archived } = useArchivedPracticeMembers(practiceId);
   const {
     archiveMember,
@@ -175,6 +176,7 @@ const PracticeAdmin = () => {
 
         <Tabs defaultValue="clinicians" className="space-y-4">
           <TabsList className="flex w-full overflow-x-auto scrollbar-none">
+            <TabsTrigger value="coverage">Coverage</TabsTrigger>
             <TabsTrigger value="clinicians">Clinicians</TabsTrigger>
             <TabsTrigger value="patients">Patients</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
@@ -182,6 +184,16 @@ const PracticeAdmin = () => {
             <TabsTrigger value="activity">Activity log</TabsTrigger>
             <TabsTrigger value="institution">Institution</TabsTrigger>
           </TabsList>
+
+          {/* ---------------- Coverage ---------------- */}
+          <TabsContent value="coverage">
+            <CoverageCard
+              staff={staff}
+              patients={patients}
+              departments={departments}
+              members={departmentMembers}
+            />
+          </TabsContent>
 
           {/* ---------------- Clinicians ---------------- */}
           <TabsContent value="clinicians">

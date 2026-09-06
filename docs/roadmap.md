@@ -149,6 +149,21 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
   One threshold set on many patients at once, replacing rather than duplicating an existing rule;
   a malformed CSV is now rejected with the specific problem named instead of importing sideways.
 
+- **A Coverage tab that says who is falling through the gaps.** The rosters already answered "who
+  works here" and "who are our patients"; nothing answered the question an administrator actually
+  has, which is who is between the two. The tab reports patients sharing their record with the
+  hospital and assigned to nobody first — a person nobody is looking after outranks an
+  organisational tidy-up — then un-routed patients, departments with no lead, departments with
+  nobody in them, and clinicians carrying no caseload. Alongside it, owner KPIs and a caseload
+  spread (median against average, busiest against lightest), and a long-format CSV carrying figures
+  and findings in one file so the report can be sent on. Two rules keep it honest: a gap is only a
+  gap where the structure exists, so a hospital that has not created departments is not told its
+  patients are un-routed; and only clinical roles carry patients, mirroring
+  `practice_role_is_clinical`, so a receptionist assigned to nobody is a receptionist rather than an
+  idle clinician. The one that needed care: a single-doctor hospital, where the owner has both the
+  hospital-wide view and the whole caseload — excluding everyone with that view would have reported
+  zero clinicians and zero of everything else. Computed entirely from rows the page already fetches,
+  so the tab costs no queries. 26 assertions.
 - **The assistant answers about medicines from the label, not from memory.** A patient asking
   "what are the side effects of my metformin?" or "can I take ibuprofen with my lisinopril?" used to
   get an answer out of the model's own recollection, with nothing behind it and nothing to cite —
@@ -268,11 +283,10 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    now closed by default and rejects any callback without `state`, so the requirement is enforced
    in code rather than recorded in a document (August 2026). Whoever builds the linking design has
    to build the issuing half first, which was the point.
-8. **Enterprise management depth** — provider/patient rosters, coverage and caseload views, owner KPI reports.
-9. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
-10. **Health news feed** filtered against the patient's own medications and conditions.
-11. **WhatsApp transport** behind the existing provider interface.
-12. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
+8. **Clinician depth phase 4** — persistent patient-detail action rail, risk explanation drawer, QHIN Network Records tab.
+9. **Health news feed** filtered against the patient's own medications and conditions.
+10. **WhatsApp transport** behind the existing provider interface.
+11. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
 
 ## Deferred (with reasons)
 
