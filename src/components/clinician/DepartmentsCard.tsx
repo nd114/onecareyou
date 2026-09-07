@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Building, Loader2, Plus, ShieldCheck, X } from 'lucide-react';
+import { Building, Loader2, Pencil, Plus, ShieldCheck, X } from 'lucide-react';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { usePracticeDepartments } from '@/hooks/usePracticeDepartments';
@@ -38,6 +38,8 @@ export const DepartmentsCard = () => {
     isLoading,
     createDepartment,
     isCreating,
+    renameDepartment,
+    setDepartmentActive,
     addMember,
     removeMember,
     setLead,
@@ -45,6 +47,11 @@ export const DepartmentsCard = () => {
 
   const [newName, setNewName] = useState('');
   const [pendingMember, setPendingMember] = useState<Record<string, string>>({});
+  // Departments could be created and staffed but never corrected: a typo made
+  // at creation was permanent, and the only way round it was a second
+  // department, which loses the record of who was in the first.
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
 
   const isChiefAdmin =
     currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
@@ -124,12 +131,77 @@ export const DepartmentsCard = () => {
               );
 
               return (
-                <div key={dept.id} className="rounded-lg border p-3 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-sm">{dept.name}</p>
-                    <Badge variant="outline" className="text-xs">
-                      {staff.length} {staff.length === 1 ? 'person' : 'people'}
-                    </Badge>
+                <div
+                  key={dept.id}
+                  className={
+                    dept.is_active
+                      ? 'rounded-lg border p-3 space-y-3'
+                      : 'rounded-lg border border-dashed bg-muted/30 p-3 space-y-3'
+                  }
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {renamingId === dept.id ? (
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Input
+                          value={renameDraft}
+                          onChange={(e) => setRenameDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              void renameDepartment({ id: dept.id, name: renameDraft }).then(() =>
+                                setRenamingId(null),
+                              );
+                            }
+                            if (e.key === 'Escape') setRenamingId(null);
+                          }}
+                          className="h-8 w-48 text-sm"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            void renameDepartment({ id: dept.id, name: renameDraft }).then(() =>
+                              setRenamingId(null),
+                            )
+                          }
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="flex items-center gap-1.5 text-left text-sm font-medium hover:underline"
+                        onClick={() => {
+                          setRenameDraft(dept.name);
+                          setRenamingId(dept.id);
+                        }}
+                      >
+                        {dept.name}
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {staff.length} {staff.length === 1 ? 'person' : 'people'}
+                      </Badge>
+                      {/* Closed, not deleted: the department's history of who
+                          worked in it and which patients it held has to survive
+                          the reorganisation that closed it. */}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() =>
+                          void setDepartmentActive({
+                            departmentId: dept.id,
+                            isActive: !dept.is_active,
+                          })
+                        }
+                      >
+                        {dept.is_active ? 'Close' : 'Reopen'}
+                      </Button>
+                    </div>
                   </div>
 
                   {staff.length > 0 && (

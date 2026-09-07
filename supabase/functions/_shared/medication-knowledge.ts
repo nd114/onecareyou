@@ -249,6 +249,167 @@ export function drugNamesMatch(a: string, b: string): boolean {
   return n1.includes(n2) || n2.includes(n1);
 }
 
+/**
+ * Brand name → generic, for the brands used outside the US.
+ *
+ * This lived in `drug-lookup`, where only the label search could reach it. The
+ * reference interaction table could not, so it matched "Aspirin" and missed
+ * "Disprin" — and the reference table is precisely what answers when RxNorm is
+ * unreachable, which is when a miss costs the most.
+ */
+export const BRAND_TO_GENERIC: Record<string, string> = {
+  // Heart failure / Cardiovascular
+  'vymada': 'sacubitril valsartan',
+  'entresto': 'sacubitril valsartan',
+  'cardicor': 'bisoprolol',
+  'concor': 'bisoprolol',
+  'emcor': 'bisoprolol',
+  'spiractin': 'spironolactone',
+  'aldactone': 'spironolactone',
+  'inspra': 'eplerenone',
+  'lanoxin': 'digoxin',
+  'cordarone': 'amiodarone',
+  
+  // Blood pressure
+  'tritace': 'ramipril',
+  'altace': 'ramipril',
+  'coversyl': 'perindopril',
+  'aceon': 'perindopril',
+  'zestril': 'lisinopril',
+  'prinivil': 'lisinopril',
+  'cozaar': 'losartan',
+  'atacand': 'candesartan',
+  'micardis': 'telmisartan',
+  'diovan': 'valsartan',
+  'norvasc': 'amlodipine',
+  'istin': 'amlodipine',
+  'adalat': 'nifedipine',
+  'cardizem': 'diltiazem',
+  'isoptin': 'verapamil',
+  
+  // Diuretics
+  'lasix': 'furosemide',
+  'frumil': 'furosemide amiloride',
+  'burinex': 'bumetanide',
+  'natrilix': 'indapamide',
+  'lozide': 'indapamide',
+  'moduretic': 'amiloride hydrochlorothiazide',
+  
+  // Beta blockers
+  'tenormin': 'atenolol',
+  'lopressor': 'metoprolol',
+  'betaloc': 'metoprolol',
+  'seloken': 'metoprolol',
+  'toprol': 'metoprolol',
+  'inderal': 'propranolol',
+  'trandate': 'labetalol',
+  'coreg': 'carvedilol',
+  
+  // Statins
+  'lipitor': 'atorvastatin',
+  'crestor': 'rosuvastatin',
+  'zocor': 'simvastatin',
+  'pravachol': 'pravastatin',
+  'lescol': 'fluvastatin',
+  
+  // Anticoagulants / Antiplatelets
+  'xarelto': 'rivaroxaban',
+  'eliquis': 'apixaban',
+  'pradaxa': 'dabigatran',
+  'plavix': 'clopidogrel',
+  'brilinta': 'ticagrelor',
+  'clexane': 'enoxaparin',
+  'lovenox': 'enoxaparin',
+  
+  // Diabetes
+  'glucophage': 'metformin',
+  'januvia': 'sitagliptin',
+  'jardiance': 'empagliflozin',
+  'forxiga': 'dapagliflozin',
+  'farxiga': 'dapagliflozin',
+  'ozempic': 'semaglutide',
+  'trulicity': 'dulaglutide',
+  'victoza': 'liraglutide',
+  
+  // Pain / Anti-inflammatory
+  'voltaren': 'diclofenac',
+  'celebrex': 'celecoxib',
+  'arcoxia': 'etoricoxib',
+  'brufen': 'ibuprofen',
+  'nurofen': 'ibuprofen',
+  'panadol': 'paracetamol',
+  'tylenol': 'acetaminophen',
+  
+  // Gastrointestinal
+  'nexium': 'esomeprazole',
+  'losec': 'omeprazole',
+  'prilosec': 'omeprazole',
+  'pariet': 'rabeprazole',
+  'aciphex': 'rabeprazole',
+  'pantoloc': 'pantoprazole',
+  'protonix': 'pantoprazole',
+  'zantac': 'ranitidine',
+  'pepcid': 'famotidine',
+  
+  // Respiratory
+  'ventolin': 'salbutamol',
+  'proventil': 'albuterol',
+  'serevent': 'salmeterol',
+  'symbicort': 'budesonide formoterol',
+  'seretide': 'fluticasone salmeterol',
+  'advair': 'fluticasone salmeterol',
+  'spiriva': 'tiotropium',
+  'atrovent': 'ipratropium',
+  'pulmicort': 'budesonide',
+  'flixotide': 'fluticasone',
+  'flovent': 'fluticasone',
+  
+  // Mental health
+  'lexapro': 'escitalopram',
+  'cipralex': 'escitalopram',
+  'zoloft': 'sertraline',
+  'lustral': 'sertraline',
+  'prozac': 'fluoxetine',
+  'effexor': 'venlafaxine',
+  'cymbalta': 'duloxetine',
+  'wellbutrin': 'bupropion',
+  'xanax': 'alprazolam',
+  'valium': 'diazepam',
+  'ativan': 'lorazepam',
+  'seroquel': 'quetiapine',
+  'zyprexa': 'olanzapine',
+  'risperdal': 'risperidone',
+  'abilify': 'aripiprazole',
+  
+  // Thyroid
+  'synthroid': 'levothyroxine',
+  'eltroxin': 'levothyroxine',
+  'euthyrox': 'levothyroxine',
+  
+  // Antibiotics
+  'augmentin': 'amoxicillin clavulanate',
+  'amoxil': 'amoxicillin',
+  'zithromax': 'azithromycin',
+  'cipro': 'ciprofloxacin',
+  'keflex': 'cephalexin',
+  'flagyl': 'metronidazole',
+  
+  // Allergies
+  'zyrtec': 'cetirizine',
+  'claritin': 'loratadine',
+  'clarityn': 'loratadine',
+  'aerius': 'desloratadine',
+  'allegra': 'fexofenadine',
+  'telfast': 'fexofenadine',
+  'benadryl': 'diphenhydramine',
+};
+
+/** The generic behind a brand, or the name as given. */
+export function genericFor(name: string): string {
+  const key = name.toLowerCase().trim();
+  return BRAND_TO_GENERIC[key] ?? name;
+}
+
 export interface ReferenceHit extends InteractionInfo {
   med1Name: string;
   med2Name: string;
@@ -260,11 +421,16 @@ export function referenceInteractionsFor(names: readonly string[]): ReferenceHit
 
   for (let i = 0; i < names.length; i += 1) {
     for (let j = i + 1; j < names.length; j += 1) {
+      // Both sides go through the brand map first, so a patient whose list says
+      // "Istin" is checked against the table's "Amlodipine".
+      const a = genericFor(names[i]);
+      const b = genericFor(names[j]);
+
       for (const interaction of INTERACTION_REFERENCE) {
         const [first, second] = interaction.medications;
         if (
-          (drugNamesMatch(names[i], first) && drugNamesMatch(names[j], second)) ||
-          (drugNamesMatch(names[i], second) && drugNamesMatch(names[j], first))
+          (drugNamesMatch(a, first) && drugNamesMatch(b, second)) ||
+          (drugNamesMatch(a, second) && drugNamesMatch(b, first))
         ) {
           found.push({ ...interaction, med1Name: names[i], med2Name: names[j] });
         }

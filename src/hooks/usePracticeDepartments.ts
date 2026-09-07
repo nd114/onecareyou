@@ -85,6 +85,31 @@ export function usePracticeDepartments(practiceId?: string | null) {
     },
   });
 
+  /**
+   * Rename a department.
+   *
+   * The card could create and staff a department but never correct its name, so
+   * a typo made at creation was permanent — and the only way out was to make a
+   * second department and move everybody, which loses the history of who was in
+   * the first one.
+   */
+  const renameDepartment = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const trimmed = name.trim();
+      if (trimmed.length < 2) throw new Error('Give the department a name of at least 2 characters');
+      const { error } = await supabase
+        .from('practice_departments')
+        .update({ name: trimmed } as never)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Department renamed');
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Could not rename the department'),
+  });
+
   const createDepartment = useMutation({
     mutationFn: async ({ name, description }: { name: string; description?: string }) => {
       if (!practiceId || !user) throw new Error('No hospital selected');
@@ -189,6 +214,8 @@ export function usePracticeDepartments(practiceId?: string | null) {
     isLoading: departments.isLoading || members.isLoading,
     createDepartment: createDepartment.mutateAsync,
     isCreating: createDepartment.isPending,
+    renameDepartment: renameDepartment.mutateAsync,
+    isRenaming: renameDepartment.isPending,
     setDepartmentActive: setDepartmentActive.mutateAsync,
     addMember: addMember.mutateAsync,
     removeMember: removeMember.mutateAsync,

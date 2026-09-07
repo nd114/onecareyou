@@ -3,6 +3,7 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUser } from "../_shared/auth.ts";
 import {
+  BRAND_TO_GENERIC as INTERNATIONAL_BRAND_MAPPING,
   condense,
   interactionsFromRxNav,
 } from "../_shared/medication-knowledge.ts";
@@ -30,152 +31,8 @@ type SearchRequest = z.infer<typeof SearchRequestSchema>;
 
 // International brand name to generic name mapping
 // These are brand names used outside the US that map to their generic equivalents
-const INTERNATIONAL_BRAND_MAPPING: Record<string, string> = {
-  // Heart failure / Cardiovascular
-  'vymada': 'sacubitril valsartan',
-  'entresto': 'sacubitril valsartan',
-  'cardicor': 'bisoprolol',
-  'concor': 'bisoprolol',
-  'emcor': 'bisoprolol',
-  'spiractin': 'spironolactone',
-  'aldactone': 'spironolactone',
-  'inspra': 'eplerenone',
-  'lanoxin': 'digoxin',
-  'cordarone': 'amiodarone',
-  
-  // Blood pressure
-  'tritace': 'ramipril',
-  'altace': 'ramipril',
-  'coversyl': 'perindopril',
-  'aceon': 'perindopril',
-  'zestril': 'lisinopril',
-  'prinivil': 'lisinopril',
-  'cozaar': 'losartan',
-  'atacand': 'candesartan',
-  'micardis': 'telmisartan',
-  'diovan': 'valsartan',
-  'norvasc': 'amlodipine',
-  'istin': 'amlodipine',
-  'adalat': 'nifedipine',
-  'cardizem': 'diltiazem',
-  'isoptin': 'verapamil',
-  
-  // Diuretics
-  'lasix': 'furosemide',
-  'frumil': 'furosemide amiloride',
-  'burinex': 'bumetanide',
-  'natrilix': 'indapamide',
-  'lozide': 'indapamide',
-  'moduretic': 'amiloride hydrochlorothiazide',
-  
-  // Beta blockers
-  'tenormin': 'atenolol',
-  'lopressor': 'metoprolol',
-  'betaloc': 'metoprolol',
-  'seloken': 'metoprolol',
-  'toprol': 'metoprolol',
-  'inderal': 'propranolol',
-  'trandate': 'labetalol',
-  'coreg': 'carvedilol',
-  
-  // Statins
-  'lipitor': 'atorvastatin',
-  'crestor': 'rosuvastatin',
-  'zocor': 'simvastatin',
-  'pravachol': 'pravastatin',
-  'lescol': 'fluvastatin',
-  
-  // Anticoagulants / Antiplatelets
-  'xarelto': 'rivaroxaban',
-  'eliquis': 'apixaban',
-  'pradaxa': 'dabigatran',
-  'plavix': 'clopidogrel',
-  'brilinta': 'ticagrelor',
-  'clexane': 'enoxaparin',
-  'lovenox': 'enoxaparin',
-  
-  // Diabetes
-  'glucophage': 'metformin',
-  'januvia': 'sitagliptin',
-  'jardiance': 'empagliflozin',
-  'forxiga': 'dapagliflozin',
-  'farxiga': 'dapagliflozin',
-  'ozempic': 'semaglutide',
-  'trulicity': 'dulaglutide',
-  'victoza': 'liraglutide',
-  
-  // Pain / Anti-inflammatory
-  'voltaren': 'diclofenac',
-  'celebrex': 'celecoxib',
-  'arcoxia': 'etoricoxib',
-  'brufen': 'ibuprofen',
-  'nurofen': 'ibuprofen',
-  'panadol': 'paracetamol',
-  'tylenol': 'acetaminophen',
-  
-  // Gastrointestinal
-  'nexium': 'esomeprazole',
-  'losec': 'omeprazole',
-  'prilosec': 'omeprazole',
-  'pariet': 'rabeprazole',
-  'aciphex': 'rabeprazole',
-  'pantoloc': 'pantoprazole',
-  'protonix': 'pantoprazole',
-  'zantac': 'ranitidine',
-  'pepcid': 'famotidine',
-  
-  // Respiratory
-  'ventolin': 'salbutamol',
-  'proventil': 'albuterol',
-  'serevent': 'salmeterol',
-  'symbicort': 'budesonide formoterol',
-  'seretide': 'fluticasone salmeterol',
-  'advair': 'fluticasone salmeterol',
-  'spiriva': 'tiotropium',
-  'atrovent': 'ipratropium',
-  'pulmicort': 'budesonide',
-  'flixotide': 'fluticasone',
-  'flovent': 'fluticasone',
-  
-  // Mental health
-  'lexapro': 'escitalopram',
-  'cipralex': 'escitalopram',
-  'zoloft': 'sertraline',
-  'lustral': 'sertraline',
-  'prozac': 'fluoxetine',
-  'effexor': 'venlafaxine',
-  'cymbalta': 'duloxetine',
-  'wellbutrin': 'bupropion',
-  'xanax': 'alprazolam',
-  'valium': 'diazepam',
-  'ativan': 'lorazepam',
-  'seroquel': 'quetiapine',
-  'zyprexa': 'olanzapine',
-  'risperdal': 'risperidone',
-  'abilify': 'aripiprazole',
-  
-  // Thyroid
-  'synthroid': 'levothyroxine',
-  'eltroxin': 'levothyroxine',
-  'euthyrox': 'levothyroxine',
-  
-  // Antibiotics
-  'augmentin': 'amoxicillin clavulanate',
-  'amoxil': 'amoxicillin',
-  'zithromax': 'azithromycin',
-  'cipro': 'ciprofloxacin',
-  'keflex': 'cephalexin',
-  'flagyl': 'metronidazole',
-  
-  // Allergies
-  'zyrtec': 'cetirizine',
-  'claritin': 'loratadine',
-  'clarityn': 'loratadine',
-  'aerius': 'desloratadine',
-  'allegra': 'fexofenadine',
-  'telfast': 'fexofenadine',
-  'benadryl': 'diphenhydramine',
-};
+// The brand map moved to _shared/medication-knowledge.ts so the interaction
+// reference can read it too. Imported above.
 
 // Clean HTML from label text. `condense` marks the cut, so a warnings section
 // that runs past the budget no longer stops mid-sentence as though the label

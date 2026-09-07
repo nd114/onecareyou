@@ -10,6 +10,7 @@ import {
   fetchRxNormInteractions,
   formatInteractionVerdict,
   formatMedicationBrief,
+  genericFor,
   interactionCheck,
   interactionsFromRxNav,
   isLookupTool,
@@ -404,5 +405,53 @@ describe("a check that never ran", () => {
     const verdict = await interactionCheck(["aspirin"], stubFetch([]));
     expect(verdict.isClear).toBe(false);
     expect(formatInteractionVerdict(["aspirin"], verdict)).toContain("Do NOT say there are no interactions");
+  });
+});
+
+describe("what a patient's medication list actually looks like", () => {
+  /**
+   * The list is free text somebody typed off a box. These are the shapes that
+   * turn up, and the ones that do not match are as important as the ones that
+   * do — a miss here is silence, and silence reads as "no interactions".
+   */
+  it("matches through strength, case, spacing and packaging words", () => {
+    for (const [entered, table] of [
+      ['Ibuprofen 400mg', 'Ibuprofen'],
+      ['IBUPROFEN', 'Ibuprofen'],
+      ['Warfarin sodium 3mg tablets', 'Warfarin'],
+      ['Aspirin 75 mg OD', 'Aspirin'],
+      ['Metformin HCl ER 500mg', 'Metformin'],
+      ['Vitamin K2 (MK-7)', 'Vitamin K'],
+      ['  Aspirin  ', 'Aspirin'],
+      ['aspirin/dipyridamole', 'Aspirin'],
+    ] as const) {
+      expect(drugNamesMatch(entered, table), `${entered} vs ${table}`).toBe(true);
+    }
+  });
+
+  it("checks a brand against the generic the table is written in", () => {
+    // The brand map lived where only the label search could reach it, so the
+    // reference table matched "Amlodipine" and missed "Istin" — and the
+    // reference table is what answers when RxNorm cannot be reached.
+    expect(referenceInteractionsFor(['Istin', 'Simvastatin'])).toHaveLength(1);
+    expect(referenceInteractionsFor(['Lasix', 'Aldactone'])).toHaveLength(0);
+    expect(genericFor('Istin')).toBe('amlodipine');
+    expect(genericFor('Not A Brand')).toBe('Not A Brand');
+  });
+
+  it("still finds the pair when both sides are messy", () => {
+    expect(referenceInteractionsFor(['Warfarin sodium 3mg', 'Aspirin 75mg OD'])).toHaveLength(1);
+  });
+
+  it("does not invent a match for a misspelling", () => {
+    // Deliberate, and a known gap: exact-substring matching means "Asprin"
+    // finds nothing. Fuzzy matching here would trade silent misses for false
+    // warnings, which is a product decision, not a code one.
+    expect(referenceInteractionsFor(['Warfarin', 'Asprin'])).toHaveLength(0);
+  });
+
+  it("survives empty, numeric and junk entries", () => {
+    expect(() => referenceInteractionsFor(['', '123', '   ', 'Aspirin'])).not.toThrow();
+    expect(referenceInteractionsFor(['', 'Aspirin'])).toEqual([]);
   });
 });

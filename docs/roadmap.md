@@ -303,13 +303,44 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    now closed by default and rejects any callback without `state`, so the requirement is enforced
    in code rather than recorded in a document (August 2026). Whoever builds the linking design has
    to build the issuing half first, which was the point.
-8. **QHIN Network Records tab** — the remaining half of clinician depth phase 4, held with the QHIN live connection below since it has nothing to show without one.
-9. **Health news feed** filtered against the patient's own medications and conditions.
-10. **WhatsApp transport** behind the existing provider interface.
-11. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
+8. **Simple Mode does nothing.** The preference is stored, offered at onboarding and repeated in
+   Settings, and its own explanation promises "bigger text, fewer things on each screen, plain
+   wording" — and **not one line of interface reads it** (verified September 2026: the only other
+   reference in the codebase is an unrelated `simple_mode` label for a conversation source). A
+   patient turns it on and nothing happens, which is worse than not offering it. Either the first
+   real change ships behind it — read-aloud and type scale are the cheapest two of the five in
+   [`low-literacy-support-plan.md`](./low-literacy-support-plan.md) — or the toggle comes out until
+   one does. Not a judgement call to make quietly: it is a promise on screen.
+9. **Voice-first actions** — say it once, review one screen, approve once. Scoped against the
+   existing approve-before-write machinery in
+   [`voice-first-actions-plan.md`](./voice-first-actions-plan.md): entity resolution first, then the
+   review screen, then clinician action breadth, then continuous capture. Prescribing and the
+   pharmacy side are split out as their own track, gated on a legal answer rather than an
+   engineering one.
+10. **Family-member targeting for the patient assistant.** Every tool and the record snapshot are
+   scoped to the signed-in user with `family_member_id` null, so a parent managing two children
+   cannot log anything for either of them by voice or by chat. A scoping change rather than new
+   machinery, and the case the assistant most obviously fails.
+11. **Enterprise coverage cannot see managed records.** `clinician_patient_records` — the profiles
+   staff create for people not on the platform — is RLS-scoped to its creating clinician, so a
+   hospital administrator cannot read them at all and the Coverage tab reports on platform patients
+   only. Widening this means deciding whether a chief admin may read records another clinician
+   created privately (`data_sharing_model = 'clinician_managed'` suggests deliberately not), so it
+   needs a product decision before a migration.
+12. **Departments are hospital-only.** An independent practice cannot create one — `DepartmentsCard`
+   returns null unless the tenant is a hospital. Deliberate ("a solo practice never needs this
+   card"), now questioned: group practices without hospital tenancy are the case it excludes.
+13. **QHIN Network Records tab** — the remaining half of clinician depth phase 4, held with the QHIN live connection below since it has nothing to show without one.
+14. **WhatsApp transport** behind the existing provider interface.
+15. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
 
 ## Deferred (with reasons)
 
+- **Health news feed** — deferred a long way out, at the owner's direction (September 2026). A feed
+  filtered against a patient's own medications and conditions is a content pipeline before it is a
+  feature: someone has to choose the sources, decide what counts as health news rather than health
+  marketing, and own what happens when an article contradicts the patient's prescriber. None of that
+  is code. Revisit when there is an editorial answer, not before.
 - **Multi-language support** — a working foundation was built in August 2026 and deliberately
   reverted. Live translation machinery with no translations behind it invites a switcher that does
   nothing and makes every new component a question. The code is about a week; spend it immediately
