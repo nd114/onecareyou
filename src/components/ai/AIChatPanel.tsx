@@ -17,7 +17,7 @@ import { MarkdownMessage } from './MarkdownMessage';
 import { ProposedActionsCard } from './ProposedActionsCard';
 import { MessageRecordCards } from './MessageRecordCards';
 import { cn } from '@/lib/utils';
-import { AI_CLINICAL_NOTICE, AI_DISCLOSURE, stripModelDisclaimer } from '@/lib/ai-disclosure';
+import { AI_DISCLOSURE, stripModelDisclaimer } from '@/lib/ai-disclosure';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { resolvePatient } from '@/lib/ai-record-query';
 
@@ -175,17 +175,10 @@ function MessageBubble({
         {/* Where the answer was read. A patient can take a named FDA label to
             their pharmacist; they cannot take a chat bubble. */}
         {!isUser && message.knowledgeSources && message.knowledgeSources.length > 0 && (
-          <div className="mt-2 space-y-1 border-t border-border/50 pt-2">
-            <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-              <BookOpen className="mt-0.5 h-3 w-3 flex-shrink-0" aria-hidden="true" />
-              <span>Read from {message.knowledgeSources.join(' · ')}</span>
-            </p>
-            {/* Stated by the app, not left to the model to remember. */}
-            <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-              <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" aria-hidden="true" />
-              <span>{AI_CLINICAL_NOTICE}</span>
-            </p>
-          </div>
+          <p className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+            <BookOpen className="mt-0.5 h-3 w-3 flex-shrink-0" aria-hidden="true" />
+            <span>Read from {message.knowledgeSources.join(' · ')}</span>
+          </p>
         )}
         {message.suggestedRoute && (
           <Button
@@ -431,13 +424,12 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
       </ScrollArea>
 
       <div className="border-t p-3 space-y-1.5">
-        {/* The empty-state version of this vanished the moment a conversation
-            started — on screen exactly while there was nothing to disclaim.
-            This one stays. */}
-        <p className="flex items-start gap-1.5 px-1 text-[11px] leading-snug text-muted-foreground">
-          <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" aria-hidden="true" />
-          <span>{AI_DISCLOSURE}</span>
-        </p>
+        {/* One line, at the foot of the chat, on every turn.
+            The version this replaces lived in the empty state, so it was on
+            screen exactly while there was nothing to disclaim and gone for
+            every answer. Repeating it under each reply was the other extreme:
+            a disclaimer people stop reading is not a disclaimer. */}
+        <p className="px-1 text-[11px] leading-snug text-muted-foreground">{AI_DISCLOSURE}</p>
         {interim && (
           <p className="text-xs text-muted-foreground italic px-1">{interim}…</p>
         )}

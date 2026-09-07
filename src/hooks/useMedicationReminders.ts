@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useServiceWorker } from './useServiceWorker';
 import { usePushNotifications } from './usePushNotifications';
+import { useNotificationSettings } from './useNotificationSettings';
 import { useMedications, Medication } from './useMedications';
 import { useScheduleEntries } from './useScheduleEntries';
 import { format, isToday, addDays, setHours, setMinutes, parseISO } from 'date-fns';
@@ -20,6 +21,13 @@ const DEFAULT_CONFIG: ReminderConfig = {
 export function useMedicationReminders(config: Partial<ReminderConfig> = {}) {
   const { isRegistered, scheduleNotification, showNotification } = useServiceWorker();
   const { isGranted } = usePushNotifications();
+  // Two different switches, and only one was being read. `isGranted` is the
+  // BROWSER's permission; `push_notifications_enabled` is what the person chose
+  // in OneCare's own Settings. Reminders fired on the browser permission alone,
+  // so switching notifications off in Settings changed nothing — the control
+  // said it was off and the phone kept buzzing.
+  const { settings: notificationSettings } = useNotificationSettings();
+  const wantsReminders = isGranted && notificationSettings.push_notifications_enabled;
   const { medications } = useMedications();
   const { entries: todayEntries } = useScheduleEntries(new Date());
   
@@ -28,7 +36,7 @@ export function useMedicationReminders(config: Partial<ReminderConfig> = {}) {
 
   // Schedule reminders for today's medications
   const scheduleRemindersForToday = useCallback(async () => {
-    if (!isRegistered || !isGranted) {
+    if (!isRegistered || !wantsReminders) {
       console.log('Cannot schedule reminders: SW not registered or notifications not granted');
       return;
     }
@@ -73,11 +81,11 @@ export function useMedicationReminders(config: Partial<ReminderConfig> = {}) {
         console.log(`Scheduled reminder for ${medicationName} at ${reminderTime.toLocaleTimeString()}`);
       }
     }
-  }, [isRegistered, isGranted, todayEntries, scheduleNotification, reminderConfig.reminderMinutesBefore]);
+  }, [isRegistered, wantsReminders, todayEntries, scheduleNotification, reminderConfig.reminderMinutesBefore]);
 
   // Schedule reminders for the next 7 days based on medication schedules
   const scheduleUpcomingReminders = useCallback(async () => {
-    if (!isRegistered || !isGranted) return;
+    if (!isRegistered || !wantsReminders) return;
 
     const now = new Date();
     const activeMedications = medications.filter(m => m.is_active);
@@ -122,11 +130,11 @@ export function useMedicationReminders(config: Partial<ReminderConfig> = {}) {
         }
       }
     }
-  }, [isRegistered, isGranted, medications, scheduleNotification, reminderConfig.reminderMinutesBefore]);
+  }, [isRegistered, wantsReminders, medications, scheduleNotification, reminderConfig.reminderMinutesBefore]);
 
   // Send an immediate test notification
   const sendTestReminder = useCallback(async (medicationName: string = 'Test Medication') => {
-    if (!isRegistered || !isGranted) {
+    if (!isRegistered || !wantsReminders) {
       console.warn('Cannot send test: notifications not enabled');
       return false;
     }
@@ -137,14 +145,14 @@ export function useMedicationReminders(config: Partial<ReminderConfig> = {}) {
       requireInteraction: true,
       data: { type: 'test', url: '/schedule' },
     });
-  }, [isRegistered, isGranted, showNotification]);
+  }, [isRegistered, wantsReminders, showNotification]);
 
   // Auto-schedule reminders when component mounts or medications change
   useEffect(() => {
-    if (isGranted && isRegistered) {
+    if (wantsReminders && isRegistered) {
       scheduleRemindersForToday();
     }
-  }, [isGranted, isRegistered, scheduleRemindersForToday]);
+  }, [wantsReminders, isRegistered, scheduleRemindersForToday]);
 
   // Clear scheduled IDs at midnight
   useEffect(() => {
@@ -167,7 +175,7 @@ export function useMedicationReminders(config: Partial<ReminderConfig> = {}) {
     scheduleRemindersForToday,
     scheduleUpcomingReminders,
     sendTestReminder,
-    isEnabled: isGranted && isRegistered,
+    isEnabled: wantsReminders && isRegistered,
     scheduledCount: scheduledIds.current.size,
   };
 }

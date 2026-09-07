@@ -303,14 +303,13 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    now closed by default and rejects any callback without `state`, so the requirement is enforced
    in code rather than recorded in a document (August 2026). Whoever builds the linking design has
    to build the issuing half first, which was the point.
-8. **Simple Mode does nothing.** The preference is stored, offered at onboarding and repeated in
-   Settings, and its own explanation promises "bigger text, fewer things on each screen, plain
-   wording" — and **not one line of interface reads it** (verified September 2026: the only other
-   reference in the codebase is an unrelated `simple_mode` label for a conversation source). A
-   patient turns it on and nothing happens, which is worse than not offering it. Either the first
-   real change ships behind it — read-aloud and type scale are the cheapest two of the five in
-   [`low-literacy-support-plan.md`](./low-literacy-support-plan.md) — or the toggle comes out until
-   one does. Not a judgement call to make quietly: it is a promise on screen.
+8. **Simple Mode — toggle withdrawn, decision open.** The preference stored a value and promised
+   bigger text, fewer things per screen and plainer wording; no interface read it, so turning it on
+   changed nothing. The control is out of Settings and onboarding (September 2026) and
+   `profiles.simple_mode` is left in place, because the people who already chose it chose something.
+   Still to decide: what Simple Mode should be, and whether the five changes in
+   [`low-literacy-support-plan.md`](./low-literacy-support-plan.md) are the right five. Read-aloud
+   and a type scale are the cheapest two if it comes back.
 9. **Voice-first actions** — say it once, review one screen, approve once. Scoped against the
    existing approve-before-write machinery in
    [`voice-first-actions-plan.md`](./voice-first-actions-plan.md): entity resolution first, then the
@@ -327,12 +326,31 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    only. Widening this means deciding whether a chief admin may read records another clinician
    created privately (`data_sharing_model = 'clinician_managed'` suggests deliberately not), so it
    needs a product decision before a migration.
-12. **Departments are hospital-only.** An independent practice cannot create one — `DepartmentsCard`
-   returns null unless the tenant is a hospital. Deliberate ("a solo practice never needs this
-   card"), now questioned: group practices without hospital tenancy are the case it excludes.
-13. **QHIN Network Records tab** — the remaining half of clinician depth phase 4, held with the QHIN live connection below since it has nothing to show without one.
-14. **WhatsApp transport** behind the existing provider interface.
-15. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
+12. **Departments stay enterprise-only, by decision.** An independent practice cannot create one and
+   that is now intended rather than incidental (September 2026). The tier below enterprise is meant
+   to be a lightweight system that sits alongside a practice's existing EHR rather than reorganising
+   it — see [`ehr-integration-plan.md`](./ehr-integration-plan.md) — so departments there would be a
+   second org chart competing with the one their EHR already holds. Revisit when that tier's shape
+   is settled.
+13. **Email notification preference governs nothing.** `email_notifications_enabled` is written by
+   Settings and read by no sender (verified September 2026 across all ten functions that send mail).
+   The reason is not an oversight in the senders: every patient-facing email OneCare currently
+   sends is transactional (welcome), safety (vital and care alerts) or patient-initiated (a report
+   they asked for), and none of those is something a general preference should silently switch off.
+   So the control promises authority over mail that does not exist. Either it gains a carve-out —
+   "safety alerts always send" stated on screen — and gates the rest, or it comes out like Simple
+   Mode's did. The push toggle had the same shape and was fixable: medication reminders checked the
+   browser's permission and never the app's own switch, so turning notifications off in Settings
+   left the phone buzzing. That one is fixed.
+14. **The interaction check cannot see the full brand dictionary.** `referenceInteractionsFor`
+   resolves brands through a 117-entry table compiled into `_shared/medication-knowledge.ts`, while
+   `international_drug_mappings` holds up to 207,544 rows from the same family — because the matcher
+   is an import-free pure function with no database access. Closing it means either a lookup before
+   the pure matcher, or generating a larger static table at build time from
+   [`data/international-drug-names.csv`](../data/international-drug-names.csv).
+15. **QHIN Network Records tab** — the remaining half of clinician depth phase 4, held with the QHIN live connection below since it has nothing to show without one.
+16. **WhatsApp transport** behind the existing provider interface.
+17. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
 
 ## Deferred (with reasons)
 

@@ -23,7 +23,6 @@ import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { SimpleModeChoice } from '@/components/patient/SimpleModeChoice';
 import { format } from 'date-fns';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -721,24 +720,14 @@ const Settings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Simple mode — offered at onboarding, changeable here, as the
-                    explanation there promises. */}
-                <SimpleModeChoice
-                  value={(profile as any)?.simple_mode === true}
-                  onChange={async (next) => {
-                    if (!user) return;
-                    const { error } = await supabase
-                      .from('profiles')
-                      .update({ simple_mode: next } as never)
-                      .eq('user_id', user.id);
-                    if (error) {
-                      toast.error('Could not save that preference');
-                      return;
-                    }
-                    await refreshProfile();
-                    toast.success(next ? 'Simple version turned on' : 'Simple version turned off');
-                  }}
-                />
+                {/* Simple Mode's toggle is withdrawn until it does something.
+                    It stored a preference and promised bigger text, fewer things
+                    per screen and plainer wording — and no interface read it, so
+                    turning it on changed nothing at all. A control that lies is
+                    worse than a missing one. `profiles.simple_mode` is left in
+                    place: the people who already turned it on chose something,
+                    and their answer should still be there when it works.
+                    See docs/low-literacy-support-plan.md. */}
 
                 {/* Timezone */}
                 <div className="flex items-center justify-between">

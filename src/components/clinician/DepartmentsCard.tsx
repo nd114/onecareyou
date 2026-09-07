@@ -20,6 +20,17 @@ import { Building, Loader2, Pencil, Plus, ShieldCheck, X } from 'lucide-react';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { usePracticeDepartments } from '@/hooks/usePracticeDepartments';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 /**
  * Departments and their sub-admins, for a hospital's chief admin.
@@ -40,6 +51,7 @@ export const DepartmentsCard = () => {
     isCreating,
     renameDepartment,
     setDepartmentActive,
+    deleteDepartment,
     addMember,
     removeMember,
     setLead,
@@ -55,6 +67,8 @@ export const DepartmentsCard = () => {
 
   const isChiefAdmin =
     currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
+  // Ending a department is the owner's alone; an administrator archives.
+  const isOwner = currentMembership?.role === 'owner';
 
   // Departments are a hospital concept. A solo practice never needs this card.
   if (!currentPractice) return null;
@@ -199,8 +213,39 @@ export const DepartmentsCard = () => {
                           })
                         }
                       >
-                        {dept.is_active ? 'Close' : 'Reopen'}
+                        {dept.is_active ? 'Archive' : 'Restore'}
                       </Button>
+                      {/* Deleting belongs to the facility owner, and only to an
+                          archived department — the database enforces both. What
+                          it held goes into the audit trail first, because the
+                          delete cascades through membership and routing. */}
+                      {!dept.is_active && isOwner && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive">
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete {dept.name}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                The department and its staffing and patient routing are removed.
+                                An audit entry keeps its name, who was in it and which patients
+                                were routed there. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep it</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => void deleteDepartment({ departmentId: dept.id })}
+                              >
+                                Delete department
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </div>
 

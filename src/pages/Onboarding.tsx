@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Heart, Calendar, Droplet, Ruler, X, Plus, ArrowRight, SkipForward, Loader2 } from "lucide-react";
-import { SimpleModeChoice } from "@/components/patient/SimpleModeChoice";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -405,13 +404,6 @@ const Onboarding = () => {
                   </div>
                 </div>
 
-                {/* How the app should look for them. Offered, with an
-                    explanation, rather than hidden in Settings. */}
-                <SimpleModeChoice
-                  value={formData.simpleMode}
-                  onChange={(next) => setFormData({ ...formData, simpleMode: next })}
-                  className="pt-2"
-                />
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">

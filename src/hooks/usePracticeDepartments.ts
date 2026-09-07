@@ -145,6 +145,30 @@ export function usePracticeDepartments(practiceId?: string | null) {
     onError: (e: Error) => toast.error(e.message || 'Could not update the department'),
   });
 
+  /**
+   * End a department for good. Owner only, and only one that is already
+   * archived.
+   *
+   * The database gathers the department's membership and patient routing into
+   * a `hipaa_audit_logs` entry before deleting, because the DELETE cascades
+   * through both — an entry that only said "department deleted" would point at
+   * tables that no longer hold the answer.
+   */
+  const deleteDepartment = useMutation({
+    mutationFn: async ({ departmentId, reason }: { departmentId: string; reason?: string }) => {
+      const { error } = await supabase.rpc('practice_delete_department' as never, {
+        _department_id: departmentId,
+        _reason: reason ?? null,
+      } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Department deleted — the audit trail keeps what it held');
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message || 'Could not delete the department'),
+  });
+
   const addMember = useMutation({
     mutationFn: async ({
       departmentId,
@@ -217,6 +241,8 @@ export function usePracticeDepartments(practiceId?: string | null) {
     renameDepartment: renameDepartment.mutateAsync,
     isRenaming: renameDepartment.isPending,
     setDepartmentActive: setDepartmentActive.mutateAsync,
+    deleteDepartment: deleteDepartment.mutateAsync,
+    isDeleting: deleteDepartment.isPending,
     addMember: addMember.mutateAsync,
     removeMember: removeMember.mutateAsync,
     setLead: setLead.mutateAsync,

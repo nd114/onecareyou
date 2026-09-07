@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AI_CLINICIAN_DISCLOSURE } from '@/lib/ai-disclosure';
 import {
   Send, Loader2, Trash2, ArrowRight, Stethoscope, User, ShieldCheck,
-  Check, X, CheckCircle2, AlertCircle, AlertTriangle,
+  Check, X, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { useClinicianAIChat, ClinicianChatMessage } from '@/hooks/useClinicianAIChat';
 import { describeClinicianAction } from '@/lib/clinician-ai-actions';
@@ -222,9 +222,8 @@ export function ClinicianAIDrawer({
           {/* The clinician assistant carried no disclosure at all. Same duty as
               the patient side, different reader: what it writes ends up in a
               record somebody signs. */}
-          <p className="mb-2 flex items-start gap-1.5 px-1 text-[11px] leading-snug text-muted-foreground">
-            <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" aria-hidden="true" />
-            <span>{AI_CLINICIAN_DISCLOSURE}</span>
+          <p className="mb-2 px-1 text-[11px] leading-snug text-muted-foreground">
+            {AI_CLINICIAN_DISCLOSURE}
           </p>
           <div className="flex items-end gap-2">
             <Textarea
