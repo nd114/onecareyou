@@ -26,7 +26,7 @@ function mount(props: Partial<React.ComponentProps<typeof PatientActionRail>> = 
   const onJump = vi.fn();
   render(
     <PatientActionRail
-      patientName="Adaeze Okonkwo"
+      patientName="Jane Evans"
       patientUserId="patient-1"
       isClinicalStaff
       onJump={onJump}
@@ -45,7 +45,7 @@ describe('PatientActionRail', () => {
     expect(screen.getByText('Set alert')).toBeTruthy();
     // jsdom has no IntersectionObserver, so the strip never reveals — the
     // actions must not have been made to depend on it.
-    expect(screen.getByText('Adaeze Okonkwo')).toBeTruthy();
+    expect(screen.getByText('Jane Evans')).toBeTruthy();
   });
 
   it('opens the tab a jump names', async () => {

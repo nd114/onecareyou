@@ -25,7 +25,7 @@ BEGIN
   INSERT INTO public.contact_submissions
     (id, contact_name, contact_email, inquiry_type, subject, message)
   VALUES
-    (v_other, 'Amara Okafor', 'amara@example.com', 'support', 'Cannot sign in',
+    (v_other, 'Sarah Mitchell', 'sarah@example.com', 'support', 'Cannot sign in',
      'The reset link says it has expired.');
 
   -- ---------------------------------------------------------------

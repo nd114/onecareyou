@@ -68,7 +68,7 @@ const ClinicianPatientImport = () => {
 
   const downloadTemplate = () => {
     const csv = TEMPLATE_HEADERS.join(',') + '\n' +
-      'Jane Doe,jane@example.com,+2348012345678,1990-05-15,Female,"Penicillin","Diabetes; Hypertension",O+,"Metformin 500mg twice daily","Regular follow-up needed"\n';
+      'Jane Evans,jane@example.com,+14155550142,1990-05-15,Female,"Penicillin","Diabetes; Hypertension",O+,"Metformin 500mg twice daily","Regular follow-up needed"\n';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Mic, MicOff, Loader2, CheckCircle2, FileAudio, AlertTriangle, Trash2, FileCheck2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Mic, MicOff, Loader2, CheckCircle2, FileAudio, AlertTriangle, Archive, FileCheck2, Pencil, Check as CheckIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { FileDictationDialog, type DictationExtract } from '@/components/clinician/FileDictationDialog';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
@@ -36,12 +37,30 @@ interface Dictation {
   patient_user_id: string | null;
   encounter_id: string | null;
   filed_at: string | null;
+  archived_at: string | null;
   metadata: { extracted?: DictationExtract } | null;
 }
 
 export default function ClinicianDictations() {
   const { user } = useAuth();
-  const recorder = useVoiceRecorder();
+  const patientLabelRef = useRef('');
+  /**
+   * Ten minutes, not one.
+   *
+   * The 60-second default belongs to Simple Mode's "say one thing" capture. A
+   * clinician dictating a consultation is a different job, and the old cap
+   * ended most of them mid-sentence — then dropped the recording, because
+   * nothing was listening for a stop the clinician had not asked for.
+   */
+  const recorder = useVoiceRecorder({
+    maxDurationMs: 10 * 60_000,
+    onLimitReached: (blob) => {
+      if (!blob) return;
+      toast.warning('Recording reached the ten-minute limit — saving what you dictated.');
+      void uploadAndProcess(blob, patientLabelRef.current, recorder.maxDurationMs);
+      setPatientLabel('');
+    },
+  });
   const [patientLabel, setPatientLabel] = useState('');
   const [dictations, setDictations] = useState<Dictation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +77,7 @@ export default function ClinicianDictations() {
       .select('*')
       .eq('clinician_user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
     // Cast through unknown: encounter_id and filed_at are added by
     // 20260820110000 and the generated types track the live database, so they
     // only appear here once that migration has been applied.
@@ -68,11 +87,18 @@ export default function ClinicianDictations() {
 
   useEffect(() => { void load(); }, [user]);
 
+  // The limit handler is created once and fires much later, so it cannot read
+  // the label out of a render closure.
+  patientLabelRef.current = patientLabel;
+
   const handleRecord = async () => {
     if (recorder.isRecording) {
+      // Read the clock before stopping: `stop()` resets it, so anything read
+      // afterwards is zero.
+      const durationMs = recorder.elapsedMs;
       const blob = await recorder.stop();
       if (!blob || !user) return;
-      await uploadAndProcess(blob, patientLabel);
+      await uploadAndProcess(blob, patientLabel, durationMs);
       setPatientLabel('');
     } else {
       const ok = await recorder.start();
@@ -80,7 +106,7 @@ export default function ClinicianDictations() {
     }
   };
 
-  const uploadAndProcess = async (blob: Blob, label: string) => {
+  const uploadAndProcess = async (blob: Blob, label: string, durationMs: number) => {
     if (!user) return;
     const path = `${user.id}/${Date.now()}.webm`;
     const { error: upErr } = await supabase.storage
@@ -93,7 +119,7 @@ export default function ClinicianDictations() {
         clinician_user_id: user.id,
         audio_path: path,
         patient_label: label || null,
-        duration_seconds: Math.round(recorder.elapsedMs / 1000),
+        duration_seconds: Math.round(durationMs / 1000),
         status: 'pending_transcription',
       }])
       .select('*')
@@ -112,6 +138,27 @@ export default function ClinicianDictations() {
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const renameDictation = async (d: Dictation, label: string) => {
+    const next = label.trim();
+    const { error } = await supabase
+      .from('clinician_dictations')
+      .update({ patient_label: next || null })
+      .eq('id', d.id);
+    if (error) { toast.error(error.message || 'Could not rename the dictation'); return; }
+    setDictations((prev) => prev.map((x) => (x.id === d.id ? { ...x, patient_label: next || null } : x)));
+    toast.success('Renamed');
+  };
+
+  const restoreDictation = async (d: Dictation) => {
+    const { error } = await supabase
+      .from('clinician_dictations')
+      .update({ archived_at: null, archived_by: null } as never)
+      .eq('id', d.id);
+    if (error) { toast.error(error.message || 'Could not restore the dictation'); return; }
+    toast.success('Dictation restored');
+    void load();
   };
 
   const approveTranscript = async (d: Dictation) => {
@@ -153,13 +200,27 @@ export default function ClinicianDictations() {
     void load();
   };
 
-  const deleteDictation = async (d: Dictation) => {
-    await supabase.storage.from('clinician-dictations').remove([d.audio_path]);
-    await supabase.from('clinician_dictations').delete().eq('id', d.id);
-    toast.success('Deleted');
+  /**
+   * Archive, not delete.
+   *
+   * This used to remove the row and the audio object outright. For a filed
+   * dictation that is a clinical note taken out of a chart with nothing left
+   * behind — against this repository's own rule that nothing is hard-deleted
+   * where there is a legal record. The row and the audio stay; the page stops
+   * showing it. The database now refuses to delete a filed one at all.
+   */
+  const archiveDictation = async (d: Dictation) => {
+    const { error } = await supabase
+      .from('clinician_dictations')
+      .update({ archived_at: new Date().toISOString(), archived_by: user!.id } as never)
+      .eq('id', d.id);
+    if (error) { toast.error(error.message || 'Could not archive the dictation'); return; }
+    toast.success('Dictation archived');
     void load();
   };
 
+  const active = dictations.filter((d) => !d.archived_at);
+  const archived = dictations.filter((d) => d.archived_at);
   const seconds = Math.floor(recorder.elapsedMs / 1000);
   const pendingCount = dictations.filter((d) => d.status === 'transcribed' && !d.summary_approved_at).length;
 
@@ -229,11 +290,11 @@ export default function ClinicianDictations() {
 
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-        ) : dictations.length === 0 ? (
+        ) : active.length === 0 && archived.length === 0 ? (
           <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No dictations yet. Record one above.</CardContent></Card>
         ) : (
           <div className="space-y-3">
-            {dictations.map((d) => (
+            {active.map((d) => (
               <DictationCard key={d.id} d={d}
                 editTranscript={editingTranscript[d.id] ?? d.transcript ?? ''}
                 editSummary={editingSummary[d.id] ?? d.summary ?? ''}
@@ -241,10 +302,29 @@ export default function ClinicianDictations() {
                 setEditSummary={(v) => setEditingSummary((s) => ({ ...s, [d.id]: v }))}
                 onApproveTranscript={() => approveTranscript(d)}
                 onApproveSummary={() => approveSummary(d)}
-                onDelete={() => deleteDictation(d)}
+                onArchive={() => archiveDictation(d)}
+                onRename={(label) => renameDictation(d, label)}
                 onFile={() => setFiling(d)}
               />
             ))}
+
+            {archived.length > 0 && (
+              <div className="pt-4 border-t space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Archived ({archived.length}) — kept, because a filed dictation is part of a record
+                </p>
+                {archived.map((d) => (
+                  <div key={d.id} className="rounded-lg border border-dashed p-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground truncate min-w-0">
+                      {d.patient_label || 'Unlabeled dictation'} · {format(new Date(d.created_at), 'd MMM yyyy')}
+                    </p>
+                    <Button variant="ghost" size="sm" onClick={() => restoreDictation(d)}>
+                      Restore
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -263,7 +343,7 @@ export default function ClinicianDictations() {
   );
 }
 
-function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setEditSummary, onApproveTranscript, onApproveSummary, onDelete, onFile }: {
+function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setEditSummary, onApproveTranscript, onApproveSummary, onArchive, onRename, onFile }: {
   d: Dictation;
   editTranscript: string;
   editSummary: string;
@@ -271,10 +351,13 @@ function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setE
   setEditSummary: (v: string) => void;
   onApproveTranscript: () => void;
   onApproveSummary: () => void;
-  onDelete: () => void;
+  onArchive: () => void;
+  onRename: (label: string) => void;
   onFile: () => void;
 }) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [draftLabel, setDraftLabel] = useState(d.patient_label ?? '');
   const loadedRef = useRef(false);
   useEffect(() => {
     if (loadedRef.current) return;
@@ -303,7 +386,42 @@ function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setE
           <div>
             <CardTitle className="text-sm flex items-center gap-2">
               <FileAudio className="h-4 w-4" />
-              {d.patient_label || 'Unlabeled dictation'}
+              {/* The label could only be typed before recording started, so a
+                  clinician who pressed record first was stuck with
+                  "Unlabeled dictation" for good. */}
+              {renaming ? (
+                <span className="flex items-center gap-1">
+                  <Input
+                    value={draftLabel}
+                    onChange={(e) => setDraftLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { onRename(draftLabel); setRenaming(false); }
+                      if (e.key === 'Escape') { setDraftLabel(d.patient_label ?? ''); setRenaming(false); }
+                    }}
+                    className="h-7 w-48 text-sm"
+                    placeholder="Who is this about?"
+                    autoFocus
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    aria-label="Save name"
+                    onClick={() => { onRename(draftLabel); setRenaming(false); }}
+                  >
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  </Button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 text-left hover:underline"
+                  onClick={() => { setDraftLabel(d.patient_label ?? ''); setRenaming(true); }}
+                >
+                  {d.patient_label || 'Unlabeled dictation'}
+                  <Pencil className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
             </CardTitle>
             <CardDescription className="text-xs">
               {format(new Date(d.created_at), 'PPp')}
@@ -313,7 +431,7 @@ function DictationCard({ d, editTranscript, editSummary, setEditTranscript, setE
           </div>
           <div className="flex items-center gap-2">
             {statusBadge}
-            <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Delete"><Trash2 className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={onArchive} aria-label="Archive dictation" title="Archive — nothing is deleted"><Archive className="h-4 w-4" /></Button>
           </div>
         </div>
       </CardHeader>

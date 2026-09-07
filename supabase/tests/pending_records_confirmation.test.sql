@@ -31,7 +31,7 @@ BEGIN
     (id, clinician_user_id, patient_name, patient_email, patient_phone,
      health_conditions, allergies, notes, linked_user_id)
   VALUES
-    (v_record, v_clinician, 'Amara Okafor', 'patient@example.com', '+234 801 234 5678',
+    (v_record, v_clinician, 'Sarah Mitchell', 'patient@example.com', '+1 415 555 0142',
      '["Type 2 diabetes"]'::jsonb, '["Penicillin"]'::jsonb,
      'Discussed insulin titration.', NULL);
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseCsvLine, validateCsvStructure } from '@/lib/import-csv';
 
-const GOOD = 'Name,Email,Date of Birth\nJames Thompson,james@example.com,1967-03-15\nAmara Okafor,amara@example.com,1980-07-02';
+const GOOD = 'Name,Email,Date of Birth\nJames Thompson,james@example.com,1967-03-15\nSarah Mitchell,sarah@example.com,1980-07-02';
 
 describe('patient import file structure', () => {
   it('accepts a well-formed file', () => {

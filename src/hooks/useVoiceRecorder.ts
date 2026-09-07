@@ -17,6 +17,16 @@ const DEFAULT_MAX_DURATION_MS = 60_000;
 export interface VoiceRecorderOptions {
   /** Hard stop, in milliseconds. Defaults to 60 seconds. */
   maxDurationMs?: number;
+  /**
+   * Called with the recording when the cap ended it rather than the person.
+   *
+   * Without this the cap was silent data loss: `onstop` built the blob, found
+   * nobody waiting for it — `stop()` is what registers a waiter, and the cap
+   * never called it — and dropped it. The UI reset as though nothing had
+   * happened, so a clinician who dictated past the limit lost everything with
+   * no error and no way to know.
+   */
+  onLimitReached?: (blob: Blob | null) => void;
 }
 
 export function useVoiceRecorder(options: VoiceRecorderOptions = {}) {
@@ -35,6 +45,13 @@ export function useVoiceRecorder(options: VoiceRecorderOptions = {}) {
   const startedAtRef = useRef<number>(0);
   const tickRef = useRef<number | null>(null);
   const stopResolverRef = useRef<((blob: Blob | null) => void) | null>(null);
+  /** Set when the cap ended the recording rather than the person. */
+  const reachedLimitRef = useRef(false);
+  const [hitLimit, setHitLimit] = useState(false);
+  // Read through a ref so the ticker, which closes over the first render, still
+  // calls the caller's current handler.
+  const onLimitRef = useRef(options.onLimitReached);
+  onLimitRef.current = options.onLimitReached;
 
   const cleanup = () => {
     if (tickRef.current !== null) {
@@ -67,17 +84,34 @@ export function useVoiceRecorder(options: VoiceRecorderOptions = {}) {
         cleanup();
         setIsRecording(false);
         setElapsedMs(0);
-        stopResolverRef.current?.(blob);
-        stopResolverRef.current = null;
+        setHitLimit(reachedLimitRef.current);
+
+        if (stopResolverRef.current) {
+          stopResolverRef.current(blob);
+          stopResolverRef.current = null;
+        } else if (reachedLimitRef.current) {
+          // Nobody asked for this one — the clock did. Hand it over rather than
+          // letting it fall on the floor.
+          onLimitRef.current?.(blob);
+        }
       };
       mediaRecorderRef.current = recorder;
       startedAtRef.current = Date.now();
+      reachedLimitRef.current = false;
+      setHitLimit(false);
       recorder.start();
       setIsRecording(true);
       tickRef.current = window.setInterval(() => {
         const elapsed = Date.now() - startedAtRef.current;
         setElapsedMs(elapsed);
         if (elapsed >= maxDurationRef.current) {
+          // The cap used to call stopInternal() directly. Nothing was waiting on
+          // the blob — `stopResolverRef` is only set by `stop()`, which the cap
+          // never calls — so `onstop` built the recording and dropped it, the UI
+          // reset as though nothing had happened, and a clinician who dictated
+          // past the limit lost the lot with no error. The cap now goes through
+          // the same door a button press does.
+          reachedLimitRef.current = true;
           stopInternal();
         }
       }, 200);
@@ -115,7 +149,17 @@ export function useVoiceRecorder(options: VoiceRecorderOptions = {}) {
     setElapsedMs(0);
   }, []);
 
-  return { isRecording, elapsedMs, maxDurationMs: MAX_DURATION_MS, error, start, stop, cancel };
+  return {
+    isRecording,
+    elapsedMs,
+    maxDurationMs: MAX_DURATION_MS,
+    /** True when the last recording ended because it ran out of time. */
+    hitLimit,
+    error,
+    start,
+    stop,
+    cancel,
+  };
 }
 
 function pickMime(): string {
