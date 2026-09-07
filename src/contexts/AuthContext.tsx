@@ -165,11 +165,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    // Ask before trying. This stops the ordinary attack — a password list
+    // worked through in the app, a script driving the real UI, a stuck client
+    // retrying forever — and it deliberately does not pretend to more than
+    // that: anyone posting straight to Supabase Auth never reaches this code.
+    // The limits that cover that case are configured in the Supabase dashboard;
+    // see docs/handbook/auth-hardening.md.
+    const { error: throttled } = await supabase.rpc('check_signin_allowed' as never, {
+      _email: email,
+    } as never);
+    if (throttled) {
+      return { error: new Error(throttled.message) };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     return { error: error as Error | null };
   };
 

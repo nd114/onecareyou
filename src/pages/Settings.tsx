@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useNotificationSettings } from '@/hooks/useNotificationSettings';
+import { NotificationPreferences } from '@/components/settings/NotificationPreferences';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,12 +143,6 @@ const Settings = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const { hasConsent, consentUpdatedAt, grantConsent, revokeConsent } = useAIConsent();
   const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
-  const { 
-    settings: notificationSettings, 
-    updatePushNotifications, 
-    updateEmailNotifications,
-    isSaving: savingNotifications 
-  } = useNotificationSettings();
   const {
     subscription,
     checkSubscription,
@@ -754,91 +748,27 @@ const Settings = () => {
 
                 <Separator />
 
-                {/* Push Notifications */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <BellRing className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Push Notifications</p>
-                      <p className="text-sm text-muted-foreground">
-                        {notificationsSupported 
-                          ? 'Get browser notifications for alerts and reminders' 
-                          : 'Not supported in this browser'}
-                      </p>
-                    </div>
+                {/* Notification settings, per thing rather than per channel.
+                    What was here: "Push Notifications", "Email Notifications"
+                    and "Weekly Adherence Report" — the first two governed
+                    nothing (no sender read the email flag; reminders checked the
+                    browser permission, not the push flag) and the third gated an
+                    in-app view rather than any weekly email. Categories now come
+                    from a catalogue that only lists what something actually
+                    sends. */}
+                {notificationsSupported && !notificationsEnabled && (
+                  <div className="rounded-lg border border-dashed p-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm text-muted-foreground">
+                      This browser has not been given permission to show notifications, so
+                      on-device reminders cannot appear.
+                    </p>
+                    <Button size="sm" variant="outline" onClick={() => void requestPermission()}>
+                      Allow notifications
+                    </Button>
                   </div>
-                  {notificationsSupported && (
-                    <Switch
-                      checked={notificationSettings.push_notifications_enabled && notificationsEnabled}
-                      disabled={savingNotifications}
-                      onCheckedChange={async (checked) => {
-                        if (checked) {
-                          // First request browser permission
-                          const granted = await requestPermission();
-                          if (granted) {
-                            await updatePushNotifications(true);
-                          }
-                        } else {
-                          await updatePushNotifications(false);
-                        }
-                      }}
-                    />
-                  )}
-                </div>
+                )}
 
-                <Separator />
-
-                {/* Email Notifications */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receive email alerts for vital thresholds and important updates
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={notificationSettings.email_notifications_enabled}
-                    disabled={savingNotifications}
-                    onCheckedChange={updateEmailNotifications}
-                />
-                </div>
-
-                <Separator />
-
-                {/* Weekly Adherence Report */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Weekly Adherence Report</p>
-                      <p className="text-sm text-muted-foreground">
-                        Show medication adherence tracking and reports
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={(profile as any)?.weekly_adherence_report_enabled ?? true}
-                    disabled={savingNotifications}
-                    onCheckedChange={async (checked) => {
-                      if (!user) return;
-                      try {
-                        const { error } = await supabase
-                          .from('profiles')
-                          .update({ weekly_adherence_report_enabled: checked })
-                          .eq('user_id', user.id);
-                        if (error) throw error;
-                        toast.success(checked ? 'Adherence report enabled' : 'Adherence report disabled');
-                        refreshProfile?.();
-                      } catch (error) {
-                        console.error('Failed to update setting:', error);
-                        toast.error('Failed to update setting');
-                      }
-                    }}
-                  />
-                </div>
+                <NotificationPreferences audience="patient" />
 
                 <Separator />
                 <div className="flex items-center justify-between">

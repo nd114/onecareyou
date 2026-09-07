@@ -277,9 +277,13 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    sign-up address. Deliberately deferred (Aug 2026): the branded intake page carries name, logo
    and brand colours, and everything after sign-in stays Emerald Prestige. Revisit if a hospital
    asks for it.
-4. **Assignment-first access** — switch `can_view_all_patients` off as the hospital default once
-   sub-admins are onboarded and trained, so a clinician sees the patients assigned to them.
-   Prepared on `claude/oclmc-panel-scope-option-a-assignment-first`; see review C2.
+4. ~~**Assignment-first access.**~~ **Done as a tenant switch** (September 2026).
+   `practices.assignment_first_access`, off by default, with `practice_set_assignment_first()`
+   applying it to existing non-admin members and auditing both directions. Not a global flip: at a
+   hospital where assignments have not been made, that would empty every clinician's panel in one
+   deploy — the objection that deferred it the first time. Owners and admins keep the wide view as
+   the administrative right the plan describes, and new members inherit the tenant's choice through
+   a BEFORE INSERT trigger. 8 assertions against Postgres.
 5. ~~**Server-side audit logging.**~~ **Done** (August 2026). Changes are recorded by six
    `AFTER INSERT OR UPDATE` triggers in the same statement as the change. Reads go through
    `log_record_access()`, which takes the actor from `auth.uid()`, verifies the access before
@@ -289,7 +293,15 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    question rather than a gap: nothing in Postgres knows a page was rendered, so a read is
    reported by the client and the guarantee is that a report cannot be forged or misattributed —
    only withheld.
-6. **Rate limiting — anonymous writes done, sign-in outstanding.** The three tables the anonymous
+6. ~~**Rate limiting.**~~ **Done, with a stated limit** (September 2026). Anonymous writes were
+   throttled in August; sign-in now goes through `check_signin_allowed()` before the form calls
+   Supabase — ten attempts per address and fifty per IP in fifteen minutes, keyed on both because
+   either alone misses a real attack. Being precise about the boundary: this covers the sign-in
+   form, and cannot see a request posted straight to `/auth/v1/token`. Nothing in the database can.
+   The limits that cover that are dashboard settings, listed with the checks that prove them in
+   [`handbook/auth-hardening.md`](./handbook/auth-hardening.md) — **the record of what is actually
+   configured is still blank and needs filling in from the project settings.** 5 assertions.
+   Superseded detail: **Rate limiting — anonymous writes done, sign-in outstanding.** The three tables the anonymous
    role can INSERT into (`job_applications`, `beta_events`, `enterprise_inquiries`) are throttled
    at the database by `BEFORE INSERT` triggers, per subject and in aggregate, keyed on the client
    IP with a fall back to the email address (August 2026). The KingsChat callback — a public
@@ -332,16 +344,16 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    it — see [`ehr-integration-plan.md`](./ehr-integration-plan.md) — so departments there would be a
    second org chart competing with the one their EHR already holds. Revisit when that tier's shape
    is settled.
-13. **Email notification preference governs nothing.** `email_notifications_enabled` is written by
-   Settings and read by no sender (verified September 2026 across all ten functions that send mail).
-   The reason is not an oversight in the senders: every patient-facing email OneCare currently
-   sends is transactional (welcome), safety (vital and care alerts) or patient-initiated (a report
-   they asked for), and none of those is something a general preference should silently switch off.
-   So the control promises authority over mail that does not exist. Either it gains a carve-out —
-   "safety alerts always send" stated on screen — and gates the rest, or it comes out like Simple
-   Mode's did. The push toggle had the same shape and was fixable: medication reminders checked the
-   browser's permission and never the app's own switch, so turning notifications off in Settings
-   left the phone buzzing. That one is fixed.
+13. ~~**Notification preferences.**~~ **Rebuilt per category** (September 2026).
+   `notification_preferences` rows, a catalogue in code that only lists categories something
+   actually sends, and `notification_allowed()` as the single question every sender asks — the old
+   design failed because ten senders each had to remember, and a sender that forgets looks exactly
+   like one that decided yes. Absence of a row means the catalogue default, never off, so shipping
+   a category cannot silently mute mail people rely on. Mandatory categories — account security,
+   and a clinician's own threshold alerts — are enforced in the database rather than only in the
+   client, and appear in the list marked with the reason rather than being hidden. 13 unit
+   assertions and 6 against Postgres. Still to wire: the remaining senders ask nothing yet, because
+   the only currently switchable category with an email producer is the care-circle alert.
 14. **The interaction check cannot see the full brand dictionary.** `referenceInteractionsFor`
    resolves brands through a 117-entry table compiled into `_shared/medication-knowledge.ts`, while
    `international_drug_mappings` holds up to 207,544 rows from the same family — because the matcher

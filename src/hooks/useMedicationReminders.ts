@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useServiceWorker } from './useServiceWorker';
 import { usePushNotifications } from './usePushNotifications';
-import { useNotificationSettings } from './useNotificationSettings';
+import { useNotificationPreferences } from './useNotificationPreferences';
 import { useMedications, Medication } from './useMedications';
 import { useScheduleEntries } from './useScheduleEntries';
 import { format, isToday, addDays, setHours, setMinutes, parseISO } from 'date-fns';
@@ -22,12 +22,12 @@ export function useMedicationReminders(config: Partial<ReminderConfig> = {}) {
   const { isRegistered, scheduleNotification, showNotification } = useServiceWorker();
   const { isGranted } = usePushNotifications();
   // Two different switches, and only one was being read. `isGranted` is the
-  // BROWSER's permission; `push_notifications_enabled` is what the person chose
-  // in OneCare's own Settings. Reminders fired on the browser permission alone,
-  // so switching notifications off in Settings changed nothing — the control
-  // said it was off and the phone kept buzzing.
-  const { settings: notificationSettings } = useNotificationSettings();
-  const wantsReminders = isGranted && notificationSettings.push_notifications_enabled;
+  // BROWSER's permission; the preference is what the person chose in OneCare's
+  // own Settings. Reminders fired on the browser permission alone, so switching
+  // notifications off in Settings changed nothing — the control said off and
+  // the phone kept buzzing.
+  const { isEnabled } = useNotificationPreferences('patient');
+  const wantsReminders = isGranted && isEnabled('medication_reminders', 'push');
   const { medications } = useMedications();
   const { entries: todayEntries } = useScheduleEntries(new Date());
   

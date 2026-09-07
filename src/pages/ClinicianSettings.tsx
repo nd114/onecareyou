@@ -30,7 +30,7 @@ import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
 import { useClinicianProfile, MEDICAL_SPECIALTIES, CLINICIAN_TITLES } from '@/hooks/useClinicianProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useClinicianNotificationSettings } from '@/hooks/useNotificationSettings';
+import { NotificationPreferences } from '@/components/settings/NotificationPreferences';
 import { useClinicianNotifications } from '@/hooks/useClinicianNotifications';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
@@ -66,12 +66,6 @@ const ClinicianSettings = () => {
   const { clinicianProfile, isLoading: isLoadingProfile, updateClinicianProfile, isClinician } = useClinicianProfile();
   const { patients } = useClinicianPatients();
   const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
-  const { 
-    settings: notificationSettings, 
-    updatePushNotifications, 
-    updateEmailNotifications,
-    isSaving: savingNotifications 
-  } = useClinicianNotificationSettings();
   
   const { preferences: guidancePrefs, updatePreferences } = useClinicianNotifications();
   
@@ -550,56 +544,25 @@ const ClinicianSettings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Push Notifications */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <BellRing className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Push Notifications</p>
-                    <p className="text-sm text-muted-foreground">
-                      {notificationsSupported 
-                        ? 'Get browser notifications for patient alerts' 
-                        : 'Not supported in this browser'}
-                    </p>
-                  </div>
+              {/* Per category rather than per channel. The two switches here
+                  before — push and email — governed nothing: no sender read the
+                  email flag, and nothing consulted the push one. Threshold
+                  alerts now appear in the list as always-on, with the reason,
+                  rather than being quietly absent: a rule you set on a reading
+                  that matters is not a rule that should be mutable from a
+                  settings page. */}
+              {notificationsSupported && !notificationsEnabled && (
+                <div className="rounded-lg border border-dashed p-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    This browser has not been given permission to show notifications.
+                  </p>
+                  <Button size="sm" variant="outline" onClick={() => void requestPermission()}>
+                    Allow notifications
+                  </Button>
                 </div>
-                {notificationsSupported && (
-                  <Switch
-                    checked={notificationSettings.push_notifications_enabled && notificationsEnabled}
-                    disabled={savingNotifications}
-                    onCheckedChange={async (checked) => {
-                      if (checked) {
-                        const granted = await requestPermission();
-                        if (granted) {
-                          await updatePushNotifications(true);
-                        }
-                      } else {
-                        await updatePushNotifications(false);
-                      }
-                    }}
-                  />
-                )}
-              </div>
+              )}
 
-              <Separator />
-
-              {/* Email Notifications */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-muted-foreground">
-                      Receive email alerts when patient vitals exceed thresholds
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={notificationSettings.email_notifications_enabled}
-                  disabled={savingNotifications}
-                  onCheckedChange={updateEmailNotifications}
-                />
-              </div>
+              <NotificationPreferences audience="clinician" />
             </CardContent>
           </Card>
 

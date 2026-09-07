@@ -92,6 +92,29 @@ serve(async (req) => {
     // Process each alert setting
     for (const setting of alertSettings as CareAlertSetting[]) {
       try {
+        // Does the patient still want their care circle told?
+        //
+        // One question, one accessor. The preference this replaces was a boolean
+        // on `profiles` that this function — and the nine others that send mail —
+        // never read, so switching notifications off in Settings changed nothing
+        // anywhere.
+        const { data: allowed, error: prefError } = await supabase.rpc('notification_allowed', {
+          _user_id: setting.user_id,
+          _category: 'care_circle_missed_doses',
+          _channel: 'email',
+        });
+        if (prefError) {
+          // A preference lookup that fails is not consent. Skip rather than
+          // send: a missed alert is recoverable, mail somebody asked not to
+          // receive is not.
+          console.error('notification_allowed failed', setting.user_id, prefError);
+          continue;
+        }
+        if (allowed === false) {
+          console.log(`Care-circle alerts switched off for ${setting.user_id}`);
+          continue;
+        }
+
         // Check if we already sent an alert today
         if (setting.last_alert_sent_at) {
           const lastSent = new Date(setting.last_alert_sent_at);
