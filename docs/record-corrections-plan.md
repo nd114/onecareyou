@@ -1,6 +1,6 @@
 # Correcting a record after the patient owns it
 
-Status: **design, with the urgent case built.** September 2026.
+Status: **two of the three classes built.** September 2026.
 
 ## The question
 
@@ -32,17 +32,52 @@ this". Not yet built.
 ### 2. Proposed changes to the patient's own data — acceptance required
 
 "Change metformin from 500 mg to 1000 mg." This edits the patient's medication
-list, which is theirs.
+list, which is theirs. **Built**, in `record_change_proposals`.
 
-**The mechanism already exists.** The AI assistant proposes and the patient
-approves; nothing is written until they do; the approval is logged. A clinician
-proposing a medication change should use the same object and the same words —
-one review surface, one vocabulary, one audit shape. Building a second
-approval system beside it would be how the two come to disagree.
+It was built because the alternative already shipped and was false. The
+connection dialog offered "Accept & Collaborate — both you and your provider
+can update records going forward" and wrote `meds_write: true` into
+`data_sharing_agreements.permissions`. Nothing reads that column, and
+`medications` carries no clinician INSERT, UPDATE or DELETE policy at all. The
+patient was consenting to a capability that did not exist — and since the
+"Take Ownership" option produced a byte-identical share, two of the dialog's
+three choices were the same choice under different names.
 
-Pending → accepted (applies, both logged) or declined (recorded, nothing
-applied). A proposal the patient never answers stays pending and visible; it
-does not expire into silence.
+The shape:
+
+- A clinician with a **live** medications share proposes a start, a change or
+  a stop. Checked at insert time, so a clinician whose access was revoked
+  yesterday cannot put a decision in front of somebody today.
+- Proposing writes nothing to the record. That is the entire distinction.
+- The patient accepts or declines through `respond_to_change_proposal()`. The
+  clinician cannot answer their own proposal, and neither can anyone else.
+- Accepting applies the payload through a **fixed key list**. A proposal can
+  change a dose, a frequency, an instruction — the things a prescriber decides.
+  It cannot reach `user_id`, `id`, `source` or `external_id`, so accepting can
+  never move a medication to another person or launder an imported row into an
+  editable one. This is what "not carte blanche" means in code rather than in
+  a comment.
+- A change is a **diff**, not a replacement row: a payload naming only the dose
+  changes only the dose.
+- `source` stays `manual`. A non-manual source locks the patient out of editing
+  their own row, and a change the patient chose to accept is theirs.
+- Declined and withdrawn proposals survive, with the patient's reason. A
+  declined change is as much a part of the history as an accepted one.
+- Both the proposal and its answer are in `hipaa_audit_logs`, attributed to the
+  clinician who proposed and recording who answered.
+
+Deliberately *not* reusing the AI assistant's approval object, which the
+earlier draft of this plan proposed. That object lives in a chat message and
+dies with it; a clinician's proposal has to outlive the session it was made in,
+be visible to both parties, and be answerable days later. Same idea, different
+lifetime. What is shared is the principle — nothing is written until the person
+whose record it is says so.
+
+The one thing still open: a proposal the patient never answers stays pending
+forever. It is visible to both sides and the clinician can withdraw it, which
+is enough for now; an ageing-out rule would need to decide what a lapsed
+prescription change means clinically, and that is not a decision to make in a
+migration.
 
 ### 3. Retractions — urgent, cannot wait for acceptance
 
@@ -107,7 +142,11 @@ Named so they are not discovered one at a time in production:
 
 ## Sequencing
 
-Retraction of documents is done. Next, in order of how much harm the absence
-does: encounters marked entered-in-error (1), then clinician proposals reusing
-the assistant's approval object (2), then addenda (4), then merge (2 in the list
-above), which should not be attempted until the first three are settled.
+Document retraction and clinician proposals are done. Next, in order of how
+much harm the absence does: encounters marked entered-in-error (1), then
+addenda (4), then merge (2 in the scenarios above), which should not be
+attempted until the first two are settled.
+
+Proposals currently cover medications only. Extending them is a value in the
+`kind` check and a branch in the apply function — deliberately, so the second
+kind does not arrive as a second review surface the patient has to learn.

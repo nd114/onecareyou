@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, Shield, Eye, X, CheckCircle2, Handshake, UserCheck, Loader2,
+  Shield, Eye, X, CheckCircle2, Handshake, Loader2,
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -21,23 +21,36 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * Two options, not three.
+ *
+ * "Accept & Collaborate" and "Accept & Take Ownership" produced identical
+ * shares — the same permissions, the same expiry, the same access — and
+ * differed only in a `permissions` object on `data_sharing_agreements` that
+ * nothing reads. Worse, the one they described ("both you and your provider
+ * can update records") was not something the platform could do: `medications`
+ * has no clinician write policy of any kind, so a patient was consenting to a
+ * capability that did not exist.
+ *
+ * What replaced it is real. A clinician records their own account of care
+ * directly — encounters, notes, readings they took — and suggests changes to
+ * the patient's own data, which apply only when the patient accepts. Both
+ * options below get that; the difference is how much the provider can see and
+ * for how long.
+ */
 const MODEL_OPTIONS = [
   {
     value: 'collaborative',
-    label: 'Accept & Collaborate',
-    description: 'Merge their data into your profile. Both you and your provider can update records going forward.',
+    label: 'Accept and connect',
+    description:
+      'They can see your record and add their notes and results to it. Changes to your own list — a dose, a new medicine — come to you as suggestions you accept or decline.',
     icon: Handshake,
   },
   {
-    value: 'patient_managed',
-    label: 'Accept & Take Ownership',
-    description: 'Import their data but you control everything. Your provider gets read-only access.',
-    icon: UserCheck,
-  },
-  {
     value: 'view_only',
-    label: 'View Only',
-    description: 'Let your provider see your data but they cannot modify it. Access expires in 30 days.',
+    label: 'Let them look, for now',
+    description:
+      'They can see your record but not your profile details, and access ends automatically after 30 days.',
     icon: Eye,
   },
 ];
@@ -66,15 +79,20 @@ export function ClinicianDataConsentDialog({ record, open, onOpenChange }: Props
 
       if (linkError) throw linkError;
 
-      // 2. Create a data_sharing_agreement
+      // 2. Record the agreement.
+      //
+      // This row is the consent record, not the enforcement — access is decided
+      // by `provider_shares` and the RLS policies that read it. So what is
+      // written here has to describe what those actually allow, or the document
+      // the patient agreed to and the access they got come apart. No `_write`
+      // flags: a clinician writes their own account of care and proposes
+      // everything else.
       const permissions = {
         vitals_read: true,
-        vitals_write: selectedModel === 'collaborative',
         meds_read: true,
-        meds_write: selectedModel === 'collaborative',
-        profile_read: true,
-        profile_write: false,
+        profile_read: selectedModel !== 'view_only',
         notes_read: selectedModel !== 'view_only',
+        may_propose_changes: true,
       };
 
       const { error: agreementError } = await supabase

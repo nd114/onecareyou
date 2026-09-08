@@ -13,6 +13,37 @@ Three ways, and they differ in who decides:
 Once a patient claims a record it is theirs. You keep your copy; corrections to
 their record go through them.
 
+## What you write, and what you suggest
+
+Two different things, and the platform treats them differently.
+
+**What you write directly** is your account of care: encounters, notes,
+readings you took, documents you send. The patient sees all of it. They cannot
+delete it, because your record of what you observed is the clinical record, and
+one a patient could erase would be no use to either of you in a dispute.
+
+**What you suggest** is a change to data that is theirs — chiefly the medicine
+list. On the Meds tab of any patient sharing medications with you:
+
+- **Suggest a change** to a dose, frequency or instruction on an existing
+  medicine. Leave a field blank to keep it as it is: only what you type is
+  proposed.
+- **Suggest a medication** they are not yet on.
+- **Suggest stopping** one.
+
+Say why. The patient reads your reason and it is often the whole basis of their
+decision.
+
+Nothing reaches their record until they accept. Until then it sits on the Meds
+tab as waiting, and you can **Withdraw** it — worth doing if you picked the
+wrong medicine, rather than leaving them a decision you no longer mean.
+
+Their answer comes back on the same tab, including any note they left. A
+declined suggestion stays visible; it is not a failure state, it is an answer.
+
+If a patient revokes your access, you can no longer suggest anything. Access is
+checked when you send, not when the page loaded.
+
 ## The chart
 
 Fifteen tabs, and a rail that follows you down all of them carrying Send

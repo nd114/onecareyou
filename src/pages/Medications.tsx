@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InteractionsPanel } from '@/components/medications/InteractionsPanel';
+import { ProposedChangesCard } from '@/components/medications/ProposedChangesCard';
 import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -134,6 +135,10 @@ const Medications = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* A clinician's proposed change sits above everything else on the page:
+            it is the one thing here that is waiting on the patient. */}
+        <ProposedChangesCard />
 
         {/* Upgrade Banner */}
         {isAtLimit && (

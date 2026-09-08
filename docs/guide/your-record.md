@@ -32,6 +32,24 @@ Name, dose, times, start and end dates, and who prescribed it.
 - **Stopping a medicine** keeps it in your history rather than erasing it. What
   you used to take is part of your record.
 
+### When your clinician suggests a change
+
+Your medicine list is yours. A clinician you are connected to cannot edit it.
+What they can do is **suggest** a change — a different dose, a new medicine, or
+stopping one — and it appears at the top of your Medicines page with their
+reason for it.
+
+- Nothing changes in your record until you press **Accept**.
+- You can **Decline**, and add a note saying why. They see your answer.
+- Either way the suggestion stays in your record, along with what you decided.
+  A change you turned down is part of your history too.
+- If you accept, the medicine stays yours: you can still edit or stop it
+  yourself afterwards.
+
+Declining a suggestion is not a message to your clinician. If you have
+questions about why they suggested it, ask them — the Decline note is short and
+they may not see it immediately.
+
 ## Documents
 
 Letters, results, scans, insurance papers — anything. OneCare can summarise a

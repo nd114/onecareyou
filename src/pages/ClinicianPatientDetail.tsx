@@ -17,7 +17,8 @@ import {
   Mail,
   BarChart3,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ import { AppointmentsTab } from '@/components/clinician/AppointmentsTab';
 import { BillingTab } from '@/components/clinician/BillingTab';
 import { AiHistoryForPatient } from '@/components/clinician/AiHistoryForPatient';
 import { CarePlanTab } from '@/components/clinician/CarePlanTab';
+import { ProposeMedicationChange, ProposalsAwaitingPatient } from '@/components/clinician/ProposeMedicationChange';
 import { isClinicalRole } from '@/lib/staff-roles';
 import { usePractice } from '@/hooks/usePractice';
 
@@ -71,6 +73,11 @@ const ClinicianPatientDetail = () => {
 
   const [activeTab, setActiveTab] = useState<string>('encounters');
   const [showRiskDetails, setShowRiskDetails] = useState(false);
+  // What the clinician is proposing, if anything. One piece of state rather
+  // than a flag per dialog, so two cannot be open at once.
+  const [proposing, setProposing] = useState<
+    { kind: 'medication_start' | 'medication_change' | 'medication_stop'; medication?: any } | null
+  >(null);
 
   // Find the patient by invite code
   const patient = useMemo(() => 
@@ -559,10 +566,24 @@ const ClinicianPatientDetail = () => {
             <TabsContent value="medications">
               <Card>
                 <CardHeader>
-                  <CardTitle>Active Medications</CardTitle>
-                  <CardDescription>
-                    Patient's current medication regimen
-                  </CardDescription>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <CardTitle>Active Medications</CardTitle>
+                      <CardDescription>
+                        The patient's list. Changes are suggested here and applied when they accept.
+                      </CardDescription>
+                    </div>
+                    {patient.permissions?.meds && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setProposing({ kind: 'medication_start' })}
+                      >
+                        <Plus className="h-4 w-4 mr-1.5" />
+                        Suggest a medication
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {!patient.permissions?.meds ? (
@@ -581,10 +602,14 @@ const ClinicianPatientDetail = () => {
                     </div>
                   ) : (
                     <div className="space-y-3">
+                      <ProposalsAwaitingPatient
+                        patientUserId={patient.user_id}
+                        medications={medications}
+                      />
                       {medications.map((med: any) => (
                         <div key={med.id} className="p-4 rounded-lg border">
-                          <div className="flex items-start justify-between">
-                            <div>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
                               <p className="font-medium">{med.name}</p>
                               <p className="text-sm text-muted-foreground">
                                 {med.dosage} • {med.frequency}
@@ -595,7 +620,23 @@ const ClinicianPatientDetail = () => {
                                 </p>
                               )}
                             </div>
-                            <Badge variant="secondary">{med.type}</Badge>
+                            <Badge variant="secondary" className="flex-shrink-0">{med.type}</Badge>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setProposing({ kind: 'medication_change', medication: med })}
+                            >
+                              Suggest a change
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setProposing({ kind: 'medication_stop', medication: med })}
+                            >
+                              Suggest stopping
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -603,6 +644,14 @@ const ClinicianPatientDetail = () => {
                   )}
                 </CardContent>
               </Card>
+
+              <ProposeMedicationChange
+                patientUserId={patient.user_id}
+                medication={proposing?.medication}
+                kind={proposing?.kind ?? 'medication_change'}
+                open={proposing !== null}
+                onOpenChange={(o) => !o && setProposing(null)}
+              />
             </TabsContent>
 
             {/* Adherence Tab */}
