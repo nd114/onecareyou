@@ -33,7 +33,7 @@ Saves 2 files, and removes the question of which one to update.
 `surface-language.md` — 498 lines across five files, all about how the product
 speaks to people.
 
-**Do:** one `docs/language.md` with sections for interface language, reading
+**Do:** one `docs/language.md` with a T of C at the beginning, and sections for interface language, reading
 level, locale defaults, and the surface-copy vocabulary. Archive the rest.
 
 Saves 4 files.
