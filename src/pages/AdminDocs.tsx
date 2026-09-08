@@ -15,6 +15,8 @@ import dataModel from '../../docs/handbook/data-model.md?raw';
 import runbook from '../../docs/handbook/operations-runbook.md?raw';
 import platformDoc from '../../docs/platform-documentation.md?raw';
 import roadmap from '../../docs/roadmap.md?raw';
+import authHardening from '../../docs/handbook/auth-hardening.md?raw';
+import testStrategy from '../../docs/test-strategy.md?raw';
 
 interface Doc {
   id: string;
@@ -31,6 +33,8 @@ const DOCS: Doc[] = [
   { id: 'data', title: 'Data model & access', blurb: 'Tables, RLS helpers, storage accounting', content: dataModel },
   { id: 'runbook', title: 'Operations runbook', blurb: 'Deploys, incidents, failure modes', content: runbook },
   { id: 'architecture', title: 'Architecture reference', blurb: 'Stack, domains, sources of truth', content: platformDoc },
+  { id: 'security', title: 'Auth hardening', blurb: 'The settings that are not in this repository', content: authHardening },
+  { id: 'testing', title: 'Test strategy', blurb: 'What is covered, what is not, and how to run it', content: testStrategy },
   { id: 'roadmap', title: 'Roadmap', blurb: 'Shipped, in flight, next, deferred', content: roadmap },
 ];
 

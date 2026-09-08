@@ -46,6 +46,22 @@ Navigation is four pillars with sub-tabs beneath the header.
   medications and vitals are per-member; messages and adherence stay on the primary account.
 - **Caregivers** — delegated access with a scoped ability to add records on the patient's behalf.
 
+### The assistant
+- Answers about the patient's own record — medications, recent readings, today's doses.
+- Answers about a **medicine** by reading the FDA label first and quoting it, with the source named
+  under the reply. It does not answer from the model's own recollection: where the label does not
+  cover a question, the reply says so rather than filling the gap.
+- Checks interactions against the NIH RxNorm database and OneCare's own reference table, and never
+  reports a check that failed to run as a check that found nothing.
+- **Proposes** changes — log a reading, add a medicine, mark a dose, change reminder times, stop a
+  medicine, delete a mistaken reading. Nothing is written until the patient taps Approve, and the
+  assistant is forbidden from describing a change as saved before that.
+- Never diagnoses, prescribes or changes a dose. On a missed dose it gives the label's own
+  instruction where there is one and otherwise says not to double up and to ask a pharmacist.
+- Every reply carries one line: answers are AI-generated, not medical advice, check anything about
+  health with a licensed practitioner. That line is written by the app, not by the model.
+- Requires AI processing consent, which is asked for once and revocable in Settings.
+
 ### Learn
 - **Ask AI** — the assistant. It can explain records, navigate to a screen, and *propose* changes.
   Nothing is written until the patient taps Approve, and the assistant is not allowed to claim it
@@ -64,24 +80,43 @@ Navigation is four pillars with sub-tabs beneath the header.
   because clinicians need server-side features — this is stated plainly in the privacy policy.
 - **Settings → Audit trail** shows the patient every access to their record: who, when, what.
 
-## 4. Offline behaviour
+## 4. Notifications
+
+Settings lists what OneCare can notify about, by **thing** rather than by channel:
+
+| Category | Channel | Default |
+|---|---|---|
+| Medicine reminders | On this device | On |
+| Missed dose alerts to your care circle | Email | On |
+| Adherence report | In the app | On |
+| Account and security | Email | **Always on** |
+
+Two rules worth knowing. A category appears only if something actually sends it — there is no
+switch for mail that does not exist. And account-and-security mail cannot be turned off, which is
+stated on the row with the reason rather than the row being hidden; these are how a person keeps
+control of the account.
+
+Turning medicine reminders off in Settings genuinely stops them. The browser's own notification
+permission is a separate switch and both must be on.
+
+## 5. Offline behaviour
 
 Vitals, medication actions and schedule changes made without a connection are queued locally and
 sent when connectivity returns; a banner reports pending items and confirms when the queue drains.
 Dashboard, vitals and medication reads are served from cache while offline.
 
-## 5. Ending a relationship
+## 6. Ending a relationship
 
 Disconnecting a clinician or institution revokes future access immediately, but nothing is deleted.
 OneCare files an immutable, watermarked **care record snapshot** of that clinician's messages and
 guidance into the Vault, so the patient keeps the legal history. Snapshots cannot be deleted.
 
-## 6. Plans and storage
+## 7. Plans and storage
 
 Tiers, prices and limits come from `src/lib/pricing-constants.ts` and are shown on `/pricing`. Free
 accounts include 500 MB of Vault storage; premium includes 10 GB. Usage is visible in Settings.
 
-## 7. Support answers to common questions
+## 8. Support answers to common questions
 
 - *"My clinician shows as an email, not a name."* The clinician has not completed their profile;
   names appear as soon as they do.
@@ -90,3 +125,23 @@ accounts include 500 MB of Vault storage; premium includes 10 GB. Usage is visib
 - *"I removed a clinician; why can I still see the thread?"* Legal preservation. It is read-only.
 - *"Can the assistant change my medication?"* It can propose changes. The patient approves. It never
   changes doses and never diagnoses.
+
+## 9. Records a clinic created for you
+
+A hospital or clinic can create a record for someone who is not yet on OneCare — from a visit, or
+imported in bulk. When that person signs up with the same confirmed email address, a banner on their
+dashboard offers the record to them.
+
+- **Accept** links the record to their own account. From then on it is theirs: the clinic can no
+  longer edit it, and changes go through the patient's own record and sharing choices.
+- **Decline** leaves it with the clinic and links nothing.
+- The clinic keeps its own copy either way, as the record rule requires — accepting is about who
+  controls the OneCare record, not about erasing the clinic's.
+
+One identity per person. The record the clinic made has an id of its own before it is claimed, but
+that is the id of a record; after claiming, the person has exactly one OneCare identity. Where a
+hospital has its own medical record number it is kept alongside as a reference, never as a second
+identity.
+
+Which institution introduced a patient is recorded once on their profile and cannot be changed
+afterwards.
