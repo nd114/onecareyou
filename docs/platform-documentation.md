@@ -130,4 +130,4 @@ Unbuilt features are labelled "(coming soon)". Never expose the underlying vendo
 - `docs/roadmap.md` — single living tracker (shipped, in flight, next, deferred)
 - `docs/pricing-roadmap.md` — commercial model including storage
 
-- `docs/qhin-integration-plan.md` — interoperability
+- `docs/plans/plans/qhin-integration-plan.md` — interoperability

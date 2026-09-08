@@ -721,7 +721,7 @@ const Settings = () => {
                     worse than a missing one. `profiles.simple_mode` is left in
                     place: the people who already turned it on chose something,
                     and their answer should still be there when it works.
-                    See docs/low-literacy-support-plan.md. */}
+                    See docs/language-and-locale.md. */}
 
                 {/* Timezone */}
                 <div className="flex items-center justify-between">

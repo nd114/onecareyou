@@ -12,8 +12,8 @@
 -- 1. **Withdrawal is always technically possible; the authority required grows
 --    with time.** A hard cutoff would mean a disclosure discovered late has no
 --    remedy at all, and disclosures are usually discovered late. What closes
---    with time is the *routine* route — a clinician tidying up. What stays open
---    is the declared privacy incident, which is a heavier act on purpose.
+--    with time is the *ordinary* route. What stays open is the declared
+--    privacy incident, which is a heavier act on purpose.
 --
 -- 2. **The platform executes; it does not adjudicate.** Every tier below runs
 --    without anybody here reading a case. The practice declares, the platform
@@ -23,10 +23,10 @@
 --    implies otherwise would invite exactly that.
 --
 -- 3. **Withdrawal removes access. It never removes the record.** The row, the
---    file, the content and this event all survive. That is what stops the
---    obvious abuse: a clinician withdrawing advice they later regret has
---    destroyed nothing, and has added a signed, timed, reason-coded record of
---    having tried. Concealment is the one thing this mechanism cannot do.
+--    file, the content and this event all survive, and the withdrawal is
+--    itself audited. Nothing that passes through here can be made never to
+--    have happened, which is why the ten-day boundary is a rule about which
+--    instrument fits — not an inference about anybody's motive.
 --
 -- Names are not used. A person is referred to by a concealed stable token, so
 -- an incident report can be read, exported and discussed by people who have no
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS public.retraction_reason_codes (
   -- What the incident record says. The clinical and regulatory framing.
   audit_description text NOT NULL,
   -- Whether this code is a privacy incident, which is what keeps withdrawal
-  -- available after the routine window closes.
+  -- available after the ordinary window closes.
   is_privacy_incident boolean NOT NULL DEFAULT false,
   sort_order integer NOT NULL DEFAULT 100
 );
@@ -140,7 +140,7 @@ AS $function$
     -- Still the sender's to do, but it is no longer a slip: a reason code is
     -- required and the practice is told.
     WHEN _sent_at > now() - interval '10 days' THEN 'sender_with_reason'
-    -- The routine route is closed. What remains is a declared privacy
+    -- The ordinary route is closed. What remains is a declared privacy
     -- incident, which needs a second person from the practice, or an emergency
     -- declaration where waiting for one would leave information exposed.
     ELSE 'privacy_incident'
@@ -428,13 +428,15 @@ BEGIN
     v_authority := v_required;
 
   ELSE
-    -- Past ten days the routine route is closed. What is left is a declared
-    -- privacy incident: a privacy reason code, and a second person from the
-    -- practice. Not us deciding anything — the practice declares, and this
+    -- Past ten days ordinary withdrawal is no longer the right instrument. A
+    -- document that old has been read and acted on, so removing it helps
+    -- nobody where a correction that supersedes it does. What remains is the
+    -- declared privacy incident, which is a different problem: the audience
+    -- was wrong rather than the content. The practice declares it; this
     -- records and enforces it.
     IF NOT v_reason.is_privacy_incident THEN
       RAISE EXCEPTION
-        'This was sent more than ten days ago. Withdrawal now requires a privacy reason code, or ask the patient to delete their copy.';
+        'This was sent more than ten days ago, so it can no longer be withdrawn as an ordinary correction. Issue a corrected version, ask the patient to delete their copy, or report it as a privacy incident.';
     END IF;
     IF v_practice IS NULL THEN
       -- An independent clinician has no colleague to co-sign. The privacy

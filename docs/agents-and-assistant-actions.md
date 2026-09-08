@@ -161,4 +161,4 @@ action, *writing* is.
 3. Clinician migration agent, reusing the same proposal machinery.
 4. Hospital setup agent.
 5. MCP, only after all of the above, and only as a share. See
-   `roadmap-logged.md`.
+   the "Deferred" section of `roadmap.md`.

@@ -1,5 +1,11 @@
 # Delegated Caregiver Access System
 
+> **Paused — September 2026.** Family-member targeting is paused by decision. The entry points are hidden rather than removed. Restart when: the single-patient experience is settled enough that a second person in the account does not multiply every open question.
+>
+> This document describes an intention, not current work. Nothing below is
+> a commitment, and none of it should be read as describing how the
+> platform behaves today.
+
 ## Status: Planned (Not Yet Implemented)
 
 ## Problem Statement

@@ -2,7 +2,7 @@
 
 **Status:** In force. Read this before demonstrating clinical data to a client.
 **Owner:** Engineering + Clinical
-**Relates to:** `docs/medplum-fhir-adapter.md`, `docs/qhin-integration-plan.md`
+**Relates to:** `docs/medplum-fhir-adapter.md`, `docs/plans/plans/qhin-integration-plan.md`
 
 ---
 

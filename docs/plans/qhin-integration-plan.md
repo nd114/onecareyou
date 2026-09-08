@@ -1,5 +1,11 @@
 # QHIN Integration Plan — OneCare ↔ TEFCA / Particle Health / Health Gorilla
 
+> **Suspended — September 2026.** OneCare is judged to supersede QHIN participation as adoption grows, and to need to be more robust than it rather than dependent on it. Restart when: a payer, health system or jurisdiction makes network participation a condition of the work.
+>
+> This document describes an intention, not current work. Nothing below is
+> a commitment, and none of it should be read as describing how the
+> platform behaves today.
+
 **Status:** Scoping (not started)
 **Owner:** Engineering + Compliance
 **Target sequence:** P3 item #5 (after subscription polish, before ambient scribe)

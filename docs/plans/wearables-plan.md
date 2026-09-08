@@ -1,5 +1,11 @@
 # Wearables Plan — automatic readings, honestly labelled
 
+> **Not started — September 2026.** Logged, not scheduled. Restart when: vitals provenance has settled, since an imported stream is the same problem as an imported medication and should reuse that answer rather than invent one.
+>
+> This document describes an intention, not current work. Nothing below is
+> a commitment, and none of it should be read as describing how the
+> platform behaves today.
+
 Status: planning. Not scaffolded into the current build.
 
 Patients should not have to type in a blood-pressure reading their cuff already took. Letting a

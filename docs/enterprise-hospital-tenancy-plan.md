@@ -85,7 +85,7 @@ Admins assign hospital-shared patients to clinicians from Practice → Instituti
 filterable by connection status. Clinician panels list hospital-assigned patients alongside private
 ones, tagged by source and named per hospital where a clinician holds several affiliations.
 
-Two corrections from the August 2026 review (`docs/reviews/oc-lmc-review-aug-2026.md`):
+Two corrections from the August 2026 review (`docs/archive/oc-lmc-review-aug-2026.md`):
 
 - There is no `sub_admin` role. Assignment is gated on `can_manage_practice`, i.e. owner or admin
   only, so delegating assignment today means granting full tenant admin. The delegated middle layer

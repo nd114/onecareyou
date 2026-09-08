@@ -1,5 +1,11 @@
 # Voice-first actions ("say it once, approve it once")
 
+> **Paused — September 2026.** Paused by decision after phase one. Restart when: the assistant's written flows are settled, since every voice phase inherits whatever they decide.
+>
+> This document describes an intention, not current work. Nothing below is
+> a commitment, and none of it should be read as describing how the
+> platform behaves today.
+
 Status: **scoped, not started.** September 2026. Written after reading what is
 already built, so the estimates below are against real code rather than a blank
 page.

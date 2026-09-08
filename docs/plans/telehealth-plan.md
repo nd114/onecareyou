@@ -1,5 +1,11 @@
 # Telehealth Plan — asynchronous first, video last
 
+> **Not started — September 2026.** Logged, not scheduled. Restart when: a tenant asks for it as a condition of adoption, or scheduling and messaging are complete enough that a call is the missing piece rather than a new pillar.
+>
+> This document describes an intention, not current work. Nothing below is
+> a commitment, and none of it should be read as describing how the
+> platform behaves today.
+
 Status: **logged, not started.** To be revisited later. Nothing in this document
 is scaffolded into the current build; it is written down so the sequencing
 decision does not have to be re-argued when the question comes back.

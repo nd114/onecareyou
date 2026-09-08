@@ -2,7 +2,7 @@
 
 **Status:** Billing shipped (invoice, line items, patient view). Payments not built — this document is where the direction is recorded so it is not lost.
 **Owner:** Engineering + Commercial
-**Relates to:** `docs/pricing-roadmap.md`, `docs/medplum-adoption-assessment.md`
+**Relates to:** `docs/pricing-roadmap.md`, `docs/archive/medplum-adoption-assessment.md`
 
 ---
 

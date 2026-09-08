@@ -1,5 +1,12 @@
 # Hospital Profiles Plan — a public directory, published opt-in
 
+> **Not started — September 2026.** A public, opt-in directory of hospital
+> profiles. Restart when: enough tenants are live that a directory has
+> something to list, and the tenancy work in
+> `docs/enterprise-hospital-tenancy-plan.md` has finished phase E.
+>
+> This document describes an intention, not current work.
+
 Status: **documented, not started.** Earliest candidate of the current forward
 plans to be picked up. Nothing here is scaffolded into the build yet.
 

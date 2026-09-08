@@ -13,8 +13,8 @@ admins at `/admin/docs`, and lives in the repository under `docs/handbook/`.
 
 Companion strategy and architecture references stay in [`docs/`](../): `roadmap.md`,
 `platform-documentation.md`, `sharing-access-consent-model.md`,
-`enterprise-hospital-tenancy-plan.md`, `pricing-roadmap.md`, `qhin-integration-plan.md`,
-`whatsapp-integration-plan.md`.
+`enterprise-hospital-tenancy-plan.md`, `pricing-roadmap.md`, `plans/qhin-integration-plan.md`,
+`plans/whatsapp-integration-plan.md`.
 
 ## Conventions used in this handbook
 

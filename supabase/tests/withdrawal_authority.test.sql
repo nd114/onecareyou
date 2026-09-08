@@ -5,18 +5,19 @@
 --   * Inside 72 hours the sender acts alone. Somebody correcting their own
 --     mistake immediately should not need a committee.
 --   * Up to ten days it is still theirs, with a reason code on the record.
---   * After ten days the routine route closes. A clinician can no longer
---     quietly take a document back weeks later — which is the concealment case,
---     where somebody withdraws advice they have come to regret.
+--   * After ten days ordinary withdrawal is no longer permitted. Not because a
+--     late withdrawal is assumed improper — everything here is audited either
+--     way — but because it is the wrong instrument: a document that old has
+--     been read, and superseding it with a correction serves the patient where
+--     removing it does not.
 --   * But a declared privacy incident stays open forever, because a disclosure
 --     found on day forty is still a disclosure, and it needs a second
 --     signature, or an emergency declaration where waiting for one would leave
 --     information exposed.
 --
--- And throughout: withdrawal removes access and never the record. That is what
--- makes the concealment case survivable — the document, its content and this
--- event all remain, so a clinician who withdrew something to hide it has
--- destroyed nothing and added signed evidence of trying.
+-- And throughout: withdrawal removes access and never the record. The document,
+-- its content and this event all remain, and the withdrawal is itself audited,
+-- so nothing that passed through here can be made never to have happened.
 BEGIN;
 
 DO $$
@@ -133,8 +134,8 @@ BEGIN
   IF v_text IS NULL THEN RAISE EXCEPTION 'FAIL: withdrawal destroyed the file reference'; END IF;
 
   -- -------------------------------------------------------------------------
-  -- 5. Past ten days the routine route closes. This is the concealment guard:
-  --    a clinician cannot quietly take back advice weeks later.
+  -- 5. Past ten days ordinary withdrawal is no longer permitted. A document
+  --    that old is corrected rather than removed.
   -- -------------------------------------------------------------------------
   INSERT INTO public.health_documents (user_id, uploaded_by_user_id, file_path, file_name, category, created_at)
   VALUES (v_patient, v_clinician, 'x/b.pdf', 'Assessment.pdf', 'other', now() - interval '40 days')
@@ -147,7 +148,7 @@ BEGIN
     PERFORM public.withdraw_shared_file(v_doc, NULL, 'superseded', NULL, NULL, NULL, NULL);
     RESET ROLE; v_ok := true;
   EXCEPTION WHEN OTHERS THEN RESET ROLE; END;
-  IF v_ok THEN RAISE EXCEPTION 'FAIL: a forty-day-old document was withdrawn on a routine reason code'; END IF;
+  IF v_ok THEN RAISE EXCEPTION 'FAIL: a forty-day-old document was withdrawn on an ordinary reason code'; END IF;
 
   -- A privacy code alone is not enough either — it needs the second signature.
   PERFORM set_config('request.jwt.claim.sub', v_clinician::text, true);

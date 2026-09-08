@@ -1,6 +1,6 @@
 # EHR Integration Plan — one-way first, bidirectional later
 
-Status: planning. Read alongside `qhin-integration-plan.md` (national networks) and
+Status: planning. Read alongside `plans/qhin-integration-plan.md` (national networks) and
 `enterprise-hospital-tenancy-plan.md` (who the data belongs to).
 
 **We are not building an EHR.** The point of connecting to one is the platform's own

@@ -1,5 +1,11 @@
 # WhatsApp Integration Plan
 
+> **Deferred — September 2026.** Notification delivery over WhatsApp. Agreed as worth doing, not now. Restart when: the per-category notification preferences have run long enough to show which categories people actually want pushed.
+>
+> This document describes an intention, not current work. Nothing below is
+> a commitment, and none of it should be read as describing how the
+> platform behaves today.
+
 > Status: **scaffolded, no transport yet.** Provider-agnostic interface lives at
 > `src/lib/whatsapp/`. Inbound webhook stub at `supabase/functions/whatsapp-webhook/`.
 > Decision pending until beta feedback from Nigeria + LATAM testers.

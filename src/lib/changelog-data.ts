@@ -56,7 +56,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'B6 — Beta tester pack: testing window, support address, and feedback flow filled in.',
       'Offline support: IndexedDB-backed write queue (idb) for vitals, medications, schedule check-offs, with retries + idempotency keys. OfflineBanner shows in patient header when offline or syncing.',
       'GTM: /pricing now hosts both Patient and Clinician tiers under a single audience toggle; /clinician/pricing 301-redirects to /pricing?audience=clinicians. New public /for-clinicians marketing landing page.',
-      'WhatsApp scaffold: provider-agnostic interface (src/lib/whatsapp), inbound webhook stub with verify_jwt=false, and messages table gains transport + external_message_id columns. No transport wired yet — Twilio vs 360dialog tradeoff documented in docs/whatsapp-integration-plan.md.',
+      'WhatsApp scaffold: provider-agnostic interface (src/lib/whatsapp), inbound webhook stub with verify_jwt=false, and messages table gains transport + external_message_id columns. No transport wired yet — Twilio vs 360dialog tradeoff documented in docs/plans/plans/whatsapp-integration-plan.md.',
       'Profiles table gains onboarding_last_step + onboarding_skipped for future resume tracking (onboarding page already supports Skip and Save & Continue Later).',
     ],
   },
@@ -148,7 +148,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Clinician session-timeout: 2-minute warning toast before forced sign-out.',
       'Empty-state copy added to permission-denied clinician tabs and first-load patient list.',
       'Send-activation-link button surfaced directly on managed-patient rows.',
-      'QHIN/Particle Health integration plan locked in (docs/qhin-integration-plan.md).',
+      'QHIN/Particle Health integration plan locked in (docs/plans/plans/qhin-integration-plan.md).',
     ],
   },
   {
