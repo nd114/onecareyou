@@ -30,7 +30,6 @@ export function EditManagedRecordDialog({ record }: Props) {
   const [gender, setGender] = useState(record.gender || '');
   const [bloodType, setBloodType] = useState(record.blood_type || '');
   const [notes, setNotes] = useState(record.notes || '');
-  const [sharingModel, setSharingModel] = useState(record.data_sharing_model);
 
   // Allergies
   const [allergies, setAllergies] = useState<string[]>(record.allergies || []);
@@ -50,7 +49,6 @@ export function EditManagedRecordDialog({ record }: Props) {
       setGender(record.gender || '');
       setBloodType(record.blood_type || '');
       setNotes(record.notes || '');
-      setSharingModel(record.data_sharing_model);
       setAllergies(record.allergies || []);
       setConditions(record.health_conditions || []);
       setNewAllergy('');
@@ -75,7 +73,9 @@ export function EditManagedRecordDialog({ record }: Props) {
         gender: gender || null,
         blood_type: bloodType || null,
         notes: notes || null,
-        data_sharing_model: sharingModel,
+        // Passed through unchanged. The clinician no longer sets this; it is
+        // written back so saving other fields does not clear it.
+        data_sharing_model: record.data_sharing_model,
         allergies,
         health_conditions: conditions,
       } as any);
@@ -161,19 +161,25 @@ export function EditManagedRecordDialog({ record }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Sharing Model</Label>
-              <Select value={sharingModel} onValueChange={setSharingModel}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="clinician_managed">Clinician Managed</SelectItem>
-                  <SelectItem value="collaborative">Collaborative</SelectItem>
-                  <SelectItem value="patient_managed">Patient Managed</SelectItem>
-                  <SelectItem value="view_only">View Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/*
+              The sharing model used to be chosen here, by the clinician, on a
+              record the patient has not claimed. It asked the wrong person: on
+              an unclaimed record that field is a note about intent, and it only
+              becomes real when the patient claims the record and chooses for
+              themselves. Offering it in permission-shaped language implied
+              otherwise, and one of its options — `patient_managed` — no longer
+              existed anywhere else after the connection dialog was corrected.
+
+              Until it is claimed, this record is yours to manage. What happens
+              afterwards is the patient's to decide.
+            */}
           </div>
+
+          <p className="text-xs text-muted-foreground -mt-2">
+            You manage this record until the patient claims it. When they do, they
+            choose how you stay connected — and everything you have written up to
+            that point stays yours.
+          </p>
 
           {/* Allergies */}
           <div>
