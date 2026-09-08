@@ -4,8 +4,10 @@ import {
   answerLookupTool,
   boundedNames,
   buildInteractionVerdict,
+  canonicalIngredient,
   condense,
   drugNamesMatch,
+  expandIngredients,
   fetchDrugLabel,
   fetchRxNormInteractions,
   formatInteractionVerdict,
@@ -453,5 +455,79 @@ describe("what a patient's medication list actually looks like", () => {
   it("survives empty, numeric and junk entries", () => {
     expect(() => referenceInteractionsFor(['', '123', '   ', 'Aspirin'])).not.toThrow();
     expect(referenceInteractionsFor(['', 'Aspirin'])).toEqual([]);
+  });
+});
+
+describe("the same drug under another name", () => {
+  /**
+   * A patient who writes "paracetamol" and a table written in "acetaminophen"
+   * are talking about one drug. An interaction check that cannot see that
+   * misses everything about it — and the two spellings split roughly along the
+   * US/rest-of-world line, so it fails for whole countries at a time.
+   */
+  it("resolves the international spellings that matter clinically", () => {
+    for (const [written, canonical] of [
+      ['Paracetamol', 'acetaminophen'],
+      ['Salbutamol', 'albuterol'],
+      ['Frusemide', 'furosemide'],
+      ['Adrenaline', 'epinephrine'],
+      ['Glibenclamide', 'glyburide'],
+      ['Rifampicin', 'rifampin'],
+      ['Ciclosporin', 'cyclosporine'],
+      ['Acetylsalicylic acid', 'aspirin'],
+    ] as const) {
+      expect(canonicalIngredient(written), written).toBe(canonical);
+    }
+  });
+
+  it("finds a warfarin interaction written in the other spelling", () => {
+    // The table says "Aspirin"; the patient's list says what their box says.
+    expect(referenceInteractionsFor(['Warfarin', 'Acetylsalicylic acid'])).toHaveLength(1);
+  });
+
+  it("still resolves a brand, and through to the canonical spelling", () => {
+    expect(canonicalIngredient('Istin')).toBe('amlodipine');
+    expect(canonicalIngredient('Lasix')).toBe('furosemide');
+  });
+});
+
+describe("combination products", () => {
+  it("sees each ingredient in a combination", () => {
+    expect(expandIngredients('Amlodipine/Valsartan 10/160mg')).toEqual(
+      expect.arrayContaining(['amlodipine', 'valsartan']),
+    );
+    expect(expandIngredients('Ibuprofen and Paracetamol')).toEqual(
+      expect.arrayContaining(['ibuprofen', 'acetaminophen']),
+    );
+  });
+
+  it("finds the interaction hiding inside a combination", () => {
+    // The warfarin risk is the ibuprofen half. Matching whole strings would
+    // have found this by luck or not at all.
+    expect(referenceInteractionsFor(['Warfarin 3mg', 'Ibuprofen/Codeine 200/12.8mg'])).toHaveLength(1);
+  });
+
+  it("does not split a hyphenated product into nonsense", () => {
+    // "Co-codamol" is one product name, not codamol combined with co.
+    expect(expandIngredients('Co-codamol 30/500')).toEqual(['co codamol']);
+  });
+
+  it("strips dose, form and frequency words", () => {
+    expect(expandIngredients('Metformin 500mg MR tablets twice daily')).toEqual(['metformin']);
+    expect(expandIngredients('Aspirin 75 mg OD')).toEqual(['aspirin']);
+  });
+
+  it("reports a pair once even when two ingredients both match", () => {
+    // Ibuprofen appears twice over; the patient should see one warning.
+    const hits = referenceInteractionsFor(['Warfarin', 'Ibuprofen/Ibuprofen lysine']);
+    expect(hits).toHaveLength(1);
+  });
+
+  it("names the medicines the way the patient wrote them", () => {
+    // A warning naming a drug they cannot find on their own list is one they
+    // will discount.
+    const [hit] = referenceInteractionsFor(['Warfarin sodium 3mg', 'Nurofen (Ibuprofen) 400mg']);
+    expect(hit.med1Name).toBe('Warfarin sodium 3mg');
+    expect(hit.med2Name).toBe('Nurofen (Ibuprofen) 400mg');
   });
 });

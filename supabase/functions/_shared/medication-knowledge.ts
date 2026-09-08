@@ -410,29 +410,169 @@ export function genericFor(name: string): string {
   return BRAND_TO_GENERIC[key] ?? name;
 }
 
+/**
+ * The same medicine under another name.
+ *
+ * Separate from `BRAND_TO_GENERIC` because these are not brands: they are the
+ * *same ingredient* spelled the way a different country spells it. A patient
+ * who writes "paracetamol" and a table written in "acetaminophen" are talking
+ * about one drug, and an interaction check that misses that misses everything
+ * about it.
+ *
+ * Curated rather than imported. `data/international-drug-names.csv` looks like
+ * the answer and is not: it is an ingredient-synonym list that has no entry for
+ * paracetamol, salbutamol, frusemide, rifampicin or glibenclamide — five of the
+ * commonest names outside the US — and where well-known brands do appear it
+ * maps some to combination products. "Advil" resolves there to
+ * "chlorpheniramine / ibuprofen / phenylephrine", which is Advil Cold & Sinus.
+ * Wiring that in would have made a warfarin patient's plain-ibuprofen warning
+ * *worse*, not better. Checked before writing this, not assumed.
+ */
+export const INTERNATIONAL_SYNONYMS: Record<string, string> = {
+  // Analgesics and antipyretics
+  paracetamol: "acetaminophen",
+  "acetylsalicylic acid": "aspirin",
+  asa: "aspirin",
+  pethidine: "meperidine",
+  lignocaine: "lidocaine",
+  dipyrone: "metamizole",
+
+  // Respiratory
+  salbutamol: "albuterol",
+  adrenaline: "epinephrine",
+  noradrenaline: "norepinephrine",
+  beclometasone: "beclomethasone",
+
+  // Cardiovascular
+  frusemide: "furosemide",
+  amiloride: "amiloride",
+  glyceryl_trinitrate: "nitroglycerin",
+  "glyceryl trinitrate": "nitroglycerin",
+  gtn: "nitroglycerin",
+  bendroflumethiazide: "bendroflumethiazide",
+
+  // Diabetes
+  glibenclamide: "glyburide",
+
+  // Anti-infectives
+  rifampicin: "rifampin",
+  amoxycillin: "amoxicillin",
+  cotrimoxazole: "sulfamethoxazole trimethoprim",
+  "co-trimoxazole": "sulfamethoxazole trimethoprim",
+  ciclosporin: "cyclosporine",
+
+  // Neurology and psychiatry
+  phenobarbitone: "phenobarbital",
+  thyroxine: "levothyroxine",
+  "sodium valproate": "valproate",
+
+  // Hormones
+  oestrogen: "estrogen",
+  oestradiol: "estradiol",
+};
+
+/** A name, its brand resolved and its spelling normalised. */
+export function canonicalIngredient(name: string): string {
+  const key = normaliseDrugName(name);
+  const viaSynonym = INTERNATIONAL_SYNONYMS[key];
+  if (viaSynonym) return viaSynonym;
+  const viaBrand = BRAND_TO_GENERIC[name.toLowerCase().trim()] ?? BRAND_TO_GENERIC[key];
+  if (viaBrand) {
+    // A brand may itself resolve to a name spelled another way.
+    return INTERNATIONAL_SYNONYMS[normaliseDrugName(viaBrand)] ?? viaBrand;
+  }
+  return key;
+}
+
+/** Dose, form and frequency words. Not part of what a drug interacts as. */
+const NOISE =
+  /\b(\d+(\.\d+)?\s*(mg|mcg|g|ml|iu|units?|%)|tablets?|tabs?|capsules?|caps?|liquid|syrup|solution|injection|inhaler|patch|cream|ointment|drops?|suppositor(y|ies)|sachets?|mr|sr|er|xl|xr|la|cr|od|bd|tds|qds|prn|daily|twice|once|nightly|morning|evening|oral|topical|film|coated|prolonged|release|modified)\b/gi;
+
+/**
+ * Every ingredient a medication-list entry stands for.
+ *
+ * A patient writes one line and it can mean several drugs: "Co-codamol
+ * 30/500", "amlodipine/valsartan", "Advil Cold & Sinus". Matching the whole
+ * line against a table of single ingredients finds these by substring luck or
+ * not at all — which for a combination product means the interaction that
+ * matters is the one hiding inside it.
+ */
+export function expandIngredients(entry: string): string[] {
+  // Every number goes before anything splits on "/", because a combination
+  // product carries its strength in exactly that form: "Co-codamol 30/500",
+  // "Amlodipine/Valsartan 10/160mg". Split first and the ratio becomes two
+  // imaginary ingredients — "valsartan 10" and "160" — and the real second
+  // ingredient disappears. Stripping the numbers leaves a bare separator,
+  // which splits into nothing.
+  const cleaned = entry.replace(NOISE, " ").replace(/\b\d+(\.\d+)?\b/g, " ");
+
+  // A combination is written with a separator between whole ingredient names.
+  // Hyphens are excluded on purpose: "co-codamol" and "sulfamethoxazole-
+  // trimethoprim" are one product name, and splitting them loses both.
+  const parts = cleaned
+    .split(/[/+,]|\band\b|\bwith\b/gi)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 1);
+
+  const source = parts.length > 0 ? parts : [cleaned];
+  const ingredients = new Set<string>();
+
+  for (const part of source) {
+    const canonical = canonicalIngredient(part);
+    if (!canonical) continue;
+    // A brand that resolves to a combination brings its own ingredients.
+    for (const piece of canonical.split(/[/+]/)) {
+      const trimmed = normaliseDrugName(piece);
+      if (trimmed) ingredients.add(trimmed);
+    }
+  }
+
+  return [...ingredients];
+}
+
 export interface ReferenceHit extends InteractionInfo {
   med1Name: string;
   med2Name: string;
 }
 
-/** Every pair among these names that appears in the reference table. */
+/**
+ * Every pair among these entries that appears in the reference table.
+ *
+ * Matching happens on *ingredients*, not on the lines a patient typed. A list
+ * entry can stand for several drugs — "Co-codamol 30/500", "amlodipine /
+ * valsartan" — and comparing whole strings finds those by substring luck or not
+ * at all, which for a combination product means the interaction that matters is
+ * the one hiding inside it. It also lets "paracetamol" meet a table written in
+ * "acetaminophen".
+ *
+ * A pair is reported once even when two ingredients of one entry both match,
+ * and the names shown are the ones the patient wrote — a warning that names a
+ * drug they cannot find on their own list is a warning they will discount.
+ */
 export function referenceInteractionsFor(names: readonly string[]): ReferenceHit[] {
   const found: ReferenceHit[] = [];
+  const expanded = names.map((n) => expandIngredients(n));
 
   for (let i = 0; i < names.length; i += 1) {
     for (let j = i + 1; j < names.length; j += 1) {
-      // Both sides go through the brand map first, so a patient whose list says
-      // "Istin" is checked against the table's "Amlodipine".
-      const a = genericFor(names[i]);
-      const b = genericFor(names[j]);
+      const seen = new Set<string>();
 
-      for (const interaction of INTERACTION_REFERENCE) {
-        const [first, second] = interaction.medications;
-        if (
-          (drugNamesMatch(a, first) && drugNamesMatch(b, second)) ||
-          (drugNamesMatch(a, second) && drugNamesMatch(b, first))
-        ) {
-          found.push({ ...interaction, med1Name: names[i], med2Name: names[j] });
+      for (const a of expanded[i]) {
+        for (const b of expanded[j]) {
+          for (const interaction of INTERACTION_REFERENCE) {
+            const [first, second] = interaction.medications;
+            const firstKey = canonicalIngredient(first);
+            const secondKey = canonicalIngredient(second);
+            const hit =
+              (drugNamesMatch(a, firstKey) && drugNamesMatch(b, secondKey)) ||
+              (drugNamesMatch(a, secondKey) && drugNamesMatch(b, firstKey));
+            if (!hit) continue;
+
+            const key = `${interaction.medications[0]}|${interaction.medications[1]}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            found.push({ ...interaction, med1Name: names[i], med2Name: names[j] });
+          }
         }
       }
     }
