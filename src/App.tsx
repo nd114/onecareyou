@@ -55,6 +55,7 @@ import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import MedicalDisclaimer from "./pages/MedicalDisclaimer";
 import HelpCenter from "./pages/HelpCenter";
+import Guide from "./pages/Guide";
 import NotFound from "./pages/NotFound";
 import AdherenceReport from "./pages/AdherenceReport";
 import KnowledgeBase from "./pages/KnowledgeBase";
@@ -159,6 +160,7 @@ const App = () => (
             <Route path="/data-processing" element={<DataProcessing />} />
             <Route path="/disclaimer" element={<MedicalDisclaimer />} />
             <Route path="/help" element={<HelpCenter />} />
+            <Route path="/guide" element={<Guide />} />
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/careers/:jobId" element={<JobDetail />} />

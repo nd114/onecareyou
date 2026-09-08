@@ -10,6 +10,7 @@ import {
   Bell,
   Settings,
   LifeBuoy,
+  BookOpen,
   LayoutDashboard,
   FileText,
   LogOut,
@@ -352,6 +353,12 @@ export function ClinicianHeader() {
                   <Link to="/help" className="flex items-center gap-2 cursor-pointer">
                     <LifeBuoy className="h-4 w-4" />
                     Help &amp; support
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/guide" className="flex items-center gap-2 cursor-pointer">
+                    <BookOpen className="h-4 w-4" />
+                    Guide
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (

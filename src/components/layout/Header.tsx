@@ -374,6 +374,12 @@ export function Header() {
                           Help &amp; support
                         </Link>
                       </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                        <Link to="/guide" className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          Guide
+                        </Link>
+                      </DropdownMenuItem>
                     </>
                   )}
                   {isClinician && (
