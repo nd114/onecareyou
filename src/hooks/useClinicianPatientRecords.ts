@@ -114,13 +114,26 @@ export function useClinicianPatientRecords() {
     mutationFn: async ({ id, ...updates }: Partial<ClinicianPatientRecord> & { id: string }) => {
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      // `.select('id')` so a write that changed nothing is visible.
+      //
+      // A record the patient has claimed is theirs, and row policy now refuses
+      // the update. Without this check PostgREST reports a clean success on
+      // zero rows, the toast says "Patient record updated", and nothing
+      // changed — a clinician correcting a spelling would be told it saved and
+      // find it unchanged tomorrow.
+      const { data, error } = await supabase
         .from('clinician_patient_records')
         .update(updates as any)
         .eq('id', id)
-        .eq('clinician_user_id', user.id);
+        .eq('clinician_user_id', user.id)
+        .select('id');
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error(
+          'That record could not be changed. Once a patient claims their record it belongs to them — ask them to update it, or send them a message.',
+        );
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinician-patient-records'] });

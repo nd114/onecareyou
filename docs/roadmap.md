@@ -354,18 +354,27 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    client, and appear in the list marked with the reason rather than being hidden. 13 unit
    assertions and 6 against Postgres. Still to wire: the remaining senders ask nothing yet, because
    the only currently switchable category with an email producer is the care-circle alert.
-14. **The interaction check cannot see the full brand dictionary.** `referenceInteractionsFor`
+14. ~~**The interaction check cannot see the full brand dictionary.**~~ **Addressed differently**
+   (September 2026), because the dictionary was the wrong answer — see the commit and
+   `data/README.md`. Matching now happens on ingredients rather than on the line a patient typed, so
+   a combination product's ingredients are each checked, and a curated synonym table lets
+   "paracetamol" meet a table written in "acetaminophen". Superseded note: `referenceInteractionsFor`
    resolves brands through a 117-entry table compiled into `_shared/medication-knowledge.ts`, while
    `international_drug_mappings` holds up to 207,544 rows from the same family — because the matcher
    is an import-free pure function with no database access. Closing it means either a lookup before
    the pure matcher, or generating a larger static table at build time from
    [`data/international-drug-names.csv`](../data/international-drug-names.csv).
-15. **QHIN Network Records tab** — the remaining half of clinician depth phase 4, held with the QHIN live connection below since it has nothing to show without one.
 16. **WhatsApp transport** behind the existing provider interface.
-17. **QHIN live connection** (Particle Health) beyond the current provenance/import shell.
 
 ## Deferred (with reasons)
 
+- **QHIN** — suspended at the owner's direction (September 2026), both the live connection and the
+  Network Records tab that has nothing to show without one. The reasoning is worth recording because
+  it is a position rather than a postponement: QHIN exists to move records between institutions that
+  each hold their own copy, and OneCare's premise is that the patient holds theirs. The more the
+  platform is adopted the less there is for a QHIN to broker. It comes back later, and when it does
+  the target is to be better than QHIN rather than to join it — which means it should be designed
+  from what patients need moved, not from what the network already carries.
 - **Health news feed** — deferred a long way out, at the owner's direction (September 2026). A feed
   filtered against a patient's own medications and conditions is a content pipeline before it is a
   feature: someone has to choose the sources, decide what counts as health news rather than health
