@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { VITAL_CONFIG, VitalType } from '@/types/health';
+import { VITAL_CONFIG, VitalType, isMedicationEditable } from '@/types/health';
 import { formatDayTime } from '@/lib/format-date';
 
 /**
@@ -102,13 +102,48 @@ export function describeAction(action: ProposedAction): { title: string; detail:
 async function findMedication(userId: string, name: string) {
   const { data } = await supabase
     .from('medications')
-    .select('id, name, times_of_day')
+    .select('id, name, times_of_day, source')
     .eq('user_id', userId)
     .eq('is_active', true)
     .is('family_member_id', null)
     .ilike('name', `%${name}%`)
     .limit(2);
   return data ?? [];
+}
+
+/**
+ * The assistant may not change a medication the patient could not change by
+ * hand.
+ *
+ * `useMedications` guards this on the button and says in its own comment that
+ * the guard lives in the mutation "because the button is not the only caller —
+ * the assistant can change a medication too". That was true of the intent and
+ * false of the wiring: this file writes to `medications` through `supabase`
+ * directly and never passes through that hook, so a row imported from a
+ * hospital's system could be stopped or rescheduled by asking the assistant,
+ * while the same change was refused on the medications page.
+ *
+ * The rule itself is not new — a row that came from a sending system is that
+ * system's record of what it prescribed, and a local edit makes the two
+ * disagree with no way to tell which is right. What is new is that the
+ * assistant is now held to it.
+ *
+ * Deliberately not applied to `mark_dose_taken`: recording that you took a
+ * hospital-prescribed medicine is adherence, not an edit to the prescription,
+ * and it is the patient's own account of their own behaviour.
+ */
+function refuseIfNotTheirs(
+  action: ProposedAction,
+  med: { name: string; source?: string | null },
+): ActionOutcome | null {
+  if (isMedicationEditable(med)) return null;
+  return {
+    id: action.id,
+    ok: false,
+    message:
+      `${med.name} came from ${med.source}, so it is not mine to change. ` +
+      'Ask them to change it and it will update on the next sync.',
+  };
 }
 
 /** Execute one approved action against the signed-in user's own record. */
@@ -227,6 +262,9 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
         }
 
         const med = meds[0];
+        const notTheirs = refuseIfNotTheirs(action, med);
+        if (notTheirs) return notTheirs;
+
         const { error } = await supabase
           .from('medications')
           .update({ times_of_day: times })
@@ -305,6 +343,9 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
         if (meds.length === 0) return { id: action.id, ok: false, message: `Couldn't find "${p.medication_name}" in your medications` };
         if (meds.length > 1) return { id: action.id, ok: false, message: `"${p.medication_name}" matches more than one medication — edit it from the medications page` };
         const med = meds[0];
+        const notTheirs = refuseIfNotTheirs(action, med);
+        if (notTheirs) return notTheirs;
+
         const current: string[] = Array.isArray(med.times_of_day) ? (med.times_of_day as string[]).map(pad) : [];
         if (!current.includes(time)) {
           return { id: action.id, ok: false, message: `${med.name} has no ${time} reminder — nothing changed` };
@@ -358,6 +399,9 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
         if (meds.length === 0) return { id: action.id, ok: false, message: `Couldn't find "${p.medication_name}" in your medications` };
         if (meds.length > 1) return { id: action.id, ok: false, message: `"${p.medication_name}" matches more than one medication — stop it from the medications page` };
         const med = meds[0];
+        const notTheirs = refuseIfNotTheirs(action, med);
+        if (notTheirs) return notTheirs;
+
         const { error } = await supabase
           .from('medications')
           .update({ is_active: false, end_date: new Date().toISOString().split('T')[0] })

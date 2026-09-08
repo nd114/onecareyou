@@ -50,3 +50,52 @@ describe("the gate in the source has not drifted", () => {
     expect(src).not.toContain("options.allowActions !== false");
   });
 });
+
+/**
+ * The assistant is held to the same rule as the button.
+ *
+ * `useMedications` refuses to change a medication that came from a sending
+ * system, and its comment says the guard sits in the mutation "because the
+ * button is not the only caller — the assistant can change a medication too."
+ * The intent was right; the wiring was not. `ai-actions.ts` writes to
+ * `medications` through `supabase` directly and never passes through that
+ * hook, so until this was fixed a hospital-imported prescription could be
+ * stopped by asking the assistant while the medications page refused the same
+ * change.
+ *
+ * Asserted against the source, like the gate above, because the failure is
+ * invisible at runtime: nothing errors, the medication simply stops.
+ */
+describe("the assistant cannot edit what the patient cannot edit", () => {
+  const read = async () => {
+    const fs = await import("node:fs/promises");
+    return fs.readFile("src/lib/ai-actions.ts", "utf8");
+  };
+
+  it("looks up a medication's provenance before changing it", async () => {
+    // Without `source` in the select there is nothing to check against, and
+    // the guard below silently passes every row.
+    expect(await read()).toMatch(/\.select\(['"]id, name, times_of_day, source['"]\)/);
+  });
+
+  it("guards every action that writes to a medication row", async () => {
+    const src = await read();
+    // Three writers: reschedule, drop one reminder, stop the medicine.
+    const guarded = src.match(/refuseIfNotTheirs\(action, med\)/g) ?? [];
+    expect(guarded.length).toBe(3);
+  });
+
+  it("guards on provenance rather than re-deriving the rule", async () => {
+    // The rule lives in isMedicationEditable and is used by the UI too. A
+    // second copy here is how the two come to disagree.
+    expect(await read()).toMatch(/isMedicationEditable/);
+  });
+
+  it("still lets a patient record taking a medicine somebody else prescribed", async () => {
+    // Adherence is the patient's account of their own behaviour, not an edit
+    // to the prescription. Guarding it would be the opposite mistake.
+    const src = await read();
+    const markDose = src.slice(src.indexOf("case 'mark_dose_taken'"), src.indexOf("case 'update_medication_times'"));
+    expect(markDose).not.toMatch(/refuseIfNotTheirs/);
+  });
+});
