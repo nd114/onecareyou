@@ -243,24 +243,50 @@ export function useHealthDocuments() {
     },
   });
 
+  /**
+   * Remove a document the patient put here themselves.
+   *
+   * Only their own uploads. A document a clinician filed is the clinic's record
+   * of what it provided and cannot vanish from under them — archiving is what
+   * the patient has for those — and a withdrawn one is the subject of an
+   * incident somebody has to be able to answer for. Both are refused by the
+   * row policy; this checks first so the refusal arrives as a sentence rather
+   * than as nothing happening.
+   *
+   * The `.select('id')` matters for the same reason it does everywhere else:
+   * a DELETE that RLS turns down affects zero rows and returns no error, so
+   * without it the toast says "Deleted" over a document that is still there.
+   */
   const deleteDocument = useMutation({
     mutationFn: async (doc: HealthDocument) => {
       if (!user) throw new Error('Not authenticated');
-
-      await supabase.storage.from('health-documents').remove([doc.file_path]);
-
-      const { error } = await supabase
+      if (doc.uploaded_by_user_id) {
+        throw new Error(
+          'This was sent to you by a clinician, so it stays in your record. ' +
+            'You can archive it instead — it will drop out of your Vault and out of anything you share.',
+        );
+      }
+      const { data, error } = await supabase
         .from('health_documents')
         .delete()
-        .eq('id', doc.id);
+        .eq('id', doc.id)
+        .select('id');
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('That document could not be removed. Archive it instead, or ask the sender to withdraw it.');
+      }
+
+      // The row went first. If the file removal fails the row is already gone,
+      // which is the right way round: an orphaned object is rubbish, an
+      // orphaned row is a document that looks present and cannot be opened.
+      await supabase.storage.from('health-documents').remove([doc.file_path]);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['health-documents'] });
       toast.success('Document deleted');
     },
     onError: (error) => {
-      toast.error('Failed to delete document: ' + error.message);
+      toast.error(error.message);
     },
   });
 

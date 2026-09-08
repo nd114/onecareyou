@@ -139,6 +139,15 @@ CREATE OR REPLACE FUNCTION cron.unschedule(text) RETURNS boolean
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 GRANT USAGE ON SCHEMA storage TO anon, authenticated, service_role;
+-- Supabase grants these, and without them every storage policy is untestable:
+-- a probe fails with "permission denied for table objects" long before any
+-- policy is consulted, so a bucket wide open to the wrong reader looks exactly
+-- like one that is locked down.
+GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO authenticated;
+GRANT SELECT ON storage.objects TO anon;
+GRANT ALL ON storage.objects TO service_role;
+GRANT SELECT ON storage.buckets TO anon, authenticated;
+GRANT ALL ON storage.buckets TO service_role;
 GRANT SELECT ON auth.users TO anon, authenticated, service_role;
 
 -- Supabase's own defaults, applied here so that a later REVOKE in the history
