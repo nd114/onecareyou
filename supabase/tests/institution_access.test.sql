@@ -71,10 +71,18 @@ BEGIN
         status = EXCLUDED.status,
         can_view_all_patients = EXCLUDED.can_view_all_patients;
 
-  -- Patient shares vitals + medications with the hospital, but NOT documents.
+  -- Patient shares vitals, medications and adherence with the hospital, but
+  -- NOT documents.
+  --
+  -- Adherence is granted explicitly. It used to ride along with medications,
+  -- and this fixture reflected that; the share vocabulary convergence made it a
+  -- category of its own that the patient grants separately. Leaving the
+  -- assertion as it was would have had the suite demanding that a medications
+  -- grant open the dose history too — a widening of consent, asserted by a
+  -- test, which is the worst place for one to hide.
   INSERT INTO public.practice_shares (practice_id, user_id, share_all, permissions)
   VALUES (_hospital, _patient, false,
-          '{"vitals":true,"medications":true,"documents":false,"conditions":false,"allergies":false}'::jsonb);
+          '{"vitals":true,"medications":true,"adherence":true,"documents":false,"conditions":false,"allergies":false}'::jsonb);
 
   INSERT INTO public.practice_patient_assignments (practice_id, patient_user_id, clinician_user_id, assigned_by)
   VALUES (_hospital, _patient, _assigned, _admin);
@@ -123,10 +131,10 @@ SELECT pg_temp.assert(
   (SELECT count(*) FROM public.health_documents) = 0,
   'assigned clinician cannot read documents the patient withheld');
 
--- 2b. Adherence rides on the medications category the patient shared.
+-- 2b. Adherence, which the patient granted as its own category.
 SELECT pg_temp.assert(
   (SELECT count(*) FROM public.schedule_entries) = 1,
-  'assigned clinician reads adherence history under the medications share');
+  'assigned clinician reads adherence history the patient granted');
 
 -- 2c. Conditions and allergies are released per category, not together. This
 --     fixture shares neither, so both come back null rather than empty.

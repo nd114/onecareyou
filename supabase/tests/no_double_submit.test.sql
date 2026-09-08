@@ -18,9 +18,18 @@ DECLARE
   doc   uuid := gen_random_uuid();
   pat   uuid := gen_random_uuid();
   other uuid := gen_random_uuid();
+  -- vitals.user_id references auth.users. The scaffold this was written
+  -- against had no such constraint, so bare uuids were enough; against the
+  -- replayed history they are not.
   ts    timestamptz := now();
   n     int;
 BEGIN
+  INSERT INTO auth.users (id, email, email_confirmed_at)
+  VALUES (doc, 'doc@example.com', now()),
+         (pat, 'pat@example.com', now()),
+         (other, 'other@example.com', now())
+  ON CONFLICT (id) DO NOTHING;
+
   -- ---------------------------------------------------------------
   -- Instructions
   -- ---------------------------------------------------------------

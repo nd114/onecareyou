@@ -14,15 +14,17 @@ DECLARE v_p uuid := gen_random_uuid();
         v_changed int;
         v_flag boolean;
 BEGIN
-  INSERT INTO public.practices(id) VALUES (v_p);
-  INSERT INTO public.practice_members(practice_id, user_id, role) VALUES (v_p, v_owner, 'owner');
-  INSERT INTO public.practice_members(practice_id, user_id, role) VALUES (v_p, v_doc, 'clinician');
-  PERFORM set_config('test.uid', v_owner::text, true);
+  INSERT INTO public.practices(id, name, created_by) VALUES (v_p, 'Riverside Medical', v_owner);
+  INSERT INTO public.practice_members(practice_id, user_id, role) VALUES (v_p, v_owner, 'owner')
+    ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'owner', status = 'active';
+  INSERT INTO public.practice_members(practice_id, user_id, role) VALUES (v_p, v_doc, 'clinician')
+    ON CONFLICT (practice_id, user_id) DO NOTHING;
+  PERFORM set_config('request.jwt.claim.sub', v_owner::text, true);
 
   SELECT can_view_all_patients INTO v_flag FROM public.practice_members WHERE user_id = v_doc;
   IF NOT v_flag THEN RAISE EXCEPTION 'FAIL: the migration narrowed an existing clinician'; END IF;
 
-  PERFORM set_config('test.uid', v_doc::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_doc::text, true);
   BEGIN
     PERFORM public.practice_set_assignment_first(v_p, true);
     RAISE EXCEPTION 'FAIL: a clinician changed the access model';
@@ -32,7 +34,7 @@ BEGIN
     END IF;
   END;
 
-  PERFORM set_config('test.uid', v_owner::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_owner::text, true);
   SELECT public.practice_set_assignment_first(v_p, true) INTO v_changed;
   IF v_changed <> 1 THEN RAISE EXCEPTION 'FAIL: expected 1 member changed, got %', v_changed; END IF;
 

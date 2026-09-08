@@ -13,17 +13,19 @@ DECLARE v_practice uuid := gen_random_uuid();
         v_dept uuid;
         v_log jsonb;
 BEGIN
-  INSERT INTO public.practices(id) VALUES (v_practice);
-  INSERT INTO public.practice_members VALUES (v_practice, v_owner, 'owner', 'active');
-  INSERT INTO public.practice_members VALUES (v_practice, v_admin, 'admin', 'active');
+  INSERT INTO public.practices(id, name, created_by) VALUES (v_practice, 'St Martins Hospital', v_owner);
+  INSERT INTO public.practice_members(practice_id, user_id, role, status) VALUES (v_practice, v_owner, 'owner', 'active')
+    ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'owner', status = 'active';
+  INSERT INTO public.practice_members(practice_id, user_id, role, status) VALUES (v_practice, v_admin, 'admin', 'active')
+    ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'admin', status = 'active';
   INSERT INTO public.practice_departments(practice_id, name, description)
     VALUES (v_practice, 'Cardiology', 'Heart') RETURNING id INTO v_dept;
   INSERT INTO public.practice_department_members(department_id, practice_id, user_id, is_lead)
     VALUES (v_dept, v_practice, v_admin, true);
-  INSERT INTO public.practice_patient_departments(department_id, patient_user_id)
-    VALUES (v_dept, gen_random_uuid()), (v_dept, gen_random_uuid());
+  INSERT INTO public.practice_patient_departments(practice_id, department_id, patient_user_id)
+    VALUES (v_practice, v_dept, gen_random_uuid()), (v_practice, v_dept, gen_random_uuid());
 
-  PERFORM set_config('test.uid', v_owner::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_owner::text, true);
 
   -- A live department cannot be deleted: no single action ends something
   -- people are working in.
@@ -39,7 +41,7 @@ BEGIN
   UPDATE public.practice_departments SET is_active = false WHERE id = v_dept;
 
   -- An administrator can archive; only the owner can end one.
-  PERFORM set_config('test.uid', v_admin::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_admin::text, true);
   BEGIN
     PERFORM public.practice_delete_department(v_dept, 'tidy up');
     RAISE EXCEPTION 'FAIL: a non-owner admin deleted a department';
@@ -49,7 +51,7 @@ BEGIN
     END IF;
   END;
 
-  PERFORM set_config('test.uid', v_owner::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_owner::text, true);
   PERFORM public.practice_delete_department(v_dept, 'ward closed');
 
   IF EXISTS (SELECT 1 FROM public.practice_departments WHERE id = v_dept) THEN

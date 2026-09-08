@@ -8,7 +8,9 @@
 DO $$
 DECLARE i int; v_blocked boolean := false;
 BEGIN
-  PERFORM set_config('test.ip', '203.0.113.9', true);
+  -- request_client_ip() reads the x-forwarded-for header PostgREST exposes,
+  -- so the test has to present one rather than invent its own setting.
+  PERFORM set_config('request.headers', '{"x-forwarded-for":"203.0.113.9"}', true);
 
   FOR i IN 1..10 LOOP
     PERFORM public.check_signin_allowed('jane.evans@example.com');
