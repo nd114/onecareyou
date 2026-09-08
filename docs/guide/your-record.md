@@ -65,6 +65,16 @@ disappears from your vault and you are told: what date it was sent, when it was
 withdrawn, and why. You will not see the contents again, and nor will anyone you
 had shared your vault with.
 
+## If something is taken out
+
+A clinician can withdraw a document they sent you — most often because it was
+meant for somebody else. It leaves a note in its place saying what was
+withdrawn and why, so you are never left with an unexplained gap.
+
+Once, and only once, does anything get removed rather than marked: when the
+information belonged to another patient. See *Notifications and privacy* for
+what that means and why.
+
 ## Recordings
 
 You can record a consultation. The recording and its transcript are filed like

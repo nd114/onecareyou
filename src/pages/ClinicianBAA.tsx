@@ -39,70 +39,193 @@ import { format } from 'date-fns';
 import { BRAND } from '@/lib/brand-constants';
 import { formatDay } from '@/lib/format-date';
 
-// Current BAA version - increment when agreement terms change
-const CURRENT_BAA_VERSION = '1.0';
+// Increment when the terms change; anyone on an older version is prompted to
+// re-sign. 2.0 added the GDPR processing agreement alongside the HIPAA BAA,
+// and the documented instruction covering withdrawal — without which the
+// platform acting on a declared incident would be OneCare deciding rather than
+// the practice instructing, which is the difference between a processor and a
+// controller.
+const CURRENT_BAA_VERSION = '2.0';
 
-const BAA_TEXT = `BUSINESS ASSOCIATE AGREEMENT
+const BAA_TEXT = `DATA PROTECTION AGREEMENT
+(HIPAA Business Associate Agreement and GDPR Data Processing Agreement)
 
-This Business Associate Agreement ("Agreement") is entered into as of the date of electronic signature below.
+This Agreement is entered into as of the date of electronic signature below.
+
+Which parts apply to you depends on where you practise and whose data you
+process. Part A applies where HIPAA applies. Part B applies where the GDPR or
+UK GDPR applies. Signing accepts both; the part that does not apply to you has
+no effect.
 
 PARTIES:
-- Covered Entity: The healthcare practice/provider identified below
-- Business Associate: OneCare Health Technologies ("OneCare")
+- Covered Entity / Controller: The healthcare practice or provider identified below
+- Business Associate / Processor: OneCare Health Technologies ("OneCare")
 
 RECITALS:
-OneCare provides remote patient monitoring and care coordination services that may involve the creation, receipt, maintenance, or transmission of Protected Health Information (PHI) as defined under the Health Insurance Portability and Accountability Act of 1996 (HIPAA).
+OneCare provides a patient-held health record with a clinician workspace, which
+involves the creation, receipt, maintenance and transmission of health
+information on the practice's behalf.
 
-TERMS AND CONDITIONS:
+The practice determines the purposes and means of processing patient records
+for the delivery of care. OneCare processes those records on the practice's
+documented instructions and does not determine the purposes of that processing.
+OneCare is a controller in its own right only for the account it provides
+directly to a patient, which is outside the scope of this Agreement.
 
-1. DEFINITIONS
-All terms used in this Agreement shall have the same meaning as those terms defined in HIPAA, including but not limited to "Protected Health Information," "Electronic Protected Health Information," and "Breach."
+--------------------------------------------------------------------------
+PART A - HIPAA BUSINESS ASSOCIATE AGREEMENT
+--------------------------------------------------------------------------
 
-2. OBLIGATIONS OF BUSINESS ASSOCIATE
+A1. DEFINITIONS
+All terms have the meaning given in HIPAA, including "Protected Health
+Information", "Electronic Protected Health Information" and "Breach".
+
+A2. OBLIGATIONS OF BUSINESS ASSOCIATE
 Business Associate agrees to:
-a) Not use or disclose PHI other than as permitted by this Agreement or as required by law
-b) Use appropriate safeguards to prevent unauthorized use or disclosure of PHI
-c) Report to Covered Entity any use or disclosure not provided for by this Agreement
-d) Ensure that any subcontractors agree to the same restrictions and conditions
+a) Not use or disclose PHI other than as permitted by this Agreement or as
+   required by law
+b) Use appropriate safeguards to prevent unauthorised use or disclosure of PHI
+c) Report to Covered Entity any use or disclosure not provided for by this
+   Agreement
+d) Ensure that any subcontractor that creates, receives, maintains or transmits
+   PHI on Business Associate's behalf agrees in writing to the same
+   restrictions and conditions
 e) Make PHI available to Covered Entity as required under HIPAA
-f) Amend PHI as directed by Covered Entity
+f) Amend PHI as directed by Covered Entity, in accordance with 45 CFR 164.526
 g) Provide an accounting of disclosures as required under HIPAA
-h) Make internal practices available to the Secretary of HHS for compliance determination
+h) Make internal practices available to the Secretary of HHS for compliance
+   determination
 i) Return or destroy PHI upon termination of this Agreement
 
-3. PERMITTED USES AND DISCLOSURES
+A3. PERMITTED USES AND DISCLOSURES
 Business Associate may use PHI for:
 a) Performance of services described in the underlying service agreement
 b) Proper management and administration of Business Associate
 c) Legal responsibilities of Business Associate
 d) Data aggregation services as permitted by HIPAA
 
-4. SECURITY REQUIREMENTS
+A4. SECURITY REQUIREMENTS
 Business Associate shall:
-a) Implement administrative, physical, and technical safeguards
-b) Ensure confidentiality, integrity, and availability of ePHI
-c) Protect against anticipated threats or hazards
-d) Protect against unauthorized use or disclosure
+a) Implement administrative, physical and technical safeguards
+b) Ensure the confidentiality, integrity and availability of ePHI
+c) Protect against reasonably anticipated threats or hazards
+d) Protect against unauthorised use or disclosure
 e) Ensure workforce compliance
 
-5. BREACH NOTIFICATION
-In the event of a breach of unsecured PHI, Business Associate shall:
-a) Notify Covered Entity within 60 days of discovery
-b) Provide all information necessary for Covered Entity notifications
-c) Cooperate with Covered Entity in breach response
+A5. BREACH NOTIFICATION
+Following discovery of a breach of unsecured PHI, Business Associate shall:
+a) Notify Covered Entity without unreasonable delay and in no case later than
+   60 calendar days after discovery, in accordance with 45 CFR 164.410
+b) Provide the information necessary for Covered Entity to make its own
+   notifications, including the individuals affected, what was disclosed, when,
+   and for how long it was accessible
+c) Cooperate with Covered Entity in its breach response
 
-6. TERM AND TERMINATION
-This Agreement shall terminate when:
-a) All PHI is destroyed or returned
-b) Either party terminates for material breach
-c) The underlying service agreement terminates
+--------------------------------------------------------------------------
+PART B - GDPR DATA PROCESSING AGREEMENT (Article 28)
+--------------------------------------------------------------------------
 
-7. GENERAL PROVISIONS
-a) This Agreement shall be governed by applicable federal and state law
-b) Any ambiguity shall be resolved in favor of HIPAA compliance
-c) The provisions of this Agreement shall survive termination
+B1. SUBJECT MATTER, DURATION, NATURE AND PURPOSE
+Subject matter: provision of the OneCare platform.
+Duration: for as long as the practice holds an active account, and thereafter
+only as set out in B9.
+Nature and purpose: hosting, transmitting, organising and making available
+patient health records so that the practice can deliver and coordinate care.
 
-By signing below, the parties agree to be bound by the terms of this Business Associate Agreement.`;
+B2. CATEGORIES OF DATA AND DATA SUBJECTS
+Data subjects: the practice's patients, and the practice's own staff who hold
+accounts.
+Categories of personal data: identity and contact details; health data
+including medications, observations, clinical notes, encounters, documents and
+correspondence; account and access records. Health data is a special category
+of personal data under Article 9.
+
+B3. PROCESSING ON DOCUMENTED INSTRUCTIONS (Art 28(3)(a))
+OneCare processes personal data only on the practice's documented instructions,
+including in relation to transfers, unless required otherwise by law - in which
+case OneCare will inform the practice before processing, unless the law forbids
+it. The instructions comprise this Agreement, the service agreement, the
+platform's documented functionality, and any further written instruction the
+practice gives.
+
+B4. WITHDRAWAL AND CONTAINMENT (a documented instruction under B3)
+The practice instructs OneCare, on the practice's declaration that information
+has been disclosed to a person who should not have received it, to:
+a) Restrict further access to the affected document or file across every access
+   path, including any copy shared onward within the platform;
+b) Restrict access to structured data derived from that information within the
+   platform, where the practice's declaration identifies the information as
+   relating to a person other than the recipient;
+c) Preserve the underlying record, the file and the audit trail, which are not
+   deleted by a restriction; and
+d) Record who declared the incident, under what authority, the reason given,
+   whether the information had been opened or downloaded, and for how long it
+   was accessible.
+
+OneCare acts on this instruction and does not determine whether a withdrawal is
+justified, adjudicate any dispute between the practice and a data subject, or
+initiate a withdrawal of its own motion. Where a recipient objects, OneCare
+records the objection and makes it available to the practice.
+
+Restriction under this clause is a restriction of processing within the meaning
+of Article 18 and is not an erasure.
+
+B5. CONFIDENTIALITY (Art 28(3)(b))
+Persons authorised by OneCare to process personal data are bound by an
+obligation of confidentiality.
+
+B6. SECURITY (Art 28(3)(c), Art 32)
+OneCare implements appropriate technical and organisational measures, including
+access control enforced at the data layer, encryption in transit and at rest,
+and logging of access to and changes affecting patient records.
+
+B7. SUB-PROCESSORS (Art 28(2), 28(4))
+The practice gives general authorisation for OneCare to engage sub-processors.
+OneCare maintains a current list of sub-processors, makes it available on
+request, and will give the practice notice of any intended addition or
+replacement so that the practice may object. Each sub-processor is bound by
+data protection obligations no less protective than those in this Agreement,
+and OneCare remains fully liable for their performance.
+
+B8. ASSISTANCE (Art 28(3)(e) and (f))
+OneCare assists the practice, by appropriate technical and organisational
+measures, in responding to requests to exercise data subject rights, and in
+complying with Articles 32 to 36 - including security, breach notification and
+data protection impact assessments. OneCare notifies the practice of a personal
+data breach without undue delay after becoming aware of it, in accordance with
+Article 33(2).
+
+B9. RETURN OR DELETION (Art 28(3)(g))
+At the end of the provision of services, OneCare will, at the practice's
+election, delete or return the personal data and delete existing copies, unless
+retention is required by law. Records the practice or a data subject is
+entitled to have retained as part of a clinical or audit record are retained
+for that purpose alone.
+
+B10. AUDIT (Art 28(3)(h))
+OneCare makes available the information necessary to demonstrate compliance
+with Article 28 and allows for and contributes to audits, including
+inspections, conducted by the practice or an auditor it mandates.
+
+B11. INTERNATIONAL TRANSFERS
+Where personal data is transferred outside the UK or EEA, OneCare relies on an
+adequacy decision or on Standard Contractual Clauses (and the UK Addendum where
+applicable), which are incorporated into this Agreement by reference.
+
+--------------------------------------------------------------------------
+PART C - GENERAL
+--------------------------------------------------------------------------
+
+C1. TERM AND TERMINATION
+This Agreement terminates when all personal data is returned or deleted, on
+material breach by either party, or when the underlying service agreement ends.
+
+C2. GENERAL PROVISIONS
+a) Governed by the applicable federal, national and state law
+b) Any ambiguity is resolved in favour of compliance with HIPAA and the GDPR
+c) The provisions of this Agreement survive termination
+
+By signing below, the parties agree to be bound by the terms of this Agreement.`;
 
 interface ExistingBAA {
   id: string;
@@ -222,7 +345,7 @@ const ClinicianBAA = () => {
 
       setJustSigned(true);
       refetch();
-      toast.success('BAA signed successfully');
+      toast.success('Data protection agreement signed');
     } catch (error: any) {
       console.error('Error signing BAA:', error);
       toast.error('Failed to sign agreement. Please try again.');
@@ -330,7 +453,7 @@ const ClinicianBAA = () => {
             <CardHeader>
               <CardTitle>Could not load your agreement</CardTitle>
               <CardDescription>
-                We could not check whether you have already signed a BAA, so we have not shown the
+                We could not check whether you have already signed the agreement, so we have not shown the
                 signing form. Please try again in a moment.
               </CardDescription>
             </CardHeader>
@@ -358,9 +481,9 @@ const ClinicianBAA = () => {
             <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
               <Check className="h-10 w-10 text-green-600 dark:text-green-400" />
             </div>
-            <h1 className="text-3xl font-bold mb-4">BAA Signed Successfully</h1>
+            <h1 className="text-3xl font-bold mb-4">Agreement Signed</h1>
             <p className="text-muted-foreground mb-8">
-              Your Business Associate Agreement has been executed. A copy has been sent to your email 
+              Your data protection agreement has been executed. A copy has been sent to your email 
               and is available in your account settings.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -422,7 +545,7 @@ const ClinicianBAA = () => {
                       <div className="flex items-center gap-3">
                         <Shield className="h-6 w-6 text-primary" />
                         <div>
-                          <CardTitle>HIPAA Business Associate Agreement</CardTitle>
+                          <CardTitle>Data Protection Agreement</CardTitle>
                           <CardDescription>Your signed agreement with OneCare</CardDescription>
                         </div>
                       </div>
@@ -585,7 +708,7 @@ const ClinicianBAA = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-primary" />
-                    HIPAA Business Associate Agreement
+                    Data Protection Agreement
                   </CardTitle>
                   <CardDescription>
                     Required for Enterprise tier and HIPAA compliance
@@ -758,7 +881,7 @@ const ClinicianBAA = () => {
                         onCheckedChange={(checked) => setHasReadAgreement(checked === true)}
                       />
                       <label htmlFor="hasRead" className="text-sm leading-relaxed cursor-pointer">
-                        I have read and understand the terms of this Business Associate Agreement
+                        I have read and understand the terms of this data protection agreement
                       </label>
                     </div>
                     <div className="flex items-start space-x-3">
@@ -799,16 +922,23 @@ const ClinicianBAA = () => {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Why a BAA?</CardTitle>
+                  <CardTitle className="text-lg">Why this agreement?</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground space-y-3">
                   <p>
-                    Under HIPAA, a Business Associate Agreement (BAA) is required when a service 
-                    provider handles Protected Health Information (PHI) on behalf of a healthcare provider.
+                    It covers two things, and which one applies depends on where you
+                    practise. Under HIPAA, a Business Associate Agreement is required when
+                    a service provider handles Protected Health Information on a
+                    provider's behalf. Under the GDPR, an Article 28 processing agreement
+                    is required when a processor handles personal data on a controller's
+                    behalf. Signing accepts both; the part that does not apply to you has
+                    no effect.
                   </p>
                   <p>
-                    This agreement establishes the legal framework for how OneCare will protect 
-                    and handle your patients' health information.
+                    It sets out what OneCare may do with your patients' information, and —
+                    just as importantly — what it will do only on your instruction. That
+                    includes withdrawing a document disclosed to the wrong person: OneCare
+                    acts when you declare it, and does not decide for itself.
                   </p>
                 </CardContent>
               </Card>

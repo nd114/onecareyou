@@ -223,9 +223,31 @@ matter, duration, nature and purpose, categories of data and data subjects, and
 the (a)–(h) obligations, plus international transfer terms. The BAA does not
 substitute for it.
 
-Both should be drafted with counsel. What matters for the design is only this:
-**the instruction must exist in writing before the capability ships**, or the
-capability is us deciding, and deciding is what a controller does.
+**Both are now written**, as a single combined agreement at
+`src/pages/ClinicianBAA.tsx`, version 2.0 — which prompts every existing
+signatory to re-sign, because the terms changed materially. Part A is the HIPAA
+BAA, Part B the GDPR Article 28 processing agreement, and the document says
+which applies where rather than pretending one covers both.
+
+B4 is the clause the design turns on. It is the practice instructing OneCare to
+restrict access on their declaration of an incident, and it says in terms that
+OneCare does not decide whether a withdrawal is justified, does not adjudicate,
+and does not act of its own motion. It also names the restriction as Article 18
+rather than an erasure, so a withdrawal cannot be read as licence to erase the
+audit trail with it.
+
+Also corrected: A5(a) now carries 45 CFR 164.410's actual clock — *without
+unreasonable delay and in no case later than 60 calendar days* — rather than a
+bare sixty days, which was both weaker than the rule and slower than what the
+platform does. Sub-processor terms added at B7.
+
+`src/test/data-protection-agreement.test.ts` holds the shape in place. If B4
+disappears in a rewrite or a redline, the capability keeps working exactly as
+before and only its legal footing moves — nothing would fail at runtime, which
+is why it is asserted against the source.
+
+**Still for counsel**, and neither is a design question: the drafting itself,
+and the wording of the public statement in §8 above.
 
 Under HIPAA the same shape: **Business Associate** to a covered entity, with
 breach notification running to the covered entity rather than to individuals or

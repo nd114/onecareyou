@@ -139,11 +139,11 @@ export const useClinicianOnboarding = () => {
     },
     {
       id: 'baa',
-      label: 'Sign HIPAA Business Associate Agreement',
+      label: 'Sign the data protection agreement',
       description: 'Required for Enterprise tier to ensure compliance',
       completed: isBaaSigned,
       href: '/clinician/baa',
-      actionLabel: 'Sign BAA',
+      actionLabel: 'Sign agreement',
     },
     {
       id: 'first_patient',
