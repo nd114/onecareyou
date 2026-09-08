@@ -72,17 +72,50 @@ describe("the assistant cannot edit what the patient cannot edit", () => {
     return fs.readFile("src/lib/ai-actions.ts", "utf8");
   };
 
+  /**
+   * The body of one `case` inside `executeAction`, not `describeAction`.
+   *
+   * Both switch on the same action names, so slicing from the first occurrence
+   * reads the copy that only builds a label — which contains none of the
+   * writes these assertions are about, and so passes or fails on nothing.
+   */
+  const executeBranch = (src: string, action: string) => {
+    const body = src.slice(src.indexOf("export async function executeAction"));
+    const start = body.indexOf(`case '${action}'`);
+    if (start === -1) throw new Error(`no ${action} branch in executeAction`);
+    const next = body.indexOf("      case '", start + 10);
+    return body.slice(start, next === -1 ? undefined : next);
+  };
+
   it("looks up a medication's provenance before changing it", async () => {
     // Without `source` in the select there is nothing to check against, and
     // the guard below silently passes every row.
     expect(await read()).toMatch(/\.select\(['"]id, name, times_of_day, source['"]\)/);
   });
 
-  it("guards every action that writes to a medication row", async () => {
+  it("guards the two actions that edit a prescription", async () => {
     const src = await read();
-    // Three writers: reschedule, drop one reminder, stop the medicine.
+    // Reschedule and drop-a-reminder. Both rewrite what the row says the
+    // regimen is, which on an imported row is the sending system's statement.
     const guarded = src.match(/refuseIfNotTheirs\(action, med\)/g) ?? [];
-    expect(guarded.length).toBe(3);
+    expect(guarded.length).toBe(2);
+  });
+
+  it("does not guard stopping, and routes it through stop_medication", async () => {
+    // The correction that produced this: stopping was guarded alongside the
+    // edits, so a patient could not tell the assistant they had come off a
+    // hospital-prescribed drug. Refusing that does not make anybody take their
+    // medicine; it only makes the record wrong, and it withholds the one signal
+    // a prescriber most needs.
+    const src = await read();
+    const stop = executeBranch(src, "discontinue_medication");
+    expect(stop).not.toMatch(/refuseIfNotTheirs/);
+    expect(stop).toMatch(/rpc\(['"]stop_medication['"]/);
+  });
+
+  it("lets a stop be backdated, because people report late", async () => {
+    const src = await read();
+    expect(executeBranch(src, "discontinue_medication")).toMatch(/p_stopped_on/);
   });
 
   it("guards on provenance rather than re-deriving the rule", async () => {
@@ -95,7 +128,6 @@ describe("the assistant cannot edit what the patient cannot edit", () => {
     // Adherence is the patient's account of their own behaviour, not an edit
     // to the prescription. Guarding it would be the opposite mistake.
     const src = await read();
-    const markDose = src.slice(src.indexOf("case 'mark_dose_taken'"), src.indexOf("case 'update_medication_times'"));
-    expect(markDose).not.toMatch(/refuseIfNotTheirs/);
+    expect(executeBranch(src, "mark_dose_taken")).not.toMatch(/refuseIfNotTheirs/);
   });
 });

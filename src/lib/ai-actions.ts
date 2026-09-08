@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { VITAL_CONFIG, VitalType, isMedicationEditable } from '@/types/health';
-import { formatDayTime } from '@/lib/format-date';
+import { formatDay, formatDayTime } from '@/lib/format-date';
 
 /**
  * Approval-gated AI actions.
@@ -80,7 +80,17 @@ export function describeAction(action: ProposedAction): { title: string; detail:
     case 'discontinue_medication':
       return {
         title: `Stop medication: ${p.medication_name}`,
-        detail: [p.reason, 'Removes it from your list and clears its reminders'].filter(Boolean).join(' · '),
+        // The date is shown when the patient gave one. Approving "stopped two
+        // weeks ago" without seeing which date that resolved to is approving
+        // something you cannot check, and the date is what the adherence
+        // history will be measured against.
+        detail: [
+          p.reason,
+          p.stopped_on ? `Stopped on ${formatDay(String(p.stopped_on))}` : null,
+          'Keeps it in your history and clears upcoming reminders',
+        ]
+          .filter(Boolean)
+          .join(' · '),
       };
     case 'delete_vital': {
       const cfg = VITAL_CONFIG[p.type as VitalType];
@@ -112,25 +122,26 @@ async function findMedication(userId: string, name: string) {
 }
 
 /**
- * The assistant may not change a medication the patient could not change by
- * hand.
+ * The assistant may not *edit* a medication the patient could not edit by hand.
  *
  * `useMedications` guards this on the button and says in its own comment that
  * the guard lives in the mutation "because the button is not the only caller —
  * the assistant can change a medication too". That was true of the intent and
  * false of the wiring: this file writes to `medications` through `supabase`
- * directly and never passes through that hook, so a row imported from a
- * hospital's system could be stopped or rescheduled by asking the assistant,
- * while the same change was refused on the medications page.
+ * directly and never passes through that hook.
  *
- * The rule itself is not new — a row that came from a sending system is that
- * system's record of what it prescribed, and a local edit makes the two
- * disagree with no way to tell which is right. What is new is that the
- * assistant is now held to it.
+ * The line this draws is between two things that look alike and are not.
+ * Editing an imported row says "you prescribed something else" — that is the
+ * sending system's statement and not the patient's to rewrite. Saying "I am
+ * not taking this" is the patient's account of their own behaviour, it is true
+ * whatever the hospital's record says, and it is the single most useful thing
+ * their record can tell a prescriber.
  *
- * Deliberately not applied to `mark_dose_taken`: recording that you took a
- * hospital-prescribed medicine is adherence, not an edit to the prescription,
- * and it is the patient's own account of their own behaviour.
+ * So this guards rescheduling and reminder edits, and deliberately does not
+ * guard stopping or dose logging. Stopping goes through `stop_medication()`,
+ * which records who stopped it and when they said so; refusing it would not
+ * make anybody take their medicine, it would only make the record wrong more
+ * quietly.
  */
 function refuseIfNotTheirs(
   action: ProposedAction,
@@ -399,15 +410,25 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
         if (meds.length === 0) return { id: action.id, ok: false, message: `Couldn't find "${p.medication_name}" in your medications` };
         if (meds.length > 1) return { id: action.id, ok: false, message: `"${p.medication_name}" matches more than one medication — stop it from the medications page` };
         const med = meds[0];
-        const notTheirs = refuseIfNotTheirs(action, med);
-        if (notTheirs) return notTheirs;
 
-        const { error } = await supabase
-          .from('medications')
-          .update({ is_active: false, end_date: new Date().toISOString().split('T')[0] })
-          .eq('id', med.id)
-          .eq('user_id', userId);
-        if (error) throw error;
+        // Not guarded on provenance. A patient stopping a hospital-prescribed
+        // medicine is reporting what they are doing, not editing what was
+        // prescribed, and it is the thing a prescriber most needs to know.
+        //
+        // `stopped_on` carries a date the patient gives in passing — "I stopped
+        // that a couple of weeks ago" — because people do not report themselves
+        // in real time and a record that stamps every stop as today is quietly
+        // wrong about when somebody came off their medication.
+        const { error } = await (supabase as unknown as {
+          rpc: (f: string, a: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+        }).rpc('stop_medication', {
+          p_medication_id: med.id,
+          p_reason: typeof p.reason === 'string' ? p.reason : null,
+          p_stopped_on: typeof p.stopped_on === 'string' ? p.stopped_on : null,
+        });
+        if (error) {
+          return { id: action.id, ok: false, message: `Couldn't stop ${med.name} — ${error.message}` };
+        }
 
         const { data: verify } = await supabase
           .from('medications')
@@ -418,16 +439,16 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
           return { id: action.id, ok: false, message: `Couldn't stop ${med.name} — please do it from the medications page` };
         }
 
-        const now = new Date();
-        await supabase
-          .from('schedule_entries')
-          .delete()
-          .eq('user_id', userId)
-          .eq('medication_id', med.id)
-          .eq('status', 'pending')
-          .gte('scheduled_time', now.toISOString());
-
-        return { id: action.id, ok: true, message: `${med.name} stopped and its upcoming reminders removed` };
+        return {
+          id: action.id,
+          ok: true,
+          message: isMedicationEditable(med)
+            ? `${med.name} stopped and its upcoming reminders removed`
+            // Worth saying out loud. The prescriber still has this on their
+            // list, and the patient should know their record now disagrees with
+            // it on purpose rather than by accident.
+            : `Recorded that you have stopped ${med.name}. It stays in your record as prescribed by ${med.source}, marked as stopped by you.`,
+        };
       }
 
       case 'delete_vital': {

@@ -54,6 +54,7 @@ import { AppointmentsTab } from '@/components/clinician/AppointmentsTab';
 import { BillingTab } from '@/components/clinician/BillingTab';
 import { AiHistoryForPatient } from '@/components/clinician/AiHistoryForPatient';
 import { CarePlanTab } from '@/components/clinician/CarePlanTab';
+import { formatDay } from '@/lib/format-date';
 import { ProposeMedicationChange, ProposalsAwaitingPatient } from '@/components/clinician/ProposeMedicationChange';
 import { isClinicalRole } from '@/lib/staff-roles';
 import { usePractice } from '@/hooks/usePractice';
@@ -112,15 +113,34 @@ const ClinicianPatientDetail = () => {
     queryKey: ['patient-medications', patient?.user_id],
     queryFn: async () => {
       if (!patient?.user_id) return [];
-      const { data, error } = await supabase
-        .from('medications')
+      // Not filtered to active.
+      //
+      // It used to be, and that made the single most clinically significant
+      // thing a record can say invisible to the only person who needed it: a
+      // patient who has stopped taking what you prescribed. They vanished from
+      // this list the moment they stopped, which reads exactly like a patient
+      // still taking everything.
+      // The generated types predate this view; the columns it adds over
+      // `medications` are `status` and `reported_after_days`.
+      const { data, error } = await (supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            eq: (col: string, v: string) => {
+              order: (col: string, o?: { ascending: boolean }) => {
+                order: (col: string) => Promise<{ data: any[] | null; error: { message: string } | null }>;
+              };
+            };
+          };
+        };
+      })
+        .from('medications_with_status')
         .select('*')
         .eq('user_id', patient.user_id)
-        .eq('is_active', true)
+        .order('is_active', { ascending: false })
         .order('name');
-      
+
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
     enabled: !!patient?.user_id && patient?.permissions?.meds,
   });
@@ -568,9 +588,9 @@ const ClinicianPatientDetail = () => {
                 <CardHeader>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <CardTitle>Active Medications</CardTitle>
+                      <CardTitle>Medications</CardTitle>
                       <CardDescription>
-                        The patient's list. Changes are suggested here and applied when they accept.
+                        Current and recently stopped. Changes are suggested here and applied when the patient accepts.
                       </CardDescription>
                     </div>
                     {patient.permissions?.meds && (
@@ -598,7 +618,7 @@ const ClinicianPatientDetail = () => {
                   ) : medications.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Pill className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No active medications</p>
+                      <p>No medications recorded</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -607,16 +627,37 @@ const ClinicianPatientDetail = () => {
                         medications={medications}
                       />
                       {medications.map((med: any) => (
-                        <div key={med.id} className="p-4 rounded-lg border">
+                        <div
+                          key={med.id}
+                          className={`p-4 rounded-lg border ${med.is_active ? '' : 'border-dashed bg-muted/30'}`}
+                        >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="font-medium">{med.name}</p>
+                              <p className={`font-medium ${med.is_active ? '' : 'text-muted-foreground'}`}>
+                                {med.name}
+                              </p>
                               <p className="text-sm text-muted-foreground">
                                 {med.dosage} • {med.frequency}
                               </p>
                               {med.instructions && (
                                 <p className="text-xs text-muted-foreground mt-1">
                                   {med.instructions}
+                                </p>
+                              )}
+                              {med.status === 'stopped_by_patient' && (
+                                /* Stated rather than implied, and the reporting
+                                   gap with it: "stopped 12 Aug, told us 21 Sep"
+                                   is a different clinical picture from a stop
+                                   reported the same day. */
+                                <p className="text-xs mt-1.5 font-medium text-amber-700 dark:text-amber-400">
+                                  Patient stopped this{med.end_date ? ` on ${formatDay(med.end_date)}` : ''}
+                                  {med.reported_after_days > 1 ? ` — told us ${med.reported_after_days} days later` : ''}
+                                  {med.stopped_reason ? `: “${med.stopped_reason}”` : ''}
+                                </p>
+                              )}
+                              {!med.is_active && med.status !== 'stopped_by_patient' && (
+                                <p className="text-xs mt-1.5 text-muted-foreground">
+                                  Ended{med.end_date ? ` ${formatDay(med.end_date)}` : ''}
                                 </p>
                               )}
                             </div>
@@ -630,13 +671,15 @@ const ClinicianPatientDetail = () => {
                             >
                               Suggest a change
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setProposing({ kind: 'medication_stop', medication: med })}
-                            >
-                              Suggest stopping
-                            </Button>
+                            {med.is_active && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setProposing({ kind: 'medication_stop', medication: med })}
+                              >
+                                Suggest stopping
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}
