@@ -12,6 +12,10 @@ patient has already read.
 So the design problem is not "can they edit" but **which kind of change is
 this**, and each kind wants different mechanics.
 
+**See also** `withdrawal-and-derived-data.md` — what happens to data extracted
+from a withdrawn document, why removing wrong-patient values is not overreach,
+and OneCare's processor/controller position with the references behind it.
+
 ## Three kinds of change, and why they differ
 
 ### 1. Additive clinical events — no acceptance, always visible
