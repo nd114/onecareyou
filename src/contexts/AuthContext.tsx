@@ -171,11 +171,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // that: anyone posting straight to Supabase Auth never reaches this code.
     // The limits that cover that case are configured in the Supabase dashboard;
     // see docs/handbook/auth-hardening.md.
-    const { error: throttled } = await supabase.rpc('check_signin_allowed' as never, {
-      _email: email,
-    } as never);
-    if (throttled) {
-      return { error: new Error(throttled.message) };
+    //
+    // It must never become a second lock on the front door. The only answer we
+    // act on is the throttle itself — a deliberate raise from the function
+    // (Postgres code P0001). A missing function, a revoked grant, a network
+    // hiccup: none of those say anything about this person's password, so we
+    // let the real sign-in decide and keep the correct password working.
+    try {
+      const { error: throttled } = await supabase.rpc('check_signin_allowed' as never, {
+        _email: email,
+      } as never);
+      if (throttled && (throttled as { code?: string }).code === 'P0001') {
+        return { error: new Error(throttled.message) };
+      }
+      if (throttled) {
+        console.warn('[Auth] sign-in pre-check unavailable, continuing:', throttled.message);
+      }
+    } catch (preCheckError) {
+      console.warn('[Auth] sign-in pre-check threw, continuing:', preCheckError);
     }
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -185,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return { error: error as Error | null };
   };
+
 
   const signOut = async () => {
     // Clear state FIRST to prevent any UI from showing stale data
