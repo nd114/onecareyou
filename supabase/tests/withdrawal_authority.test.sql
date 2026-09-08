@@ -334,6 +334,74 @@ BEGIN
   RESET ROLE;
   IF v_count <> 0 THEN RAISE EXCEPTION 'FAIL: the register leaked % rows to an outsider', v_count; END IF;
 
+  -- -------------------------------------------------------------------------
+  -- 11. Withdrawal cannot be reached by an ordinary UPDATE.
+  --
+  --     Two tables, refusing for two different reasons, and the difference is
+  --     worth asserting rather than assuming — an earlier draft of this test
+  --     asserted a case RLS already covered and so passed with the guard
+  --     removed, which is the failure it was written to catch.
+  -- -------------------------------------------------------------------------
+
+  -- A document: RLS refuses outright. Setting `retracted_at` produces a row the
+  -- owner's own policy will not accept, so Postgres raises rather than allowing
+  -- a state with no reason code and no event behind it.
+  INSERT INTO public.health_documents (user_id, uploaded_by_user_id, file_path, file_name, category)
+  VALUES (v_patient, v_clinician, 'x/d.pdf', 'Letter.pdf', 'other')
+  RETURNING id INTO v_doc;
+
+  PERFORM set_config('request.jwt.claim.sub', v_patient::text, true);
+  v_ok := false;
+  BEGIN
+    SET LOCAL ROLE authenticated;
+    UPDATE public.health_documents SET retracted_at = now() WHERE id = v_doc;
+    RESET ROLE;
+    v_ok := true;
+  EXCEPTION WHEN insufficient_privilege THEN RESET ROLE; END;
+
+  IF (SELECT retracted_at FROM public.health_documents WHERE id = v_doc) IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL: a document reached a withdrawn state with no reason code and no event';
+  END IF;
+  SELECT count(*) INTO v_count FROM public.document_retraction_events WHERE document_id = v_doc;
+  IF v_count <> 0 THEN RAISE EXCEPTION 'FAIL: an event was fabricated'; END IF;
+
+  -- A message attachment: RLS does not cover it. The read-status policy lets a
+  -- recipient update the row and says nothing about the attachment columns, so
+  -- without the guard a patient could withdraw a clinician's attachment —
+  -- taking a clinical instruction out of the thread with no record of it.
+  INSERT INTO public.messages (patient_user_id, clinician_user_id, sender_user_id, body, attachment_path, attachment_name)
+  VALUES (v_patient, v_clinician, v_clinician, 'Here is the plan',
+          v_patient::text||'/'||v_clinician::text||'/plan.pdf', 'plan.pdf')
+  RETURNING id INTO v_msg;
+
+  PERFORM set_config('request.jwt.claim.sub', v_patient::text, true);
+  BEGIN
+    SET LOCAL ROLE authenticated;
+    UPDATE public.messages
+       SET attachment_retracted_at = now(),
+           attachment_path = v_patient::text||'/'||v_clinician::text||'/other.pdf'
+     WHERE id = v_msg;
+    RESET ROLE;
+  EXCEPTION WHEN insufficient_privilege THEN RESET ROLE; END;
+
+  IF (SELECT attachment_retracted_at FROM public.messages WHERE id = v_msg) IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL: a recipient withdrew a clinician''s attachment without going through the function';
+  END IF;
+  IF (SELECT attachment_path FROM public.messages WHERE id = v_msg) NOT LIKE '%plan.pdf' THEN
+    RAISE EXCEPTION 'FAIL: the attachment path was repointed around the storage guard';
+  END IF;
+
+  -- 12. The flag the withdrawal function uses to announce itself does not
+  --     outlive the call. It is transaction-scoped, so leaving it set would
+  --     disable the guard for every later write in the same request.
+  PERFORM set_config('request.jwt.claim.sub', v_clinician::text, true);
+  SET LOCAL ROLE authenticated;
+  PERFORM public.withdraw_shared_file(NULL, v_msg, 'sent_in_error', NULL, NULL, NULL, NULL);
+  RESET ROLE;
+  IF coalesce(current_setting('onecare.withdrawal', true), 'off') <> 'off' THEN
+    RAISE EXCEPTION 'FAIL: the withdrawal flag outlived the call that set it';
+  END IF;
+
   RAISE NOTICE 'withdrawal_authority: all assertions passed';
 END $$;
 

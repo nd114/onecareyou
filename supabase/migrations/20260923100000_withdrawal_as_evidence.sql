@@ -279,6 +279,11 @@ CREATE OR REPLACE VIEW public.my_withdrawn_documents
 WITH (security_invoker = true) AS
 SELECT
   e.id,
+  -- Which item this stands in for, so the remnant can be shown in its place
+  -- rather than in a list of its own. Safe to expose: the recipient's own Vault
+  -- item, or their own message.
+  e.document_id,
+  e.message_id,
   e.file_name,
   e.retracted_at,
   e.sent_at,
@@ -476,6 +481,19 @@ BEGIN
     AND action IN ('view_document', 'download_document');
 
   -- --- Stop the access ------------------------------------------------------
+  --
+  -- Announced to the guard triggers, which otherwise revert these columns for
+  -- any caller carrying an `auth.uid()`. Definer rights change the executing
+  -- role but not the JWT claim, so this function's own write looks exactly like
+  -- a client's and checking the actor cannot tell them apart.
+  --
+  -- Cleared again immediately, and that is not tidiness. `set_config`'s local
+  -- flag is scoped to the **transaction**, not the statement, so leaving it set
+  -- would disable the guard for every later write in the same request — one
+  -- legitimate withdrawal holding the door open behind it. Found by removing
+  -- the trigger and watching the test pass regardless.
+  PERFORM set_config('onecare.withdrawal', 'on', true);
+
   IF _document_id IS NOT NULL THEN
     UPDATE public.health_documents
        SET retracted_at = now(),
@@ -488,6 +506,10 @@ BEGIN
            attachment_retracted_by = v_actor
      WHERE id = _message_id;
   END IF;
+
+  PERFORM set_config('onecare.withdrawal', 'off', true);
+
+
 
   -- --- Record it ------------------------------------------------------------
   INSERT INTO public.document_retraction_events (

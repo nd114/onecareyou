@@ -20,6 +20,7 @@ DECLARE
   v_count int;
   v_ok boolean;
   v_details jsonb;
+  v_event_id uuid;
 BEGIN
   INSERT INTO auth.users(id,email,email_confirmed_at) VALUES
     (v_clinician,'evans@example.com',now()),
@@ -44,24 +45,31 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', v_stranger::text, true);
   v_ok := false;
   BEGIN
-    PERFORM public.retract_health_document(v_doc_id, 'not mine to take back');
+    PERFORM public.withdraw_shared_file(v_doc_id, NULL, 'wrong_recipient', 'not mine to take back', NULL, NULL, NULL);
     v_ok := true;
   EXCEPTION WHEN OTHERS THEN v_ok := false;
   END;
   IF v_ok THEN RAISE EXCEPTION 'FAIL: a third party withdrew somebody else''s document'; END IF;
 
-  -- Nor can it be withdrawn without saying why.
+  -- Nor on a reason nobody defined. Free text used to be accepted here, which
+  -- is what made the withdrawals uncountable.
   PERFORM set_config('request.jwt.claim.sub', v_clinician::text, true);
   v_ok := false;
   BEGIN
-    PERFORM public.retract_health_document(v_doc_id, '   ');
+    PERFORM public.withdraw_shared_file(v_doc_id, NULL, 'because I said so', NULL, NULL, NULL, NULL);
     v_ok := true;
   EXCEPTION WHEN OTHERS THEN v_ok := false;
   END;
-  IF v_ok THEN RAISE EXCEPTION 'FAIL: a document was withdrawn with no reason recorded'; END IF;
+  IF v_ok THEN RAISE EXCEPTION 'FAIL: a document was withdrawn on an undefined reason'; END IF;
+
+  -- And the old function is gone rather than merely unused. A permissive path
+  -- left reachable is not narrowed by adding a strict one beside it.
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'retract_health_document') THEN
+    RAISE EXCEPTION 'FAIL: the unrestricted withdrawal function is still callable';
+  END IF;
 
   -- The sender withdraws it.
-  PERFORM public.retract_health_document(v_doc_id, 'Filed to the wrong patient — same name');
+  PERFORM public.withdraw_shared_file(v_doc_id, NULL, 'wrong_recipient', 'Filed to the wrong patient — same name', NULL, NULL, NULL);
 
   -- The patient holding somebody else's letter stops seeing it. This is the
   -- assertion the whole thing exists for.
@@ -74,7 +82,7 @@ BEGIN
   -- But is told it happened, without the content coming back.
   PERFORM set_config('request.jwt.claim.sub', v_wrong_patient::text, true);
   SET LOCAL ROLE authenticated;
-  SELECT count(*) INTO v_count FROM public.my_retracted_documents WHERE id = v_doc_id;
+  SELECT count(*) INTO v_count FROM public.my_withdrawn_documents WHERE document_id = v_doc_id;
   RESET ROLE;
   IF v_count <> 1 THEN RAISE EXCEPTION 'FAIL: the patient is not told a document was withdrawn'; END IF;
 
@@ -85,19 +93,21 @@ BEGIN
 
   -- And the incident says how long it was visible rather than implying nothing
   -- was seen.
+  SELECT e.id INTO v_event_id FROM public.document_retraction_events e
+   WHERE e.document_id = v_doc_id;
   SELECT details INTO v_details FROM public.hipaa_audit_logs
-   WHERE resource_id = v_doc_id::text AND action = 'document_retracted';
+   WHERE resource_id = v_event_id::text AND action = 'document_withdrawn';
   IF v_details IS NULL THEN RAISE EXCEPTION 'FAIL: the retraction was not audited'; END IF;
   IF (v_details->>'days_visible')::numeric < 3 THEN
     RAISE EXCEPTION 'FAIL: the exposure window was understated (% days)', v_details->>'days_visible';
   END IF;
-  IF v_details->>'reason' IS NULL THEN RAISE EXCEPTION 'FAIL: the reason was not kept'; END IF;
+  IF v_details->>'reason_code' IS NULL THEN RAISE EXCEPTION 'FAIL: the reason code was not kept'; END IF;
 
   -- Retracting twice is not an error.
   PERFORM set_config('request.jwt.claim.sub', v_clinician::text, true);
-  PERFORM public.retract_health_document(v_doc_id, 'again');
+  PERFORM public.withdraw_shared_file(v_doc_id, NULL, 'wrong_recipient', 'again', NULL, NULL, NULL);
 
-  RAISE NOTICE 'retract_document: 8 assertions passed';
+  RAISE NOTICE 'retract_document: assertions passed';
 END $$;
 
 ROLLBACK;
