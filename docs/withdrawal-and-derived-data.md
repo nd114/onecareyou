@@ -172,18 +172,60 @@ The position is a **split role**, which is ordinary for a platform of this shape
   the assistant, notifications, the Vault as a personal service. We decide the
   purposes of that processing and cannot pretend otherwise.
 
-Two consequences worth being clear-eyed about:
+### Where liability actually sits
 
-1. A processor is **not** immune. Article 82(2) gives direct liability where a
-   processor fails obligations directed at processors, or acts outside or
-   contrary to the controller's lawful instructions. The protection is not the
-   label — it is acting only on instruction and holding the audit trail that
-   proves it. Which is what the incident record is for.
+Article 82(2) is narrower than it first reads, and the narrowing is the point:
 
-2. "The clinician is the controller, so it is their responsibility" is right
-   about the *breach* and wrong as a general shield. Our exposure is our own
-   conduct: security, acting on instructions, assisting properly, and not
-   over-reaching. The design keeps all four.
+> A processor shall be liable for the damage caused by processing **only where**
+> it has not complied with obligations of this Regulation specifically directed
+> to processors **or where** it has acted outside or contrary to lawful
+> instructions of the controller.
+
+So a clinician misfiling a document is the controller's act and not ours. Our
+exposure is confined to two things, both of which are our own conduct:
+
+1. **Processor-specific obligations** — security (Art 32), notifying the
+   controller of a breach (33(2)), sub-processor terms (28(4)), records of
+   processing (30(2)).
+2. **Acting outside lawful instructions.**
+
+Which means executing a containment the practice has declared does not create
+exposure — **it removes it.** It is Art 28(3)(f) assistance, performed on
+instruction, and the incident record is the evidence that it was. Refusing to
+help would be closer to a processor-obligation failure than helping is.
+
+One framing correction worth keeping straight: GDPR has no concept of an
+"owner" of personal data. The patient is the **data subject**, the practice is
+the **controller**, we are the **processor**. "The patient owns their record" is
+a true and important statement about the product and does not move liability
+anywhere.
+
+### What the agreements need to say
+
+The containment described in this document is only processor behaviour if it is
+a **documented instruction**. Today it is not written down anywhere, which is
+the one real gap.
+
+**The BAA** (`src/pages/ClinicianBAA.tsx`) is a sound HIPAA BAA and is missing:
+
+- A documented instruction covering withdrawal: *on the Covered Entity's
+  declaration of a privacy incident, OneCare will restrict access to the
+  affected material and to data derived from it, and preserve the audit record.*
+  §2(f) covers amendment (45 CFR 164.526); it does not cover containment.
+- §5(a) says "notify within 60 days". 45 CFR 164.410 says **without unreasonable
+  delay and no later than 60 days**. The current wording is both weaker than the
+  rule and slower than what the platform actually does.
+- Sub-processor identification, and a route for notifying changes to it.
+
+**There is no GDPR DPA at all.** For anyone outside the US this is the bigger
+gap — an Article 28(3) processing agreement is mandatory and needs subject
+matter, duration, nature and purpose, categories of data and data subjects, and
+the (a)–(h) obligations, plus international transfer terms. The BAA does not
+substitute for it.
+
+Both should be drafted with counsel. What matters for the design is only this:
+**the instruction must exist in writing before the capability ships**, or the
+capability is us deciding, and deciding is what a controller does.
 
 Under HIPAA the same shape: **Business Associate** to a covered entity, with
 breach notification running to the covered entity rather than to individuals or
