@@ -7,7 +7,17 @@
 -- transcript. The INSERT policy asked for practice membership and the invite
 -- capability, and nothing about the patient agreeing.
 --
--- Test 1 is that exact attack.
+-- Rewritten September 2026. `practice_patient_access` no longer exists: the
+-- one-access-table migration folded the practice's own switch onto
+-- `practice_shares` and left assignment to `practice_patient_assignments`. The
+-- old attack is impossible by construction, and the suite had silently stopped
+-- running — it referenced a dropped table and nobody noticed until the tests
+-- were run as a set.
+--
+-- The rule survives the table, so the attack is restated against what replaced
+-- it: **can a practice write itself a share, or an assignment, for a patient
+-- who never consented, and read the record through it?** That is the same
+-- question the original asked, and the answer must still be no.
 --
 -- Run: psql -d <db> -v ON_ERROR_STOP=1 -f supabase/tests/practice_access_consent.test.sql
 
@@ -56,15 +66,30 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', _staff::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   BEGIN
-    INSERT INTO public.practice_patient_access
-      (practice_id,patient_user_id,primary_clinician_id,is_active)
-    VALUES (_practice,_stranger,_staff,true);
+    -- A share is the patient's own act. Staff writing one for themselves is
+    -- the whole attack.
+    INSERT INTO public.practice_shares (practice_id, user_id, is_active)
+    VALUES (_practice, _stranger, true);
     _ok := true;
   EXCEPTION WHEN insufficient_privilege THEN _ok := false;
   END;
   EXECUTE 'SET LOCAL ROLE postgres';
   PERFORM pg_temp.assert(NOT _ok,
-    'a practice cannot record access to a patient who never shared with it');
+    'a practice cannot write itself a share for a patient who never shared');
+
+  PERFORM set_config('request.jwt.claim.sub', _staff::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  BEGIN
+    -- Nor reach them by assignment, which is the other half of the gate.
+    INSERT INTO public.practice_patient_assignments
+      (practice_id, patient_user_id, clinician_user_id, assigned_by)
+    VALUES (_practice, _stranger, _staff, _staff);
+    _ok := true;
+  EXCEPTION WHEN insufficient_privilege THEN _ok := false;
+  END;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(NOT _ok,
+    'nor assign a clinician to a patient who never shared');
 
   PERFORM set_config('request.jwt.claim.sub', _staff::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
@@ -78,14 +103,14 @@ BEGIN
   -- Closing only the door would leave every row already through it working
   -- forever, so the gate checks consent too.
   -- ==========================================================================
-  INSERT INTO public.practice_patient_access
-    (practice_id,patient_user_id,primary_clinician_id,is_active)
-  VALUES (_practice,_stranger,_owner,true);
+  INSERT INTO public.practice_patient_assignments
+    (practice_id, patient_user_id, clinician_user_id, assigned_by)
+  VALUES (_practice, _stranger, _owner, _owner);
 
   PERFORM set_config('request.jwt.claim.sub', _staff::text, true);
   PERFORM pg_temp.assert(
     public.practice_has_patient_access(_stranger) = false,
-    'an existing access row is not evidence of consent');
+    'an existing assignment is not evidence of consent');
 
   EXECUTE 'SET LOCAL ROLE authenticated';
   SELECT count(*) INTO _count FROM public.encounters WHERE patient_user_id = _stranger;
@@ -100,17 +125,22 @@ BEGIN
   INSERT INTO public.practice_shares (practice_id,user_id,is_active)
   VALUES (_practice,_sharer,true);
 
-  PERFORM set_config('request.jwt.claim.sub', _staff::text, true);
+  -- The owner assigns, not the provider. Under the old table any member with
+  -- can_invite_patients wrote their own access row; assignment is now a
+  -- manager's or a department lead's act, which is the same principle this
+  -- suite is about applied one level up — a clinician does not decide which
+  -- patients they may open.
+  PERFORM set_config('request.jwt.claim.sub', _owner::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   BEGIN
-    INSERT INTO public.practice_patient_access
-      (practice_id,patient_user_id,primary_clinician_id,is_active)
-    VALUES (_practice,_sharer,_owner,true);
+    INSERT INTO public.practice_patient_assignments
+      (practice_id, patient_user_id, clinician_user_id, assigned_by)
+    VALUES (_practice, _sharer, _staff, _owner);
     _ok := true;
   EXCEPTION WHEN insufficient_privilege THEN _ok := false;
   END;
   EXECUTE 'SET LOCAL ROLE postgres';
-  PERFORM pg_temp.assert(_ok, 'a patient who shared can be recorded normally');
+  PERFORM pg_temp.assert(_ok, 'a manager can assign a patient who shared');
 
   PERFORM set_config('request.jwt.claim.sub', _staff::text, true);
   PERFORM pg_temp.assert(
@@ -142,9 +172,9 @@ BEGIN
   PERFORM pg_temp.assert(_count = 0, 'and the notes go with it');
 
   PERFORM pg_temp.assert(
-    (SELECT count(*) FROM public.practice_patient_access
+    (SELECT count(*) FROM public.practice_patient_assignments
       WHERE practice_id = _practice AND patient_user_id = _sharer) = 1,
-    'the access row itself survives — it is a record, not a permission');
+    'the assignment itself survives — it is a record, not a permission');
 
   RAISE NOTICE 'ALL PRACTICE ACCESS CONSENT TESTS PASSED';
 END

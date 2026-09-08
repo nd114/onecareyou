@@ -87,13 +87,13 @@ BEGIN
   IF EXISTS (
     SELECT 1 FROM public.my_pending_clinician_records()
      WHERE masked_email = 'patient@example.com'
-        OR masked_phone LIKE '%801234%'
+        OR masked_phone LIKE '%4155550%'
   ) THEN
     RAISE EXCEPTION 'contact details were returned unmasked';
   END IF;
   IF NOT EXISTS (
     SELECT 1 FROM public.my_pending_clinician_records()
-     WHERE masked_email LIKE 'p%@example.com' AND masked_phone LIKE '%5678'
+     WHERE masked_email LIKE 'p%@example.com' AND masked_phone LIKE '%0142'
   ) THEN
     RAISE EXCEPTION 'masking removed too much to recognise the record';
   END IF;

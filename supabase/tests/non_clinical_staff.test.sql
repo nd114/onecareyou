@@ -48,8 +48,13 @@ BEGIN
 
   INSERT INTO public.practice_shares (practice_id,user_id,is_active)
   VALUES (_practice,_patient,true);
-  INSERT INTO public.practice_patient_access (practice_id,patient_user_id,primary_clinician_id,is_active)
-  VALUES (_practice,_patient,_doctor,true);
+  -- practice_patient_access is gone: the one-access-table migration moved the
+  -- practice's own suspension onto practice_shares and left assignment to
+  -- practice_patient_assignments. This fixture had not been updated, so the
+  -- suite had not run since — which is what the runner exists to surface.
+  INSERT INTO public.practice_patient_assignments
+    (practice_id, patient_user_id, clinician_user_id, assigned_by)
+  VALUES (_practice, _patient, _doctor, _doctor);
 
   INSERT INTO public.encounters
     (patient_user_id,clinician_user_id,practice_id,visit_type,status,signed_at,assessment,scribe_transcript)

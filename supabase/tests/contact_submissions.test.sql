@@ -29,17 +29,36 @@ BEGIN
      'The reset link says it has expired.');
 
   -- ---------------------------------------------------------------
-  -- A signed-out visitor can send a message
+  -- A signed-out visitor can no longer write here directly
+  --
+  -- This suite used to assert the opposite, and was correct when it was
+  -- written. The contact-form relay made notify-contact-submission the only
+  -- writer, so validation and rate limiting happen before anything is stored —
+  -- which is impossible when the client inserts for itself, because the
+  -- function never sees the insert. The revoke is the enforcement; this is the
+  -- assertion that it holds.
   -- ---------------------------------------------------------------
   SET LOCAL ROLE anon;
 
+  BEGIN
+    INSERT INTO public.contact_submissions
+      (id, contact_name, contact_email, inquiry_type, subject, message)
+    VALUES
+      (v_id, 'Tom Reyes', 'tom@example.com', 'general', 'Question about sharing',
+       'Can I share only my medications with one clinic?');
+    RAISE EXCEPTION 'anon inserted a contact submission directly';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'anon cannot write to the table directly: t';
+  END;
+
+  -- The relay writes it instead.
+  RESET ROLE;
   INSERT INTO public.contact_submissions
     (id, contact_name, contact_email, inquiry_type, subject, message)
   VALUES
     (v_id, 'Tom Reyes', 'tom@example.com', 'general', 'Question about sharing',
      'Can I share only my medications with one clinic?');
-
-  RAISE NOTICE 'anon can send a message: t';
+  SET LOCAL ROLE anon;
 
   -- ---------------------------------------------------------------
   -- ...and cannot read any of them back, including its own
@@ -79,32 +98,24 @@ BEGIN
   SET LOCAL ROLE authenticated;
   PERFORM set_config('request.jwt.claim.sub', v_user::text, true);
 
-  INSERT INTO public.contact_submissions
-    (submitted_by, contact_name, contact_email, subject, message)
-  VALUES
-    (v_user, 'Signed in', 'signed@example.com', 'Hello', 'A message.');
-
-  RAISE NOTICE 'a signed-in sender can attribute a message to themselves: t';
-
-  -- v_someone_else is a real user, so the foreign key is satisfied and only the
-  -- INSERT policy can refuse this. A random uuid would be rejected by the key
-  -- first and would leave the policy untested.
+  -- A signed-in sender cannot write here either. The relay is the only writer,
+  -- so "who may attribute a message to whom" is now decided inside the edge
+  -- function against the caller's own token rather than by an INSERT policy.
+  -- This suite asserted the policy; the policy is gone because the door is.
   v_failed := false;
   BEGIN
     INSERT INTO public.contact_submissions
       (submitted_by, contact_name, contact_email, subject, message)
     VALUES
-      (v_someone_else, 'Impostor', 'impostor@example.com', 'Hello', 'A message.');
-  EXCEPTION
-    WHEN insufficient_privilege OR check_violation THEN
-      v_failed := true;
+      (v_user, 'Signed in', 'signed@example.com', 'Hello', 'A message.');
+  EXCEPTION WHEN insufficient_privilege THEN v_failed := true;
   END;
   IF NOT v_failed THEN
-    RAISE EXCEPTION 'a sender could attribute a message to another user';
+    RAISE EXCEPTION 'a signed-in sender wrote to the table directly';
   END IF;
-  RAISE NOTICE 'a sender cannot attribute a message to someone else: t';
+  RAISE NOTICE 'a signed-in sender cannot write to the table directly: t';
 
-  -- The signed-in sender cannot read submissions either.
+  -- Nor read submissions back.
   BEGIN
     SELECT count(*) INTO v_count FROM public.contact_submissions;
     RAISE EXCEPTION 'authenticated could SELECT % contact submissions', v_count;
@@ -163,7 +174,7 @@ BEGIN
   -- ---------------------------------------------------------------
   SET LOCAL ROLE service_role;
   SELECT count(*) INTO v_count FROM public.contact_submissions;
-  IF v_count < 3 THEN
+  IF v_count < 2 THEN
     RAISE EXCEPTION 'service_role saw only % submissions', v_count;
   END IF;
   RAISE NOTICE 'service_role can read submissions to notify on them: t';

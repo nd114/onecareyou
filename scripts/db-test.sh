@@ -45,8 +45,13 @@ DO $$ BEGIN
   CREATE ROLE anon NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE ROLE authenticated NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+-- service_role carries BYPASSRLS on a hosted project: it is the role the edge
+-- functions run as, and they are expected to see past row policies. Without it
+-- a suite asserting "the notify function can read these" fails on RLS and reads
+-- as a missing grant.
 DO $$ BEGIN
-  CREATE ROLE service_role NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+  CREATE ROLE service_role NOLOGIN BYPASSRLS; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+ALTER ROLE service_role BYPASSRLS;
 DO $$ BEGIN
   CREATE ROLE supabase_auth_admin NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
