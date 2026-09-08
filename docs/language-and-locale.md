@@ -16,6 +16,28 @@ interface pending a decision on what it should actually be — the five changes
 that carry its value are a rebuild of the patient surfaces, which is not work to
 start casually.
 
+## Contents
+
+- [Locale defaults — in force](#locale-defaults--in-force)
+  - [1. The rule](#1-the-rule)
+  - [2. What that means in practice](#2-what-that-means-in-practice)
+  - [3. Money, specifically](#3-money-specifically)
+  - [4. What is deliberately not done](#4-what-is-deliberately-not-done)
+- [Translation — plan only](#translation--plan-only)
+  - [1. What "we already have i18n" actually amounts to](#1-what-we-already-have-i18n-actually-amounts-to)
+  - [2. The real size of it](#2-the-real-size-of-it)
+  - [3. Staged rollout, highest value first](#3-staged-rollout-highest-value-first)
+  - [4. What the foundation needs when it is built](#4-what-the-foundation-needs-when-it-is-built)
+  - [5. Two non-negotiables](#5-two-non-negotiables)
+  - [6. Open question](#6-open-question)
+  - [7. Why this is a plan and not code](#7-why-this-is-a-plan-and-not-code)
+- [Reading level — partly shipped, depth deferred](#reading-level--partly-shipped-depth-deferred)
+  - [1. Why this is a separate problem from translation](#1-why-this-is-a-separate-problem-from-translation)
+  - [2. What shipped](#2-what-shipped)
+  - [3. Deferred: the five changes that carry the value](#3-deferred-the-five-changes-that-carry-the-value)
+  - [4. Structural rules worth adopting regardless](#4-structural-rules-worth-adopting-regardless)
+  - [5. Who else this helps](#5-who-else-this-helps)
+
 ---
 
 ## Locale defaults — in force

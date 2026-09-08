@@ -7,6 +7,26 @@ Two documents merged, September 2026. Note for anyone who filed these under
 "language": this is about named UI primitives, not about what tongue the
 product speaks. That lives in `docs/language-and-locale.md`.
 
+## Contents
+
+- [What Panel and Card are](#what-panel-and-card-are)
+  - [The problem it fixes](#the-problem-it-fixes)
+  - [The two primitives](#the-two-primitives)
+  - [Operable rows](#operable-rows)
+  - [`TogglePill`](#togglepill)
+  - [The base Card was softened too](#the-base-card-was-softened-too)
+  - [Converted so far](#converted-so-far)
+  - [Not yet converted, and why](#not-yet-converted-and-why)
+  - [Rule of thumb](#rule-of-thumb)
+- [Rolling it through the rest of the app](#rolling-it-through-the-rest-of-the-app)
+  - [What the survey found](#what-the-survey-found)
+  - [The criterion](#the-criterion)
+  - [Ordering](#ordering)
+  - [What each conversion actually involves](#what-each-conversion-actually-involves)
+  - [Verification, which is the actual constraint](#verification-which-is-the-actual-constraint)
+  - [Known gaps in the primitives](#known-gaps-in-the-primitives)
+  - [The honest argument against doing all of it](#the-honest-argument-against-doing-all-of-it)
+
 ---
 
 ## What Panel and Card are
