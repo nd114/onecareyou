@@ -45,12 +45,22 @@ export function createSupabaseMock(config: MockConfig = {}) {
     return entry ?? [];
   };
 
-  function chain(table: string, kind: RecordedCall["kind"], payload?: unknown) {
+  function chain(
+    table: string,
+    kind: RecordedCall["kind"],
+    payload?: unknown,
+    countRequested = false,
+  ) {
     let single = false;
     let maybe = false;
+    // `.select('id', { count: 'exact', head: true })` asks for a number and no
+    // rows. Code written against it reads `count`, so a mock that only returns
+    // `data` leaves those callers looking at undefined forever.
+    let wantsCount = countRequested;
 
-    const result = (): MockResult => {
+    const result = (): MockResult & { count?: number } => {
       const rows = kind === "select" ? rowsFor(table) : [];
+      if (wantsCount) return { data: null, error: null, count: rows.length };
       if (single || maybe) {
         const row = rows[0] ?? null;
         if (row === null && single) {
@@ -66,13 +76,17 @@ export function createSupabaseMock(config: MockConfig = {}) {
 
     const proxy: Record<string, unknown> = {};
     const passthrough = [
-      "select", "eq", "neq", "in", "is", "not", "or", "gt", "gte", "lt", "lte",
+      "eq", "neq", "in", "is", "not", "or", "gt", "gte", "lt", "lte",
       "like", "ilike", "contains", "order", "limit", "range", "filter", "match",
       "overlaps", "textSearch", "abortSignal", "returns", "csv", "throwOnError",
     ];
     for (const method of passthrough) {
       proxy[method] = () => proxy;
     }
+    proxy.select = (_columns?: unknown, options?: { count?: string; head?: boolean }) => {
+      if (options?.count) wantsCount = true;
+      return proxy;
+    };
     proxy.single = () => {
       single = true;
       return proxy;
@@ -91,7 +105,10 @@ export function createSupabaseMock(config: MockConfig = {}) {
 
   const client = {
     from: (table: string) => ({
-      select: (...args: unknown[]) => chain(table, "select", args),
+      // The count options arrive on the FIRST select, which `from()` owns —
+      // the chain never sees them otherwise.
+      select: (columns?: unknown, options?: { count?: string; head?: boolean }) =>
+        chain(table, "select", columns, !!options?.count),
       insert: (payload: unknown) => chain(table, "insert", payload),
       update: (payload: unknown) => chain(table, "update", payload),
       upsert: (payload: unknown) => chain(table, "upsert", payload),
