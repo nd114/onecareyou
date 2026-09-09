@@ -141,7 +141,15 @@ const COMMON_TIMEZONES = [
 
 const Settings = () => {
   const { user, profile, signOut, refreshProfile } = useAuth();
-  const { hasConsent, consentUpdatedAt, grantConsent, revokeConsent } = useAIConsent();
+  const {
+    hasConsent,
+    consentUpdatedAt,
+    grantConsent,
+    revokeConsent,
+    hasActionsConsent,
+    grantActionsConsent,
+    revokeActionsConsent,
+  } = useAIConsent();
   const { isSupported: notificationsSupported, isGranted: notificationsEnabled, requestPermission } = usePushNotifications();
   const {
     subscription,
@@ -592,6 +600,26 @@ const Settings = () => {
 
                 {hasConsent && (
                   <div className="ml-4 pl-4 border-l-2 border-primary/20 space-y-4">
+                    {/* The second, separate decision: may the assistant
+                        prepare changes to the record? Nothing is ever saved
+                        without an Approve tap either way. */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-base font-medium">Assistant can prepare changes</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Say "my blood pressure was 115 over 70" and the assistant prepares the entry.
+                          Nothing is saved until you approve it.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={hasActionsConsent}
+                        onCheckedChange={(checked) =>
+                          checked ? grantActionsConsent() : revokeActionsConsent()
+                        }
+                      />
+                    </div>
+
+
                     {/* Sub-feature 1: Vitals extraction */}
                     <div className="rounded-lg bg-status-success/5 border border-status-success/20 p-3 space-y-1">
                       <p className="text-sm font-medium flex items-center gap-2">
