@@ -176,3 +176,20 @@ planted, and the assistant can propose changes to a medication list.
 - The live end-to-end script is written down for whoever has backend access,
   with the demo credentials and expected results, so it is a checklist rather
   than an exploration.
+
+## Driving the signed-in app in a browser
+
+`scripts/local-supabase/` replays the migration history into a local Postgres,
+puts a Supabase-compatible HTTP front end over it, and drives the real app in a
+real browser against it. Every request opens a transaction and sets the caller's
+role and JWT claims, so **row policies are enforced by the same Postgres the SQL
+suites test**, through the same client code.
+
+It exists because the first four QA passes on this branch could say the rules
+were right and could say nothing about what they look like from the other side
+of the screen — where a correct refusal reads as nothing happening and a reading
+in the wrong unit is just a number. The pass that used it found six defects in
+one sitting, two of them severe, none of which a policy review would have seen.
+
+Its README carries the setup, what it does not cover, and the standing warning:
+**when a finding depends on the instrument, test the instrument first.**

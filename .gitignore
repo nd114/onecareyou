@@ -28,3 +28,6 @@ dist-ssr
 # were committed under public/ and shipped to every visitor as a public
 # download that nothing in the application referenced.
 public/data/
+
+# Screenshots from the local browser harness (scripts/local-supabase).
+scripts/local-supabase/shots/
