@@ -188,6 +188,51 @@ for t in "$ROOT"/supabase/tests/*.test.sql; do
   fi
 done
 
+# ---------------------------------------------------------------------------
+# Every name the client reaches for actually exists
+# ---------------------------------------------------------------------------
+#
+# A cross-layer check, which is why it lives in the runner rather than in a SQL
+# suite: the suites cannot see src/, and typecheck cannot see the database.
+# A misspelled RPC or a table renamed in a migration but not in a hook fails
+# only at runtime, for one user, on one screen — nothing here would otherwise
+# notice.
+if [[ -z "$FILTER" ]]; then
+  echo "→ checking the client's names against the schema"
+  missing=0
+
+  while read -r fn; do
+    [[ -z "$fn" ]] && continue
+    if ! run_sql -tAc "SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                        WHERE n.nspname='public' AND p.proname='$fn' LIMIT 1" | grep -q 1; then
+      echo "  MISSING FUNCTION  $fn  (called from src/)"
+      missing=$((missing + 1))
+    fi
+  done < <(grep -rhoE "rpc\('[a-z_]+'" "$ROOT/src" 2>/dev/null | sed "s/rpc('//;s/'//" | sort -u)
+
+  while read -r tbl; do
+    [[ -z "$tbl" ]] && continue
+    # `.from()` is both PostgREST and storage, so a name is good if it is a
+    # public relation *or* a bucket. Checking only the first reports every
+    # bucket in the app as missing, which is how a useful check gets switched
+    # off for crying wolf.
+    if ! run_sql -tAc "SELECT 1 WHERE EXISTS (
+                          SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                           WHERE n.nspname='public' AND c.relname='$tbl')
+                        OR EXISTS (SELECT 1 FROM storage.buckets b WHERE b.id='$tbl')" | grep -q 1; then
+      echo "  MISSING RELATION  $tbl  (read from src/, and not a bucket either)"
+      missing=$((missing + 1))
+    fi
+  done < <(grep -rhoE "\.from\('[a-z_]+'\)" "$ROOT/src" 2>/dev/null | sed "s/\.from('//;s/')//" | sort -u)
+
+  if ((missing > 0)); then
+    echo "  $missing name(s) the client uses do not exist"
+    fail=$((fail + missing))
+  else
+    echo "  all client names resolve"
+  fi
+fi
+
 echo
 echo "$pass passed, $fail failed"
 if ((fail > 0)); then
