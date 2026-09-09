@@ -15,7 +15,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { describeSharingModel } from '@/lib/managed-record-labels';
+import { describeInvitationStatus, describeSharingModel } from '@/lib/managed-record-labels';
 import { PanelRow, PanelRows } from '@/components/ui/panel';
 import { Input } from '@/components/ui/input';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
@@ -481,7 +481,7 @@ const ClinicianPatients = () => {
                                 record.invitation_status === 'declined' ? 'destructive' :
                                 'outline'
                               } className="text-xs">
-                                {record.invitation_status.replace('_', ' ')}
+                                {describeInvitationStatus(record.invitation_status)}
                               </Badge>
                             </div>
                             {record.patient_email && (

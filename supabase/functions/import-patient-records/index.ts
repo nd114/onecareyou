@@ -92,6 +92,20 @@ Deno.serve(async (req) => {
       })
     }
 
+    // The sharing model comes from the request body and decides, a hundred
+    // lines down, whether a provider share is created at all. It was never
+    // checked: anything that was not exactly 'clinician_managed' took the
+    // share-creating branch under a model nobody could name.
+    const SHARING_MODELS = ['clinician_managed', 'collaborative', 'view_only']
+    if (data_sharing_model && !SHARING_MODELS.includes(data_sharing_model)) {
+      return new Response(
+        JSON.stringify({
+          error: `Unknown sharing model '${data_sharing_model}'. Expected one of: ${SHARING_MODELS.join(', ')}.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
     // Fetch existing records for dedup
     const { data: existingRecords } = await adminClient
       .from('clinician_patient_records')

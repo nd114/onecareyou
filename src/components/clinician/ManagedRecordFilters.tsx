@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { describeInvitationStatus } from '@/lib/managed-record-labels';
 import { Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +69,9 @@ export function ManagedRecordFilterBar({ records, filters, onFiltersChange }: Pr
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="_all">All Statuses</SelectItem>
-          {statuses.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
+          {statuses.map(s => (
+            <SelectItem key={s} value={s}>{describeInvitationStatus(s)}</SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

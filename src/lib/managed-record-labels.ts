@@ -25,6 +25,7 @@ const INVITATION_LABELS: Record<InvitationStatus, string> = {
   invited: 'Invited',
   accepted: 'Accepted',
   declined: 'Declined',
+
 };
 
 export function describeSharingModel(model?: string | null): string {

@@ -10,6 +10,11 @@ import {
   medicationSourceSyncs,
   resolveVitalType,
 } from "@/types/health";
+import {
+  describeInvitationStatus,
+  describeSharingModel,
+  patientHasAccepted,
+} from "@/lib/managed-record-labels";
 
 const read = (p: string) => readFileSync(resolve(__dirname, "../..", p), "utf8");
 
@@ -155,8 +160,12 @@ describe("naming who manages a medication", () => {
     expect(describeMedicationSource("City General EHR")).toBe("City General EHR");
   });
 
-  it("does not print an unknown internal token at a patient", () => {
-    expect(describeMedicationSource("some_new_pipeline")).toBe("another system");
+  it("tidies an unknown value instead of printing the raw token", () => {
+    // Never "some_new_pipeline" at a patient, and never nothing either: an
+    // unrecognised source is often a practice's own provider name.
+    expect(describeMedicationSource("some_new_pipeline")).toBe("Some new pipeline");
+    expect(describeMedicationSource("kaiser")).toBe("Kaiser");
+    expect(describeMedicationSource("some_new_pipeline")).not.toMatch(/_/);
   });
 
   it("only promises a sync for a source that syncs", () => {
@@ -185,6 +194,64 @@ describe("naming who manages a medication", () => {
       // lookbehind lets that through and catches only the rendered text.
       expect(src).not.toMatch(/\$\{\s*\w+\.source\s*\}/);
       expect(src).not.toMatch(/(?<![=\w.])\{\s*(existing|med|medication)\.source\s*\}/);
+    }
+  });
+});
+
+/**
+ * The clinician's record header showed both of these as tokens, and the invite
+ * button's badge said "Accepted" for any status it did not recognise — over a
+ * column with no CHECK behind it. Fixing the detail page left the list page and
+ * the filter dropdown still rendering the raw word, which is the shape half the
+ * findings on this branch have had: the rule was fixed and the neighbour was
+ * not.
+ */
+describe("the words on a managed record", () => {
+  it("never presents an unrecognised status as consent", () => {
+    expect(patientHasAccepted("accepted")).toBe(true);
+    for (const odd of ["pending", "", "ACCEPTED", "sort-of", null, undefined]) {
+      expect(patientHasAccepted(odd as string | null | undefined)).toBe(false);
+      expect(describeInvitationStatus(odd as string | null | undefined)).toBe("Invitation unknown");
+    }
+  });
+
+  it("labels the four statuses the application writes", () => {
+    expect(describeInvitationStatus("not_invited")).toBe("Not invited");
+    expect(describeInvitationStatus("invited")).toBe("Invited");
+    expect(describeInvitationStatus("accepted")).toBe("Accepted");
+    expect(describeInvitationStatus("declined")).toBe("Declined");
+  });
+
+  it("labels the sharing model in the clinician's own terms", () => {
+    expect(describeSharingModel("clinician_managed")).toBe("You keep this record");
+    expect(describeSharingModel("collaborative")).toMatch(/patient/i);
+    expect(describeSharingModel("nonsense")).toBe("Sharing not set");
+  });
+
+  it("is used everywhere either column reaches a screen", () => {
+    for (const file of [
+      "src/pages/ClinicianManagedRecord.tsx",
+      "src/pages/ClinicianPatients.tsx",
+      "src/components/clinician/ManagedRecordActions.tsx",
+      "src/components/clinician/ManagedRecordFilters.tsx",
+    ]) {
+      const src = read(file);
+      expect(src).toMatch(/describe(InvitationStatus|SharingModel)\(/);
+      expect(src).not.toMatch(/(invitation_status|data_sharing_model)\.replace\(/);
+    }
+  });
+
+  it("keeps the vocabulary the database enforces", () => {
+    const migration = read(
+      "supabase/migrations/20260927100000_a_status_nobody_recognises_is_not_consent.sql",
+    );
+    for (const word of ["not_invited", "invited", "accepted", "declined"]) {
+      expect(migration).toContain(`'${word}'`);
+      expect(describeInvitationStatus(word)).not.toBe("Invitation unknown");
+    }
+    for (const word of ["clinician_managed", "collaborative", "view_only"]) {
+      expect(migration).toContain(`'${word}'`);
+      expect(describeSharingModel(word)).not.toBe("Sharing not set");
     }
   });
 });

@@ -87,7 +87,13 @@ export function describeMedicationSource(source?: string | null): string {
     csv: 'an import',
   };
   if (known[source]) return known[source];
-  return /[A-Z\s]/.test(source) ? source : 'another system';
+  // Anything else is a name we have not seen. The EHR sync writes the
+  // connection's own provider_name, which a practice types in and may well type
+  // in lower case, so erasing it would leave the patient with "another system"
+  // and nobody to ask. Print it, tidied — never the raw snake_case token.
+  if (/[A-Z\s]/.test(source)) return source;
+  const words = source.replace(/[_-]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /** Whether a source is one that syncs, and so will update on its own. */
