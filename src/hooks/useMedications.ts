@@ -144,20 +144,31 @@ export const useMedications = () => {
       if (!user?.id) throw new Error('Not authenticated');
       if (!guardImported(id, 'remove')) throw new Error('IMPORTED_MEDICATION');
 
-      // First delete related schedule entries
+      // Upcoming reminders go; doses that have already come round do not. The
+      // schedule policy enforces that too — this is just the tidy-up, and it is
+      // deliberately not a blanket delete: erasing the doses that were due
+      // would rewrite adherence to look as though nothing was missed.
       await supabase
         .from('schedule_entries')
         .delete()
         .eq('medication_id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .gte('scheduled_time', new Date().toISOString());
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('medications')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('id');
 
       if (error) throw error;
+      // Deleting is for something entered by mistake and never taken. Once a
+      // dose has come round the row carries an adherence record, the policy
+      // refuses, and a DELETE that matches nothing returns no error at all —
+      // so without this the toast says "Deleted" over a medication still there.
+      if (!data || data.length === 0) throw new Error('HAS_HISTORY');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medications', user?.id] });
@@ -165,6 +176,13 @@ export const useMedications = () => {
     },
     onError: (error: Error) => {
       if (error.message === 'IMPORTED_MEDICATION') return; // The guard already said why.
+      if (error.message === 'HAS_HISTORY') {
+        toast.error(
+          'This medication has doses recorded against it, so it stays in your history. ' +
+            'Stop it instead — it moves out of your current list and keeps the record of what you took.',
+        );
+        return;
+      }
       console.error('Error deleting medication:', error);
       toast.error('Failed to delete medication');
     },
