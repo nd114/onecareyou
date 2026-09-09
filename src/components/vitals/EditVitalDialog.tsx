@@ -41,12 +41,13 @@ export function EditVitalDialog({ open, onOpenChange, vital, onSave }: EditVital
 
   useEffect(() => {
     if (vital) {
-      // Convert stored base unit value to user's preferred unit for display
-      const converted = convertVitalValue(vital.type, vital.value);
+      // The row's own unit, not the config's. Pre-filling an mmol/L reading
+      // as though it were mg/dL and saving would write the wrong number back.
+      const converted = convertVitalValue(vital.type, vital.value, vital.unit);
       setValue(converted.value.toString());
       
       if (vital.secondary_value) {
-        const convertedSecondary = convertVitalValue(vital.type, vital.secondary_value);
+        const convertedSecondary = convertVitalValue(vital.type, vital.secondary_value, vital.unit);
         setSecondaryValue(convertedSecondary.value.toString());
       } else {
         setSecondaryValue('');

@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { Database, User, Smartphone } from 'lucide-react';
+import { Database, User, Smartphone, Stethoscope } from 'lucide-react';
 import { VitalSource } from '@/hooks/useVitals';
 import {
   Tooltip,
@@ -20,6 +20,12 @@ export function VitalSourceBadge({ source, className }: VitalSourceBadgeProps) {
       icon: User,
       variant: 'secondary' as const,
       tooltip: 'Recorded by you in OneCare',
+    },
+    clinician: {
+      label: 'Clinician',
+      icon: Stethoscope,
+      variant: 'outline' as const,
+      tooltip: 'Recorded by your clinician during a visit. It is their record of what they measured, so ask them if it needs changing.',
     },
     ehr_import: {
       label: 'EHR',

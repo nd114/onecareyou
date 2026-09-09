@@ -6,19 +6,13 @@ import { TrendingUp, TrendingDown, Minus, LucideIcon } from 'lucide-react';
 import { VitalRecord } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { vitalStatus } from '@/lib/vital-status';
+import type { VitalStats } from '@/lib/vital-stats';
 
 interface VitalStatsCardProps {
   type: VitalType;
   latestVital: VitalRecord | undefined;
-  stats: {
-    average: number;
-    min: number;
-    max: number;
-    count: number;
-    trend: number;
-    inRange: number;
-    outOfRange: number;
-  } | null;
+  /** What summariseVital returns. Restating its shape here let the two drift. */
+  stats: VitalStats | null;
   icon: LucideIcon;
   colorClass: string;
 }
@@ -32,7 +26,7 @@ export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProp
     const displayUnit = getDisplayUnit(type);
 
     const status = vitalStatus(
-      latestVital ? convertVitalValue(type, latestVital.value).value : null,
+      latestVital ? convertVitalValue(type, latestVital.value, latestVital.unit).value : null,
       normalRange,
       hasNormalRange(type),
     );
@@ -56,13 +50,15 @@ export const VitalStatsCard = memo(forwardRef<HTMLDivElement, VitalStatsCardProp
       if (type === 'blood_pressure' && latestVital.secondary_value) {
         return `${Math.round(latestVital.value * 10) / 10}/${Math.round(latestVital.secondary_value * 10) / 10}`;
       }
-      const converted = convertVitalValue(type, latestVital.value);
+      const converted = convertVitalValue(type, latestVital.value, latestVital.unit);
       return Math.round(converted.value * 10) / 10;
     };
 
     const formatAverage = () => {
       if (!stats) return null;
-      const converted = convertVitalValue(type, stats.average);
+      // summariseVital already normalised these to the config's unit, so that
+      // is what they are being converted from.
+      const converted = convertVitalValue(type, stats.average, stats.unit);
       return Math.round(converted.value * 10) / 10;
     };
 

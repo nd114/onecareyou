@@ -219,7 +219,7 @@ const Vitals = () => {
                             const normalRange = getNormalRange(type);
                             
                             const status = vitalStatus(
-                              vital ? convertVitalValue(type, vital.value).value : null,
+                              vital ? convertVitalValue(type, vital.value, vital.unit).value : null,
                               normalRange,
                               hasNormalRange(type),
                             );
@@ -235,7 +235,7 @@ const Vitals = () => {
                               if (type === 'blood_pressure' && vital.secondary_value) {
                                 return `${vital.value}/${vital.secondary_value}`;
                               }
-                              const converted = convertVitalValue(type, vital.value);
+                              const converted = convertVitalValue(type, vital.value, vital.unit);
                               return Math.round(converted.value * 10) / 10;
                             };
                             
@@ -297,7 +297,8 @@ const Vitals = () => {
                 
                 const formatAvg = () => {
                   if (!stats) return null;
-                  const converted = convertVitalValue(card.type, stats.average);
+                  // Already in the config's unit — summariseVital normalised it.
+                  const converted = convertVitalValue(card.type, stats.average, stats.unit);
                   return Math.round(converted.value * 10) / 10;
                 };
                 

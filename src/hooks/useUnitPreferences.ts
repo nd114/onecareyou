@@ -9,7 +9,8 @@ import {
   convertWeight,
   convertTemperature,
   VitalType,
-  VITAL_CONFIG
+  VITAL_CONFIG,
+  resolveVitalType
 } from '@/types/health';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -76,11 +77,25 @@ export function useUnitPreferences() {
     }
   }, [preferences, user]);
 
-  // Convert a vital value to the user's preferred unit (for display)
+  /**
+   * A value in the patient's preferred unit.
+   *
+   * `fromUnit` is required, and that is the point. It used to be optional and
+   * fell back to the config's unit, which meant every caller that forgot it
+   * declared the reading already canonical. Nothing passed it, so a glucose
+   * stored as 5.8 mmol/L — the unit an import or a dictation writes — was
+   * shown to the patient as "5.8 mg/dL", and the normal-range badge judged
+   * 5.8 against a mg/dL band and called it a hypo. Required, the compiler
+   * asks the question at every call site.
+   *
+   * Pass the row's own `unit` for a stored reading, and VITAL_CONFIG's unit
+   * for anything already normalised — the statistics out of summariseVital,
+   * for instance.
+   */
   const convertVitalValue = useCallback((
-    type: VitalType, 
-    value: number, 
-    fromUnit?: string
+    type: VitalType,
+    value: number,
+    fromUnit: string | null | undefined
   ): { value: number; unit: string } => {
     const config = VITAL_CONFIG[type];
     const baseUnit = fromUnit || config?.unit || '';
@@ -105,6 +120,17 @@ export function useUnitPreferences() {
         return { value, unit: config?.unit || '' };
     }
   }, [preferences]);
+
+  /**
+   * The same conversion for a stored row, which knows its own unit and may
+   * carry a legacy type key. The common case, and the one worth making hard
+   * to get wrong.
+   */
+  const convertStoredVital = useCallback((
+    vital: { type: string; value: number; unit?: string | null }
+  ): { value: number; unit: string } =>
+    convertVitalValue(resolveVitalType(vital.type), vital.value, vital.unit),
+  [convertVitalValue]);
 
   // Convert a vital value FROM user's preferred unit TO base unit (for saving)
   const convertToBaseUnit = useCallback((
@@ -185,6 +211,7 @@ export function useUnitPreferences() {
     preferences,
     updatePreference,
     convertVitalValue,
+    convertStoredVital,
     convertToBaseUnit,
     getDisplayUnit,
     getNormalRange,

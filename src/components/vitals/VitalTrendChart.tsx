@@ -28,8 +28,8 @@ export function VitalTrendChart({ type, data, title }: VitalTrendChartProps) {
 
   const chartData = useMemo(() => {
     return data.map(v => {
-      const converted = convertVitalValue(resolvedType, v.value);
-      const secondaryConverted = v.secondary_value ? convertVitalValue(resolvedType, v.secondary_value) : null;
+      const converted = convertVitalValue(resolvedType, v.value, v.unit);
+      const secondaryConverted = v.secondary_value ? convertVitalValue(resolvedType, v.secondary_value, v.unit) : null;
       
       return {
         date: format(new Date(v.recorded_at), 'MMM d'),

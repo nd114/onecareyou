@@ -146,12 +146,12 @@ export default function ClinicianReports() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Ack rate (30d)</p>
-                    <p className="font-display text-2xl font-bold flex items-center gap-2">
+                    <div className="font-display text-2xl font-bold flex items-center gap-2">
                       {data.guidanceAckRate}%
                       <Badge variant={data.guidanceAckRate >= 70 ? "default" : "secondary"} className="text-xs">
                         {data.guidanceAckRate >= 70 ? "Healthy" : "Watch"}
                       </Badge>
-                    </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>

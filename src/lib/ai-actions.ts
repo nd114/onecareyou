@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { VITAL_CONFIG, VitalType, isMedicationEditable } from '@/types/health';
+import { VITAL_CONFIG, VitalType, isMedicationEditable, describeMedicationSource, medicationSourceSyncs } from '@/types/health';
 import { formatDay, formatDayTime } from '@/lib/format-date';
 
 /**
@@ -152,8 +152,9 @@ function refuseIfNotTheirs(
     id: action.id,
     ok: false,
     message:
-      `${med.name} came from ${med.source}, so it is not mine to change. ` +
-      'Ask them to change it and it will update on the next sync.',
+      `${med.name} came from ${describeMedicationSource(med.source)}, so it is not mine to change. ` +
+      'Ask them to change it' +
+      (medicationSourceSyncs(med.source) ? ' and it will update on the next sync.' : '.'),
   };
 }
 
@@ -447,7 +448,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
             // Worth saying out loud. The prescriber still has this on their
             // list, and the patient should know their record now disagrees with
             // it on purpose rather than by accident.
-            : `Recorded that you have stopped ${med.name}. It stays in your record as prescribed by ${med.source}, marked as stopped by you.`,
+            : `Recorded that you have stopped ${med.name}. It stays in your record as prescribed by ${describeMedicationSource(med.source)}, marked as stopped by you.`,
         };
       }
 

@@ -2,12 +2,21 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
-import { VitalType, VITAL_CONFIG } from '@/types/health';
+import { VitalType, VITAL_CONFIG, resolveVitalType } from '@/types/health';
 import { toast } from 'sonner';
 import { enqueueWrite, cacheRead, getCachedRead } from '@/lib/offline';
 import { summariseVital } from "@/lib/vital-stats";
 
-export type VitalSource = 'manual' | 'ehr_import' | 'device';
+/**
+ * Where a reading came from.
+ *
+ * `clinician` is written by EncounterScribePanel and FileDictationDialog when a
+ * clinician records a measurement during a visit. It was missing from this
+ * union for as long as those screens have existed, so every branch downstream
+ * fell through to its default: the badge called the reading the patient's own,
+ * and refusing to edit it blamed an EHR import that never happened.
+ */
+export type VitalSource = 'manual' | 'clinician' | 'ehr_import' | 'device';
 
 export interface VitalRecord {
   id: string;
@@ -25,9 +34,26 @@ export interface VitalRecord {
   family_member_id: string | null;
 }
 
-// Check if a vital can be edited (only manual entries can be modified)
-export function isVitalEditable(vital: VitalRecord): boolean {
-  return vital.source === 'manual';
+// Only the patient's own entries are theirs to change. A reading somebody else
+// recorded is that person's record of what they measured.
+export function isVitalEditable(vital: { source?: string | null }): boolean {
+  return !vital.source || vital.source === 'manual';
+}
+
+/**
+ * Why a reading cannot be changed, in terms of who recorded it.
+ *
+ * The single message this replaces said "imported from EHR" whatever the
+ * source, so a patient told their own doctor's bedside reading came from a
+ * hospital system they had never connected.
+ */
+export function describeVitalSource(source?: string | null): string {
+  switch (source) {
+    case 'clinician': return 'your clinician';
+    case 'ehr_import': return 'your health provider’s system';
+    case 'device': return 'a connected device';
+    default: return 'another source';
+  }
 }
 
 export function useVitals() {
@@ -152,10 +178,9 @@ export function useVitals() {
   };
 
   const deleteVital = async (id: string) => {
-    // Check if vital is editable (not from EHR)
     const vital = vitals.find(v => v.id === id);
     if (vital && !isVitalEditable(vital)) {
-      toast.error('Cannot delete vitals imported from EHR');
+      toast.error(`This reading was recorded by ${describeVitalSource(vital.source)}, so it is not yours to delete.`);
       return;
     }
 
@@ -184,10 +209,9 @@ export function useVitals() {
       recordedAt?: Date;
     }
   ): Promise<boolean> => {
-    // Check if vital is editable (not from EHR)
     const vital = vitals.find(v => v.id === id);
     if (vital && !isVitalEditable(vital)) {
-      toast.error('Cannot edit vitals imported from EHR');
+      toast.error(`This reading was recorded by ${describeVitalSource(vital.source)}, so it is not yours to change.`);
       return false;
     }
 
@@ -218,16 +242,25 @@ export function useVitals() {
     }
   };
 
+  // VITAL_TYPE_ALIASES exists because rows carry legacy and imported keys —
+  // blood_glucose, bp, spo2, pulse. Selecting with a bare === applied the map
+  // at display time only: a blood_glucose reading was listed in the history log
+  // under "Blood Glucose" and was simultaneously missing from the glucose card,
+  // its chart and its statistics, which read "No readings" with the row sitting
+  // in the table.
+  const sameType = (rowType: string, wanted: VitalType) =>
+    resolveVitalType(rowType) === resolveVitalType(wanted);
+
   const getLatestVital = (type: VitalType): VitalRecord | undefined => {
-    return vitals.find(v => v.type === type);
+    return vitals.find(v => sameType(v.type, type));
   };
 
   const getVitalHistory = (type: VitalType, days: number = 30): VitalRecord[] => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    
+
     return vitals
-      .filter(v => v.type === type && new Date(v.recorded_at) >= cutoff)
+      .filter(v => sameType(v.type, type) && new Date(v.recorded_at) >= cutoff)
       .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
   };
 

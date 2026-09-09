@@ -5,7 +5,7 @@ import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { cacheRead, getCachedRead } from '@/lib/offline';
-import { isMedicationEditable } from '@/types/health';
+import { isMedicationEditable, describeMedicationSource, medicationSourceSyncs } from '@/types/health';
 
 export type Medication = Tables<'medications'>;
 export type MedicationInsert = TablesInsert<'medications'>;
@@ -104,8 +104,9 @@ export const useMedications = () => {
     const existing = medicationsQuery.data?.find((m) => m.id === id);
     if (existing && !isMedicationEditable(existing)) {
       toast.error(
-        `This medication came from ${existing.source}, so you cannot ${verb} it here. ` +
-          'Ask them to change it and it will update on the next sync.',
+        `This medication came from ${describeMedicationSource(existing.source)}, so you cannot ` +
+          `${verb} it here. Ask them to change it` +
+          (medicationSourceSyncs(existing.source) ? ' and it will update on the next sync.' : '.'),
       );
       return false;
     }

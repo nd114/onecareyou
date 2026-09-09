@@ -26,8 +26,8 @@ export function ExpandedChartModal({ open, onOpenChange, type, data, title }: Ex
 
   const chartData = useMemo(() => {
     return data.map(v => {
-      const converted = convertVitalValue(type, v.value);
-      const secondaryConverted = v.secondary_value ? convertVitalValue(type, v.secondary_value) : null;
+      const converted = convertVitalValue(type, v.value, v.unit);
+      const secondaryConverted = v.secondary_value ? convertVitalValue(type, v.secondary_value, v.unit) : null;
       
       return {
         date: format(new Date(v.recorded_at), 'MMM d'),
@@ -45,7 +45,7 @@ export function ExpandedChartModal({ open, onOpenChange, type, data, title }: Ex
   const stats = useMemo(() => {
     if (data.length === 0) return null;
     
-    const values = data.map(v => convertVitalValue(type, v.value).value);
+    const values = data.map(v => convertVitalValue(type, v.value, v.unit).value);
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     const min = Math.min(...values);
     const max = Math.max(...values);

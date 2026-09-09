@@ -4,6 +4,7 @@ import { Pencil, Trash2, Filter, ChevronDown, ChevronUp, CalendarIcon, ChevronLe
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { VitalSourceBadge } from '@/components/vitals/VitalSourceBadge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -37,8 +38,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { VitalType, VITAL_CONFIG, hasNormalRange } from '@/types/health';
-import { VitalRecord } from '@/hooks/useVitals';
+import { VitalType, VITAL_CONFIG, hasNormalRange, resolveVitalType } from '@/types/health';
+import { VitalRecord, isVitalEditable } from '@/hooks/useVitals';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { vitalStatus } from '@/lib/vital-status';
 
@@ -121,7 +122,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     // First filter by type
     let filtered = typeFilter === 'all' 
       ? vitals 
-      : vitals.filter(v => v.type === typeFilter);
+      : vitals.filter(v => resolveVitalType(v.type) === resolveVitalType(typeFilter as VitalType));
 
     // Then filter by date range if applicable
     if (dateRange) {
@@ -185,7 +186,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     if (vital.type === 'blood_pressure' && vital.secondary_value) {
       return `${Math.round(vital.value * 10) / 10}/${Math.round(vital.secondary_value * 10) / 10}`;
     }
-    const converted = convertVitalValue(vital.type, vital.value);
+    const converted = convertVitalValue(vital.type, vital.value, vital.unit);
     return Math.round(converted.value * 10) / 10;
   };
 
@@ -199,7 +200,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
   const getStatus = (vital: VitalRecord) => {
     if (!vital || !vital.type) return null;
     return vitalStatus(
-      convertVitalValue(vital.type, vital.value).value,
+      convertVitalValue(vital.type, vital.value, vital.unit).value,
       getNormalRange(vital.type),
       hasNormalRange(vital.type),
     );
@@ -236,7 +237,7 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
     setCustomDateEnd(undefined);
   };
 
-  const totalVitals = typeFilter === 'all' ? vitals.length : vitals.filter(v => v.type === typeFilter).length;
+  const totalVitals = typeFilter === 'all' ? vitals.length : vitals.filter(v => resolveVitalType(v.type) === resolveVitalType(typeFilter as VitalType)).length;
   const filteredVitalsCount = groupedEntries.reduce((acc, g) => acc + g.vitals.length, 0);
 
   if (vitals.length === 0) {
@@ -448,23 +449,36 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                         </div>
                       </div>
 
+                      {/* A reading somebody else recorded gets a badge saying so
+                          and no controls. Offering Edit and then refusing on save
+                          — after a dialog that says the reading will be permanently
+                          removed — is the pattern the medicine cabinet already
+                          avoids. */}
                       <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => onEdit(vital)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setDeleteConfirm(vital.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {isVitalEditable(vital) ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label={`Edit this ${config.label.toLowerCase()} reading`}
+                              onClick={() => onEdit(vital)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              aria-label={`Delete this ${config.label.toLowerCase()} reading`}
+                              onClick={() => setDeleteConfirm(vital.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <VitalSourceBadge source={vital.source} />
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -562,28 +576,36 @@ export function VitalHistoryLog({ vitals, onEdit, onDelete }: VitalHistoryLogPro
                             </div>
                             
                             <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onEdit(vital);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteConfirm(vital.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {isVitalEditable(vital) ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    aria-label={`Edit this ${config.label.toLowerCase()} reading`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEdit(vital);
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    aria-label={`Delete this ${config.label.toLowerCase()} reading`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteConfirm(vital.id);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <VitalSourceBadge source={vital.source} />
+                              )}
                             </div>
                           </div>
                         );

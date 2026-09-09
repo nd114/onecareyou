@@ -65,6 +65,37 @@ export function isMedicationEditable(medication: { source?: string | null }): bo
   return !medication.source || medication.source === 'manual';
 }
 
+/**
+ * Who to name when explaining a medication the patient cannot change.
+ *
+ * `source` holds two different kinds of thing. The EHR sync writes the
+ * connection's provider name — "City General EHR" — which reads correctly in a
+ * sentence. Everything the platform writes itself is an internal token, and
+ * four screens put that token straight into patient-facing copy: "Managed by
+ * ehr_import — ask them to change it."
+ *
+ * The rule is the shape of the value: a lowercase token with no spaces is
+ * ours to translate, and anything with a capital or a space is already a name.
+ */
+export function describeMedicationSource(source?: string | null): string {
+  if (!source || source === 'manual') return 'you';
+  const known: Record<string, string> = {
+    clinician: 'your clinician',
+    clinician_assistant: 'your clinician',
+    ehr_import: 'your health provider’s system',
+    import: 'an import',
+    csv: 'an import',
+  };
+  if (known[source]) return known[source];
+  return /[A-Z\s]/.test(source) ? source : 'another system';
+}
+
+/** Whether a source is one that syncs, and so will update on its own. */
+export function medicationSourceSyncs(source?: string | null): boolean {
+  if (!source || source === 'manual') return false;
+  return !['clinician', 'clinician_assistant', 'import', 'csv'].includes(source);
+}
+
 export interface ScheduleEntry {
   id: string;
   medicationId: string;

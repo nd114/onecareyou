@@ -10,7 +10,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { useMedications } from '@/hooks/useMedications';
 import { didYouMean, search } from '@/lib/search';
 import { MedicationSourceBadge } from '@/components/medications/MedicationSourceBadge';
-import { isMedicationEditable } from '@/types/health';
+import { describeMedicationSource, isMedicationEditable } from '@/types/health';
 import { MEDICATION_TYPE_COLORS, MedicationType } from '@/types/health';
 import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
@@ -325,7 +325,7 @@ const Medications = () => {
                           instead. */}
                       {!isMedicationEditable(medication) ? (
                         <p className="flex-1 self-center text-xs text-muted-foreground">
-                          Managed by {medication.source} — ask them to change it.
+                          Managed by {describeMedicationSource(medication.source)} — ask them to change it.
                         </p>
                       ) : (
                         <>

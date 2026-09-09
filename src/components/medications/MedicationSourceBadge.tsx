@@ -1,6 +1,7 @@
 import { Database, User } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+import { describeMedicationSource, medicationSourceSyncs } from '@/types/health';
 import {
   Tooltip,
   TooltipContent,
@@ -24,19 +25,24 @@ interface Props {
 export function MedicationSourceBadge({ source, className }: Props) {
   if (!source || source === 'manual') return null;
 
+  const who = describeMedicationSource(source);
+  const nextStep = medicationSourceSyncs(source)
+    ? 'ask them to change it and it will update on the next sync'
+    : 'ask them to change it';
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge variant="outline" className={`gap-1 text-xs font-normal ${className ?? ''}`}>
             <Database className="h-3 w-3" />
-            {source}
+            {who}
           </Badge>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p>
-            Imported from {source}. It is their record of what they prescribed, so it is read-only
-            here — ask them to change it and it will update on the next sync.
+            Recorded by {who}. It is their record of what they prescribed, so it is read-only
+            here — {nextStep}.
           </p>
         </TooltipContent>
       </Tooltip>
