@@ -6,6 +6,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { describeSharingModel } from '@/lib/managed-record-labels';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -193,11 +194,11 @@ const ClinicianManagedRecord = () => {
                 </CardDescription>
                 <div className="flex flex-wrap gap-1 mt-2">
                   <Badge variant="outline" className="text-xs">
-                    {record.data_sharing_model.replace(/_/g, ' ')}
+                    {describeSharingModel(record.data_sharing_model)}
                   </Badge>
-                  <Badge variant="secondary" className="text-xs">
-                    {record.invitation_status.replace(/_/g, ' ')}
-                  </Badge>
+                  {/* The invitation state is the invite button's job, one line
+                      down. Printing it here too put "accepted" beside
+                      "Accepted" on every managed record. */}
                   {(record.tags || []).map((tag, i) => (
                     <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
                   ))}

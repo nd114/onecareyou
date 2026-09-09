@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { describeSharingModel } from '@/lib/managed-record-labels';
 import { PanelRow, PanelRows } from '@/components/ui/panel';
 import { Input } from '@/components/ui/input';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
@@ -472,7 +473,7 @@ const ClinicianPatients = () => {
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{record.patient_name}</p>
                               <Badge variant="outline" className="text-xs">
-                                {record.data_sharing_model.replace('_', ' ')}
+                                {describeSharingModel(record.data_sharing_model)}
                               </Badge>
                               <Badge variant={
                                 record.invitation_status === 'accepted' ? 'default' :

@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { describeInvitationStatus, patientHasAccepted } from '@/lib/managed-record-labels';
 import { useClinicianPatientRecords, type ClinicianPatientRecord } from '@/hooks/useClinicianPatientRecords';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,9 +70,15 @@ export function InviteToOneCareButton({ record }: InviteToOneCareProps) {
   };
 
   if (!canInvite) {
+    // Anything other than 'accepted' is not consent, including a value this
+    // build has never heard of. The old else-branch called all of them
+    // "Accepted".
     return (
-      <Badge variant={record.invitation_status === 'invited' ? 'secondary' : 'default'} className="text-xs">
-        {record.invitation_status === 'invited' ? 'Invited' : 'Accepted'}
+      <Badge
+        variant={patientHasAccepted(record.invitation_status) ? 'default' : 'secondary'}
+        className="text-xs"
+      >
+        {describeInvitationStatus(record.invitation_status)}
       </Badge>
     );
   }

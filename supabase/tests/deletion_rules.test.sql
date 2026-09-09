@@ -123,7 +123,9 @@ BEGIN
   END IF;
 
   INSERT INTO public.clinician_patient_records (clinician_user_id,patient_name,invitation_status)
-  VALUES (v_clin,'Unclaimed','pending') RETURNING id INTO v_id;
+  -- 'not_invited', not 'pending': the rule under test is about linked_user_id,
+  -- and 'pending' was never a value the application writes.
+  VALUES (v_clin,'Unclaimed','not_invited') RETURNING id INTO v_id;
   PERFORM set_config('request.jwt.claim.sub', v_clin::text, true);
   SET LOCAL ROLE authenticated;
   DELETE FROM public.clinician_patient_records WHERE id = v_id;
