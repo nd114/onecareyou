@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { VITAL_CONFIG, type VitalType } from "@/types/health";
+import { resolveVitalConfig } from "@/types/health";
 import { describeReadingStatus } from "@/lib/patient-risk";
 import { formatMoney, balanceMinor, type InvoiceRow } from "@/lib/fhir/invoice";
 import type { RecordQuery } from "@/lib/ai-record-query";
@@ -193,7 +193,9 @@ async function fetchRecords(query: RecordQuery, patientUserId: string): Promise<
 
 function RecordRow({ kind, row }: { kind: RecordQuery["kind"]; row: any }) {
   if (kind === "vitals") {
-    const config = VITAL_CONFIG[row.type as VitalType];
+    // resolveVitalConfig, not a bare lookup: a legacy key such as blood_glucose
+    // has no VITAL_CONFIG entry and would print itself as the label.
+    const config = resolveVitalConfig(row.type as string);
     // The same clinical check the rest of the product uses, so the assistant's
     // cards never disagree with the clinician's own screen.
     const status = describeReadingStatus(row.type, row.value, row.secondary_value, row.unit);

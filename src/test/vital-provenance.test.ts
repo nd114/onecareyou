@@ -255,3 +255,47 @@ describe("the words on a managed record", () => {
     }
   });
 });
+
+/**
+ * The patient's Instructions page sorts guidance into exact-match buckets, and
+ * summariseAdherence counts doses the same way. A row holding a word neither
+ * knows belongs to no bucket: the clinician sees the instruction as sent, the
+ * row is in the table, and the patient's page says "All caught up!". Both
+ * columns were plain text with a default and no CHECK.
+ */
+describe("a status a screen cannot bucket", () => {
+  const migration = () =>
+    read("supabase/migrations/20260928100000_an_instruction_that_falls_out_of_every_bucket.sql");
+
+  it("keeps the guidance vocabulary and the constraint in step", () => {
+    const declared = read("src/lib/guidance-status.ts").match(
+      /export type GuidanceStatus =([^;]+);/,
+    );
+    expect(declared).not.toBeNull();
+    const words = [...declared![1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+    expect(words.sort()).toEqual(["acknowledged", "archived", "completed", "pending"]);
+    for (const w of words) expect(migration()).toContain(`'${w}'`);
+  });
+
+  it("keeps the dose vocabulary and the constraint in step", () => {
+    const declared = read("src/types/health.ts").match(/export type ScheduleStatus =([^;]+);/);
+    expect(declared).not.toBeNull();
+    const words = [...declared![1].matchAll(/"([a-z_]+)"/g)].map((m) => m[1]);
+    expect(words.sort()).toEqual(["missed", "pending", "skipped", "taken"]);
+    for (const w of words) expect(migration()).toContain(`'${w}'`);
+  });
+
+  it("buckets guidance on those words and nothing else", () => {
+    const page = read("src/pages/PatientGuidance.tsx");
+    for (const w of ["pending", "acknowledged", "completed"]) {
+      expect(page).toContain(`g.status === '${w}'`);
+    }
+  });
+
+  it("normalises an unrecognised value to the state that loses nothing", () => {
+    // Not 'completed' or 'archived': an instruction the patient has not seen
+    // must stay in front of them, and a dose of unknown outcome is still owed.
+    expect(migration()).toMatch(/SET status = 'pending'\s+WHERE status IS NULL/);
+    expect(migration()).not.toMatch(/SET status = '(completed|archived|taken)'/);
+  });
+});
