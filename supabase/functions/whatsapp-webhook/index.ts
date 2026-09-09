@@ -5,7 +5,10 @@
 //
 // verify_jwt is set to false in supabase/config.toml because WhatsApp BSPs
 // call this endpoint without our auth.
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
