@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { VITAL_CONFIG, VitalType, isMedicationEditable, describeMedicationSource, medicationSourceSyncs } from '@/types/health';
+import { isVitalEditable, describeVitalSource } from '@/hooks/useVitals';
 import { formatDay, formatDayTime } from '@/lib/format-date';
 
 /**
@@ -459,7 +460,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
 
         let q = supabase
           .from('vitals')
-          .select('id, value, recorded_at')
+          .select('id, value, recorded_at, source')
           .eq('user_id', userId)
           .is('family_member_id', null)
           .eq('type', type)
@@ -478,6 +479,19 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
           target = match ?? target;
         }
         if (!target) return { id: action.id, ok: false, message: `No matching ${cfg.label} reading found — nothing deleted` };
+
+        // The RLS policy refuses this anyway (20260929100000), but the point is
+        // never to make the patient watch a refusal it could have avoided —
+        // this is the same class of gap as refuseIfNotTheirs for medications,
+        // just found later, because a reading someone else recorded looks
+        // identical to the assistant until it checks.
+        if (!isVitalEditable(target)) {
+          return {
+            id: action.id,
+            ok: false,
+            message: `That ${cfg.label.toLowerCase()} reading was recorded by ${describeVitalSource(target.source)}, so it is not mine to delete.`,
+          };
+        }
 
         const { error } = await supabase.from('vitals').delete().eq('id', target.id).eq('user_id', userId);
         if (error) throw error;

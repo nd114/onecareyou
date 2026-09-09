@@ -116,10 +116,20 @@ BEGIN
     'a clinician with no relationship at all cannot record one');
 
   -- ==========================================================================
-  -- 4. Recording is all a clinician may do
+  -- 4. Recording is all a clinician may do — and, since the final audit,
+  --    reading is all the patient may do to what the clinician recorded.
   --
-  -- Same asymmetry the Vault got: it is the patient's record. A clinician who
-  -- mis-recorded adds the correction rather than erasing the history.
+  -- This block used to assert the opposite of its second half: that the
+  -- patient could delete a clinician's own reading from their chart, framed
+  -- as "the patient stays in charge of their own record." Tested directly
+  -- against RLS rather than trusted, that framing was live-reachable through
+  -- the assistant's delete_vital action with no guard at all, and it was the
+  -- one place left where the provenance rule the rest of this branch enforces
+  -- for medications and Vault documents did not apply to vitals. A clinical
+  -- reading a doctor took during a visit is their record of what they
+  -- measured; the patient can dispute it, ask for a correction, or tell the
+  -- assistant they believe it is wrong, but they cannot make it disappear
+  -- with no trace. See 20260929100000_the_record_is_not_the_patients_to_rewrite.sql.
   -- ==========================================================================
   PERFORM set_config('request.jwt.claim.sub', _doctor::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
@@ -132,15 +142,31 @@ BEGIN
   SELECT value INTO _num FROM public.vitals WHERE user_id = _patient;
   PERFORM pg_temp.assert(_num = 128, 'a clinician cannot rewrite a reading in the chart');
 
-  -- The patient stays in charge of their own record.
+  -- The patient adds their own reading freely...
   PERFORM set_config('request.jwt.claim.sub', _patient::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   INSERT INTO public.vitals (user_id, type, value, unit) VALUES (_patient, 'weight', 78, 'kg');
+
+  -- ...but cannot rewrite or erase the doctor's own reading, the same rule
+  -- that already holds for a non-manual medication and a clinician-filed
+  -- document.
+  UPDATE public.vitals SET value = 200 WHERE user_id = _patient AND recorded_by_user_id = _doctor;
   DELETE FROM public.vitals WHERE user_id = _patient AND recorded_by_user_id = _doctor;
   EXECUTE 'SET LOCAL ROLE postgres';
+
   SELECT count(*) INTO _count FROM public.vitals WHERE user_id = _patient;
-  PERFORM pg_temp.assert(_count = 1,
-    'the patient can still add their own readings and remove one recorded for them');
+  PERFORM pg_temp.assert(_count = 2,
+    'the patient''s own reading and the doctor''s both survive');
+  SELECT value INTO _num FROM public.vitals WHERE user_id = _patient AND recorded_by_user_id = _doctor;
+  PERFORM pg_temp.assert(_num = 128, 'and the doctor''s reading was not silently rewritten either');
+
+  -- And the patient's own manual entry is still theirs to remove.
+  PERFORM set_config('request.jwt.claim.sub', _patient::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  DELETE FROM public.vitals WHERE user_id = _patient AND type = 'weight';
+  EXECUTE 'SET LOCAL ROLE postgres';
+  SELECT count(*) INTO _count FROM public.vitals WHERE user_id = _patient;
+  PERFORM pg_temp.assert(_count = 1, 'deleting their own manual entry is unaffected');
 
   -- ==========================================================================
   -- 5. A dictation records what it became

@@ -131,3 +131,48 @@ describe("the assistant cannot edit what the patient cannot edit", () => {
     expect(executeBranch(src, "mark_dose_taken")).not.toMatch(/refuseIfNotTheirs/);
   });
 });
+
+/**
+ * The vitals half of the same rule. Found in the final audit: `delete_vital`
+ * never looked up `source` at all, so the assistant would delete a clinician's
+ * own reading on request with no refusal — reachable from the chat, not just
+ * from a raw API call. RLS refuses the write either way as of
+ * 20260929100000_the_record_is_not_the_patients_to_rewrite.sql; this is the
+ * other half, so the patient gets a message instead of a silent no-op.
+ */
+describe("the assistant cannot delete a vital it did not record", () => {
+  const read = async () => {
+    const fs = await import("node:fs/promises");
+    return fs.readFile("src/lib/ai-actions.ts", "utf8");
+  };
+
+  const executeBranch = (src: string, action: string) => {
+    const body = src.slice(src.indexOf("export async function executeAction"));
+    const start = body.indexOf(`case '${action}'`);
+    if (start === -1) throw new Error(`no ${action} branch in executeAction`);
+    const next = body.indexOf("      case '", start + 10);
+    return body.slice(start, next === -1 ? undefined : next);
+  };
+
+  it("selects source before deciding whether to delete", async () => {
+    const src = await read();
+    const branch = executeBranch(src, "delete_vital");
+    expect(branch).toMatch(/\.select\(['"]id, value, recorded_at, source['"]\)/);
+  });
+
+  it("refuses a reading it did not record, by name", async () => {
+    const src = await read();
+    const branch = executeBranch(src, "delete_vital");
+    expect(branch).toMatch(/isVitalEditable\(target\)/);
+    expect(branch).toMatch(/describeVitalSource\(target\.source\)/);
+  });
+
+  it("guards on the same functions the vitals screens use, not a private copy", async () => {
+    // isVitalEditable and describeVitalSource live in useVitals.ts. A second
+    // definition here is how this and the UI come to disagree, which is
+    // exactly how the vitals gap in 5.1 happened for medications' equivalent.
+    const src = await read();
+    expect(src).toContain("import { isVitalEditable, describeVitalSource } from '@/hooks/useVitals';");
+  });
+});
+
