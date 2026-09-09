@@ -3588,6 +3588,8 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          ai_actions_consent: boolean
+          ai_actions_consent_updated_at: string | null
           ai_consent_updated_at: string | null
           ai_processing_consent: boolean | null
           allergies: Json | null
@@ -3630,6 +3632,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_actions_consent?: boolean
+          ai_actions_consent_updated_at?: string | null
           ai_consent_updated_at?: string | null
           ai_processing_consent?: boolean | null
           allergies?: Json | null
@@ -3672,6 +3676,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_actions_consent?: boolean
+          ai_actions_consent_updated_at?: string | null
           ai_consent_updated_at?: string | null
           ai_processing_consent?: boolean | null
           allergies?: Json | null
