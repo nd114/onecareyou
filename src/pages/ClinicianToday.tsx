@@ -73,6 +73,18 @@ const ClinicianToday = () => {
 
   useSessionTimeout();
 
+  // The date the clinician is actually working, spelled out — a hospital day
+  // is oriented by the day, not by a page title.
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      }),
+    [],
+  );
+
   const filtered = useMemo(() => {
     if (filter === "all") return items;
     return items.filter((i) => i.kind === filter);
@@ -163,7 +175,10 @@ const ClinicianToday = () => {
           </div>
 
 
-          {/* Triage list */}
+          {/* Queue on the left, the clinician's own tasks beside it: two
+              different jobs, so they stop stacking into one long scroll. */}
+          <div className="grid gap-8 lg:grid-cols-3 items-start">
+          <div className="lg:col-span-2">
           <Panel>
             <PanelHeader eyebrow="Queue">
               <div className="flex flex-wrap gap-2">
@@ -246,8 +261,11 @@ const ClinicianToday = () => {
             )}
           </Panel>
 
+          </div>
+
           {/* Open tasks panel */}
-          <Panel className="mt-6">
+          <div>
+          <Panel>
             <PanelHeader eyebrow="My tasks">
               <Badge variant="outline">{openTasks.length} open</Badge>
             </PanelHeader>
@@ -294,7 +312,14 @@ const ClinicianToday = () => {
                 ))}
               </PanelRows>
             )}
+            <div className="border-t border-primary/5 p-4">
+              <Button size="sm" className="w-full gap-2" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-3.5 w-3.5" /> New task
+              </Button>
+            </div>
           </Panel>
+          </div>
+          </div>
         </motion.div>
       </main>
 
