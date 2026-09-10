@@ -268,14 +268,95 @@ const HealthVault = () => {
           <VisitSummariesSection />
 
           {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search documents, summaries, and tags..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+          <div className="mb-4 space-y-2">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, tag, note — or a date like 2026 or March"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant={fromDate || toDate ? 'default' : 'outline'}
+                className="shrink-0"
+                onClick={() => setShowDates((v) => !v)}
+              >
+                <CalendarRange className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Dates</span>
+              </Button>
+            </div>
+
+            {/* Searching by name only meant a result from March could not be
+                found by its month. This filters on the date written on the
+                document, not the day it was uploaded. */}
+            {showDates && (
+              <div className="rounded-xl border bg-secondary/30 p-3 space-y-2">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="vault-from" className="text-xs">From</Label>
+                    <Input
+                      id="vault-from"
+                      type="date"
+                      className="h-9"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vault-to" className="text-xs">To</Label>
+                    <Input
+                      id="vault-to"
+                      type="date"
+                      className="h-9"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                    />
+                  </div>
+                  {(fromDate || toDate) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9"
+                      onClick={() => { setFromDate(''); setToDate(''); }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - 30);
+                      setFromDate(d.toISOString().slice(0, 10));
+                      setToDate('');
+                    }}
+                  >
+                    Last 30 days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setFromDate(`${new Date().getFullYear()}-01-01`);
+                      setToDate('');
+                    }}
+                  >
+                    This year
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Filtered on the date written on the document or note.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Archive switch. Kept beside the folders because that is what it
@@ -285,7 +366,7 @@ const HealthVault = () => {
               <p className="text-sm text-muted-foreground">
                 {showArchived
                   ? 'Showing your archive. These are not shared with anyone through whole-Vault access.'
-                  : `${archivedCount} document${archivedCount === 1 ? '' : 's'} in your archive`}
+                  : `${archivedCount} item${archivedCount === 1 ? '' : 's'} in your archive`}
               </p>
               <Button
                 variant="outline"
@@ -297,6 +378,7 @@ const HealthVault = () => {
               </Button>
             </div>
           )}
+
 
           {/* Folders */}
           <div className="mb-4">
@@ -345,12 +427,44 @@ const HealthVault = () => {
                 </Badge>
               ))}
             </div>
+
+            {/* Renaming and removing belong to the folder you are looking at,
+                so they appear once it is selected rather than as icons on every
+                chip. Removing never touches a file: its contents go back to
+                Unfiled. */}
+            {activeFolderRecord && (
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs"
+                  onClick={() => {
+                    setRenameDraft(activeFolderRecord.name);
+                    setRenaming({ id: activeFolderRecord.id, name: activeFolderRecord.name });
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Rename "{activeFolderRecord.name}"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+                  onClick={() => setRemoving({ id: activeFolderRecord.id, name: activeFolderRecord.name })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove folder
+                </Button>
+              </div>
+            )}
+
             {folders.length === 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                Create folders when uploading a document, or use the folder icon on any document to file it.
+                Make a folder with "New folder", then use the folder icon on any document to file it.
               </p>
             )}
           </div>
+
 
           {/* Category Filters */}
           <div className="flex gap-2 mb-6 flex-wrap">
@@ -379,22 +493,22 @@ const HealthVault = () => {
             ))}
           </div>
 
-          {/* Documents List */}
-          {isLoading ? (
+          {/* Documents and notes */}
+          {isLoading || notesLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : filteredDocuments.length === 0 ? (
+          ) : !hasResults ? (
             <div className="text-center py-16">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="font-medium mb-2">
                 {showArchived
                   ? 'Nothing archived'
-                  : documents.length === 0
-                    ? 'No documents yet'
-                    : draftFolders.includes(activeFolder)
+                  : documents.length === 0 && notes.length === 0
+                    ? 'Nothing here yet'
+                    : activeFolderRecord
                       ? `"${activeFolder}" is empty`
-                      : 'No documents match your search'}
+                      : 'Nothing matches your search'}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 {vaultSuggestion ? (
@@ -409,24 +523,29 @@ const HealthVault = () => {
                     </button>
                     ?
                   </>
-                ) : documents.length === 0 ? (
-                  'Upload prescriptions, lab results, discharge summaries, and other health documents to keep them organized and accessible.'
-                ) : draftFolders.includes(activeFolder) ? (
-                  'Choose "All documents", then use the folder icon on any document to file it in here. Upload straight into it with the Upload button.'
+                ) : documents.length === 0 && notes.length === 0 ? (
+                  'Upload prescriptions, lab results and discharge summaries, or write a note of your own.'
+                ) : activeFolderRecord ? (
+                  'Use the folder icon on any document to file it in here, or upload straight into it with the Upload button.'
                 ) : (
-                  'Try adjusting your search terms or category filter.'
+                  'Try a different search, date range or type.'
                 )}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
+              {filteredNotes.map((note) => (
+                <motion.div key={note.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <PersonalNoteCard note={note} />
+                </motion.div>
+              ))}
               {filteredDocuments.map((doc) => (
                 <motion.div
                   key={doc.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <DocumentCard document={doc} isPremium={isPremium} extraFolders={draftFolders} />
+                  <DocumentCard document={doc} isPremium={isPremium} />
                 </motion.div>
               ))}
             </div>
@@ -434,31 +553,30 @@ const HealthVault = () => {
         </motion.div>
       </main>
 
-      {/* A folder here is just a label on documents — there is no folder table.
-          Creating one selects it, so the next thing you file goes into it. */}
+      {/* A folder is its own record now: it survives being empty, and renaming
+          it moves its documents with it. */}
       <Dialog open={showNewFolder} onOpenChange={setShowNewFolder}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New folder</DialogTitle>
             <DialogDescription>
-              Name it, then use the folder icon on any document to file it here. An empty folder
-              disappears again, so file something into it to keep it.
+              Name it and it stays, empty or not. File documents into it with the folder icon on
+              any document, or upload straight into it.
             </DialogDescription>
           </DialogHeader>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               const name = newFolderName.trim();
               if (!name) return;
-              if (folders.includes(name)) {
+              if (folders.some((f) => f.toLowerCase() === name.toLowerCase())) {
                 toast.error('You already have a folder with that name');
                 return;
               }
-              setDraftFolders((prev) => [...prev, name]);
+              await createFolder.mutateAsync(name);
               setActiveFolder(name);
               setShowNewFolder(false);
               setNewFolderName('');
-              toast.success(`"${name}" is ready — file documents into it to keep it`);
             }}
             className="space-y-4"
           >
@@ -477,15 +595,93 @@ const HealthVault = () => {
               <Button type="button" variant="outline" onClick={() => setShowNewFolder(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!newFolderName.trim()}>
+              <Button type="submit" disabled={!newFolderName.trim() || createFolder.isPending}>
                 Create folder
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Rename */}
+      <Dialog open={!!renaming} onOpenChange={(v) => !v && setRenaming(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename folder</DialogTitle>
+            <DialogDescription>
+              Everything filed in "{renaming?.name}" moves with the new name.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const name = renameDraft.trim();
+              if (!name || !renaming) return;
+              if (
+                name.toLowerCase() !== renaming.name.toLowerCase() &&
+                folders.some((f) => f.toLowerCase() === name.toLowerCase())
+              ) {
+                toast.error('You already have a folder with that name');
+                return;
+              }
+              await renameFolder.mutateAsync({ id: renaming.id, name });
+              if (activeFolder === renaming.name) setActiveFolder(name);
+              setRenaming(null);
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="rename-folder">Folder name</Label>
+              <Input
+                id="rename-folder"
+                autoFocus
+                value={renameDraft}
+                onChange={(e) => setRenameDraft(e.target.value)}
+                maxLength={60}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRenaming(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!renameDraft.trim() || renameFolder.isPending}>
+                Save name
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove */}
+      <AlertDialog open={!!removing} onOpenChange={(v) => !v && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove "{removing?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The folder goes; nothing inside it is deleted. Anything filed in it moves back to
+              Unfiled, where you can find it again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!removing) return;
+                await deleteFolder.mutateAsync(removing.id);
+                if (activeFolder === removing.name) setActiveFolder('all');
+                setRemoving(null);
+              }}
+            >
+              Remove folder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <PersonalNoteDialog open={showNewNote} onOpenChange={setShowNewNote} />
     </div>
   );
 };
 
 export default HealthVault;
+

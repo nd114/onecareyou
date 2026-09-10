@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, Stethoscope } from 'lucide-react';
+import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, Stethoscope, Pencil } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,30 +33,28 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { HealthDocument, DOCUMENT_CATEGORIES, useHealthDocuments } from '@/hooks/useHealthDocuments';
+import { useDocumentFolders } from '@/hooks/useDocumentFolders';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { ShareDocumentDialog } from '@/components/documents/ShareDocumentDialog';
 import { DocumentViewerDialog } from '@/components/documents/DocumentViewerDialog';
+import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { useDocumentShares } from '@/hooks/useDocumentShares';
+
 
 
 interface DocumentCardProps {
   document: HealthDocument;
   isPremium?: boolean;
-  /**
-   * Folder names that exist but hold nothing yet. Folders are derived from the
-   * documents in them, so a freshly named one is invisible here — and then the
-   * only way to fill it is missing from this menu.
-   */
-  extraFolders?: string[];
 }
 
-export function DocumentCard({ document: doc, isPremium = false, extraFolders = [] }: DocumentCardProps) {
-  const { archiveDocument, restoreDocument, getDownloadUrl, triggerSummarize, folders: usedFolders, moveToFolder } =
+export function DocumentCard({ document: doc, isPremium = false }: DocumentCardProps) {
+  const { archiveDocument, restoreDocument, getDownloadUrl, triggerSummarize, moveToFolder } =
     useHealthDocuments();
-  const folders = [...usedFolders, ...extraFolders.filter((f) => !usedFolders.includes(f))].sort(
-    (a, b) => a.localeCompare(b),
-  );
+  // Folders are real records now, so an empty one is offered here too — there
+  // is no longer a "folder that exists but cannot be filed into".
+  const { folderNames: folders } = useDocumentFolders();
+
   // The page decides whether archived documents are shown at all; the card
   // only has to offer the right action.
   const isArchived = Boolean(doc.archived_at);
@@ -68,6 +66,8 @@ export function DocumentCard({ document: doc, isPremium = false, extraFolders = 
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+
 
   const shareCount = allShareCounts[doc.id] || 0;
 
@@ -202,6 +202,16 @@ export function DocumentCard({ document: doc, isPremium = false, extraFolders = 
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowViewer(true)} title="View">
                     <Eye className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setShowEdit(true)}
+                    title="Edit details"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -384,6 +394,11 @@ export function DocumentCard({ document: doc, isPremium = false, extraFolders = 
         open={showViewer}
         onOpenChange={setShowViewer}
       />
+
+      {showEdit && (
+        <EditDocumentDialog document={doc} open={showEdit} onOpenChange={setShowEdit} />
+      )}
+
 
     </>
   );

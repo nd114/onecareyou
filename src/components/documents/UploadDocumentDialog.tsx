@@ -34,6 +34,8 @@ import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hoo
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
+import { useDocumentFolders } from '@/hooks/useDocumentFolders';
+
 
 export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?: string | null } = {}) {
   const [open, setOpen] = useState(false);
@@ -48,7 +50,9 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [folder, setFolder] = useState<string>(defaultFolder ?? '__none__');
   const [newFolder, setNewFolder] = useState('');
-  const { uploadDocument, folders } = useHealthDocuments();
+  const { uploadDocument } = useHealthDocuments();
+  const { folderNames: folders, createFolder } = useDocumentFolders();
+
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
 
   const handleAiToggle = (checked: boolean) => {
@@ -71,6 +75,17 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
 
   const handleUpload = async () => {
     if (!file) return;
+    // A folder typed in here becomes a real folder, so it is still there next
+    // time — and so it can be renamed later like any other.
+    let target: string | null = folder === '__none__' ? null : folder;
+    if (folder === '__new__') {
+      const name = newFolder.trim();
+      if (!name) return;
+      if (!folders.some((f) => f.toLowerCase() === name.toLowerCase())) {
+        await createFolder.mutateAsync(name);
+      }
+      target = name;
+    }
     await uploadDocument.mutateAsync({
       file,
       title: title || file.name,
@@ -79,11 +94,12 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
       notes: notes || undefined,
       aiSummarize,
       familyMemberId,
-      folder: folder === '__new__' ? newFolder : folder === '__none__' ? null : folder,
+      folder: target,
     });
     setOpen(false);
     resetForm();
   };
+
 
   const resetForm = () => {
     setFile(null);

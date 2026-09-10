@@ -119,12 +119,14 @@ export default function Guide() {
           </div>
           <h1 className="font-display text-3xl sm:text-4xl font-bold">How OneCare works</h1>
           <p className="text-muted-foreground mt-3">
-            Written for the person using it. If you have a specific question,{' '}
-            <a href="/help" className="underline underline-offset-4">
-              the help centre
-            </a>{' '}
-            may be quicker.
+            Written for the person using it. If something here does not answer your
+            question,{' '}
+            <a href="/contact" className="underline underline-offset-4">
+              get in touch
+            </a>
+            .
           </p>
+
         </motion.div>
 
         <div className="relative mb-8 max-w-md">
