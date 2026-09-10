@@ -19,6 +19,11 @@ import { format } from "date-fns";
 export default function ClinicianAudit() {
   const { can, practiceId, loading: capsLoading } = useClinicianCapabilities();
   const [query, setQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  // Five hundred rows in one scroll is not a review; page it.
+  const PER_PAGE = 50;
+  const [page, setPage] = useState(0);
   // The tenant view filters server-side, so every keystroke was its own RPC
   // fetching up to 500 rows — the list flickered while you typed.
   const search = useDebouncedValue(query, 250);
@@ -163,16 +168,52 @@ export default function ClinicianAudit() {
                     : "Last 500 of your own events"}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-none">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setPage(0);
+                    }}
                     placeholder="Filter action, resource, patient…"
                     className="pl-8 w-full sm:w-72"
                   />
                 </div>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  aria-label="From date"
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-[9.5rem]"
+                />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  aria-label="To date"
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-[9.5rem]"
+                />
+                {(dateFrom || dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDateFrom("");
+                      setDateTo("");
+                      setPage(0);
+                    }}
+                  >
+                    Clear dates
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
                   <Download className="h-4 w-4 mr-1" />
                   CSV
