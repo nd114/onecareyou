@@ -29,6 +29,12 @@ export interface ScribeDraft {
   follow_up_in_days?: number | null;
 }
 
+export type NoteStyle = "soap" | "narrative" | "referral" | "discharge";
+
+/** The five parts of a note the clinician approves one at a time. */
+export const ALL_SECTIONS = ["chief_complaint", "subjective", "objective", "assessment", "plan"] as const;
+export type SectionKey = (typeof ALL_SECTIONS)[number];
+
 interface Props {
   encounter: Encounter;
   onApply: (fields: {
@@ -294,7 +300,22 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
         </p>
       </div>
 
-      {(transcript || hasDraft) && (
+      {live.recording && (
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Live transcript
+          </Label>
+          <Textarea
+            value={liveText}
+            readOnly
+            rows={8}
+            className="text-xs font-mono bg-muted/40"
+            placeholder="Words will appear here a few seconds behind the conversation…"
+          />
+        </div>
+      )}
+
+      {!live.recording && (transcript || hasDraft) && (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Transcript</Label>
@@ -308,16 +329,33 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
           </div>
           <div className="space-y-3">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Suggested note</Label>
-            <div>
-              <Label className="text-xs">Chief complaint</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Untick anything you do not want. Only ticked parts are copied into the note.
+            </p>
+            <div className={accepted.has("chief_complaint") ? "" : "opacity-50"}>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="scribe-chief_complaint"
+                  checked={accepted.has("chief_complaint")}
+                  onCheckedChange={() => toggleSection("chief_complaint")}
+                />
+                <Label htmlFor="scribe-chief_complaint" className="text-xs">Chief complaint</Label>
+              </div>
               <Input
                 value={draft.chief_complaint ?? ""}
                 onChange={(e) => setDraft({ ...draft, chief_complaint: e.target.value })}
               />
             </div>
             {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
-              <div key={k}>
-                <Label className="text-xs capitalize">{k}</Label>
+              <div key={k} className={accepted.has(k) ? "" : "opacity-50"}>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`scribe-${k}`}
+                    checked={accepted.has(k)}
+                    onCheckedChange={() => toggleSection(k)}
+                  />
+                  <Label htmlFor={`scribe-${k}`} className="text-xs capitalize">{k}</Label>
+                </div>
                 <Textarea
                   rows={3}
                   value={draft[k] ?? ""}
@@ -390,8 +428,13 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
                 ) : null}
               </div>
             ) : null}
-            <Button size="sm" className="gap-2 w-full" onClick={applyDraft} disabled={!hasDraft}>
-              <Check className="h-3.5 w-3.5" /> Apply to note
+            <Button
+              size="sm"
+              className="gap-2 w-full"
+              onClick={applyDraft}
+              disabled={!hasDraft || accepted.size === 0}
+            >
+              <Check className="h-3.5 w-3.5" /> Apply {accepted.size} of {ALL_SECTIONS.length} to note
             </Button>
           </div>
         </div>
