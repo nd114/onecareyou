@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   Users,
+  User,
   Bell,
   Settings,
   LifeBuoy,
@@ -50,7 +51,8 @@ import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive } from "@/lib/nav-ia";
+import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
+import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
 
 export function ClinicianHeader() {
@@ -59,7 +61,7 @@ export function ClinicianHeader() {
   const { clinicianProfile } = useClinicianProfile();
   const { isAdmin } = useAdminRole();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
-  const { myInvitations, acceptInvitation, declineInvitation } = usePractice();
+  const { myInvitations, acceptInvitation, declineInvitation, practices, currentPractice } = usePractice();
   const pendingInviteCount = myInvitations?.length || 0;
   const totalBadgeCount = unreadCount + pendingInviteCount;
   const location = useLocation();
@@ -148,8 +150,14 @@ export function ClinicianHeader() {
   const initials = getInitials();
 
   const activePillar = getClinicianPillarForRoute(location.pathname);
+  // A nurse, a receptionist and a biller do not share a menu. Tabs their role
+  // cannot open are removed rather than shown and refused.
+  const { can, loading: capsLoading } = useClinicianCapabilities();
+  const pillars = capsLoading
+    ? CLINICIAN_PILLARS
+    : CLINICIAN_PILLARS.map((p) => ({ ...p, tabs: visibleTabs(p.tabs, can) }));
   // Navigation IA v2 — 4 pillars. Sub-tabs render via SectionTabs inside each pillar page.
-  const navLinks = CLINICIAN_PILLARS.map((p) => ({
+  const navLinks = pillars.map((p) => ({
     to: p.primary,
     label: p.label,
     pillarKey: p.key,
@@ -340,21 +348,17 @@ export function ClinicianHeader() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
+                {/* Workspace switching (personal vs hospital) is deliberately not
+                    here: one account belongs to one hospital. Deferred — see roadmap. */}
                 <DropdownMenuItem asChild>
                   <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" />
                     My profile &amp; settings
                   </Link>
                 </DropdownMenuItem>
-                {/* Linked from the marketing footer and nowhere else, which the
-                    app shell does not render — so help was unreachable from
-                    inside the product. */}
-                <DropdownMenuItem asChild>
-                  <Link to="/help" className="flex items-center gap-2 cursor-pointer">
-                    <LifeBuoy className="h-4 w-4" />
-                    Help &amp; support
-                  </Link>
-                </DropdownMenuItem>
+                {/* Help Centre is unfinished, so it stays out of navigation for
+                    now; the Guide below is what actually answers questions. */}
+
                 <DropdownMenuItem asChild>
                   <Link to="/guide" className="flex items-center gap-2 cursor-pointer">
                     <BookOpen className="h-4 w-4" />
@@ -393,7 +397,7 @@ export function ClinicianHeader() {
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-border bg-background">
           <nav className="container py-4 space-y-1">
-            {CLINICIAN_PILLARS.map((pillar) => {
+            {pillars.map((pillar) => {
               const isExpanded =
                 expandedPillar === pillar.key ||
                 (expandedPillar === null && activePillar === pillar.key);
@@ -468,13 +472,14 @@ export function ClinicianHeader() {
               My profile &amp; settings
             </Link>
             <Link
-              to="/help"
+              to="/guide"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
             >
-              <LifeBuoy className="h-4 w-4" />
-              Help &amp; support
+              <BookOpen className="h-4 w-4" />
+              Guide
             </Link>
+
 
             {/* Mobile Theme Toggle */}
             <div className="border-t border-border my-3" />

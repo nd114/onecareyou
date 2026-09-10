@@ -1,20 +1,43 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files, FolderPlus } from 'lucide-react';
+import {
+  FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files, FolderPlus,
+  NotebookPen, Pencil, Trash2, CalendarRange,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { DocumentCard } from '@/components/documents/DocumentCard';
+import { PersonalNoteCard } from '@/components/documents/PersonalNoteCard';
+import { PersonalNoteDialog } from '@/components/documents/PersonalNoteDialog';
 import type { HealthDocument } from '@/hooks/useHealthDocuments';
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
+import { useDocumentFolders } from '@/hooks/useDocumentFolders';
+import { usePersonalNotes, type PersonalNote } from '@/hooks/usePersonalNotes';
+import { noteHtmlToText } from '@/lib/sanitize-html';
 import { didYouMean, search as searchList } from '@/lib/search';
+import { formatDateOnly } from '@/lib/date-only';
+
+/**
+ * A date, written the ways people actually type it.
+ *
+ * Search was name-only, so "2025" or "March" found nothing even when the date
+ * was on screen. Folding the document's own date into the searchable text is
+ * the smallest way to make typing a year or a month work.
+ */
+const dateSearchText = (value: string | null | undefined) => {
+  if (!value) return null;
+  const long = formatDateOnly(value, { year: 'numeric', month: 'long', day: 'numeric' });
+  const short = formatDateOnly(value, { year: 'numeric', month: 'short', day: 'numeric' });
+  return [value, long, short].filter(Boolean).join(' ');
+};
 
 /** Most important first: a hit in the title outranks one in a summary. */
 const vaultSearchFields = (d: HealthDocument) => [
@@ -24,11 +47,29 @@ const vaultSearchFields = (d: HealthDocument) => [
   ...(d.ai_tags ?? []),
   d.notes,
   d.ai_summary,
+  dateSearchText(d.document_date),
+];
+
+const noteSearchFields = (n: PersonalNote) => [
+  n.title,
+  ...(n.tags ?? []),
+  noteHtmlToText(n.body_html),
+  dateSearchText(n.note_date),
 ];
 import { VisitSummariesSection } from '@/components/documents/VisitSummariesSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FREE_DOCUMENT_LIMIT } from '@/lib/pricing-constants';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -40,23 +81,25 @@ import {
 
 const HealthVault = () => {
   const { profile } = useAuth();
-  const { documents, folders: usedFolders, isLoading } = useHealthDocuments();
-  // A folder is only a label on documents, so an empty one does not exist yet.
-  // Names created here are remembered for this visit so they can be selected,
-  // filed into and seen — instead of vanishing the moment they are made.
-  const [draftFolders, setDraftFolders] = useState<string[]>([]);
-  const folders = useMemo(
-    () =>
-      [...usedFolders, ...draftFolders.filter((f) => !usedFolders.includes(f))].sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [usedFolders, draftFolders],
-  );
+  const { documents, isLoading } = useHealthDocuments();
+  // Folders are records of their own now, so an empty one survives a reload and
+  // can be renamed or removed.
+  const { folders: folderRecords, folderNames, createFolder, renameFolder, deleteFolder } =
+    useDocumentFolders();
+  const { notes, isLoading: notesLoading } = usePersonalNotes();
+  const folders = folderNames;
   const { checkSubscription, isPremium } = useSubscription();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory | 'all'>('all');
   const [activeFolder, setActiveFolder] = useState<string>('all');
   const [checkedSub, setCheckedSub] = useState(false);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [showDates, setShowDates] = useState(false);
+  const [showNewNote, setShowNewNote] = useState(false);
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     checkSubscription().then(() => setCheckedSub(true));
@@ -71,7 +114,18 @@ const HealthVault = () => {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const isArchived = (d: HealthDocument) => Boolean(d.archived_at);
-  const archivedCount = useMemo(() => documents.filter(isArchived).length, [documents]);
+  const archivedCount = useMemo(
+    () => documents.filter(isArchived).length + notes.filter((n) => n.archived_at).length,
+    [documents, notes],
+  );
+
+  const withinDates = (value: string | null) => {
+    if (!fromDate && !toDate) return true;
+    if (!value) return false;
+    if (fromDate && value < fromDate) return false;
+    if (toDate && value > toDate) return false;
+    return true;
+  };
 
   const filteredDocuments = useMemo(() => {
     let filtered = documents.filter((d) => (showArchived ? isArchived(d) : !isArchived(d)));
@@ -83,6 +137,7 @@ const HealthVault = () => {
     if (activeCategory !== 'all') {
       filtered = filtered.filter((d) => d.category === activeCategory || d.ai_category === activeCategory);
     }
+    filtered = filtered.filter((d) => withinDates(d.document_date));
     if (search.trim()) {
       // Ranked, accent- and typo-tolerant, and the title outranks a passing
       // mention in a summary — a substring filter treated all five fields as
@@ -90,7 +145,21 @@ const HealthVault = () => {
       filtered = searchList(filtered, search, vaultSearchFields);
     }
     return filtered;
-  }, [documents, activeCategory, activeFolder, search]);
+    // showArchived belongs here: leaving it out was why switching to the
+    // archive changed nothing until a folder was clicked.
+  }, [documents, activeCategory, activeFolder, search, showArchived, fromDate, toDate]);
+
+  /** Notes live beside the documents and answer to the same filters. */
+  const filteredNotes = useMemo(() => {
+    let filtered = notes.filter((n) => (showArchived ? !!n.archived_at : !n.archived_at));
+    if (activeFolder === '__unfiled__') filtered = filtered.filter((n) => !n.folder);
+    else if (activeFolder !== 'all') filtered = filtered.filter((n) => n.folder === activeFolder);
+    // Notes are not one of the document types, so any type filter excludes them.
+    if (activeCategory !== 'all') return [];
+    filtered = filtered.filter((n) => withinDates(n.note_date));
+    if (search.trim()) filtered = searchList(filtered, search, noteSearchFields);
+    return filtered;
+  }, [notes, activeCategory, activeFolder, search, showArchived, fromDate, toDate]);
 
   // Only computed when the search found nothing, which is the only moment the
   // question helps — offering a correction beside results teaches people to
@@ -115,13 +184,19 @@ const HealthVault = () => {
   }, [documents, activeFolder]);
 
   const folderCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: documents.length, __unfiled__: 0 };
-    documents.forEach((d) => {
-      if (d.folder) counts[d.folder] = (counts[d.folder] || 0) + 1;
+    const counts: Record<string, number> = { all: documents.length + notes.length, __unfiled__: 0 };
+    const tally = (folder: string | null) => {
+      if (folder) counts[folder] = (counts[folder] || 0) + 1;
       else counts.__unfiled__ += 1;
-    });
+    };
+    documents.forEach((d) => tally(d.folder));
+    notes.forEach((n) => tally(n.folder));
     return counts;
-  }, [documents]);
+  }, [documents, notes]);
+
+  const activeFolderRecord = folderRecords.find((f) => f.name === activeFolder) ?? null;
+  const hasResults = filteredDocuments.length > 0 || filteredNotes.length > 0;
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,15 +215,22 @@ const HealthVault = () => {
                 Health Vault
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Your visit summaries and health documents, in one place
+                Your visit summaries, health documents and your own notes, in one place
               </p>
             </div>
-            {!isOverFreeLimit && (
-              <UploadDocumentDialog
-                defaultFolder={activeFolder === 'all' || activeFolder === '__unfiled__' ? null : activeFolder}
-              />
-            )}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setShowNewNote(true)}>
+                <NotebookPen className="h-4 w-4 mr-2" />
+                New note
+              </Button>
+              {!isOverFreeLimit && (
+                <UploadDocumentDialog
+                  defaultFolder={activeFolder === 'all' || activeFolder === '__unfiled__' ? null : activeFolder}
+                />
+              )}
+            </div>
           </div>
+
 
           {/* Premium Upsell Banner for free users at limit */}
           {isOverFreeLimit && (
@@ -186,14 +268,95 @@ const HealthVault = () => {
           <VisitSummariesSection />
 
           {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search documents, summaries, and tags..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+          <div className="mb-4 space-y-2">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, tag, note — or a date like 2026 or March"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant={fromDate || toDate ? 'default' : 'outline'}
+                className="shrink-0"
+                onClick={() => setShowDates((v) => !v)}
+              >
+                <CalendarRange className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Dates</span>
+              </Button>
+            </div>
+
+            {/* Searching by name only meant a result from March could not be
+                found by its month. This filters on the date written on the
+                document, not the day it was uploaded. */}
+            {showDates && (
+              <div className="rounded-xl border bg-secondary/30 p-3 space-y-2">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="vault-from" className="text-xs">From</Label>
+                    <Input
+                      id="vault-from"
+                      type="date"
+                      className="h-9"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vault-to" className="text-xs">To</Label>
+                    <Input
+                      id="vault-to"
+                      type="date"
+                      className="h-9"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                    />
+                  </div>
+                  {(fromDate || toDate) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9"
+                      onClick={() => { setFromDate(''); setToDate(''); }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - 30);
+                      setFromDate(d.toISOString().slice(0, 10));
+                      setToDate('');
+                    }}
+                  >
+                    Last 30 days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setFromDate(`${new Date().getFullYear()}-01-01`);
+                      setToDate('');
+                    }}
+                  >
+                    This year
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Filtered on the date written on the document or note.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Archive switch. Kept beside the folders because that is what it
@@ -203,7 +366,7 @@ const HealthVault = () => {
               <p className="text-sm text-muted-foreground">
                 {showArchived
                   ? 'Showing your archive. These are not shared with anyone through whole-Vault access.'
-                  : `${archivedCount} document${archivedCount === 1 ? '' : 's'} in your archive`}
+                  : `${archivedCount} item${archivedCount === 1 ? '' : 's'} in your archive`}
               </p>
               <Button
                 variant="outline"
@@ -215,6 +378,7 @@ const HealthVault = () => {
               </Button>
             </div>
           )}
+
 
           {/* Folders */}
           <div className="mb-4">
@@ -263,12 +427,44 @@ const HealthVault = () => {
                 </Badge>
               ))}
             </div>
+
+            {/* Renaming and removing belong to the folder you are looking at,
+                so they appear once it is selected rather than as icons on every
+                chip. Removing never touches a file: its contents go back to
+                Unfiled. */}
+            {activeFolderRecord && (
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs"
+                  onClick={() => {
+                    setRenameDraft(activeFolderRecord.name);
+                    setRenaming({ id: activeFolderRecord.id, name: activeFolderRecord.name });
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Rename "{activeFolderRecord.name}"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+                  onClick={() => setRemoving({ id: activeFolderRecord.id, name: activeFolderRecord.name })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove folder
+                </Button>
+              </div>
+            )}
+
             {folders.length === 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                Create folders when uploading a document, or use the folder icon on any document to file it.
+                Make a folder with "New folder", then use the folder icon on any document to file it.
               </p>
             )}
           </div>
+
 
           {/* Category Filters */}
           <div className="flex gap-2 mb-6 flex-wrap">
@@ -297,22 +493,22 @@ const HealthVault = () => {
             ))}
           </div>
 
-          {/* Documents List */}
-          {isLoading ? (
+          {/* Documents and notes */}
+          {isLoading || notesLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : filteredDocuments.length === 0 ? (
+          ) : !hasResults ? (
             <div className="text-center py-16">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="font-medium mb-2">
                 {showArchived
                   ? 'Nothing archived'
-                  : documents.length === 0
-                    ? 'No documents yet'
-                    : draftFolders.includes(activeFolder)
+                  : documents.length === 0 && notes.length === 0
+                    ? 'Nothing here yet'
+                    : activeFolderRecord
                       ? `"${activeFolder}" is empty`
-                      : 'No documents match your search'}
+                      : 'Nothing matches your search'}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 {vaultSuggestion ? (
@@ -327,24 +523,29 @@ const HealthVault = () => {
                     </button>
                     ?
                   </>
-                ) : documents.length === 0 ? (
-                  'Upload prescriptions, lab results, discharge summaries, and other health documents to keep them organized and accessible.'
-                ) : draftFolders.includes(activeFolder) ? (
-                  'Choose "All documents", then use the folder icon on any document to file it in here. Upload straight into it with the Upload button.'
+                ) : documents.length === 0 && notes.length === 0 ? (
+                  'Upload prescriptions, lab results and discharge summaries, or write a note of your own.'
+                ) : activeFolderRecord ? (
+                  'Use the folder icon on any document to file it in here, or upload straight into it with the Upload button.'
                 ) : (
-                  'Try adjusting your search terms or category filter.'
+                  'Try a different search, date range or type.'
                 )}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
+              {filteredNotes.map((note) => (
+                <motion.div key={note.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <PersonalNoteCard note={note} />
+                </motion.div>
+              ))}
               {filteredDocuments.map((doc) => (
                 <motion.div
                   key={doc.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <DocumentCard document={doc} isPremium={isPremium} extraFolders={draftFolders} />
+                  <DocumentCard document={doc} isPremium={isPremium} />
                 </motion.div>
               ))}
             </div>
@@ -352,31 +553,30 @@ const HealthVault = () => {
         </motion.div>
       </main>
 
-      {/* A folder here is just a label on documents — there is no folder table.
-          Creating one selects it, so the next thing you file goes into it. */}
+      {/* A folder is its own record now: it survives being empty, and renaming
+          it moves its documents with it. */}
       <Dialog open={showNewFolder} onOpenChange={setShowNewFolder}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New folder</DialogTitle>
             <DialogDescription>
-              Name it, then use the folder icon on any document to file it here. An empty folder
-              disappears again, so file something into it to keep it.
+              Name it and it stays, empty or not. File documents into it with the folder icon on
+              any document, or upload straight into it.
             </DialogDescription>
           </DialogHeader>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               const name = newFolderName.trim();
               if (!name) return;
-              if (folders.includes(name)) {
+              if (folders.some((f) => f.toLowerCase() === name.toLowerCase())) {
                 toast.error('You already have a folder with that name');
                 return;
               }
-              setDraftFolders((prev) => [...prev, name]);
+              await createFolder.mutateAsync(name);
               setActiveFolder(name);
               setShowNewFolder(false);
               setNewFolderName('');
-              toast.success(`"${name}" is ready — file documents into it to keep it`);
             }}
             className="space-y-4"
           >
@@ -395,15 +595,93 @@ const HealthVault = () => {
               <Button type="button" variant="outline" onClick={() => setShowNewFolder(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!newFolderName.trim()}>
+              <Button type="submit" disabled={!newFolderName.trim() || createFolder.isPending}>
                 Create folder
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Rename */}
+      <Dialog open={!!renaming} onOpenChange={(v) => !v && setRenaming(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename folder</DialogTitle>
+            <DialogDescription>
+              Everything filed in "{renaming?.name}" moves with the new name.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const name = renameDraft.trim();
+              if (!name || !renaming) return;
+              if (
+                name.toLowerCase() !== renaming.name.toLowerCase() &&
+                folders.some((f) => f.toLowerCase() === name.toLowerCase())
+              ) {
+                toast.error('You already have a folder with that name');
+                return;
+              }
+              await renameFolder.mutateAsync({ id: renaming.id, name });
+              if (activeFolder === renaming.name) setActiveFolder(name);
+              setRenaming(null);
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="rename-folder">Folder name</Label>
+              <Input
+                id="rename-folder"
+                autoFocus
+                value={renameDraft}
+                onChange={(e) => setRenameDraft(e.target.value)}
+                maxLength={60}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRenaming(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!renameDraft.trim() || renameFolder.isPending}>
+                Save name
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove */}
+      <AlertDialog open={!!removing} onOpenChange={(v) => !v && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove "{removing?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The folder goes; nothing inside it is deleted. Anything filed in it moves back to
+              Unfiled, where you can find it again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!removing) return;
+                await deleteFolder.mutateAsync(removing.id);
+                if (activeFolder === removing.name) setActiveFolder('all');
+                setRemoving(null);
+              }}
+            >
+              Remove folder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <PersonalNoteDialog open={showNewNote} onOpenChange={setShowNewNote} />
     </div>
   );
 };
 
 export default HealthVault;
+

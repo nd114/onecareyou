@@ -364,16 +364,9 @@ export function Header() {
                           Settings
                         </Link>
                       </DropdownMenuItem>
-                      {/* The Help Centre was linked from the marketing footer
-                          and nowhere else. The app shell has no footer, so once
-                          you were signed in — which is when you need help — it
-                          was unreachable. */}
-                      <DropdownMenuItem asChild>
-                        <Link to="/help" className="flex items-center gap-2">
-                          <LifeBuoy className="h-4 w-4" />
-                          Help &amp; support
-                        </Link>
-                      </DropdownMenuItem>
+                      {/* The Help Centre is still thin, so it is not offered in
+                          navigation yet — the Guide is the honest answer. */}
+
                 <DropdownMenuItem asChild>
                         <Link to="/guide" className="flex items-center gap-2">
                           <BookOpen className="h-4 w-4" />
@@ -406,6 +399,17 @@ export function Header() {
                       </Link>
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                    <Sun className="h-4 w-4 mr-2" /> Light appearance
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    <Moon className="h-4 w-4 mr-2" /> Dark appearance
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                    <Monitor className="h-4 w-4 mr-2" /> System appearance
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
@@ -539,12 +543,13 @@ export function Header() {
                   Settings
                 </Link>
                 <Link
-                  to="/help"
+                  to="/guide"
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Help &amp; support
+                  Guide
                 </Link>
+
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);

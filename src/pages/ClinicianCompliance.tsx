@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Shield, Download, Loader2, FileCheck2, FileText, ArrowRight } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
+import { CapabilityDenied } from "@/components/clinician/CapabilityDenied";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -87,7 +88,8 @@ export default function ClinicianCompliance() {
   // Held back for a separate click: a second automatic download would be blocked.
   const [auditCsvReady, setAuditCsvReady] = useState<string | null>(null);
 
-  const { data: auditEntries = [] } = useAuditLog({ limit: 5000 });
+  const { data: auditPage } = useAuditLog({ limit: 5000 });
+  const auditEntries = auditPage?.entries ?? [];
 
   if (capsLoading) {
     return (
@@ -97,9 +99,7 @@ export default function ClinicianCompliance() {
     );
   }
 
-  if (!can("view_audit")) {
-    return <Navigate to="/clinician/today" replace />;
-  }
+  if (!can("view_audit")) return <CapabilityDenied what="Compliance" />;
 
   const filteredAudit = auditEntries.filter((e: any) => {
     const t = new Date(e.created_at).getTime();
@@ -334,7 +334,11 @@ ${auditRows}
               </li>
             </ul>
             <div className="mt-4">
-              <Badge variant="secondary">Owner/Admin only</Badge>
+              <Badge variant="secondary">Available to owners, admins and compliance roles</Badge>
+              <p className="mt-2 text-xs text-muted-foreground">
+                The log covers your own access to patient records. Hospital-wide access is
+                reviewed under Practice, where it stays inside the hospital it belongs to.
+              </p>
             </div>
           </CardContent>
         </Card>

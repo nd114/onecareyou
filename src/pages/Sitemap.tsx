@@ -58,7 +58,7 @@ const sitemapData: SitemapSection[] = [
     title: "Support",
     icon: <HelpCircle className="h-5 w-5" />,
     links: [
-      { title: "Help Center", path: "/help", description: "Answers to common questions" },
+      { title: "Contact", path: "/contact", description: "Ask us anything" },
       { title: "Guide", path: "/guide", description: "How OneCare works, step by step" },
     ],
   },

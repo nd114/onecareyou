@@ -11,6 +11,17 @@ export interface NavTab {
   label: string;
   /** Additional route prefixes that should highlight this tab. */
   match?: string[];
+  /**
+   * Practice capability needed to reach this tab. Omitted means everyone in a
+   * practice sees it. A billing clerk shown a Guidance tab that returns nothing
+   * reads the product as broken rather than as respecting their role.
+   */
+  capability?: string;
+}
+
+/** The tabs this member may actually open. `can` comes from useClinicianCapabilities. */
+export function visibleTabs(tabs: NavTab[], can: (c: any) => boolean): NavTab[] {
+  return tabs.filter((tab) => !tab.capability || can(tab.capability));
 }
 
 export interface PatientPillar {
@@ -100,7 +111,10 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
       // The diary across every patient. Appointments were reachable only from
       // inside one patient at a time, so a working day had no single view.
       { to: "/clinician/schedule", label: "Schedule" },
-      { to: "/clinician/alerts", label: "Alert rules" },
+      // The scribe was buried inside one patient's Encounters tab. A clinician
+      // between two patients needs it in one tap, before they know which chart.
+      { to: "/clinician/scribe", label: "Visit notes", capability: "edit_clinical" },
+      { to: "/clinician/alerts", label: "Alert rules", capability: "view_phi" },
     ],
 
   },
@@ -110,7 +124,7 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     primary: "/clinician/patients",
     tabs: [
       { to: "/clinician/patients", label: "All Patients", match: ["/clinician/patient"] },
-      { to: "/clinician/patients/import", label: "Import" },
+      { to: "/clinician/patients/import", label: "Import", capability: "invite_patients" },
     ],
   },
   {
@@ -118,14 +132,14 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     label: "Communicate",
     primary: "/clinician/messages",
     tabs: [
-      { to: "/clinician/messages", label: "Messages" },
-      { to: "/clinician/guidance", label: "Guidance" },
+      { to: "/clinician/messages", label: "Messages", capability: "message_patients" },
+      { to: "/clinician/guidance", label: "Guidance", capability: "send_guidance" },
       // Dictation belongs to the visit, not beside Messages. EncounterScribePanel
       // already records inside an encounter and produces a SOAP draft tied to a
       // patient; the standalone page was a second, weaker copy — capped at 60
       // seconds, with no patient attached. The route still resolves so existing
       // recordings are not stranded, but it is no longer a destination of its own.
-      { to: "/clinician/templates", label: "Templates" },
+      { to: "/clinician/templates", label: "Templates", capability: "edit_clinical" },
     ],
   },
   {
@@ -135,13 +149,13 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
     tabs: [
       { to: "/clinician/practice", label: "Overview" },
       // Billing had the same problem the schedule did: one patient at a time.
-      { to: "/clinician/invoices", label: "Invoices" },
-      { to: "/clinician/reports", label: "Reports" },
+      { to: "/clinician/invoices", label: "Invoices", capability: "manage_billing" },
+      { to: "/clinician/reports", label: "Reports", capability: "view_audit" },
       // Audit and the BAA are things you reach *because* of compliance, not
       // three peers in a row. Both keep their routes — deep links and the
       // BAA's existing back-to-compliance breadcrumb still work — they are
       // just no longer competing for space in the tab bar.
-      { to: "/clinician/compliance", label: "Compliance", match: ["/clinician/audit", "/clinician/baa"] },
+      { to: "/clinician/compliance", label: "Compliance", capability: "view_audit", match: ["/clinician/audit", "/clinician/baa"] },
       // "My profile" is deliberately NOT a Practice tab: it edits the person,
       // not the organisation. It lives in the account dropdown under their own
       // name, which is where anyone looks for their own details.

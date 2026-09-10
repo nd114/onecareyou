@@ -2,10 +2,16 @@ import { useEffect, useState } from "react";
 import { Check, Pencil, Pin, PinOff, Trash2, Loader2, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor, NoteBody } from "@/components/notes/RichTextEditor";
 import { useInternalNotes, type NoteVisibility } from "@/hooks/useInternalNotes";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+
+/** Is there anything but markup in here? An empty editor still reports "<br>". */
+const hasWords = (html: string) => html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length > 0;
+
+/** Notes written before the editor existed are plain text; keep their line breaks. */
+const looksLikeHtml = (body: string) => /<\/?(p|h2|h3|ul|ol|li|br|strong|em|u)\b/i.test(body);
 
 interface Props {
   patientUserId: string;
@@ -53,12 +59,12 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
   }, []);
 
   const onAdd = () => {
-    if (!body.trim()) return;
+    if (!hasWords(body)) return;
     create.mutate(body.trim(), { onSuccess: () => setBody("") });
   };
 
   const onSaveEdit = (id: string) => {
-    if (!draft.trim()) return;
+    if (!hasWords(draft)) return;
     update.mutate({ id, body: draft.trim() }, { onSuccess: () => setEditingId(null) });
   };
 
@@ -70,14 +76,13 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Textarea
+          <RichTextEditor
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
             placeholder={copy.placeholder}
-            rows={3}
           />
           <div className="flex justify-end">
-            <Button onClick={onAdd} disabled={!body.trim() || create.isPending}>
+            <Button onClick={onAdd} disabled={!hasWords(body) || create.isPending}>
               {create.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add note
             </Button>
@@ -95,13 +100,13 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
               <li key={n.id} className="rounded-md border bg-muted/30 p-3">
                 {editingId === n.id ? (
                   <div className="space-y-2">
-                    <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} />
+                    <RichTextEditor value={draft} onChange={setDraft} />
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>
                         <X className="h-3.5 w-3.5 mr-1" />
                         Cancel
                       </Button>
-                      <Button size="sm" onClick={() => onSaveEdit(n.id)} disabled={!draft.trim()}>
+                      <Button size="sm" onClick={() => onSaveEdit(n.id)} disabled={!hasWords(draft)}>
                         <Check className="h-3.5 w-3.5 mr-1" />
                         Save
                       </Button>
@@ -109,7 +114,11 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
                   </div>
                 ) : (
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm whitespace-pre-wrap flex-1">{n.body}</p>
+                    {looksLikeHtml(n.body) ? (
+                      <NoteBody html={n.body} className="flex-1" />
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap flex-1">{n.body}</p>
+                    )}
                     <div className="flex items-center gap-1">
                       {/* Amending an entry, which neither surface had — correcting
                           a typo used to mean deleting the note and its date. Only

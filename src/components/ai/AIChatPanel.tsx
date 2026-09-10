@@ -5,14 +5,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import {
-  Send, Loader2, Mic, MicOff, SquarePen, ArrowRight, Bot, User, AlertTriangle, Paperclip, BookOpen,
+  Send, Loader2, SquarePen, ArrowRight, Bot, User, AlertTriangle, Paperclip, BookOpen,
 } from 'lucide-react';
+import { DictateButton } from './DictateButton';
+
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useHealthDocuments } from '@/hooks/useHealthDocuments';
 import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
+import { AIActionsConsentDialog } from '@/components/consent/AIActionsConsentDialog';
 import { MarkdownMessage } from './MarkdownMessage';
 import { ProposedActionsCard } from './ProposedActionsCard';
 import { MessageRecordCards } from './MessageRecordCards';
@@ -29,106 +32,9 @@ import { resolvePatient } from '@/lib/ai-record-query';
  * rather than behind a side sheet you have to open while already there.
  */
 
-/**
- * Dictation button.
- *
- * Speech is appended to the message draft — never sent automatically — so the
- * user can proof-read (and edit) before pressing send. Recognition keeps
- * running through natural pauses until the user presses stop.
- */
-function VoiceButton({
-  onFinalText,
-  onInterimText,
-  disabled,
-}: {
-  onFinalText: (text: string) => void;
-  onInterimText: (text: string) => void;
-  disabled?: boolean;
-}) {
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
-  const wantsListeningRef = useRef(false);
+/** Dictation now lives in one place, shared with the clinician assistant. */
+const VoiceButton = DictateButton;
 
-  const supported = typeof window !== 'undefined' &&
-    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
-
-  useEffect(() => () => {
-    wantsListeningRef.current = false;
-    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
-  }, []);
-
-  const stop = () => {
-    wantsListeningRef.current = false;
-    try { recognitionRef.current?.stop(); } catch { /* already stopped */ }
-    setListening(false);
-    onInterimText('');
-  };
-
-  const toggle = () => {
-    if (listening) {
-      stop();
-      return;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event: any) => {
-      let finalText = '';
-      let interimText = '';
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const chunk = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalText += chunk;
-        else interimText += chunk;
-      }
-      if (finalText.trim()) onFinalText(finalText.trim());
-      onInterimText(interimText.trim());
-    };
-
-    recognition.onerror = (event: any) => {
-      // 'no-speech' / 'aborted' fire on quiet gaps — keep listening.
-      if (event?.error === 'no-speech' || event?.error === 'aborted') return;
-      stop();
-    };
-
-    recognition.onend = () => {
-      if (wantsListeningRef.current) {
-        try {
-          recognition.start();
-          return;
-        } catch {
-          /* fall through to stopping */
-        }
-      }
-      setListening(false);
-      onInterimText('');
-    };
-
-    recognitionRef.current = recognition;
-    wantsListeningRef.current = true;
-    recognition.start();
-    setListening(true);
-  };
-
-  if (!supported) return null;
-
-  return (
-    <Button
-      type="button"
-      size="icon"
-      variant={listening ? 'destructive' : 'outline'}
-      onClick={toggle}
-      disabled={disabled}
-      className="h-9 w-9 flex-shrink-0"
-      title={listening ? 'Stop dictating' : 'Dictate your message'}
-    >
-      {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-    </Button>
-  );
-}
 
 function MessageBubble({
   message,
@@ -244,16 +150,21 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
     [records],
   );
 
+  const { hasConsent, grantConsent, hasActionsConsent, grantActionsConsent } = useAIConsent();
+
   const { messages, isLoading, sendMessage, clearChat, loadConversation, approveActions, discardActions } = useAIChat({
     persistSurface: 'assistant',
     resolvePatientId,
+    // The assistant may only prepare changes once the person has said so
+    // separately from the general AI consent. Without this the model was told
+    // it could act, could not, and said it had anyway.
+    allowActions: hasActionsConsent,
   });
-
-  const { hasConsent, grantConsent } = useAIConsent();
   const { uploadDocument } = useHealthDocuments();
   const [input, setInput] = useState('');
   const [interim, setInterim] = useState('');
   const [showConsent, setShowConsent] = useState(false);
+  const [showActionsConsent, setShowActionsConsent] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -430,6 +341,15 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
             every answer. Repeating it under each reply was the other extreme:
             a disclaimer people stop reading is not a disclaimer. */}
         <p className="px-1 text-[11px] leading-snug text-muted-foreground">{AI_DISCLOSURE}</p>
+        {hasConsent && !hasActionsConsent && (
+          <button
+            type="button"
+            onClick={() => setShowActionsConsent(true)}
+            className="px-1 text-left text-[11px] leading-snug text-primary underline underline-offset-2"
+          >
+            It can only answer and point you around. Let it prepare entries for you to approve.
+          </button>
+        )}
         {interim && (
           <p className="text-xs text-muted-foreground italic px-1">{interim}…</p>
         )}
@@ -484,6 +404,14 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
           </Button>
         </div>
       </div>
+
+      <AIActionsConsentDialog
+        open={showActionsConsent}
+        onOpenChange={setShowActionsConsent}
+        onConsent={async () => {
+          await grantActionsConsent();
+        }}
+      />
 
       <AIConsentDialog
         open={showConsent}

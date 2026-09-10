@@ -1,6 +1,7 @@
 // Phase 3.2 — Practice audit & access viewer (owner/admin only).
 import { useMemo, useState } from "react";
 import { Shield, Download, Loader2, Search } from "lucide-react";
+import { CapabilityDenied } from "@/components/clinician/CapabilityDenied";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,6 +20,11 @@ import { format } from "date-fns";
 export default function ClinicianAudit() {
   const { can, practiceId, loading: capsLoading } = useClinicianCapabilities();
   const [query, setQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  // Five hundred rows in one scroll is not a review; page it.
+  const PER_PAGE = 50;
+  const [page, setPage] = useState(0);
   // The tenant view filters server-side, so every keystroke was its own RPC
   // fetching up to 500 rows — the list flickered while you typed.
   const search = useDebouncedValue(query, 250);
@@ -37,10 +43,11 @@ export default function ClinicianAudit() {
   );
   // Only the view actually on screen is fetched. Both ran before, so a tenant
   // admin pulled 500 personal rows on every visit and threw them away.
-  const { data: ownEntries = [], isLoading: loadingOwn } = useAuditLog({
+  const { data: ownPage, isLoading: loadingOwn } = useAuditLog({
     limit: 500,
     enabled: !isTenantView,
   });
+  const ownEntries = ownPage?.entries ?? [];
   const isLoading = isTenantView ? loadingTenant : loadingOwn;
 
   const entries = useMemo(
@@ -73,18 +80,32 @@ export default function ClinicianAudit() {
     [isTenantView, tenantEntries, ownEntries],
   );
 
-  // The tenant query filters server-side; the personal one filters here.
+  // The tenant query filters text server-side; the date window is applied here
+  // for both, so "what happened on the 3rd" is answerable without scrolling.
   const filtered = useMemo(() => {
-    if (isTenantView || !query.trim()) return entries;
-    const q = query.toLowerCase();
-    return entries.filter(
-      (e) =>
+    const q = query.trim().toLowerCase();
+    const fromMs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+    const toMs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+
+    return entries.filter((e) => {
+      if (fromMs !== null || toMs !== null) {
+        const at = new Date(e.created_at).getTime();
+        if (fromMs !== null && at < fromMs) return false;
+        if (toMs !== null && at > toMs) return false;
+      }
+      if (isTenantView || !q) return true;
+      return (
         e.action.toLowerCase().includes(q) ||
         e.resource_type.toLowerCase().includes(q) ||
         (e.resource_id ?? "").toLowerCase().includes(q) ||
-        (e.patient_user_id ?? "").toLowerCase().includes(q),
-    );
-  }, [isTenantView, entries, query]);
+        (e.patient_user_id ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [isTenantView, entries, query, dateFrom, dateTo]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const pageSafe = Math.min(page, pageCount - 1);
+  const pageRows = filtered.slice(pageSafe * PER_PAGE, pageSafe * PER_PAGE + PER_PAGE);
 
   const exportCsv = () => {
     const csv = toCsv(filtered, [
@@ -118,9 +139,7 @@ export default function ClinicianAudit() {
     );
   }
 
-  if (!can("view_audit")) {
-    return <Navigate to="/clinician/today" replace />;
-  }
+  if (!can("view_audit")) return <CapabilityDenied what="The audit log" />;
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -149,16 +168,52 @@ export default function ClinicianAudit() {
                     : "Last 500 of your own events"}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-none">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setPage(0);
+                    }}
                     placeholder="Filter action, resource, patient…"
                     className="pl-8 w-full sm:w-72"
                   />
                 </div>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  aria-label="From date"
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-[9.5rem]"
+                />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  aria-label="To date"
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-[9.5rem]"
+                />
+                {(dateFrom || dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDateFrom("");
+                      setDateTo("");
+                      setPage(0);
+                    }}
+                  >
+                    Clear dates
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={exportCsv} disabled={filtered.length === 0}>
                   <Download className="h-4 w-4 mr-1" />
                   CSV
@@ -176,7 +231,7 @@ export default function ClinicianAudit() {
               {/* Mobile: one card per event — a six-column table is unreadable
                   on a phone, and clinicians review audit trails on the ward. */}
               <ul className="space-y-2 sm:hidden">
-                {filtered.map((e) => (
+                {pageRows.map((e) => (
                   <li key={e.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="outline" className="text-xs">{e.action}</Badge>
@@ -206,7 +261,7 @@ export default function ClinicianAudit() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((e) => (
+                    {pageRows.map((e) => (
                       <tr key={e.id} className="border-b border-border/50 hover:bg-muted/40">
                         <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
                           {formatDayTime(e.created_at)}
@@ -228,6 +283,32 @@ export default function ClinicianAudit() {
                   </tbody>
                 </table>
               </div>
+
+              {pageCount > 1 && (
+                <div className="flex items-center justify-between border-t pt-3 mt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Page {pageSafe + 1} of {pageCount} · {filtered.length} events
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pageSafe === 0}
+                      onClick={() => setPage(Math.max(0, pageSafe - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pageSafe >= pageCount - 1}
+                      onClick={() => setPage(Math.min(pageCount - 1, pageSafe + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
               </>
             )}
           </CardContent>

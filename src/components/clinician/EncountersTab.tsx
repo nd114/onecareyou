@@ -1,5 +1,5 @@
 // Phase 1.4 — Encounter editor dialog + tab content.
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, FileSignature, Loader2, ChevronRight, FileText, Mic, Eye, EyeOff, FileAudio } from "lucide-react";
@@ -32,6 +32,12 @@ import { toast } from "sonner";
 interface Props {
   patientUserId: string;
   patientName: string;
+  /**
+   * Arrived here to record a visit. The recorder opens itself against the
+   * newest unsigned note, or starts a fresh one, so the clinician can press
+   * record instead of hunting for it.
+   */
+  autoStartScribe?: boolean;
 }
 
 const VISIT_TYPES = [
@@ -43,7 +49,7 @@ const VISIT_TYPES = [
   { value: "procedure", label: "Procedure" },
 ];
 
-export function EncountersTab({ patientUserId, patientName }: Props) {
+export function EncountersTab({ patientUserId, patientName, autoStartScribe }: Props) {
   const { encounters, isLoading, create, update, sign, setShared } = useEncounters(patientUserId);
   const { log } = usePatientActionLog(patientUserId);
   const { templates } = useClinicalTemplates("visit");
@@ -82,6 +88,23 @@ export function EncountersTab({ patientUserId, patientName }: Props) {
     plan: "",
     follow_up_in_days: "",
   });
+
+  // Opening the recorder on arrival. Runs once: `startedRef` keeps a re-render
+  // from creating a second empty encounter.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (!autoStartScribe || isLoading || startedRef.current) return;
+    startedRef.current = true;
+    const openDraft = encounters.find((e) => !e.signed_at);
+    if (openDraft) {
+      setScribeFor(openDraft);
+      return;
+    }
+    create
+      .mutateAsync({ patient_user_id: patientUserId, visit_type: "follow_up" } as any)
+      .then((created: any) => setScribeFor(created))
+      .catch(() => toast.error("Could not start a visit note"));
+  }, [autoStartScribe, isLoading, encounters, create, patientUserId]);
 
   const resetDraft = () =>
     setDraft({

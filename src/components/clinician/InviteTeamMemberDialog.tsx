@@ -16,7 +16,13 @@ interface InviteTeamMemberDialogProps {
 const ROLE_DESCRIPTIONS: Record<PracticeRole, string> = {
   owner: 'Full control over practice settings, billing, and members',
   admin: 'Can manage members, settings, and all patients',
+  sub_admin: 'Can manage an assigned department and route its patients',
   provider: 'Can view and manage assigned patients',
+  clinician: 'Can provide clinical care to assigned patients',
+  nurse: 'Can support clinical care for assigned patients',
+  front_desk: 'Can manage scheduling and non-clinical patient coordination',
+  billing: 'Can manage billing without clinical record access',
+  read_only: 'Can view permitted records without making changes',
   staff: 'Limited access to patient data and scheduling',
 };
 
@@ -45,9 +51,9 @@ export function InviteTeamMemberDialog({ open, onOpenChange, practiceId }: Invit
   };
 
   // Roles that can be assigned (owners can assign admins)
-  const availableRoles: PracticeRole[] = isOwner 
-    ? ['admin', 'provider', 'staff']
-    : ['provider', 'staff'];
+  const availableRoles: PracticeRole[] = isOwner
+    ? ['admin', 'sub_admin', 'provider', 'clinician', 'nurse', 'front_desk', 'billing', 'read_only', 'staff']
+    : ['provider', 'clinician', 'nurse', 'front_desk', 'billing', 'read_only', 'staff'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

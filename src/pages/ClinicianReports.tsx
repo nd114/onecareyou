@@ -1,6 +1,7 @@
 // Phase 3.4 — Practice owner reports / KPI dashboard.
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Users, Bell, MessageSquare, FileText, TrendingUp, Loader2 } from "lucide-react";
+import { CapabilityDenied } from "@/components/clinician/CapabilityDenied";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -102,7 +103,7 @@ export default function ClinicianReports() {
       </div>
     );
   }
-  if (!can("manage_team") && !can("view_audit")) return <Navigate to="/clinician/today" replace />;
+  if (!can("manage_team") && !can("view_audit")) return <CapabilityDenied what="Practice reports" />;
 
   return (
     <div className="min-h-screen bg-muted/30">

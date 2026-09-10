@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CalendarClock, Loader2, MapPin, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { BookAppointmentDialog } from '@/components/clinician/BookAppointmentDialog';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { Badge } from '@/components/ui/badge';
 import { Panel, PanelEmpty, PanelHeader, PanelRow, PanelRows } from '@/components/ui/panel';
@@ -100,16 +101,27 @@ const ClinicianSchedule = () => {
 
       <main className="container px-4 sm:px-6 py-6 sm:py-8 max-w-4xl">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="mb-6 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <CalendarClock className="h-5 w-5 text-primary" />
+          <div className="mb-6 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <CalendarClock className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">Schedule</h1>
+                <p className="text-muted-foreground text-sm">
+                  Every appointment across your patients, in one diary.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">Schedule</h1>
-              <p className="text-muted-foreground text-sm">
-                Every appointment across your patients, in one diary.
-              </p>
-            </div>
+            <BookAppointmentDialog
+              patients={patients
+                .filter((p) => !!p.user_id)
+                .map((p) => ({
+                  userId: p.user_id as string,
+                  name: p.patient_name || p.patient_email || 'Patient',
+                  practiceId: (p as any).practice_id ?? null,
+                }))}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -160,7 +172,7 @@ const ClinicianSchedule = () => {
                   {range === 'upcoming' ? 'Nothing booked yet' : 'Nothing behind you yet'}
                 </p>
                 <p className="mx-auto mt-2 max-w-sm">
-                  Appointments are booked from a patient's own page, on their Appointments tab.
+                  Use "Book appointment" above, or book from a patient's own Appointments tab.
                 </p>
               </PanelEmpty>
             </Panel>

@@ -20,6 +20,8 @@ import {
   Loader2,
   CheckCircle2,
   CalendarClock,
+  MailOpen,
+  Mic,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Panel, PanelEmpty, PanelGlyph, PanelHeader, PanelRow, PanelRows } from "@/components/ui/panel";
@@ -29,6 +31,7 @@ import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useTriageInbox, type TriageItem } from "@/hooks/useTriageInbox";
+import { useTriageBulkActions } from "@/hooks/useTriageBulkActions";
 import { usePracticeTasks } from "@/hooks/usePracticeTasks";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { CreateTaskDialog } from "@/components/clinician/CreateTaskDialog";
@@ -62,6 +65,7 @@ const ClinicianToday = () => {
   const navigate = useNavigate();
   const { isClinician, isLoading: loadingProfile } = useClinicianProfile();
   const { items, isLoading, counts } = useTriageInbox();
+  const { markAllMessagesRead, acknowledgeAlerts } = useTriageBulkActions();
   const { patients } = useClinicianPatients();
 
   const { tasks, update, isLoading: loadingTasks } = usePracticeTasks({ scope: "mine" });
@@ -69,6 +73,18 @@ const ClinicianToday = () => {
   const [createOpen, setCreateOpen] = useState(false);
 
   useSessionTimeout();
+
+  // The date the clinician is actually working, spelled out — a hospital day
+  // is oriented by the day, not by a page title.
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      }),
+    [],
+  );
 
   const filtered = useMemo(() => {
     if (filter === "all") return items;
@@ -99,69 +115,103 @@ const ClinicianToday = () => {
       <ClinicianHeader />
       <SectionTabs section="today" variant="clinician" />
 
-      <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-4xl">
+      <main className="container py-4 sm:py-8 px-4 sm:px-6 max-w-6xl">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="mb-6 flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Inbox className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="font-display text-2xl sm:text-3xl font-bold mb-1">
-                  Today
-                </h1>
-                <p className="text-muted-foreground text-sm">
-                  Everything that needs you, in one queue.
-                </p>
-              </div>
+          {/* Header: the day itself does the orienting, so the date sits under
+              the title instead of an icon tile competing with it. */}
+          <header className="mb-8 flex flex-col gap-4 border-b border-primary/10 pb-6 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-1">
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-primary">
+                Today
+              </h1>
+              <p className="text-sm font-medium text-muted-foreground">
+                {todayLabel} · Everything that needs you, in one queue.
+              </p>
             </div>
-            <Button onClick={() => setCreateOpen(true)} className="gap-2">
+            <Button onClick={() => setCreateOpen(true)} className="gap-2 self-start md:self-auto">
               <Plus className="h-4 w-4" /> New task
             </Button>
-          </div>
+          </header>
 
           {/* Onboarding + plan limits (merged in from the old Overview tab) */}
           <ClinicianOnboardingCard />
           <PatientLimitBanner patientCount={patients.length} />
 
-
-
-          {/* Summary chips. They count the queue — what needs you now — which
-              is not the same number as "all my open tasks" in the panel
-              further down, and the two disagreeing with no explanation read
-              as a bug. Say what is being counted. */}
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Needs you now
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {/* Counters count the queue — what needs you now — which is not the
+              same number as "all my open tasks" beside it. Each one is also
+              the filter for that kind. */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {[
-              { key: "all", label: "Total", value: counts.total, icon: Inbox },
-              { key: "alert", label: "Alerts", value: counts.alerts, icon: AlertTriangle },
-              { key: "message", label: "Messages", value: counts.messages, icon: MessageSquare },
-              { key: "task", label: "Tasks", value: counts.tasks, icon: CheckSquare },
+              { key: "all", label: "Needs you now", value: counts.total, icon: Inbox, urgent: false },
+              { key: "alert", label: "Alerts", value: counts.alerts, icon: AlertTriangle, urgent: true },
+              { key: "message", label: "Messages", value: counts.messages, icon: MessageSquare, urgent: false },
+              { key: "task", label: "Tasks", value: counts.tasks, icon: CheckSquare, urgent: false },
             ].map((c) => {
               const Icon = c.icon;
               const active = filter === c.key;
+              const flag = c.urgent && c.value > 0;
               return (
                 <button
                   key={c.key}
                   onClick={() => setFilter(c.key as any)}
-                  className={`text-left rounded-lg border p-3 transition-colors ${
-                    active ? "border-primary bg-primary/5" : "bg-card hover:bg-muted/40"
+                  aria-pressed={active}
+                  className={`rounded-2xl border bg-card p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                    active ? "border-primary ring-1 ring-primary/30" : "border-primary/10"
                   }`}
                 >
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     <Icon className="h-3.5 w-3.5" /> {c.label}
-                  </div>
-                  <div className="mt-1 text-2xl font-semibold">{c.value}</div>
+                  </p>
+                  <span className="mt-1 flex items-baseline gap-2">
+                    <span
+                      className={`font-display text-3xl ${flag ? "text-destructive" : "text-primary"}`}
+                    >
+                      {String(c.value).padStart(2, "0")}
+                    </span>
+                    {flag && <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />}
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Triage list */}
+
+          {/* Queue on the left, the clinician's own tasks beside it: two
+              different jobs, so they stop stacking into one long scroll. */}
+          <div className="grid gap-8 lg:grid-cols-3 items-start">
+          <div className="lg:col-span-2">
           <Panel>
-            <PanelHeader eyebrow="Queue" />
+            <PanelHeader eyebrow="Queue">
+              <div className="flex flex-wrap gap-2">
+                {counts.messages > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => markAllMessagesRead.mutate()}
+                    disabled={markAllMessagesRead.isPending}
+                  >
+                    <MailOpen className="h-3.5 w-3.5" /> Mark all read
+                  </Button>
+                )}
+                {/* Between two patients, this is the fastest route into a
+                    visit note — no chart hunting first. */}
+                <Button size="sm" className="gap-1.5" onClick={() => navigate("/clinician/scribe")}>
+                  <Mic className="h-3.5 w-3.5" /> Record a visit note
+                </Button>
+                {counts.alerts > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => acknowledgeAlerts.mutate(undefined)}
+                    disabled={acknowledgeAlerts.isPending}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Acknowledge all alerts
+                  </Button>
+                )}
+              </div>
+            </PanelHeader>
             {isLoading ? (
               <PanelEmpty>
                 <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
@@ -217,8 +267,11 @@ const ClinicianToday = () => {
             )}
           </Panel>
 
+          </div>
+
           {/* Open tasks panel */}
-          <Panel className="mt-6">
+          <div>
+          <Panel>
             <PanelHeader eyebrow="My tasks">
               <Badge variant="outline">{openTasks.length} open</Badge>
             </PanelHeader>
@@ -265,7 +318,14 @@ const ClinicianToday = () => {
                 ))}
               </PanelRows>
             )}
+            <div className="border-t border-primary/5 p-4">
+              <Button size="sm" className="w-full gap-2" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-3.5 w-3.5" /> New task
+              </Button>
+            </div>
           </Panel>
+          </div>
+          </div>
         </motion.div>
       </main>
 

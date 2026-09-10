@@ -71,7 +71,7 @@ PLATFORM ROUTE MAP:
 - Adherence report → /adherence-report
 - Messages with your care team → /messages
 
-To offer a navigation button, include [NAVIGATE:/path] anywhere in your reply.
+To offer a navigation button, put [NAVIGATE:/path] on its own line at the END of your reply — never in the middle of a sentence. Write route names out in words in the sentence itself ("open Medications"), never as a bare link, because the marker is removed before the reply is shown.
 
 When your reply contains clinical information (not for pure navigation, small talk, or confirming a queued action), end with:
 "⚠️ General information, not medical advice — check with your healthcare provider."`;
@@ -426,7 +426,20 @@ ${doseList || "(nothing scheduled today)"}`;
       console.warn("snapshot fetch failed", e);
     }
 
-    const systemPrompt = BASE_SYSTEM_PROMPT + snapshot;
+    // When the person has not given the separate consent for the assistant to
+    // prepare changes, it has no proposal tools at all. Telling it otherwise is
+    // how it ended up saying "tap Approve below" with no Approve button
+    // anywhere — the one failure this prompt spends most of its length trying
+    // to prevent.
+    const NO_ACTIONS_NOTE = `
+
+YOU CANNOT CHANGE ANYTHING THIS TURN (important)
+- You have NO tools for logging readings, adding or changing medications, or marking doses. The user has not turned that on.
+- Never say you have prepared, queued, drafted or logged anything, and never say "tap Approve" — there is no Approve button for them to tap.
+- When the user asks you to record something, say plainly that you cannot save it yet, that they can turn on "let the assistant prepare changes" under the message box, and where they can enter it themselves in the meantime.`;
+
+    const systemPrompt =
+      BASE_SYSTEM_PROMPT + (allowActions ? "" : NO_ACTIONS_NOTE) + snapshot;
     const convo: any[] = [
       { role: "system", content: systemPrompt },
       ...recentMessages.map((m: any) => ({ role: m.role, content: m.content })),
@@ -531,7 +544,19 @@ ${doseList || "(nothing scheduled today)"}`;
       if (followUp.ok) {
         const followData = await followUp.json();
         const followMessage = followData.choices?.[0]?.message;
-        if (followMessage?.content) message = followMessage;
+        if (followMessage?.content) {
+          message = followMessage;
+        } else {
+          // An empty second pass used to surface as "I couldn't generate a
+          // response" even though the lookup or the proposal had worked. Ask
+          // once more before giving up on the turn.
+          const retry = await callGateway(lovableApiKey, [...convo, message, ...toolResults], null);
+          if (retry.ok) {
+            const retryData = await retry.json();
+            const retryMessage = retryData.choices?.[0]?.message;
+            if (retryMessage?.content) message = retryMessage;
+          }
+        }
       } else {
         console.error("AI gateway follow-up error:", followUp.status, await followUp.text());
       }
@@ -541,11 +566,18 @@ ${doseList || "(nothing scheduled today)"}`;
       message.content ||
       (proposedActions.length > 0
         ? "I've prepared the change below — review it and tap Approve when it looks right."
-        : "I'm sorry, I couldn't generate a response. Please try again.");
+        : knowledgeSources.length > 0
+          ? `I read ${knowledgeSources.join(" and ")} but couldn't put an answer together just then. Please ask me again.`
+          : "I'm sorry, I couldn't generate a response. Please try again.");
 
     const routeMatch = content.match(/\[NAVIGATE:(\/[^\]]+)\]/);
     const suggestedRoute = routeMatch ? routeMatch[1] : null;
-    const cleanContent = content.replace(/\[NAVIGATE:\/[^\]]+\]/g, "").trim();
+    // Keep the path as readable text where the model wrote it mid-sentence.
+    // Stripping it outright produced replies like "your medications are at ."
+    const cleanContent = content
+      .replace(/\[NAVIGATE:(\/[^\]]+)\]/g, (_m, path) => path)
+      .replace(/\s+([.,])/g, "$1")
+      .trim();
 
     return new Response(
       JSON.stringify({ content: cleanContent, suggestedRoute, proposedActions, knowledgeSources }),

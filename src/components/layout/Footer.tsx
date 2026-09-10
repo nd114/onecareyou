@@ -48,11 +48,9 @@ export function Footer() {
                   About
                 </Link>
               </li>
-              <li>
-                <Link to="/contact" className="hover:text-foreground transition-colors">
-                  Contact
-                </Link>
-              </li>
+              {/* Contact lives under Support; listing it twice just made the
+                  same page look like two different destinations. */}
+
               <li>
                 <Link to="/careers" className="hover:text-foreground transition-colors">
                   Careers
@@ -65,11 +63,9 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link to="/help" className="hover:text-foreground transition-colors">
-                  Help Center
-                </Link>
-              </li>
+              {/* The Help Centre is still being written, so it is not linked
+                  anywhere public yet — the Guide is the real answer today. */}
+
               <li>
                 <Link to="/guide" className="hover:text-foreground transition-colors">Guide</Link>
               </li>

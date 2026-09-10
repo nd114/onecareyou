@@ -14,12 +14,17 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { AlertRulesManager } from '@/components/clinician/AlertRulesManager';
 import { format } from 'date-fns';
 import { formatAlertType } from '@/lib/alert-labels';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useTriageBulkActions } from '@/hooks/useTriageBulkActions';
 
 const ClinicianAlerts = () => {
   const navigate = useNavigate();
   const { isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts, acknowledgeAlertLog } = useAlertRules();
   const [triageTab, setTriageTab] = useState<'unread' | 'acknowledged'>('unread');
+  // Ticked rows, the way an email list works. Cleared once they are dealt with.
+  const [selected, setSelected] = useState<string[]>([]);
+  const { acknowledgeAlerts } = useTriageBulkActions();
   const { patients } = useClinicianPatients();
   
 
@@ -198,6 +203,18 @@ const ClinicianAlerts = () => {
                       }`}
                     >
                       <div className="flex items-start gap-3">
+                        {!log.acknowledged_at && (
+                          <Checkbox
+                            className="mt-0.5"
+                            checked={selected.includes(log.id)}
+                            onCheckedChange={(c) =>
+                              setSelected((prev) =>
+                                c === true ? [...prev, log.id] : prev.filter((id) => id !== log.id),
+                              )
+                            }
+                            aria-label={`Select ${formatAlertType(log.alert_type)}`}
+                          />
+                        )}
                         {log.acknowledged_at ? (
                           <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
                         ) : (
@@ -262,9 +279,41 @@ const ClinicianAlerts = () => {
                             </p>
                           </div>
                         ) : (
-                          <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {list.slice(0, 30).map(renderLog)}
-                          </div>
+                          <>
+                            {triageTab === 'unread' && (() => {
+                              const shown = list.slice(0, 30).map((l) => l.id);
+                              const allChosen = shown.length > 0 && shown.every((id) => selected.includes(id));
+                              return (
+                                <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-2">
+                                  <label className="flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                      checked={allChosen}
+                                      onCheckedChange={(c) => setSelected(c === true ? shown : [])}
+                                      aria-label="Select all alerts shown"
+                                    />
+                                    Select all
+                                  </label>
+                                  <span className="text-xs text-muted-foreground">
+                                    {selected.length > 0 ? `${selected.length} selected` : 'Nothing selected'}
+                                  </span>
+                                  <Button
+                                    size="sm"
+                                    className="ml-auto"
+                                    disabled={selected.length === 0 || acknowledgeAlerts.isPending}
+                                    onClick={() =>
+                                      acknowledgeAlerts.mutate(selected, { onSuccess: () => setSelected([]) })
+                                    }
+                                  >
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                    Acknowledge selected
+                                  </Button>
+                                </div>
+                              );
+                            })()}
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                              {list.slice(0, 30).map(renderLog)}
+                            </div>
+                          </>
                         )}
                       </TabsContent>
                     </Tabs>

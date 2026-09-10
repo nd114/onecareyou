@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { VITAL_CONFIG, VitalType } from '@/types/health';
+import { toAppointmentRow } from '@/lib/fhir/appointment';
 
 /**
  * Approval-gated clinician AI actions.
@@ -9,7 +10,13 @@ import { VITAL_CONFIG, VitalType } from '@/types/health';
  * Every write runs through the clinician's own session (RLS applies) and is
  * mirrored into the patient action log for audit.
  */
-export type ClinicianActionType = 'send_message' | 'create_guidance' | 'set_alert_rule';
+export type ClinicianActionType =
+  | 'send_message'
+  | 'create_guidance'
+  | 'set_alert_rule'
+  | 'book_appointment'
+  | 'create_task'
+  | 'internal_note';
 
 export interface ClinicianProposedAction {
   id: string;
@@ -56,6 +63,36 @@ export function describeClinicianAction(
         detail: `${cfg?.label ?? p.vital_type} ${p.condition} ${value} ${cfg?.unit ?? ''}`.trim(),
       };
     }
+    case 'book_appointment': {
+      const when = p.start ? new Date(p.start) : null;
+      return {
+        title: `Book appointment for ${patientLabel(p)}`,
+        detail: [
+          when && !isNaN(when.getTime()) ? when.toLocaleString() : 'time not set',
+          p.visit_type ? String(p.visit_type).replace('_', ' ') : '',
+          p.description ? String(p.description) : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      };
+    }
+    case 'create_task':
+      return {
+        title: `Add task: ${p.title ?? ''}`,
+        detail: [
+          p.patient_name ? `for ${p.patient_name}` : '',
+          p.due_at ? `due ${new Date(p.due_at).toLocaleString()}` : '',
+          p.priority ? `priority: ${p.priority}` : '',
+          p.notes ? String(p.notes) : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      };
+    case 'internal_note':
+      return {
+        title: `Internal note on ${patientLabel(p)} (${p.visibility === 'private' ? 'only you' : 'your team'})`,
+        detail: String(p.body ?? ''),
+      };
     default:
       return { title: 'Unsupported action', detail: '' };
   }
@@ -188,6 +225,72 @@ export async function executeClinicianAction(
           data?.id,
         );
         return { id: action.id, ok: true, message: 'Alert rule saved.' };
+      }
+
+      case 'book_appointment': {
+        // A time the assistant could not pin down is not a booking. Guessing
+        // one puts a patient in a slot nobody agreed to.
+        const start = p.start ? new Date(String(p.start)) : null;
+        if (!start || isNaN(start.getTime())) return fail('No clear date and time — nothing booked.');
+        const end = p.end ? new Date(String(p.end)) : new Date(start.getTime() + 30 * 60000);
+        const row = toAppointmentRow(
+          {
+            patientUserId: patientId,
+            clinicianUserId: clinician.id,
+            status: 'booked',
+            start: start.toISOString(),
+            end: end.toISOString(),
+            visitType: p.visit_type ?? null,
+            description: p.description ?? null,
+          },
+          clinician.id,
+        );
+        const { error } = await supabase.from('fhir_appointments').insert(row);
+        if (error) return fail(error.message);
+        await logAction(
+          clinician.id,
+          patientId,
+          'appointment_booked',
+          `Assistant-drafted appointment on ${start.toLocaleString()}`,
+          'fhir_appointments',
+        );
+        return { id: action.id, ok: true, message: 'Appointment booked.' };
+      }
+
+      case 'create_task': {
+        const title = String(p.title ?? '').trim();
+        if (!title) return fail('Task had no title — nothing added.');
+        const { data, error } = await supabase
+          .from('practice_tasks')
+          .insert({
+            assignee_user_id: clinician.id,
+            created_by: clinician.id,
+            patient_user_id: patientId,
+            title,
+            notes: p.notes ?? null,
+            due_at: p.due_at ?? null,
+            priority: p.priority ?? 'normal',
+            source: 'manual',
+          })
+          .select('id')
+          .single();
+        if (error) return fail(error.message);
+        await logAction(clinician.id, patientId, 'task_created', `Assistant-drafted task: ${title}`, 'practice_tasks', data?.id);
+        return { id: action.id, ok: true, message: 'Task added to your list.' };
+      }
+
+      case 'internal_note': {
+        const body = String(p.body ?? '').trim();
+        if (!body) return fail('Note was empty — nothing saved.');
+        const { error } = await supabase.from('internal_notes').insert({
+          patient_user_id: patientId,
+          author_user_id: clinician.id,
+          body,
+          visibility: p.visibility === 'private' ? 'private' : 'team',
+        });
+        if (error) return fail(error.message);
+        await logAction(clinician.id, patientId, 'internal_note_added', 'Assistant-drafted internal note', 'internal_notes');
+        return { id: action.id, ok: true, message: 'Note saved.' };
       }
 
       default:

@@ -18,7 +18,7 @@ const ClinicianMessages = () => {
   const { patients } = useClinicianPatients();
   const [selected, setSelected] = useState<Conversation | null>(null);
 
-  const counterparties: Conversation[] = useMemo(
+  const counterparties: (Conversation & { readOnly?: boolean })[] = useMemo(
     () =>
       (patients || [])
         .filter((p) => !!p.user_id)
@@ -28,6 +28,8 @@ const ClinicianMessages = () => {
           // Which hospital a patient reaches you through, when it is one —
           // every row used to read "Patient", which said nothing.
           caption: p.source === 'hospital' ? p.hospital_name || 'Hospital patient' : undefined,
+          // An ended connection keeps its history readable, never writable.
+          readOnly: p.share_active === false,
         })),
     [patients],
   );
