@@ -37,7 +37,6 @@ import { SendToVaultDialog } from '@/components/clinician/SendToVaultDialog';
 import { MessageThread } from '@/components/messaging/MessageThread';
 import { EncountersTab } from '@/components/clinician/EncountersTab';
 import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
-import { NetworkRecordsTab } from '@/components/clinician/NetworkRecordsTab';
 import { InternalNotesTab } from '@/components/clinician/InternalNotesTab';
 import { PatientSafetyStrip } from '@/components/clinician/PatientSafetyStrip';
 import { PatientActionRail } from '@/components/clinician/PatientActionRail';
