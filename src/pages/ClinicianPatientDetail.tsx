@@ -563,6 +563,8 @@ const ClinicianPatientDetail = () => {
                     otherPartyName={patient.patient_name || 'Patient'}
                     role="clinician"
                     className="h-[520px]"
+                    readOnly={patient.share_active === false}
+                    readOnlyNotice="This connection has ended. The conversation is kept for the record, but no new messages can be sent."
                   />
                 </CardContent>
               </Card>
