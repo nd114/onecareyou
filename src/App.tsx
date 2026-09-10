@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
+import { RequireCapability } from "@/components/clinician/RequireCapability";
 import { PatientRoute } from "@/components/auth/PatientRoute";
 import { PracticeAdminRoute } from "@/components/auth/PracticeAdminRoute";
 import PracticeAdmin from "./pages/PracticeAdmin";
