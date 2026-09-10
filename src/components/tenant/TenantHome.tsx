@@ -1,5 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
@@ -10,6 +12,7 @@ import InstitutionSignUp from '@/pages/InstitutionSignUp';
 import InstitutionStaffSignUp from '@/pages/InstitutionStaffSignUp';
 import { tenantSlugFromHost } from '@/lib/tenant-host';
 import { useInstitutionBranding } from '@/hooks/useInstitutionBranding';
+
 
 type Audience = 'patient' | 'staff';
 type Mode = 'sign-up' | 'sign-in';
