@@ -16,7 +16,10 @@ const corsHeaders = {
 
 const PASSWORD = "Demo123!";
 const HOSPITAL_NAME = "OneCare Demo Hospital";
-const HOSPITAL_SLUG = "demo-hospital";
+// 3-7 characters: the app only treats a slug of that shape as a tenant address
+// (see isValidSlug in src/lib/tenant-host.ts), so demoh.onecare.you resolves.
+const HOSPITAL_SLUG = "demoh";
+
 const DEPARTMENT = "Internal Medicine";
 
 type Role =
@@ -174,18 +177,20 @@ serve(async (req) => {
       practiceId = data.id;
     }
 
-    // 3. Department
-    const { data: dept } = await admin
-      .from("practice_departments")
-      .upsert({ practice_id: practiceId, name: DEPARTMENT, description: "Demo department", created_by: ownerId },
-        { onConflict: "practice_id,name", ignoreDuplicates: false })
-      .select("id").maybeSingle();
-    let departmentId = dept?.id as string | undefined;
+    // 3. Department. Uniqueness is a functional index on lower(name), which
+    //    ON CONFLICT cannot target, so look first and insert only if absent.
+    let departmentId: string | undefined;
+    const { data: found } = await admin.from("practice_departments")
+      .select("id").eq("practice_id", practiceId).ilike("name", DEPARTMENT).maybeSingle();
+    departmentId = found?.id;
     if (!departmentId) {
-      const { data: found } = await admin.from("practice_departments")
-        .select("id").eq("practice_id", practiceId).eq("name", DEPARTMENT).maybeSingle();
-      departmentId = found?.id;
+      const { data: created, error } = await admin.from("practice_departments")
+        .insert({ practice_id: practiceId, name: DEPARTMENT, description: "Demo department", created_by: ownerId })
+        .select("id").single();
+      if (error) notes.push(`department: ${error.message}`);
+      departmentId = created?.id;
     }
+
 
     // 4. Seats
     for (const s of STAFF) {
@@ -227,17 +232,28 @@ serve(async (req) => {
     //    other so it lands in pending approval.
     const allowlisted = STAFF.find((s) => s.join === "allowlisted");
     if (allowlisted) {
-      const { error } = await admin.from("practice_clinician_allowlist").upsert({
-        practice_id: practiceId,
-        email: allowlisted.email,
-        full_name: `${allowlisted.first_name} ${allowlisted.last_name}`,
-        intended_role: "clinician",
-        department_id: departmentId ?? null,
-        note: "Demo: expected staff member",
-        added_by: ownerId,
-      }, { onConflict: "practice_id,email" });
-      if (error) notes.push(`allowlist: ${error.message}`);
+      // The uniqueness here is a functional index on lower(email), which
+      // ON CONFLICT cannot target — so look first, then insert.
+      const { data: already } = await admin
+        .from("practice_clinician_allowlist")
+        .select("id")
+        .eq("practice_id", practiceId)
+        .ilike("email", allowlisted.email)
+        .maybeSingle();
+      if (!already) {
+        const { error } = await admin.from("practice_clinician_allowlist").insert({
+          practice_id: practiceId,
+          email: allowlisted.email,
+          full_name: `${allowlisted.first_name} ${allowlisted.last_name}`,
+          intended_role: "clinician",
+          department_id: departmentId ?? null,
+          note: "Demo: expected staff member",
+          added_by: ownerId,
+        });
+        if (error) notes.push(`allowlist: ${error.message}`);
+      }
     }
+
 
     // 6. Patients connected to the hospital, with assignments
     const patients: Array<{ email: string; assigned_to: string }> = [];

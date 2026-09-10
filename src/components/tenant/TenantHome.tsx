@@ -1,5 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
@@ -10,6 +12,7 @@ import InstitutionSignUp from '@/pages/InstitutionSignUp';
 import InstitutionStaffSignUp from '@/pages/InstitutionStaffSignUp';
 import { tenantSlugFromHost } from '@/lib/tenant-host';
 import { useInstitutionBranding } from '@/hooks/useInstitutionBranding';
+
 
 type Audience = 'patient' | 'staff';
 type Mode = 'sign-up' | 'sign-in';
@@ -41,7 +44,27 @@ export function TenantHome({
   const { isClinician, isTenantAdmin, isLoading: clinicianLoading } = useClinicianProfile();
   const { isAdmin, isLoading: adminLoading } = useAdminRole();
 
-  const rolesLoading = authLoading || clinicianLoading || adminLoading;
+  // Somebody signed in who has arrived at a hospital's own staff address may be
+  // there to ask to join it. Only send them to their own screen once we know
+  // they already belong to this hospital.
+  const { data: belongsHere, isLoading: membershipLoading } = useQuery({
+    queryKey: ['tenant-home-membership', user?.id, institution?.id],
+    enabled: !!user && audience === 'staff' && !!institution?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('practice_members')
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('practice_id', institution!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+  });
+
+  const staffJoinGate = !!user && audience === 'staff' && !!slug;
+  const rolesLoading =
+    authLoading || clinicianLoading || adminLoading || (staffJoinGate && (isLoading || membershipLoading));
 
   // Wait for the roles before deciding, or a clinician is bounced to the
   // patient dashboard for a frame and then moved again.
@@ -53,9 +76,16 @@ export function TenantHome({
     );
   }
 
+  // Signed in, at this hospital's staff door, and not one of its people yet:
+  // the branded page renders its own "Join {hospital}" step.
+  if (user && staffJoinGate && institution && belongsHere === false) {
+    return <InstitutionStaffSignUp institution={institution} slug={slug} initialMode={mode} />;
+  }
+
   if (user) {
     return <Navigate to={homeRouteFor({ isAdmin, isTenantAdmin, isClinician })} replace />;
   }
+
 
   // Off a tenant host there is nothing to brand — fall back to the generic
   // OneCare pages for whichever door was asked for.
