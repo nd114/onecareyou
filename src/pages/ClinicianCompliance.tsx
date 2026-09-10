@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Shield, Download, Loader2, FileCheck2, FileText, ArrowRight } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
+import { CapabilityDenied } from "@/components/clinician/CapabilityDenied";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -98,9 +99,7 @@ export default function ClinicianCompliance() {
     );
   }
 
-  if (!can("view_audit")) {
-    return <Navigate to="/clinician/today" replace />;
-  }
+  if (!can("view_audit")) return <CapabilityDenied what="Compliance" />;
 
   const filteredAudit = auditEntries.filter((e: any) => {
     const t = new Date(e.created_at).getTime();

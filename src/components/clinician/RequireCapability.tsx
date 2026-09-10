@@ -1,5 +1,5 @@
-import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { CapabilityDenied } from "@/components/clinician/CapabilityDenied";
 import { useClinicianCapabilities, type PracticeCapability } from "@/hooks/useClinicianCapabilities";
 
 /**
@@ -9,6 +9,9 @@ import { useClinicianCapabilities, type PracticeCapability } from "@/hooks/useCl
  * the security boundary — it is honesty. A receptionist who opens Invoices and
  * sees an empty list concludes the product is broken; a receptionist who is
  * never shown the tab concludes, correctly, that it is not their job.
+ *
+ * Somebody who types the address anyway gets told so in a sentence. Silently
+ * dropping them back on Today looked like the click had failed.
  *
  * A clinician with no practice is the owner of their own workspace and holds
  * every capability, so this never blocks a solo clinician.
@@ -38,7 +41,7 @@ export function RequireCapability({
   const wanted = anyOf ?? (capability ? [capability] : []);
   const allowed = wanted.length === 0 || wanted.some((c) => can(c));
 
-  if (!allowed) return <Navigate to="/clinician/today" replace />;
+  if (!allowed) return <CapabilityDenied />;
 
   return <>{children}</>;
 }

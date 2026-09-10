@@ -74,6 +74,9 @@ const ClinicianPracticeSection = () => {
     isHospital: (tenant?.tenant_type ?? 'practice') === 'hospital',
     isAdmin: can('manage_team'),
     canManageTeam: hasFeatureAccess(tier, 'team_management'),
+    canManageBilling: can('manage_billing'),
+    canManageSettings: can('manage_settings'),
+    canRoutePatients: can('assign_patients'),
   };
 
   // An unknown section, or one this clinician has nothing in, goes back to the

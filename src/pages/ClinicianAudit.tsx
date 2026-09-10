@@ -1,6 +1,7 @@
 // Phase 3.2 — Practice audit & access viewer (owner/admin only).
 import { useMemo, useState } from "react";
 import { Shield, Download, Loader2, Search } from "lucide-react";
+import { CapabilityDenied } from "@/components/clinician/CapabilityDenied";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -138,9 +139,7 @@ export default function ClinicianAudit() {
     );
   }
 
-  if (!can("view_audit")) {
-    return <Navigate to="/clinician/today" replace />;
-  }
+  if (!can("view_audit")) return <CapabilityDenied what="The audit log" />;
 
   return (
     <div className="min-h-screen bg-muted/30">

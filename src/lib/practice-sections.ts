@@ -45,6 +45,14 @@ export interface PracticeContext {
   isAdmin: boolean;
   /** Whether the plan includes team management. */
   canManageTeam: boolean;
+  /**
+   * Role capabilities, when the caller knows them. Undefined means "not asked",
+   * which stays permissive so a caller that has not resolved roles yet does not
+   * hide sections from the person who runs the place.
+   */
+  canManageBilling?: boolean;
+  canManageSettings?: boolean;
+  canRoutePatients?: boolean;
 }
 
 export interface PracticeSection {
@@ -72,7 +80,9 @@ export const PRACTICE_SECTIONS: PracticeSection[] = [
     // The team section is always rendered here — either the real thing, or an
     // explanation of what the plan does not include, which is a real answer to
     // "how do I add a colleague" rather than a blank page.
-    isAvailable: (c) => c.hasPractice,
+    // Personnel is a management screen: it lists colleagues, invitations and
+    // who may join. A nurse or receptionist has no business in it.
+    isAvailable: (c) => c.hasPractice && c.isAdmin,
   },
   {
     id: "departments",
@@ -86,7 +96,7 @@ export const PRACTICE_SECTIONS: PracticeSection[] = [
     label: "Patient routing",
     summary: "Manage hospital patients and route their care to the right personnel.",
     path: "/clinician/practice/routing",
-    isAvailable: (c) => c.hasPractice && c.isHospital,
+    isAvailable: (c) => c.hasPractice && c.isHospital && (c.canRoutePatients ?? true),
   },
   {
     id: "access",
@@ -101,16 +111,18 @@ export const PRACTICE_SECTIONS: PracticeSection[] = [
     label: "Practice details",
     summary: "Name, address, joining code, billing currency and branding.",
     path: "/clinician/practice/details",
-    // Every card here needs a practice to describe.
-    isAvailable: (c) => c.hasPractice,
+    // Every card here needs a practice to describe, and somebody entitled to
+    // change it.
+    isAvailable: (c) => c.hasPractice && (c.canManageSettings ?? true),
   },
   {
     id: "plan",
     label: "Plan and usage",
     summary: "Subscription, storage, and what the practice is being billed.",
     path: "/clinician/practice/plan",
-    // The subscription card is always there, even on a trial.
-    isAvailable: () => true,
+    // The subscription card is always there, even on a trial — for whoever
+    // looks after the money.
+    isAvailable: (c) => c.canManageBilling ?? true,
   },
 ];
 

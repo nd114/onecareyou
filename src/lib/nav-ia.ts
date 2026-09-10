@@ -152,7 +152,7 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
       // three peers in a row. Both keep their routes — deep links and the
       // BAA's existing back-to-compliance breadcrumb still work — they are
       // just no longer competing for space in the tab bar.
-      { to: "/clinician/compliance", label: "Compliance", match: ["/clinician/audit", "/clinician/baa"] },
+      { to: "/clinician/compliance", label: "Compliance", capability: "view_audit", match: ["/clinician/audit", "/clinician/baa"] },
       // "My profile" is deliberately NOT a Practice tab: it edits the person,
       // not the organisation. It lives in the account dropdown under their own
       // name, which is where anyone looks for their own details.

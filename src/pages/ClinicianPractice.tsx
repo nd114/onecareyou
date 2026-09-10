@@ -13,6 +13,7 @@ import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useClinicianCapabilities } from '@/hooks/useClinicianCapabilities';
 import { availableSections, sectionForLegacyAnchor } from '@/lib/practice-sections';
 
 /**
@@ -34,9 +35,10 @@ const ClinicianPractice = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isClinician, isLoading: isLoadingProfile } = useClinicianProfile();
-  const { currentPractice, currentMembership, isLoading: isLoadingPractice } = usePractice();
+  const { currentPractice, isLoading: isLoadingPractice } = usePractice();
   const { tenant, isLoading: isLoadingTenant } = usePracticeTenant(currentPractice?.id);
   const { tier } = useClinicianSubscription();
+  const { can, loading: capabilitiesLoading } = useClinicianCapabilities();
 
   useSessionTimeout();
 
@@ -48,7 +50,7 @@ const ClinicianPractice = () => {
     if (section) navigate(section.path, { replace: true });
   }, [location.hash, navigate]);
 
-  if (isLoadingProfile || isLoadingPractice || (Boolean(currentPractice) && isLoadingTenant)) {
+  if (isLoadingProfile || isLoadingPractice || capabilitiesLoading || (Boolean(currentPractice) && isLoadingTenant)) {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
@@ -65,8 +67,11 @@ const ClinicianPractice = () => {
   const sections = availableSections({
     hasPractice: Boolean(currentPractice),
     isHospital: (tenant?.tenant_type ?? 'practice') === 'hospital',
-    isAdmin: currentMembership?.role === 'owner' || currentMembership?.role === 'admin',
+    isAdmin: can('manage_team'),
     canManageTeam: hasFeatureAccess(tier, 'team_management'),
+    canManageBilling: can('manage_billing'),
+    canManageSettings: can('manage_settings'),
+    canRoutePatients: can('assign_patients'),
   });
 
   return (
