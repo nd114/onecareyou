@@ -30,12 +30,20 @@
 -- stop_medication) that do not query through this policy.
 
 DROP POLICY IF EXISTS "Users can update their own vitals" ON public.vitals;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Patients edit only the vitals they recorded themselves" ON public.vitals;
 CREATE POLICY "Patients edit only the vitals they recorded themselves"
   ON public.vitals FOR UPDATE TO authenticated
   USING (auth.uid() = user_id AND (source IS NULL OR source = 'manual'))
   WITH CHECK (auth.uid() = user_id AND (source IS NULL OR source = 'manual'));
 
 DROP POLICY IF EXISTS "Users can delete their own vitals" ON public.vitals;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Patients delete only the vitals they recorded themselves" ON public.vitals;
 CREATE POLICY "Patients delete only the vitals they recorded themselves"
   ON public.vitals FOR DELETE TO authenticated
   USING (auth.uid() = user_id AND (source IS NULL OR source = 'manual'));
@@ -48,6 +56,10 @@ COMMENT ON POLICY "Patients delete only the vitals they recorded themselves" ON 
   'own manual entries freely — this is not the medications history guard.';
 
 DROP POLICY IF EXISTS "Users can update their own medications" ON public.medications;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Patients edit only medications they entered themselves" ON public.medications;
 CREATE POLICY "Patients edit only medications they entered themselves"
   ON public.medications FOR UPDATE TO authenticated
   USING (auth.uid() = user_id AND (source IS NULL OR source = 'manual'))

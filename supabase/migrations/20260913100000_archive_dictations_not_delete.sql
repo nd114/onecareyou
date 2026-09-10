@@ -33,6 +33,10 @@ CREATE INDEX IF NOT EXISTS idx_clinician_dictations_active
 -- of an empty room — but once it has been filed it is part of a chart.
 DROP POLICY IF EXISTS "Clinicians delete own dictations" ON public.clinician_dictations;
 
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Clinicians delete own unfiled dictations" ON public.clinician_dictations;
 CREATE POLICY "Clinicians delete own unfiled dictations"
   ON public.clinician_dictations FOR DELETE
   USING (

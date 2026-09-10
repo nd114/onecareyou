@@ -36,19 +36,35 @@ COMMENT ON TABLE public.notification_preferences IS
 
 ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
 
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "People read their own notification preferences" ON public.notification_preferences;
 CREATE POLICY "People read their own notification preferences"
   ON public.notification_preferences FOR SELECT
   USING (auth.uid() = user_id);
 
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "People set their own notification preferences" ON public.notification_preferences;
 CREATE POLICY "People set their own notification preferences"
   ON public.notification_preferences FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "People change their own notification preferences" ON public.notification_preferences;
 CREATE POLICY "People change their own notification preferences"
   ON public.notification_preferences FOR UPDATE
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "People clear their own notification preferences" ON public.notification_preferences;
 CREATE POLICY "People clear their own notification preferences"
   ON public.notification_preferences FOR DELETE
   USING (auth.uid() = user_id);

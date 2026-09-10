@@ -203,6 +203,10 @@ COMMENT ON FUNCTION public.record_onboarding_provenance() IS
 
 DROP POLICY IF EXISTS "Clinicians can update their own patient records" ON public.clinician_patient_records;
 
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Clinicians update their own unclaimed patient records" ON public.clinician_patient_records;
 CREATE POLICY "Clinicians update their own unclaimed patient records"
   ON public.clinician_patient_records FOR UPDATE
   USING (auth.uid() = clinician_user_id AND linked_user_id IS NULL)

@@ -156,6 +156,10 @@ COMMENT ON POLICY "Users can update their own health documents" ON storage.objec
 -- ---------------------------------------------------------------------------
 
 DROP POLICY IF EXISTS "Users can delete their own documents" ON public.health_documents;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Patients delete only documents they filed themselves" ON public.health_documents;
 CREATE POLICY "Patients delete only documents they filed themselves"
   ON public.health_documents FOR DELETE TO authenticated
   USING (

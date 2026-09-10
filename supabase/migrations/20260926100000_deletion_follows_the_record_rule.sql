@@ -21,6 +21,10 @@
 -- its place belongs with the correction work and is not a delete.
 
 DROP POLICY IF EXISTS "Clinicians can delete their guidance" ON public.clinician_guidance;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Clinicians delete only guidance never acknowledged" ON public.clinician_guidance;
 CREATE POLICY "Clinicians delete only guidance never acknowledged"
   ON public.clinician_guidance FOR DELETE TO authenticated
   USING (
@@ -48,6 +52,10 @@ COMMENT ON POLICY "Clinicians delete only guidance never acknowledged" ON public
 -- the prescription is a claim about what was prescribed.
 
 DROP POLICY IF EXISTS "Users can delete their own medications" ON public.medications;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Patients delete only medications they entered themselves" ON public.medications;
 CREATE POLICY "Patients delete only medications they entered themselves"
   ON public.medications FOR DELETE TO authenticated
   USING (
@@ -69,6 +77,10 @@ CREATE POLICY "Patients delete only medications they entered themselves"
 -- come round yet.
 
 DROP POLICY IF EXISTS "Users can delete their own schedule entries" ON public.schedule_entries;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Patients delete only doses not yet due" ON public.schedule_entries;
 CREATE POLICY "Patients delete only doses not yet due"
   ON public.schedule_entries FOR DELETE TO authenticated
   USING (
@@ -96,6 +108,10 @@ COMMENT ON POLICY "Patients delete only doses not yet due" ON public.schedule_en
 -- destroys the evidence of an attribution that is still being paid on.
 
 DROP POLICY IF EXISTS "Clinicians can delete their own patient records" ON public.clinician_patient_records;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Clinicians delete only unclaimed patient records" ON public.clinician_patient_records;
 CREATE POLICY "Clinicians delete only unclaimed patient records"
   ON public.clinician_patient_records FOR DELETE TO authenticated
   USING (
@@ -125,6 +141,10 @@ COMMENT ON POLICY "Clinicians delete only unclaimed patient records" ON public.c
 -- never taken.
 
 DROP POLICY IF EXISTS "Patients delete only medications they entered themselves" ON public.medications;
+-- Idempotent against a re-sync that already created this exact
+-- policy name (Supabase re-exports applied migrations under its
+-- own real timestamps, which can sort before this file).
+DROP POLICY IF EXISTS "Patients delete only medications with no history" ON public.medications;
 CREATE POLICY "Patients delete only medications with no history"
   ON public.medications FOR DELETE TO authenticated
   USING (
