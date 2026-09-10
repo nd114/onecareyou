@@ -81,6 +81,7 @@ import ClinicianPatients from "./pages/ClinicianPatients";
 import ClinicianGuidance from "./pages/ClinicianGuidance";
 import ClinicianAlerts from "./pages/ClinicianAlerts";
 import ClinicianSchedule from "./pages/ClinicianSchedule";
+import ClinicianScribe from "./pages/ClinicianScribe";
 import ClinicianInvoices from "./pages/ClinicianInvoices";
 import ClinicianPatientImport from "./pages/ClinicianPatientImport";
 import ClinicianManagedRecord from "./pages/ClinicianManagedRecord";
@@ -204,6 +205,14 @@ const App = () => (
             {/* The practice diary and the practice ledger. The per-patient
                 tabs answer "what about this person"; these answer "what about
                 today" and "who owes us what", which no screen could. */}
+            {/* The scribe's own front door: pick the patient, then record. */}
+            <Route path="/clinician/scribe" element={
+              <ClinicianRoute>
+                <RequireCapability capability="edit_clinical">
+                  <ClinicianScribe />
+                </RequireCapability>
+              </ClinicianRoute>
+            } />
             <Route path="/clinician/schedule" element={
               <ClinicianRoute>
                 <ClinicianSchedule />

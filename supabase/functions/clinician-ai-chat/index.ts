@@ -28,13 +28,16 @@ const ACTION_BY_TOOL: Record<string, string> = {
   propose_send_message: "send_message",
   propose_create_guidance: "create_guidance",
   propose_set_alert_rule: "set_alert_rule",
+  propose_book_appointment: "book_appointment",
+  propose_create_task: "create_task",
+  propose_internal_note: "internal_note",
 };
 
 const BASE_PROMPT = `You are the OneCare Clinical Assistant, working alongside a licensed clinician inside their OneCare workspace. Speak like a competent colleague: brief, concrete, no filler.
 
 WHAT YOU DO
 1. Answer questions about the clinician's own panel using the snapshot below (patients, recent vitals, open guidance, unread messages).
-2. Draft work for the clinician: patient messages, care guidance, vital alert thresholds.
+2. Draft work for the clinician: patient messages, care guidance, vital alert thresholds, appointments, their own follow-up tasks, and internal notes on a patient.
 3. Show them real records — readings, medications, appointments, invoices — with show_records.
 4. Help them navigate the workspace (route map below).
 
@@ -51,6 +54,9 @@ HOW TOOLS WORK (critical)
 - Never say something was sent, set, saved or created. Say "I've drafted this — approve it below and it will be sent/saved."
 - Only treat something as done when a SYSTEM NOTE says the clinician approved it and it succeeded. If a SYSTEM NOTE says FAILED, say so plainly.
 - Always pass patient_user_id exactly as it appears in the snapshot. If the patient is not in the snapshot, say you don't have access to them instead of guessing.
+- DICTATION: the clinician may say several things in one breath ("message Mrs Ade, book her in two days, remind me to chase the lab"). Queue one draft per thing you heard, in the order said, so they approve them together on one screen.
+- Dates: today's date is in the snapshot. Turn "in two days", "next Tuesday", "next week" into an exact ISO date and time. If a time of day was never said, use 09:00 local. If you cannot work out the date at all, say so instead of guessing.
+- If you are not certain which patient was meant — two similar names, or a name not in the snapshot — ASK. Never queue a draft against a guessed patient; the wrong record is the one mistake that cannot be undone by discarding a draft.
 - For a cohort request ("all my hypertensive patients"), queue one action per patient so the clinician sees a per-patient preview, and only for patients in the snapshot.
 
 CLINICAL BOUNDARIES
@@ -130,6 +136,70 @@ const tools = [
           threshold_secondary: { type: "number", description: "Diastolic threshold, blood pressure only" },
         },
         required: ["patient_user_id", "vital_type", "condition", "threshold_value"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "propose_book_appointment",
+      description:
+        "Draft an appointment for a patient with this clinician. Queued for approval — nothing is booked until the clinician approves.",
+      parameters: {
+        type: "object",
+        properties: {
+          patient_user_id: { type: "string" },
+          patient_name: { type: "string" },
+          start: { type: "string", description: "Exact start, ISO 8601 e.g. 2026-09-14T09:00:00" },
+          end: { type: "string", description: "Optional ISO end. Defaults to 30 minutes after start." },
+          visit_type: {
+            type: "string",
+            enum: ["follow_up", "new_patient", "annual", "acute", "telehealth", "procedure"],
+          },
+          description: { type: "string", description: "Why they are coming in, one line" },
+        },
+        required: ["patient_user_id", "start"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "propose_create_task",
+      description:
+        "Draft a task on the clinician's own to-do list (chase a result, call a colleague, review something). Queued for approval.",
+      parameters: {
+        type: "object",
+        properties: {
+          patient_user_id: { type: "string", description: "The patient it concerns, if any" },
+          patient_name: { type: "string" },
+          title: { type: "string" },
+          notes: { type: "string" },
+          due_at: { type: "string", description: "Optional ISO 8601 date and time" },
+          priority: { type: "string", enum: ["low", "normal", "high", "urgent"] },
+        },
+        required: ["title"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "propose_internal_note",
+      description:
+        "Draft an internal note on a patient — staff-facing only, the patient never sees it. Queued for approval.",
+      parameters: {
+        type: "object",
+        properties: {
+          patient_user_id: { type: "string" },
+          patient_name: { type: "string" },
+          body: { type: "string" },
+          visibility: { type: "string", enum: ["team", "private"] },
+        },
+        required: ["patient_user_id", "body"],
         additionalProperties: false,
       },
     },
@@ -290,6 +360,9 @@ Deno.serve(async (req) => {
         .join("\n");
 
       snapshot = `
+
+=== TODAY ===
+${new Date().toISOString().slice(0, 10)} (${new Date().toUTCString().slice(0, 3)})
 
 === YOUR PANEL (only these patients are in scope) ===
 ${patientLines || "(no connected patients yet)"}

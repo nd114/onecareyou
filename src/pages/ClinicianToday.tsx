@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   CalendarClock,
   MailOpen,
+  Mic,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Panel, PanelEmpty, PanelGlyph, PanelHeader, PanelRow, PanelRows } from "@/components/ui/panel";
@@ -193,6 +194,11 @@ const ClinicianToday = () => {
                     <MailOpen className="h-3.5 w-3.5" /> Mark all read
                   </Button>
                 )}
+                {/* Between two patients, this is the fastest route into a
+                    visit note — no chart hunting first. */}
+                <Button size="sm" className="gap-1.5" onClick={() => navigate("/clinician/scribe")}>
+                  <Mic className="h-3.5 w-3.5" /> Record a visit note
+                </Button>
                 {counts.alerts > 0 && (
                   <Button
                     size="sm"
