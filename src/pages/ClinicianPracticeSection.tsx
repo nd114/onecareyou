@@ -50,7 +50,10 @@ const ClinicianPracticeSection = () => {
 
   const section = findSection(sectionId);
 
-  if (isLoadingProfile) {
+  // The practice has to be known before we can judge whether a section applies.
+  // Deciding early sent a hospital owner who opened People or Practice details
+  // straight back to the hub, because at that instant they had no practice yet.
+  if (isLoadingProfile || isLoadingPractice) {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
