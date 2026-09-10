@@ -73,18 +73,32 @@ export default function ClinicianAudit() {
     [isTenantView, tenantEntries, ownEntries],
   );
 
-  // The tenant query filters server-side; the personal one filters here.
+  // The tenant query filters text server-side; the date window is applied here
+  // for both, so "what happened on the 3rd" is answerable without scrolling.
   const filtered = useMemo(() => {
-    if (isTenantView || !query.trim()) return entries;
-    const q = query.toLowerCase();
-    return entries.filter(
-      (e) =>
+    const q = query.trim().toLowerCase();
+    const fromMs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+    const toMs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
+
+    return entries.filter((e) => {
+      if (fromMs !== null || toMs !== null) {
+        const at = new Date(e.created_at).getTime();
+        if (fromMs !== null && at < fromMs) return false;
+        if (toMs !== null && at > toMs) return false;
+      }
+      if (isTenantView || !q) return true;
+      return (
         e.action.toLowerCase().includes(q) ||
         e.resource_type.toLowerCase().includes(q) ||
         (e.resource_id ?? "").toLowerCase().includes(q) ||
-        (e.patient_user_id ?? "").toLowerCase().includes(q),
-    );
-  }, [isTenantView, entries, query]);
+        (e.patient_user_id ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [isTenantView, entries, query, dateFrom, dateTo]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const pageSafe = Math.min(page, pageCount - 1);
+  const pageRows = filtered.slice(pageSafe * PER_PAGE, pageSafe * PER_PAGE + PER_PAGE);
 
   const exportCsv = () => {
     const csv = toCsv(filtered, [
