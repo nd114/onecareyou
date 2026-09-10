@@ -20,6 +20,7 @@ import {
   Loader2,
   CheckCircle2,
   CalendarClock,
+  MailOpen,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Panel, PanelEmpty, PanelGlyph, PanelHeader, PanelRow, PanelRows } from "@/components/ui/panel";
@@ -29,6 +30,7 @@ import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { SectionTabs } from "@/components/layout/SectionTabs";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useTriageInbox, type TriageItem } from "@/hooks/useTriageInbox";
+import { useTriageBulkActions } from "@/hooks/useTriageBulkActions";
 import { usePracticeTasks } from "@/hooks/usePracticeTasks";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { CreateTaskDialog } from "@/components/clinician/CreateTaskDialog";
@@ -62,6 +64,7 @@ const ClinicianToday = () => {
   const navigate = useNavigate();
   const { isClinician, isLoading: loadingProfile } = useClinicianProfile();
   const { items, isLoading, counts } = useTriageInbox();
+  const { markAllMessagesRead, acknowledgeAlerts } = useTriageBulkActions();
   const { patients } = useClinicianPatients();
 
   const { tasks, update, isLoading: loadingTasks } = usePracticeTasks({ scope: "mine" });
@@ -161,7 +164,32 @@ const ClinicianToday = () => {
 
           {/* Triage list */}
           <Panel>
-            <PanelHeader eyebrow="Queue" />
+            <PanelHeader eyebrow="Queue">
+              <div className="flex flex-wrap gap-2">
+                {counts.messages > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => markAllMessagesRead.mutate()}
+                    disabled={markAllMessagesRead.isPending}
+                  >
+                    <MailOpen className="h-3.5 w-3.5" /> Mark all read
+                  </Button>
+                )}
+                {counts.alerts > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => acknowledgeAlerts.mutate(undefined)}
+                    disabled={acknowledgeAlerts.isPending}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Acknowledge all alerts
+                  </Button>
+                )}
+              </div>
+            </PanelHeader>
             {isLoading ? (
               <PanelEmpty>
                 <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
