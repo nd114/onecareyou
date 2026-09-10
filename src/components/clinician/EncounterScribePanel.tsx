@@ -1,7 +1,7 @@
 // Ambient clinical scribe — record/upload visit audio, review the AI draft
 // side-by-side with the transcript, then apply it to the encounter note.
 // Nothing reaches the encounter's clinical fields until the clinician applies.
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle, Activity, Pause, Play } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLiveScribe } from "@/hooks/useLiveScribe";
@@ -45,11 +45,6 @@ interface Props {
     plan: string;
     follow_up_in_days: string;
   }) => void;
-}
-
-function pickMime() {
-  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
-  return candidates.find((c) => MediaRecorder.isTypeSupported?.(c)) ?? "";
 }
 
 function fmt(ms: number) {
