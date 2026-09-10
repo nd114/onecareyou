@@ -14,12 +14,17 @@ import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { AlertRulesManager } from '@/components/clinician/AlertRulesManager';
 import { format } from 'date-fns';
 import { formatAlertType } from '@/lib/alert-labels';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useTriageBulkActions } from '@/hooks/useTriageBulkActions';
 
 const ClinicianAlerts = () => {
   const navigate = useNavigate();
   const { isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
   const { alertRules, alertLogs, isLoading: isLoadingAlerts, acknowledgeAlertLog } = useAlertRules();
   const [triageTab, setTriageTab] = useState<'unread' | 'acknowledged'>('unread');
+  // Ticked rows, the way an email list works. Cleared once they are dealt with.
+  const [selected, setSelected] = useState<string[]>([]);
+  const { acknowledgeAlerts } = useTriageBulkActions();
   const { patients } = useClinicianPatients();
   
 
@@ -198,6 +203,18 @@ const ClinicianAlerts = () => {
                       }`}
                     >
                       <div className="flex items-start gap-3">
+                        {!log.acknowledged_at && (
+                          <Checkbox
+                            className="mt-0.5"
+                            checked={selected.includes(log.id)}
+                            onCheckedChange={(c) =>
+                              setSelected((prev) =>
+                                c === true ? [...prev, log.id] : prev.filter((id) => id !== log.id),
+                              )
+                            }
+                            aria-label={`Select ${formatAlertType(log.alert_type)}`}
+                          />
+                        )}
                         {log.acknowledged_at ? (
                           <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
                         ) : (
