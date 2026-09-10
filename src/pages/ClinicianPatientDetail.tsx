@@ -173,6 +173,16 @@ const ClinicianPatientDetail = () => {
     [scheduleEntries],
   );
 
+  // Adherence used to stop dead at the twenty most recent doses, so a month of
+  // history simply was not reachable. Paged, like the patients list.
+  const ADHERENCE_PER_PAGE = 20;
+  const [adherencePage, setAdherencePage] = useState(0);
+  const adherencePages = Math.max(1, Math.ceil(scheduleEntries.length / ADHERENCE_PER_PAGE));
+  const adherenceSlice = scheduleEntries.slice(
+    adherencePage * ADHERENCE_PER_PAGE,
+    adherencePage * ADHERENCE_PER_PAGE + ADHERENCE_PER_PAGE,
+  );
+
   // Filter guidance for this patient
   const patientGuidance = useMemo(() => 
     clinicianGuidance.filter(g => g.patient_user_id === patient?.user_id),
