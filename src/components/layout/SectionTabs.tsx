@@ -32,7 +32,17 @@ interface Props {
 export function SectionTabs({ section, variant = "patient" }: Props) {
   const { pathname, hash } = useLocation();
   const pillars = variant === "patient" ? PATIENT_PILLARS : CLINICIAN_PILLARS;
-  const pillar = pillars.find((p) => p.key === section);
+  const pillarDef = pillars.find((p) => p.key === section);
+
+  // A practice role decides which sub-tabs exist at all. Patient tabs are never
+  // filtered, so the capability answer is only consulted on the clinician side.
+  const { can, loading: capsLoading } = useClinicianCapabilities();
+  const tabs =
+    variant === "clinician" && !capsLoading && pillarDef
+      ? visibleTabs(pillarDef.tabs, can)
+      : pillarDef?.tabs ?? [];
+  const pillar = pillarDef ? { ...pillarDef, tabs } : undefined;
+
 
   const scroller = useRef<HTMLElement | null>(null);
   const [overflow, setOverflow] = useState({ start: false, end: false });
