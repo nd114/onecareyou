@@ -7,6 +7,7 @@ Grouped into four phases. Each phase is shippable on its own.
 **The archive switch bug (confirmed).** The document list recalculates on documents, category, folder and search — but not on the archive switch itself, which is why nothing changes until you click a folder and back. Adding the switch to that list fixes it.
 
 **Folders become real, not just labels.** Today a folder only exists while a document carries its name, so a new folder disappears on refresh and cannot be renamed. Add a small folders record per person so that:
+
 - Creating a folder keeps it, empty, across visits.
 - Renaming a folder renames it everywhere its documents point.
 - Removing a folder is allowed only when empty (or moves its documents to Unfiled), never touching the files themselves.
@@ -28,11 +29,13 @@ Grouped into four phases. Each phase is shippable on its own.
 ## Phase 3 — Clinician side
 
 **Today**
+
 - "Mark all as read" / "Mark all acknowledged" on the inbox, with per-item actions unchanged.
 - Booking from Schedule: a "Book appointment" action that lets the clinician pick one of their patients, set date, time, type and note — and the patient is notified by their chosen channel. Today booking only exists inside a patient's own Appointments tab.
 - Alert management: checkboxes with select-all, and bulk actions (acknowledge, dismiss, change threshold) the way an email list works.
 
 **A patient's page**
+
 - Make the connection between clinician and patient visible at the top of the patient page — how they're linked, since when, what access it grants — instead of it only being inferable from Encounters.
 - Signed visit notes: review and tighten so opening a signed note reads as final. The follow-up interval is currently the one editable field by design; make that explicit on screen, or lock it too — your call, noted as a decision below.
 - Paginate Adherence, as the patients list already is.
@@ -42,11 +45,13 @@ Grouped into four phases. Each phase is shippable on its own.
 - Activity: unchanged.
 
 **Communicate & Practice**
+
 - Patient Access section: it currently shows only EHR integration — rename and describe it for what it actually does, and surface the access/consent information a clinician expects there.
 - Privacy & Data activity log: pagination plus search and date filtering.
 - Hide clinician Help & Support from both menus (the top-right profile menu and the section nav disagree today).
 
 **Clinical assistant**
+
 - Voice: dictate to the assistant, so a clinician can speak a message or an instruction and have it drafted for approval.
 - Fix the overlapping bin and close buttons at the top of the assistant panel.
 - Go through each advertised assistant capability and confirm it works end to end: drafting messages, guidance, alert thresholds, bulk actions — with nothing saved before approval.
@@ -57,8 +62,8 @@ The database already carries roles beyond owner/admin/provider (nurse, front des
 
 ## Decisions I need from you
 
-1. Signed visit notes — should the follow-up interval stay editable after signing, or should a signed note be entirely read-only with changes going through an addendum?
-2. Folder removal — when a folder still has documents in it, move them to Unfiled, or refuse until it's empty?
+1. Signed visit notes — should the follow-up interval stay editable after signing, or should a signed note be entirely read-only with changes going through an addendum? ---> Yes, should have an addendum
+2. Folder removal — when a folder still has documents in it, move them to Unfiled, or refuse until it's empty? ---> move them to unfiled
 
 I'll start with Phase 1 unless you'd rather I take the clinician items first.
 

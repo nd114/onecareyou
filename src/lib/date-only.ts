@@ -38,3 +38,10 @@ export function ageFromDateOnly(value: string | null | undefined): number | null
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age -= 1;
   return age;
 }
+
+/** Today as "YYYY-MM-DD" in local time, for date inputs and defaults. */
+export function todayDateOnly(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}

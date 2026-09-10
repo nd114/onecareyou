@@ -1211,6 +1211,41 @@ export type Database = {
           },
         ]
       }
+      document_folders: {
+        Row: {
+          created_at: string
+          family_member_id: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          family_member_id?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          family_member_id?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_folders_family_member_id_fkey"
+            columns: ["family_member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_retraction_events: {
         Row: {
           access_count: number
@@ -2912,6 +2947,56 @@ export type Database = {
             columns: ["transcript_document_id"]
             isOneToOne: false
             referencedRelation: "health_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_notes: {
+        Row: {
+          archived_at: string | null
+          body_html: string
+          created_at: string
+          family_member_id: string | null
+          folder: string | null
+          id: string
+          note_date: string
+          tags: Json
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          body_html?: string
+          created_at?: string
+          family_member_id?: string | null
+          folder?: string | null
+          id?: string
+          note_date?: string
+          tags?: Json
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          body_html?: string
+          created_at?: string
+          family_member_id?: string | null
+          folder?: string | null
+          id?: string
+          note_date?: string
+          tags?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_notes_family_member_id_fkey"
+            columns: ["family_member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
             referencedColumns: ["id"]
           },
         ]
@@ -4865,6 +4950,10 @@ export type Database = {
       }
       confirmed_email: { Args: never; Returns: string }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
+      delete_document_folder: {
+        Args: { _folder_id: string }
+        Returns: undefined
+      }
       document_is_withdrawn: { Args: { _file_path: string }; Returns: boolean }
       enforce_rate_limit: {
         Args: {
@@ -5339,6 +5428,10 @@ export type Database = {
         }[]
       }
       purge_expired_kingschat_attempts: { Args: never; Returns: number }
+      rename_document_folder: {
+        Args: { _folder_id: string; _new_name: string }
+        Returns: undefined
+      }
       request_client_ip: { Args: never; Returns: string }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       required_withdrawal_authority: {
