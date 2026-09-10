@@ -11,6 +11,17 @@ export interface NavTab {
   label: string;
   /** Additional route prefixes that should highlight this tab. */
   match?: string[];
+  /**
+   * Practice capability needed to reach this tab. Omitted means everyone in a
+   * practice sees it. A billing clerk shown a Guidance tab that returns nothing
+   * reads the product as broken rather than as respecting their role.
+   */
+  capability?: string;
+}
+
+/** The tabs this member may actually open. `can` comes from useClinicianCapabilities. */
+export function visibleTabs(tabs: NavTab[], can: (c: any) => boolean): NavTab[] {
+  return tabs.filter((tab) => !tab.capability || can(tab.capability));
 }
 
 export interface PatientPillar {
