@@ -227,17 +227,28 @@ serve(async (req) => {
     //    other so it lands in pending approval.
     const allowlisted = STAFF.find((s) => s.join === "allowlisted");
     if (allowlisted) {
-      const { error } = await admin.from("practice_clinician_allowlist").upsert({
-        practice_id: practiceId,
-        email: allowlisted.email,
-        full_name: `${allowlisted.first_name} ${allowlisted.last_name}`,
-        intended_role: "clinician",
-        department_id: departmentId ?? null,
-        note: "Demo: expected staff member",
-        added_by: ownerId,
-      }, { onConflict: "practice_id,email" });
-      if (error) notes.push(`allowlist: ${error.message}`);
+      // The uniqueness here is a functional index on lower(email), which
+      // ON CONFLICT cannot target — so look first, then insert.
+      const { data: already } = await admin
+        .from("practice_clinician_allowlist")
+        .select("id")
+        .eq("practice_id", practiceId)
+        .ilike("email", allowlisted.email)
+        .maybeSingle();
+      if (!already) {
+        const { error } = await admin.from("practice_clinician_allowlist").insert({
+          practice_id: practiceId,
+          email: allowlisted.email,
+          full_name: `${allowlisted.first_name} ${allowlisted.last_name}`,
+          intended_role: "clinician",
+          department_id: departmentId ?? null,
+          note: "Demo: expected staff member",
+          added_by: ownerId,
+        });
+        if (error) notes.push(`allowlist: ${error.message}`);
+      }
     }
+
 
     // 6. Patients connected to the hospital, with assignments
     const patients: Array<{ email: string; assigned_to: string }> = [];
