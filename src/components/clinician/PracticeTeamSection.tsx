@@ -63,6 +63,7 @@ export function PracticeTeamSection() {
     usePracticeMembers,
     usePracticeInvitations,
     removeMember,
+    updateMember,
     canManagePractice,
     hasPractice,
     isLoading,
