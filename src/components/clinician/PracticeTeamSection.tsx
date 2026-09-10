@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { usePractice, PracticeMember, PracticeRole } from '@/hooks/usePractice';
 import { CreatePracticeDialog } from './CreatePracticeDialog';
@@ -12,6 +12,23 @@ import { InviteTeamMemberDialog } from './InviteTeamMemberDialog';
 import { Building2, UserPlus, Users, MoreVertical, Crown, Shield, Stethoscope, User, Loader2, Mail, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PAGE_SIZE = 10;
+
+/**
+ * Roles an owner or admin can move somebody to. Ownership is deliberately not
+ * here: handing over a hospital is not a menu item, and the database treats it
+ * as its own step.
+ */
+const ASSIGNABLE_ROLES: PracticeRole[] = [
+  'admin',
+  'sub_admin',
+  'provider',
+  'clinician',
+  'nurse',
+  'front_desk',
+  'billing',
+  'read_only',
+  'staff',
+];
 
 const ROLE_ICONS: Record<PracticeRole, React.ReactNode> = {
   owner: <Crown className="h-4 w-4 text-amber-500" />,
@@ -215,12 +232,31 @@ export function PracticeTeamSection() {
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel>Change role</DropdownMenuLabel>
+                          {ASSIGNABLE_ROLES.map((role) => (
+                            <DropdownMenuItem
+                              key={role}
+                              disabled={role === member.role || updateMember.isPending}
+                              onClick={() =>
+                                updateMember.mutate({ memberId: member.id, updates: { role } })
+                              }
+                            >
+                              <span className="flex items-center gap-2 capitalize">
+                                {ROLE_ICONS[role]}
+                                {role.replace(/_/g, ' ')}
+                              </span>
+                              {role === member.role && (
+                                <span className="ml-auto text-xs text-muted-foreground">Current</span>
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="text-destructive"
                             onClick={() => setMemberToRemove(member)}
                           >
-                            Remove from practice
+                            End their access
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
