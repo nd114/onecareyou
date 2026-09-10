@@ -9,8 +9,15 @@
 //   view_phi · edit_clinical · send_guidance · message_patients
 //   manage_billing · manage_team · manage_ehr · manage_settings
 //   invite_patients · export_data · bulk_message · view_audit
+//
+// Cached through React Query on purpose. Every guarded screen and every sub-tab
+// bar asks this question, and a per-mount fetch (one membership read plus one
+// RPC per capability) made each move to Invoices, Import or Compliance sit on a
+// full-screen spinner — indistinguishable from a page reload. The answer only
+// changes when a role changes, so it is read once and shared.
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
@@ -68,96 +75,106 @@ interface MembershipRow {
   created_at?: string;
 }
 
+interface CapabilityAnswer {
+  membership: MembershipRow | null;
+  memberships: MembershipRow[];
+  grants: PracticeCapability[];
+}
+
+const EMPTY: CapabilityAnswer = { membership: null, memberships: [], grants: [] };
+
+async function fetchCapabilities(userId: string, isClinician: boolean): Promise<CapabilityAnswer> {
+  // 1. Look up active practice memberships.
+  //    A clinician can be affiliated with several hospitals at once (sharing
+  //    model §6), so this reads the full set. maybeSingle() used to error on
+  //    exactly that case, dropping the user through to the solo branch below
+  //    and handing them every capability.
+  const { data: memberRows } = await supabase
+    .from("practice_members")
+    .select("practice_id, role, created_at")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .order("created_at", { ascending: true });
+
+  // Until there is a tenant switcher, the earliest affiliation is the active
+  // one — deterministic, and the same row the database-side default resolves.
+  const memberRow = (memberRows ?? [])[0] as MembershipRow | undefined;
+
+  if (!memberRow) {
+    // Solo clinician (verified clinician profile, no practice yet) is the
+    // owner of their own workspace — grant all capabilities so audit,
+    // reports, compliance, templates, etc. are accessible without forcing
+    // them to create a practice first. Non-clinicians get nothing.
+    return {
+      membership: null,
+      memberships: [],
+      grants: isClinician ? [...ALL_CAPABILITIES] : [],
+    };
+  }
+
+  // 2. Resolve every capability via the SECURITY DEFINER RPC, scoped to the
+  //    tenant in hand so a role at one hospital cannot answer for another.
+  const results = await Promise.all(
+    ALL_CAPABILITIES.map(async (cap) => {
+      const { data, error } = await supabase.rpc("has_practice_capability", {
+        _user_id: userId,
+        _capability: cap,
+        _practice_id: memberRow.practice_id,
+      });
+      return [cap, !error && data === true] as const;
+    }),
+  );
+
+  return {
+    membership: memberRow,
+    memberships: (memberRows ?? []) as MembershipRow[],
+    grants: results.filter(([, ok]) => ok).map(([cap]) => cap),
+  };
+}
+
 export function useClinicianCapabilities() {
   const { user } = useAuth();
-  const { isClinician } = useClinicianProfile();
-  const [membership, setMembership] = useState<MembershipRow | null>(null);
-  const [memberships, setMemberships] = useState<MembershipRow[]>([]);
-  const [grants, setGrants] = useState<Set<PracticeCapability>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const { isClinician, isLoading: profileLoading } = useClinicianProfile();
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    if (!user) {
-      setMembership(null);
-      setMemberships([]);
-      setGrants(new Set());
-      setLoading(false);
-      return;
-    }
+  const enabled = !!user && !profileLoading;
 
-    setLoading(true);
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["clinician-capabilities", user?.id ?? null, isClinician],
+    queryFn: () => fetchCapabilities(user!.id, isClinician),
+    enabled,
+    // A role change is an administrative act, not a per-navigation event.
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-    // 1. Look up active practice memberships.
-    //    A clinician can be affiliated with several hospitals at once (sharing
-    //    model §6), so this reads the full set. maybeSingle() used to error on
-    //    exactly that case, dropping the user through to the solo branch below
-    //    and handing them every capability.
-    const { data: memberRows } = await supabase
-      .from("practice_members")
-      .select("practice_id, role, created_at")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .order("created_at", { ascending: true });
+  const answer = data ?? EMPTY;
 
-    // Until there is a tenant switcher, the earliest affiliation is the active
-    // one — deterministic, and the same row the database-side default resolves.
-    const memberRow = (memberRows ?? [])[0] as MembershipRow | undefined;
-
-    if (!memberRow) {
-      setMembership(null);
-      setMemberships([]);
-      // Solo clinician (verified clinician profile, no practice yet) is the
-      // owner of their own workspace — grant all capabilities so audit,
-      // reports, compliance, templates, etc. are accessible without forcing
-      // them to create a practice first. Non-clinicians get nothing.
-      setGrants(isClinician ? new Set(ALL_CAPABILITIES) : new Set());
-      setLoading(false);
-      return;
-    }
-
-    setMembership(memberRow);
-    setMemberships((memberRows ?? []) as MembershipRow[]);
-
-    // 2. Resolve every capability via the SECURITY DEFINER RPC, scoped to the
-    //    tenant in hand so a role at one hospital cannot answer for another.
-    const results = await Promise.all(
-      ALL_CAPABILITIES.map(async (cap) => {
-        // Cast: the practice-scoped overload is newer than the generated types.
-        const { data, error } = await supabase.rpc("has_practice_capability", {
-          _user_id: user.id,
-          _capability: cap,
-          _practice_id: memberRow.practice_id,
-        });
-        return [cap, !error && data === true] as const;
-      }),
-    );
-
-    const next = new Set<PracticeCapability>();
-    for (const [cap, ok] of results) if (ok) next.add(cap);
-    setGrants(next);
-    setLoading(false);
-  }, [user, isClinician]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const grants = useMemo(() => new Set(answer.grants), [answer.grants]);
 
   const can = useCallback(
     (capability: PracticeCapability): boolean => grants.has(capability),
     [grants],
   );
 
+  const refresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["clinician-capabilities"] });
+  }, [queryClient]);
+
   return useMemo(
     () => ({
-      loading,
-      role: membership?.role ?? null,
-      practiceId: membership?.practice_id ?? null,
+      // Only the very first answer counts as loading. A background refresh must
+      // never blank a screen the person is already reading.
+      loading: enabled ? isLoading || (!data && isFetching) : !!user,
+      role: answer.membership?.role ?? null,
+      practiceId: answer.membership?.practice_id ?? null,
       /** Every active affiliation — a clinician may work across hospitals. */
-      memberships,
-      isInPractice: membership !== null,
+      memberships: answer.memberships,
+      isInPractice: answer.membership !== null,
       can,
-      refresh: load,
+      refresh,
     }),
-    [loading, membership, memberships, can, load],
+    [enabled, isLoading, isFetching, data, user, answer, can, refresh],
   );
 }
