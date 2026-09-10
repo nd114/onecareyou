@@ -483,13 +483,10 @@ const ClinicianPatientDetail = () => {
                 Around the care
               </span>
               <TabsTrigger value="billing">Billing</TabsTrigger>
-              <TabsTrigger value="network">Network</TabsTrigger>
+              {/* Network is hidden until outside-record matching is finished —
+                  a tab that cannot yet be trusted reads worse than no tab. */}
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="network">
-              <NetworkRecordsTab patientUserId={patient.user_id} />
-            </TabsContent>
 
             <TabsContent value="internal">
               <InternalNotesTab patientUserId={patient.user_id} />
