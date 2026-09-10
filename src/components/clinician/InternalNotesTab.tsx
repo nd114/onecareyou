@@ -2,10 +2,16 @@ import { useEffect, useState } from "react";
 import { Check, Pencil, Pin, PinOff, Trash2, Loader2, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor, NoteBody } from "@/components/notes/RichTextEditor";
 import { useInternalNotes, type NoteVisibility } from "@/hooks/useInternalNotes";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+
+/** Is there anything but markup in here? An empty editor still reports "<br>". */
+const hasWords = (html: string) => html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length > 0;
+
+/** Notes written before the editor existed are plain text; keep their line breaks. */
+const looksLikeHtml = (body: string) => /<\/?(p|h2|h3|ul|ol|li|br|strong|em|u)\b/i.test(body);
 
 interface Props {
   patientUserId: string;
