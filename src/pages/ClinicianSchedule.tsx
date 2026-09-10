@@ -172,7 +172,7 @@ const ClinicianSchedule = () => {
                   {range === 'upcoming' ? 'Nothing booked yet' : 'Nothing behind you yet'}
                 </p>
                 <p className="mx-auto mt-2 max-w-sm">
-                  Appointments are booked from a patient's own page, on their Appointments tab.
+                  Use "Book appointment" above, or book from a patient's own Appointments tab.
                 </p>
               </PanelEmpty>
             </Panel>
