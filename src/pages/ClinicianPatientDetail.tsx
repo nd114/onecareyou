@@ -37,7 +37,6 @@ import { SendToVaultDialog } from '@/components/clinician/SendToVaultDialog';
 import { MessageThread } from '@/components/messaging/MessageThread';
 import { EncountersTab } from '@/components/clinician/EncountersTab';
 import { PatientActivityTab } from '@/components/clinician/PatientActivityTab';
-import { NetworkRecordsTab } from '@/components/clinician/NetworkRecordsTab';
 import { InternalNotesTab } from '@/components/clinician/InternalNotesTab';
 import { PatientSafetyStrip } from '@/components/clinician/PatientSafetyStrip';
 import { PatientActionRail } from '@/components/clinician/PatientActionRail';
@@ -174,6 +173,16 @@ const ClinicianPatientDetail = () => {
     [scheduleEntries],
   );
 
+  // Adherence used to stop dead at the twenty most recent doses, so a month of
+  // history simply was not reachable. Paged, like the patients list.
+  const ADHERENCE_PER_PAGE = 20;
+  const [adherencePage, setAdherencePage] = useState(0);
+  const adherencePages = Math.max(1, Math.ceil(scheduleEntries.length / ADHERENCE_PER_PAGE));
+  const adherenceSlice = scheduleEntries.slice(
+    adherencePage * ADHERENCE_PER_PAGE,
+    adherencePage * ADHERENCE_PER_PAGE + ADHERENCE_PER_PAGE,
+  );
+
   // Filter guidance for this patient
   const patientGuidance = useMemo(() => 
     clinicianGuidance.filter(g => g.patient_user_id === patient?.user_id),
@@ -273,12 +282,37 @@ const ClinicianPatientDetail = () => {
 
           </div>
 
-          {/* Permission Badges */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {patient.permissions?.vitals && <Badge variant="secondary">Vitals Access</Badge>}
-            {patient.permissions?.meds && <Badge variant="secondary">Medications Access</Badge>}
-            {patient.permissions?.adherence && <Badge variant="secondary">Adherence Access</Badge>}
-            {patient.permissions?.profile && <Badge variant="secondary">Profile Access</Badge>}
+          {/* How this clinician came to see this record, said plainly. It was
+              only inferable from the Encounters tab before, which is the wrong
+              place for the basis of access. */}
+          <div className="mt-4 rounded-lg border border-border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              Your connection
+            </p>
+            <p className="text-sm">
+              {patient.source === 'hospital'
+                ? `Assigned to you${patient.hospital_name ? ` by ${patient.hospital_name}` : ' by your hospital'}`
+                : 'Shared with you directly by the patient'}
+              {patient.created_at && ` · since ${format(new Date(patient.created_at), 'd MMM yyyy')}`}
+              {patient.share_active === false && ' · connection ended'}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {patient.permissions?.vitals && <Badge variant="secondary">Vitals</Badge>}
+              {patient.permissions?.meds && <Badge variant="secondary">Medications</Badge>}
+              {patient.permissions?.adherence && <Badge variant="secondary">Adherence</Badge>}
+              {patient.permissions?.profile && <Badge variant="secondary">Profile</Badge>}
+              {!patient.permissions?.vitals &&
+                !patient.permissions?.meds &&
+                !patient.permissions?.adherence &&
+                !patient.permissions?.profile && (
+                  <span className="text-xs text-muted-foreground">No data access granted yet</span>
+                )}
+            </div>
+            {patient.last_accessed_at && (
+              <p className="text-xs text-muted-foreground mt-2">
+                You last opened this record {format(new Date(patient.last_accessed_at), 'd MMM yyyy, HH:mm')}
+              </p>
+            )}
           </div>
 
           {showRiskDetails && (
@@ -483,13 +517,10 @@ const ClinicianPatientDetail = () => {
                 Around the care
               </span>
               <TabsTrigger value="billing">Billing</TabsTrigger>
-              <TabsTrigger value="network">Network</TabsTrigger>
+              {/* Network is hidden until outside-record matching is finished —
+                  a tab that cannot yet be trusted reads worse than no tab. */}
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
-
-            <TabsContent value="network">
-              <NetworkRecordsTab patientUserId={patient.user_id} />
-            </TabsContent>
 
             <TabsContent value="internal">
               <InternalNotesTab patientUserId={patient.user_id} />
@@ -747,7 +778,7 @@ const ClinicianPatientDetail = () => {
 
                       {/* Recent Entries */}
                       <div className="space-y-2">
-                        {scheduleEntries.slice(0, 20).map((entry: any) => (
+                        {adherenceSlice.map((entry: any) => (
                           <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg border">
                             <div className="flex items-center gap-3">
                               {entry.status === 'taken' ? (
@@ -773,6 +804,32 @@ const ClinicianPatientDetail = () => {
                           </div>
                         ))}
                       </div>
+
+                      {adherencePages > 1 && (
+                        <div className="flex items-center justify-between border-t pt-3">
+                          <p className="text-xs text-muted-foreground">
+                            Page {adherencePage + 1} of {adherencePages} · {scheduleEntries.length} doses
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={adherencePage === 0}
+                              onClick={() => setAdherencePage((p) => Math.max(0, p - 1))}
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={adherencePage >= adherencePages - 1}
+                              onClick={() => setAdherencePage((p) => Math.min(adherencePages - 1, p + 1))}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
