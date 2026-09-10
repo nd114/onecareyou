@@ -4915,6 +4915,35 @@ export type Database = {
         }
         Returns: string
       }
+      assign_practice_patient: {
+        Args: {
+          _clinician_user_id: string
+          _department_id?: string
+          _notes?: string
+          _patient_user_id: string
+          _practice_id: string
+        }
+        Returns: {
+          assigned_by: string | null
+          assignment_role: string
+          clinician_user_id: string
+          created_at: string
+          department_id: string | null
+          effective_from: string
+          effective_to: string | null
+          id: string
+          notes: string | null
+          patient_user_id: string
+          practice_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "practice_patient_assignments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       bulk_allowlist_clinicians: {
         Args: { _entries: Json; _practice_id: string }
         Returns: {
