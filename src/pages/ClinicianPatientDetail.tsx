@@ -339,7 +339,7 @@ const ClinicianPatientDetail = () => {
           riskChip={
             <PatientRiskIndicator vitals={vitals} adherenceRate={adherenceRate || undefined} />
           }
-          guidanceAction={
+          guidanceAction={patient.share_active !== false ? (
             <CreateGuidanceDialog
               patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
               selectedPatientId={patient.user_id}
@@ -350,8 +350,8 @@ const ClinicianPatientDetail = () => {
                 </Button>
               }
             />
-          }
-          alertAction={
+          ) : undefined}
+          alertAction={patient.share_active !== false ? (
             <CreateAlertRuleDialog
               patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
               selectedPatientId={patient.user_id}
@@ -362,7 +362,7 @@ const ClinicianPatientDetail = () => {
                 </Button>
               }
             />
-          }
+          ) : undefined}
         />
 
         {/* Quick Stats */}
@@ -922,11 +922,13 @@ const ClinicianPatientDetail = () => {
                       Instructions and guidance sent to this patient
                     </CardDescription>
                   </div>
-                  <CreateGuidanceDialog
-                    patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
-                    selectedPatientId={patient.user_id}
-                    trigger={<Button size="sm"><Send className="h-4 w-4 mr-2" />Send</Button>}
-                  />
+                  {patient.share_active !== false && (
+                    <CreateGuidanceDialog
+                      patients={[{ id: patient.id, user_id: patient.user_id, patient_name: patient.patient_name || 'Patient' }]}
+                      selectedPatientId={patient.user_id}
+                      trigger={<Button size="sm"><Send className="h-4 w-4 mr-2" />Send</Button>}
+                    />
+                  )}
                 </CardHeader>
                 <CardContent>
                   {patientGuidance.length === 0 ? (

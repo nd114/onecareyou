@@ -417,13 +417,13 @@ export function usePractice() {
     mutationFn: async (memberId: string) => {
       const { error } = await supabase
         .from('practice_members')
-        .delete()
+        .update({ status: 'revoked', updated_at: new Date().toISOString() })
         .eq('id', memberId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practice-members'] });
-      toast.success('Member removed');
+      toast.success('Member access ended');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Could not remove that member');
