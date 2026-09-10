@@ -427,12 +427,44 @@ const HealthVault = () => {
                 </Badge>
               ))}
             </div>
+
+            {/* Renaming and removing belong to the folder you are looking at,
+                so they appear once it is selected rather than as icons on every
+                chip. Removing never touches a file: its contents go back to
+                Unfiled. */}
+            {activeFolderRecord && (
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs"
+                  onClick={() => {
+                    setRenameDraft(activeFolderRecord.name);
+                    setRenaming({ id: activeFolderRecord.id, name: activeFolderRecord.name });
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Rename "{activeFolderRecord.name}"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+                  onClick={() => setRemoving({ id: activeFolderRecord.id, name: activeFolderRecord.name })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove folder
+                </Button>
+              </div>
+            )}
+
             {folders.length === 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                Create folders when uploading a document, or use the folder icon on any document to file it.
+                Make a folder with "New folder", then use the folder icon on any document to file it.
               </p>
             )}
           </div>
+
 
           {/* Category Filters */}
           <div className="flex gap-2 mb-6 flex-wrap">
