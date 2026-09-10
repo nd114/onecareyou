@@ -131,16 +131,20 @@ export function ClinicianAIDrawer({
           <div className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-primary" />
             <SheetTitle className="text-base">Clinical Assistant</SheetTitle>
+            {/* The sheet draws its own close button in the top-right corner, so
+                anything placed at the end of this row landed underneath it.
+                The margin leaves that corner alone. */}
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto h-8 w-8"
+              className="ml-auto mr-7 h-8 w-8"
               onClick={clearChat}
               title="Clear conversation"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
+
           <p className="text-xs text-muted-foreground text-left">
             Drafts messages, guidance and alert thresholds for your review. Nothing is sent or saved until you approve it.
           </p>
