@@ -42,7 +42,7 @@ const ClinicianPracticeSection = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
   const { isClinician, isLoading: isLoadingProfile } = useClinicianProfile();
   const { patients } = useClinicianPatients();
-  const { currentPractice, currentMembership } = usePractice();
+  const { currentPractice, currentMembership, isLoading: isLoadingPractice } = usePractice();
   const { tenant } = usePracticeTenant(currentPractice?.id);
   const { tier, subscriptionReady } = useClinicianSubscription();
 
