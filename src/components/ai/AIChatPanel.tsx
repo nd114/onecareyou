@@ -5,8 +5,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import {
-  Send, Loader2, Mic, MicOff, SquarePen, ArrowRight, Bot, User, AlertTriangle, Paperclip, BookOpen,
+  Send, Loader2, SquarePen, ArrowRight, Bot, User, AlertTriangle, Paperclip, BookOpen,
 } from 'lucide-react';
+import { DictateButton } from './DictateButton';
+
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useHealthDocuments } from '@/hooks/useHealthDocuments';
