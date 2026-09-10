@@ -11,6 +11,7 @@ export type DocumentCategory =
   | 'discharge_summary'
   | 'imaging'
   | 'insurance'
+  | 'billing'
   | 'vaccination'
   | 'referral'
   | 'visit_note'
@@ -24,6 +25,7 @@ export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; colo
   { value: 'discharge_summary', label: 'Discharge Summary', color: 'bg-purple-500/10 text-purple-700 dark:text-purple-300' },
   { value: 'imaging', label: 'Imaging Report', color: 'bg-orange-500/10 text-orange-700 dark:text-orange-300' },
   { value: 'insurance', label: 'Insurance', color: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300' },
+  { value: 'billing', label: 'Billing', color: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300' },
   { value: 'vaccination', label: 'Vaccination', color: 'bg-teal-500/10 text-teal-700 dark:text-teal-300' },
   { value: 'referral', label: 'Referral', color: 'bg-pink-500/10 text-pink-700 dark:text-pink-300' },
   { value: 'visit_note', label: 'Visit Note', color: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300' },
@@ -349,12 +351,17 @@ export function useHealthDocuments() {
    * sets Content-Disposition: attachment, so it saves, with the document's own
    * name rather than a storage path.
    */
-  const getDownloadUrl = async (filePath: string, fileName?: string) => {
+  const getFileUrl = async (filePath: string, fileName?: string) => {
     const { data } = await supabase.storage
       .from('health-documents')
-      .createSignedUrl(filePath, 3600, { download: fileName || true });
+      .createSignedUrl(filePath, 3600, fileName ? { download: fileName } : undefined);
     return data?.signedUrl;
   };
+
+  const getDownloadUrl = (filePath: string, fileName?: string) =>
+    getFileUrl(filePath, fileName || filePath.split('/').pop() || 'document');
+
+  const getPreviewUrl = (filePath: string) => getFileUrl(filePath);
 
   return {
     documents,
@@ -368,5 +375,6 @@ export function useHealthDocuments() {
     updateDocument,
     triggerSummarize,
     getDownloadUrl,
+    getPreviewUrl,
   };
 }

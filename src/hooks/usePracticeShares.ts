@@ -106,6 +106,10 @@ export function useMyInstitutionShares() {
     onSuccess: () => {
       toast.success('Connected to the hospital');
       queryClient.invalidateQueries({ queryKey: ['my-institution-shares'] });
+      queryClient.invalidateQueries({ queryKey: ['institution-assigned-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-shared-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-patient-overview'] });
     },
     onError: (e: Error) => toast.error(e.message || 'Could not connect'),
   });
@@ -127,6 +131,10 @@ export function useMyInstitutionShares() {
     onSuccess: () => {
       toast.success('Disconnected. Your history is preserved.');
       queryClient.invalidateQueries({ queryKey: ['my-institution-shares'] });
+      queryClient.invalidateQueries({ queryKey: ['institution-assigned-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-shared-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-patient-overview'] });
     },
     onError: (e: Error) => toast.error(e.message || 'Could not disconnect'),
   });
@@ -238,7 +246,7 @@ export function useInstitutionAssignedPatients() {
           const share = shareByKey.get(`${a.practice_id}:${a.patient_user_id}`);
           // No share row means the assignment outlived the consent that created
           // it; there is nothing to show and nothing readable behind it.
-          if (!share) return null;
+          if (!share?.is_active) return null;
           const identity = identityById.get(a.patient_user_id);
           return {
             assignmentId: a.id,
@@ -307,7 +315,7 @@ export function usePracticeSharedPatients(practiceId?: string | null) {
       return shares.map((s) => ({
         ...s,
         patient: byId.get(s.user_id),
-        assignedClinicianIds: ((assignments || []) as {
+        assignedClinicianIds: [...new Set(((assignments || []) as {
           patient_user_id: string;
           clinician_user_id: string;
           effective_to: string | null;
@@ -317,7 +325,7 @@ export function usePracticeSharedPatients(practiceId?: string | null) {
               a.patient_user_id === s.user_id &&
               (!a.effective_to || new Date(a.effective_to) > new Date()),
           )
-          .map((a) => a.clinician_user_id),
+          .map((a) => a.clinician_user_id))],
       }));
     },
     enabled: !!practiceId,
@@ -335,18 +343,21 @@ export function usePracticeSharedPatients(practiceId?: string | null) {
       departmentId?: string | null;
     }) => {
       if (!practiceId || !user) throw new Error('No practice');
-      const { error } = await supabase.from('practice_patient_assignments').insert({
-        practice_id: practiceId,
-        patient_user_id: patientUserId,
-        clinician_user_id: clinicianUserId,
-        department_id: departmentId ?? null,
-        assigned_by: user.id,
-      } as never);
+      const { error } = await supabase.rpc('assign_practice_patient', {
+        _practice_id: practiceId,
+        _patient_user_id: patientUserId,
+        _clinician_user_id: clinicianUserId,
+        _department_id: departmentId ?? undefined,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Patient assigned');
       queryClient.invalidateQueries({ queryKey: ['practice-shared-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['institution-assigned-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-patient-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['patient-action-log'] });
     },
     onError: (e: Error) => toast.error(e.message || 'Could not assign patient'),
   });
