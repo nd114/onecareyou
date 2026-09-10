@@ -183,14 +183,21 @@ const App = () => (
                 <ClinicianPatients />
               </ClinicianRoute>
             } />
+            {/* Practice roles: the database already refuses these reads to a
+                receptionist or a biller. Turning them away at the door is
+                clearer than handing them an empty screen. */}
             <Route path="/clinician/guidance" element={
               <ClinicianRoute>
-                <ClinicianGuidance />
+                <RequireCapability capability="send_guidance">
+                  <ClinicianGuidance />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/alerts" element={
               <ClinicianRoute>
-                <ClinicianAlerts />
+                <RequireCapability capability="view_phi">
+                  <ClinicianAlerts />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             {/* The practice diary and the practice ledger. The per-patient
@@ -203,17 +210,23 @@ const App = () => (
             } />
             <Route path="/clinician/invoices" element={
               <ClinicianRoute>
-                <ClinicianInvoices />
+                <RequireCapability capability="manage_billing">
+                  <ClinicianInvoices />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/messages" element={
               <ClinicianRoute>
-                <ClinicianMessages />
+                <RequireCapability capability="message_patients">
+                  <ClinicianMessages />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/patients/import" element={
               <ClinicianRoute>
-                <ClinicianPatientImport />
+                <RequireCapability capability="invite_patients">
+                  <ClinicianPatientImport />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/records/:recordId" element={
