@@ -48,7 +48,7 @@ const ClinicianPractice = () => {
     if (section) navigate(section.path, { replace: true });
   }, [location.hash, navigate]);
 
-  if (isLoadingProfile) {
+  if (isLoadingProfile || isLoadingPractice) {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
