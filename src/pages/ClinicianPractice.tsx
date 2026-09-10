@@ -34,7 +34,7 @@ const ClinicianPractice = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isClinician, isLoading: isLoadingProfile } = useClinicianProfile();
-  const { currentPractice, currentMembership } = usePractice();
+  const { currentPractice, currentMembership, isLoading: isLoadingPractice } = usePractice();
   const { tenant } = usePracticeTenant(currentPractice?.id);
   const { tier } = useClinicianSubscription();
 
@@ -48,7 +48,7 @@ const ClinicianPractice = () => {
     if (section) navigate(section.path, { replace: true });
   }, [location.hash, navigate]);
 
-  if (isLoadingProfile) {
+  if (isLoadingProfile || isLoadingPractice) {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
