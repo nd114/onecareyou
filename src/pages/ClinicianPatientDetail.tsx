@@ -282,12 +282,37 @@ const ClinicianPatientDetail = () => {
 
           </div>
 
-          {/* Permission Badges */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {patient.permissions?.vitals && <Badge variant="secondary">Vitals Access</Badge>}
-            {patient.permissions?.meds && <Badge variant="secondary">Medications Access</Badge>}
-            {patient.permissions?.adherence && <Badge variant="secondary">Adherence Access</Badge>}
-            {patient.permissions?.profile && <Badge variant="secondary">Profile Access</Badge>}
+          {/* How this clinician came to see this record, said plainly. It was
+              only inferable from the Encounters tab before, which is the wrong
+              place for the basis of access. */}
+          <div className="mt-4 rounded-lg border border-border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              Your connection
+            </p>
+            <p className="text-sm">
+              {patient.source === 'hospital'
+                ? `Assigned to you${patient.hospital_name ? ` by ${patient.hospital_name}` : ' by your hospital'}`
+                : 'Shared with you directly by the patient'}
+              {patient.created_at && ` · since ${format(new Date(patient.created_at), 'd MMM yyyy')}`}
+              {patient.share_active === false && ' · connection ended'}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {patient.permissions?.vitals && <Badge variant="secondary">Vitals</Badge>}
+              {patient.permissions?.meds && <Badge variant="secondary">Medications</Badge>}
+              {patient.permissions?.adherence && <Badge variant="secondary">Adherence</Badge>}
+              {patient.permissions?.profile && <Badge variant="secondary">Profile</Badge>}
+              {!patient.permissions?.vitals &&
+                !patient.permissions?.meds &&
+                !patient.permissions?.adherence &&
+                !patient.permissions?.profile && (
+                  <span className="text-xs text-muted-foreground">No data access granted yet</span>
+                )}
+            </div>
+            {patient.last_accessed_at && (
+              <p className="text-xs text-muted-foreground mt-2">
+                You last opened this record {format(new Date(patient.last_accessed_at), 'd MMM yyyy, HH:mm')}
+              </p>
+            )}
           </div>
 
           {showRiskDetails && (
