@@ -60,27 +60,51 @@ export function usePracticeAuditLog(
   });
 }
 
+export interface AuditPage {
+  entries: AuditEntry[];
+  total: number;
+}
+
 export function useAuditLog(opts?: {
   patientId?: string;
   action?: string;
   limit?: number;
+  /** 1-based page, when the caller wants server-side paging instead of a slice. */
+  page?: number;
+  pageSize?: number;
   /** Skip the query entirely — for a page showing the tenant view instead. */
   enabled?: boolean;
 }) {
   const { user } = useAuth();
+  const page = opts?.page;
+  const pageSize = opts?.pageSize ?? 25;
   return useQuery({
-    queryKey: ["audit-log", opts?.patientId ?? null, opts?.action ?? null, opts?.limit ?? 200],
-    queryFn: async () => {
+    queryKey: [
+      "audit-log",
+      opts?.patientId ?? null,
+      opts?.action ?? null,
+      page ?? null,
+      page ? pageSize : (opts?.limit ?? 200),
+    ],
+    // The trail is append-only, so keep the page the reader is on in place
+    // while the next one loads rather than blanking it.
+    placeholderData: (previous) => previous,
+    queryFn: async (): Promise<AuditPage> => {
       let q = supabase
         .from("hipaa_audit_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(opts?.limit ?? 200);
+        .select("*", page ? { count: "exact" } : undefined)
+        .order("created_at", { ascending: false });
+      if (page) {
+        const start = (page - 1) * pageSize;
+        q = q.range(start, start + pageSize - 1);
+      } else {
+        q = q.limit(opts?.limit ?? 200);
+      }
       if (opts?.patientId) q = q.eq("patient_user_id", opts.patientId);
       if (opts?.action) q = q.eq("action", opts.action);
-      const { data, error } = await q;
+      const { data, error, count } = await q;
       if (error) throw error;
-      return (data ?? []) as AuditEntry[];
+      return { entries: (data ?? []) as AuditEntry[], total: count ?? data?.length ?? 0 };
     },
     enabled: !!user && opts?.enabled !== false,
   });
