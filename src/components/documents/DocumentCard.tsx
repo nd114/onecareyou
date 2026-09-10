@@ -395,6 +395,11 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
         onOpenChange={setShowViewer}
       />
 
+      {showEdit && (
+        <EditDocumentDialog document={doc} open={showEdit} onOpenChange={setShowEdit} />
+      )}
+
+
     </>
   );
 }
