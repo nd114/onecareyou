@@ -215,15 +215,22 @@ const HealthVault = () => {
                 Health Vault
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Your visit summaries and health documents, in one place
+                Your visit summaries, health documents and your own notes, in one place
               </p>
             </div>
-            {!isOverFreeLimit && (
-              <UploadDocumentDialog
-                defaultFolder={activeFolder === 'all' || activeFolder === '__unfiled__' ? null : activeFolder}
-              />
-            )}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setShowNewNote(true)}>
+                <NotebookPen className="h-4 w-4 mr-2" />
+                New note
+              </Button>
+              {!isOverFreeLimit && (
+                <UploadDocumentDialog
+                  defaultFolder={activeFolder === 'all' || activeFolder === '__unfiled__' ? null : activeFolder}
+                />
+              )}
+            </div>
           </div>
+
 
           {/* Premium Upsell Banner for free users at limit */}
           {isOverFreeLimit && (
