@@ -4,7 +4,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 
-export type PracticeRole = 'owner' | 'admin' | 'provider' | 'staff';
+export type PracticeRole =
+  | 'owner'
+  | 'admin'
+  | 'sub_admin'
+  | 'provider'
+  | 'clinician'
+  | 'nurse'
+  | 'front_desk'
+  | 'billing'
+  | 'read_only'
+  | 'staff';
 
 export interface Practice {
   id: string;

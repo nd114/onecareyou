@@ -25,6 +25,7 @@ import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinician
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { useClinicianCapabilities } from '@/hooks/useClinicianCapabilities';
 import { availableSections, findSection } from '@/lib/practice-sections';
 
 /**
@@ -45,6 +46,7 @@ const ClinicianPracticeSection = () => {
   const { currentPractice, currentMembership, isLoading: isLoadingPractice } = usePractice();
   const { tenant } = usePracticeTenant(currentPractice?.id);
   const { tier, subscriptionReady } = useClinicianSubscription();
+  const { can, loading: capabilitiesLoading } = useClinicianCapabilities();
 
   useSessionTimeout();
 
@@ -53,7 +55,7 @@ const ClinicianPracticeSection = () => {
   // The practice has to be known before we can judge whether a section applies.
   // Deciding early sent a hospital owner who opened People or Practice details
   // straight back to the hub, because at that instant they had no practice yet.
-  if (isLoadingProfile || isLoadingPractice) {
+  if (isLoadingProfile || isLoadingPractice || capabilitiesLoading) {
     return (
       <div className="min-h-screen bg-muted/30">
         <ClinicianHeader />
@@ -70,7 +72,7 @@ const ClinicianPracticeSection = () => {
   const context = {
     hasPractice: Boolean(currentPractice),
     isHospital: (tenant?.tenant_type ?? 'practice') === 'hospital',
-    isAdmin: currentMembership?.role === 'owner' || currentMembership?.role === 'admin',
+    isAdmin: can('manage_team'),
     canManageTeam: hasFeatureAccess(tier, 'team_management'),
   };
 
@@ -116,15 +118,17 @@ const ClinicianPracticeSection = () => {
                   <TeamUpgradeCard />
                 )}
                 <ClinicianAllowlistCard />
-                <DepartmentsCard />
               </>
             )}
 
+            {section.id === 'departments' && <DepartmentsCard />}
+
+            {section.id === 'routing' && <HospitalPatientsCard />}
+
             {section.id === 'access' && (
               <>
-                <HospitalPatientsCard />
                 <PracticeAccessOverviewCard />
-                <EHRConnectionsSection />
+                {can('manage_ehr') && <EHRConnectionsSection />}
               </>
             )}
 
@@ -132,7 +136,7 @@ const ClinicianPracticeSection = () => {
               <>
                 <PracticeContactCard />
                 <HospitalCodeCard />
-                <PracticeCurrencyCard />
+                {can('manage_billing') && <PracticeCurrencyCard />}
                 {subscriptionReady && hasFeatureAccess(tier, 'practice_branding') && (
                   <PracticeBrandingCard />
                 )}
@@ -141,9 +145,15 @@ const ClinicianPracticeSection = () => {
 
             {section.id === 'plan' && (
               <>
-                <SubscriptionManagementCard patientCount={patients.length} />
-                <PracticeStorageCard />
-                <PracticeRevenueShareCard />
+                {can('manage_billing') ? (
+                  <>
+                    <SubscriptionManagementCard patientCount={patients.length} />
+                    <PracticeStorageCard />
+                    <PracticeRevenueShareCard />
+                  </>
+                ) : (
+                  <Card><CardContent className="py-8 text-sm text-muted-foreground">Billing and storage settings are available to authorised personnel.</CardContent></Card>
+                )}
               </>
             )}
           </div>

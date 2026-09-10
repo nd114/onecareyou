@@ -263,7 +263,7 @@ export function useInstitutionAssignedPatients() {
             assignedAt: a.created_at,
           } satisfies InstitutionAssignedPatient;
         })
-        .filter((p): p is InstitutionAssignedPatient => p !== null);
+        .filter((p) => p !== null) as InstitutionAssignedPatient[];
     },
   });
 
