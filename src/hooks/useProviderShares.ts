@@ -414,7 +414,9 @@ export function useShareEvents(shareId?: string) {
     queryKey: ["share-events", user?.id, shareId ?? "all"],
     enabled: !!user,
     queryFn: async () => {
-      let q = supabase.from("share_events").select("*").order("created_at", { ascending: false }).limit(200);
+      // Sharing history is a legal record the patient reads back through, so the
+      // ceiling is generous; the card itself pages what it shows.
+      let q = supabase.from("share_events").select("*").order("created_at", { ascending: false }).limit(1000);
       if (shareId) q = q.eq("share_id", shareId);
       const { data, error } = await q;
       if (error) throw error;
