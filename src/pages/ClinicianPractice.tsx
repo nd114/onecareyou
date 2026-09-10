@@ -34,7 +34,7 @@ const ClinicianPractice = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isClinician, isLoading: isLoadingProfile } = useClinicianProfile();
-  const { currentPractice, currentMembership } = usePractice();
+  const { currentPractice, currentMembership, isLoading: isLoadingPractice } = usePractice();
   const { tenant } = usePracticeTenant(currentPractice?.id);
   const { tier } = useClinicianSubscription();
 
