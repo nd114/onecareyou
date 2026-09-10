@@ -59,12 +59,12 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
   }, []);
 
   const onAdd = () => {
-    if (!body.trim()) return;
+    if (!hasWords(body)) return;
     create.mutate(body.trim(), { onSuccess: () => setBody("") });
   };
 
   const onSaveEdit = (id: string) => {
-    if (!draft.trim()) return;
+    if (!hasWords(draft)) return;
     update.mutate({ id, body: draft.trim() }, { onSuccess: () => setEditingId(null) });
   };
 
@@ -76,14 +76,13 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Textarea
+          <RichTextEditor
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
             placeholder={copy.placeholder}
-            rows={3}
           />
           <div className="flex justify-end">
-            <Button onClick={onAdd} disabled={!body.trim() || create.isPending}>
+            <Button onClick={onAdd} disabled={!hasWords(body) || create.isPending}>
               {create.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add note
             </Button>
