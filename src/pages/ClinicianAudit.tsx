@@ -231,7 +231,7 @@ export default function ClinicianAudit() {
               {/* Mobile: one card per event — a six-column table is unreadable
                   on a phone, and clinicians review audit trails on the ward. */}
               <ul className="space-y-2 sm:hidden">
-                {filtered.map((e) => (
+                {pageRows.map((e) => (
                   <li key={e.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="outline" className="text-xs">{e.action}</Badge>
@@ -261,7 +261,7 @@ export default function ClinicianAudit() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((e) => (
+                    {pageRows.map((e) => (
                       <tr key={e.id} className="border-b border-border/50 hover:bg-muted/40">
                         <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
                           {formatDayTime(e.created_at)}
@@ -283,6 +283,32 @@ export default function ClinicianAudit() {
                   </tbody>
                 </table>
               </div>
+
+              {pageCount > 1 && (
+                <div className="flex items-center justify-between border-t pt-3 mt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Page {pageSafe + 1} of {pageCount} · {filtered.length} events
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pageSafe === 0}
+                      onClick={() => setPage(Math.max(0, pageSafe - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pageSafe >= pageCount - 1}
+                      onClick={() => setPage(Math.min(pageCount - 1, pageSafe + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
               </>
             )}
           </CardContent>
