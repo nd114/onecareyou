@@ -894,6 +894,15 @@ const ClinicianPatientDetail = () => {
             </TabsContent>
           </Tabs>
 
+          {patient.user_id && (
+            <RecordVitalDialog
+              open={recordingVital}
+              onOpenChange={setRecordingVital}
+              patientUserId={patient.user_id}
+              patientName={patient.patient_name || 'this patient'}
+            />
+          )}
+
         </motion.div>
       </main>
     </div>
