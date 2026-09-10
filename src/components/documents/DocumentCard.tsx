@@ -66,6 +66,8 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+
 
   const shareCount = allShareCounts[doc.id] || 0;
 
