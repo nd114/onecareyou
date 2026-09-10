@@ -100,13 +100,13 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
               <li key={n.id} className="rounded-md border bg-muted/30 p-3">
                 {editingId === n.id ? (
                   <div className="space-y-2">
-                    <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} />
+                    <RichTextEditor value={draft} onChange={setDraft} />
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>
                         <X className="h-3.5 w-3.5 mr-1" />
                         Cancel
                       </Button>
-                      <Button size="sm" onClick={() => onSaveEdit(n.id)} disabled={!draft.trim()}>
+                      <Button size="sm" onClick={() => onSaveEdit(n.id)} disabled={!hasWords(draft)}>
                         <Check className="h-3.5 w-3.5 mr-1" />
                         Save
                       </Button>
@@ -114,7 +114,11 @@ export function InternalNotesTab({ patientUserId, visibility = "team" }: Props) 
                   </div>
                 ) : (
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm whitespace-pre-wrap flex-1">{n.body}</p>
+                    {looksLikeHtml(n.body) ? (
+                      <NoteBody html={n.body} className="flex-1" />
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap flex-1">{n.body}</p>
+                    )}
                     <div className="flex items-center gap-1">
                       {/* Amending an entry, which neither surface had — correcting
                           a typo used to mean deleting the note and its date. Only
