@@ -3,8 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
+import { useActiveWorkspace } from '@/hooks/useActiveWorkspace';
 
-export type PracticeRole = 'owner' | 'admin' | 'provider' | 'staff';
+export type PracticeRole =
+  | 'owner'
+  | 'admin'
+  | 'sub_admin'
+  | 'provider'
+  | 'clinician'
+  | 'nurse'
+  | 'front_desk'
+  | 'billing'
+  | 'read_only'
+  | 'staff';
 
 export interface Practice {
   id: string;
@@ -90,6 +101,7 @@ export interface CreatePracticeData {
 export function usePractice() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { workspaceId } = useActiveWorkspace();
 
   // Get user's practice memberships
   const { data: memberships = [], isLoading: loadingMemberships } = useQuery({
@@ -129,8 +141,13 @@ export function usePractice() {
   });
 
   // Get the user's current/primary practice (first one for now)
-  const currentPractice = practices[0] || null;
-  const currentMembership = memberships[0] || null;
+  const selectedPractice = workspaceId && workspaceId !== 'personal'
+    ? practices.find((practice) => practice.id === workspaceId)
+    : undefined;
+  const currentPractice = workspaceId === 'personal' ? null : selectedPractice || practices[0] || null;
+  const currentMembership = currentPractice
+    ? memberships.find((membership) => membership.practice_id === currentPractice.id) || null
+    : null;
 
   // Get members of a practice.
   //
@@ -400,13 +417,13 @@ export function usePractice() {
     mutationFn: async (memberId: string) => {
       const { error } = await supabase
         .from('practice_members')
-        .delete()
+        .update({ status: 'revoked', updated_at: new Date().toISOString() })
         .eq('id', memberId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practice-members'] });
-      toast.success('Member removed');
+      toast.success('Member access ended');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Could not remove that member');

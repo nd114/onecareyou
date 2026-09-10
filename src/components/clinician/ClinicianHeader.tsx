@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   Users,
+  User,
   Bell,
   Settings,
   LifeBuoy,
@@ -53,6 +54,7 @@ import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
+import { useActiveWorkspace } from "@/hooks/useActiveWorkspace";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -60,7 +62,8 @@ export function ClinicianHeader() {
   const { clinicianProfile } = useClinicianProfile();
   const { isAdmin } = useAdminRole();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
-  const { myInvitations, acceptInvitation, declineInvitation } = usePractice();
+  const { myInvitations, acceptInvitation, declineInvitation, practices, currentPractice } = usePractice();
+  const { setWorkspaceId } = useActiveWorkspace();
   const pendingInviteCount = myInvitations?.length || 0;
   const totalBadgeCount = unreadCount + pendingInviteCount;
   const location = useLocation();
@@ -346,6 +349,18 @@ export function ClinicianHeader() {
                   <p className="text-sm font-medium">{displayName}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1 text-xs font-medium text-muted-foreground">Workspace</div>
+                <DropdownMenuItem onClick={() => { setWorkspaceId('personal'); navigate('/clinician/today'); }}>
+                  <User className="h-4 w-4" />
+                  Personal practice {!currentPractice && '•'}
+                </DropdownMenuItem>
+                {practices.map((practice) => (
+                  <DropdownMenuItem key={practice.id} onClick={() => { setWorkspaceId(practice.id); navigate('/clinician/today'); }}>
+                    <Building2 className="h-4 w-4" />
+                    <span className="truncate">{practice.name}</span> {currentPractice?.id === practice.id && '•'}
+                  </DropdownMenuItem>
+                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">

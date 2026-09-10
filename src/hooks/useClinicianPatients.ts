@@ -216,9 +216,14 @@ export function useClinicianPatients() {
   );
 
   const allPatients = useMemo(() => {
-    // A patient may hold a private share AND be assigned at a hospital. Both
-    // rows are kept: they are separate relationships with separate scopes.
-    return [...patients, ...institutionPatients];
+    // Count and render people, not relationship rows. A private relationship
+    // remains the primary route when both exist; the institutional copy is
+    // still available in institutionPatients so consent scopes never merge.
+    const unique = new Map<string, PatientShare>();
+    for (const patient of [...patients, ...institutionPatients]) {
+      if (!unique.has(patient.user_id)) unique.set(patient.user_id, patient);
+    }
+    return [...unique.values()];
   }, [patients, institutionPatients]);
 
   return {

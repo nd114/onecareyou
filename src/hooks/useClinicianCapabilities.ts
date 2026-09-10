@@ -21,6 +21,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useActiveWorkspace } from "@/hooks/useActiveWorkspace";
 
 export type PracticeCapability =
   | "view_phi"
@@ -83,7 +84,7 @@ interface CapabilityAnswer {
 
 const EMPTY: CapabilityAnswer = { membership: null, memberships: [], grants: [] };
 
-async function fetchCapabilities(userId: string, isClinician: boolean): Promise<CapabilityAnswer> {
+async function fetchCapabilities(userId: string, isClinician: boolean, workspaceId: string | null): Promise<CapabilityAnswer> {
   // 1. Look up active practice memberships.
   //    A clinician can be affiliated with several hospitals at once (sharing
   //    model §6), so this reads the full set. maybeSingle() used to error on
@@ -98,7 +99,9 @@ async function fetchCapabilities(userId: string, isClinician: boolean): Promise<
 
   // Until there is a tenant switcher, the earliest affiliation is the active
   // one — deterministic, and the same row the database-side default resolves.
-  const memberRow = (memberRows ?? [])[0] as MembershipRow | undefined;
+  const memberRow = workspaceId === 'personal'
+    ? undefined
+    : ((memberRows ?? []).find((row) => row.practice_id === workspaceId) ?? (memberRows ?? [])[0]) as MembershipRow | undefined;
 
   if (!memberRow) {
     // Solo clinician (verified clinician profile, no practice yet) is the
@@ -136,12 +139,16 @@ export function useClinicianCapabilities() {
   const { user } = useAuth();
   const { isClinician, isLoading: profileLoading } = useClinicianProfile();
   const queryClient = useQueryClient();
+  const { workspaceId } = useActiveWorkspace();
 
   const enabled = !!user && !profileLoading;
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["clinician-capabilities", user?.id ?? null, isClinician],
-    queryFn: () => fetchCapabilities(user!.id, isClinician),
+    queryKey: ["clinician-capabilities", user?.id ?? null, isClinician, workspaceId],
+    queryFn: () => {
+      if (!user) return Promise.resolve(EMPTY);
+      return fetchCapabilities(user.id, isClinician, workspaceId);
+    },
     enabled,
     // A role change is an administrative act, not a per-navigation event.
     staleTime: 5 * 60 * 1000,

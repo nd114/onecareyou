@@ -52,9 +52,9 @@ describe("which sections are offered", () => {
     expect(availableSections(soloClinician).map((s) => s.id)).toEqual(["access", "plan"]);
   });
 
-  it("gives a practice owner all four", () => {
+  it("gives a practice owner the core four and a hospital owner the operational sections", () => {
     expect(availableSections(practiceOwner)).toHaveLength(4);
-    expect(availableSections(hospitalOwner)).toHaveLength(4);
+    expect(availableSections(hospitalOwner)).toHaveLength(6);
   });
 
   it("keeps them in the same order however many are shown", () => {
@@ -88,7 +88,7 @@ describe("the sections themselves", () => {
   });
 
   it("finds a section by id, and nothing by a name that is not one", () => {
-    expect(findSection("people")?.label).toBe("People");
+    expect(findSection("people")?.label).toBe("Personnel");
     expect(findSection("nonsense")).toBeUndefined();
     expect(findSection(undefined)).toBeUndefined();
   });
@@ -107,8 +107,8 @@ describe("the anchors the old page used", () => {
   });
 
   it("accepts the anchor with or without its hash", () => {
-    expect(sectionForLegacyAnchor("#departments")?.id).toBe("people");
-    expect(sectionForLegacyAnchor("departments")?.id).toBe("people");
+    expect(sectionForLegacyAnchor("#departments")?.id).toBe("departments");
+    expect(sectionForLegacyAnchor("departments")?.id).toBe("departments");
   });
 
   it("does not invent a destination for an anchor it does not know", () => {

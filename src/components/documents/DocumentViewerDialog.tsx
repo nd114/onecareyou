@@ -21,7 +21,7 @@ export function DocumentViewerDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { getDownloadUrl } = useHealthDocuments();
+  const { getDownloadUrl, getPreviewUrl } = useHealthDocuments();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const [url, setUrl] = useState<string | null>(null);
@@ -30,10 +30,10 @@ export function DocumentViewerDialog({
 
 
   const mime = doc.mime_type || '';
-  const isImage = mime.startsWith('image/');
+  const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(doc.file_name || '');
   const isHtml = mime === 'text/html' || /\.html?$/i.test(doc.file_name || '');
-  const isPlainText = !isHtml && (mime.startsWith('text/') || mime === 'application/json');
-  const isPdf = mime === 'application/pdf';
+  const isPlainText = !isHtml && (mime.startsWith('text/') || mime === 'application/json' || /\.(txt|md|json|csv)$/i.test(doc.file_name || ''));
+  const isPdf = mime === 'application/pdf' || /\.pdf$/i.test(doc.file_name || '');
   const canPreview = isImage || isPdf || isHtml || isPlainText;
 
   useEffect(() => {
@@ -44,7 +44,10 @@ export function DocumentViewerDialog({
       return;
     }
     let active = true;
-    getDownloadUrl(doc.file_path)
+    setUrl(null);
+    setText(null);
+    setFailed(false);
+    getPreviewUrl(doc.file_path)
       .then(async (signed) => {
         if (!active) return;
         if (!signed) {
@@ -67,7 +70,7 @@ export function DocumentViewerDialog({
     return () => {
       active = false;
     };
-    // getDownloadUrl is stable enough for this one-shot fetch per open document.
+    // getPreviewUrl is stable enough for this one-shot fetch per open document.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, doc.file_path]);
 

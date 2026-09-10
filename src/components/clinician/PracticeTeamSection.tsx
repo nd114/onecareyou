@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -8,19 +9,33 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { usePractice, PracticeMember, PracticeRole } from '@/hooks/usePractice';
 import { CreatePracticeDialog } from './CreatePracticeDialog';
 import { InviteTeamMemberDialog } from './InviteTeamMemberDialog';
-import { Building2, UserPlus, Users, MoreVertical, Crown, Shield, Stethoscope, User, Loader2, Mail } from 'lucide-react';
+import { Building2, UserPlus, Users, MoreVertical, Crown, Shield, Stethoscope, User, Loader2, Mail, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 10;
 
 const ROLE_ICONS: Record<PracticeRole, React.ReactNode> = {
   owner: <Crown className="h-4 w-4 text-amber-500" />,
   admin: <Shield className="h-4 w-4 text-blue-500" />,
+  sub_admin: <Shield className="h-4 w-4 text-blue-500" />,
   provider: <Stethoscope className="h-4 w-4 text-green-500" />,
+  clinician: <Stethoscope className="h-4 w-4 text-green-500" />,
+  nurse: <Stethoscope className="h-4 w-4 text-green-500" />,
+  front_desk: <User className="h-4 w-4 text-gray-500" />,
+  billing: <User className="h-4 w-4 text-gray-500" />,
+  read_only: <User className="h-4 w-4 text-gray-500" />,
   staff: <User className="h-4 w-4 text-gray-500" />,
 };
 
 const ROLE_COLORS: Record<PracticeRole, string> = {
   owner: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   admin: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  sub_admin: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   provider: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  clinician: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  nurse: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  front_desk: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  billing: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  read_only: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
   staff: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
 };
 
@@ -39,9 +54,23 @@ export function PracticeTeamSection() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<PracticeMember | null>(null);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   const { data: members = [], isLoading: loadingMembers } = usePracticeMembers(currentPractice?.id || '');
   const { data: invitations = [] } = usePracticeInvitations(currentPractice?.id || '');
+  const filteredMembers = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return members;
+    return members.filter((member) => {
+      const clinicianName = `${member.clinician_profile?.first_name ?? ''} ${member.clinician_profile?.last_name ?? ''}`;
+      return [clinicianName, member.profile?.name, member.profile?.email, member.clinician_profile?.specialty, member.role]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(needle));
+    });
+  }, [members, search]);
+  const pageCount = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE));
+  const visibleMembers = filteredMembers.slice((Math.min(page, pageCount) - 1) * PAGE_SIZE, Math.min(page, pageCount) * PAGE_SIZE);
 
   if (isLoading) {
     return (
@@ -105,6 +134,15 @@ export function PracticeTeamSection() {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+              placeholder="Search personnel"
+              className="pl-9"
+            />
+          </div>
           {/* Pending Invitations */}
           {invitations.length > 0 && (
             <div className="space-y-2">
@@ -135,7 +173,7 @@ export function PracticeTeamSection() {
             </div>
           ) : (
             <div className="space-y-2">
-              {members.map((member) => (
+              {visibleMembers.map((member) => (
                 <div 
                   key={member.id} 
                   className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -190,6 +228,22 @@ export function PracticeTeamSection() {
                   </div>
                 </div>
               ))}
+              {filteredMembers.length === 0 && (
+                <p className="py-8 text-center text-sm text-muted-foreground">No personnel match this search.</p>
+              )}
+              {pageCount > 1 && (
+                <div className="flex items-center justify-between pt-3">
+                  <p className="text-sm text-muted-foreground">Page {Math.min(page, pageCount)} of {pageCount}</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label="Previous personnel page">
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} aria-label="Next personnel page">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

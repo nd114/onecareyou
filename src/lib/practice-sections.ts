@@ -34,7 +34,7 @@
  * plan includes — so they cannot answer differently.
  */
 
-export type PracticeSectionId = "people" | "access" | "details" | "plan";
+export type PracticeSectionId = "people" | "departments" | "routing" | "access" | "details" | "plan";
 
 export interface PracticeContext {
   /** Whether this clinician belongs to a practice at all. */
@@ -66,13 +66,27 @@ export interface PracticeSection {
 export const PRACTICE_SECTIONS: PracticeSection[] = [
   {
     id: "people",
-    label: "People",
-    summary: "Who works here, which departments they belong to, and who may join.",
+    label: "Personnel",
+    summary: "Search staff, manage invitations, and control who may join.",
     path: "/clinician/practice/people",
     // The team section is always rendered here — either the real thing, or an
     // explanation of what the plan does not include, which is a real answer to
     // "how do I add a colleague" rather than a blank page.
     isAvailable: (c) => c.hasPractice,
+  },
+  {
+    id: "departments",
+    label: "Departments",
+    summary: "Organise personnel into departments and designate department leads.",
+    path: "/clinician/practice/departments",
+    isAvailable: (c) => c.hasPractice && c.isHospital && c.isAdmin,
+  },
+  {
+    id: "routing",
+    label: "Patient routing",
+    summary: "Manage hospital patients and route their care to the right personnel.",
+    path: "/clinician/practice/routing",
+    isAvailable: (c) => c.hasPractice && c.isHospital,
   },
   {
     id: "access",
@@ -119,8 +133,8 @@ export function findSection(id: string | undefined): PracticeSection | undefined
 export const LEGACY_ANCHOR_SECTIONS: Record<string, PracticeSectionId> = {
   "practice-team": "people",
   "staff-recognition": "people",
-  departments: "people",
-  "institution-patients": "access",
+  departments: "departments",
+  "institution-patients": "routing",
   "access-overview": "access",
   "ehr-connections": "access",
   "practice-contact": "details",
