@@ -27,11 +27,17 @@ export type PracticeCapability =
   | "invite_patients"
   | "export_data"
   | "bulk_message"
-  | "view_audit";
+  | "view_audit"
+  // Routing patients to colleagues. The database has answered for this since
+  // department leads existed; the interface simply never asked.
+  | "assign_patients";
 
 export type PracticeRole =
   | "owner"
   | "admin"
+  // A department lead is a real role in the database enum. Leaving it out here
+  // made a lead's role read as an unknown value in the interface.
+  | "sub_admin"
   | "provider"
   | "clinician"
   | "nurse"
@@ -53,6 +59,7 @@ const ALL_CAPABILITIES: PracticeCapability[] = [
   "export_data",
   "bulk_message",
   "view_audit",
+  "assign_patients",
 ];
 
 interface MembershipRow {
