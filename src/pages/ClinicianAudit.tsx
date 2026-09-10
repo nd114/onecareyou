@@ -42,10 +42,11 @@ export default function ClinicianAudit() {
   );
   // Only the view actually on screen is fetched. Both ran before, so a tenant
   // admin pulled 500 personal rows on every visit and threw them away.
-  const { data: ownEntries = [], isLoading: loadingOwn } = useAuditLog({
+  const { data: ownPage, isLoading: loadingOwn } = useAuditLog({
     limit: 500,
     enabled: !isTenantView,
   });
+  const ownEntries = ownPage?.entries ?? [];
   const isLoading = isTenantView ? loadingTenant : loadingOwn;
 
   const entries = useMemo(
