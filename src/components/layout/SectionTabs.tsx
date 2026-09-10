@@ -5,9 +5,11 @@ import {
   PATIENT_PILLARS,
   CLINICIAN_PILLARS,
   isNavTabActive,
+  visibleTabs,
   type PatientPillarKey,
   type ClinicianPillarKey,
 } from "@/lib/nav-ia";
+import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 
 interface Props {
   section: PatientPillarKey | ClinicianPillarKey;
