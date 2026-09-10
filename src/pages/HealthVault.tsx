@@ -268,14 +268,95 @@ const HealthVault = () => {
           <VisitSummariesSection />
 
           {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search documents, summaries, and tags..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
+          <div className="mb-4 space-y-2">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, tag, note — or a date like 2026 or March"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant={fromDate || toDate ? 'default' : 'outline'}
+                className="shrink-0"
+                onClick={() => setShowDates((v) => !v)}
+              >
+                <CalendarRange className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Dates</span>
+              </Button>
+            </div>
+
+            {/* Searching by name only meant a result from March could not be
+                found by its month. This filters on the date written on the
+                document, not the day it was uploaded. */}
+            {showDates && (
+              <div className="rounded-xl border bg-secondary/30 p-3 space-y-2">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="vault-from" className="text-xs">From</Label>
+                    <Input
+                      id="vault-from"
+                      type="date"
+                      className="h-9"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="vault-to" className="text-xs">To</Label>
+                    <Input
+                      id="vault-to"
+                      type="date"
+                      className="h-9"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                    />
+                  </div>
+                  {(fromDate || toDate) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-9"
+                      onClick={() => { setFromDate(''); setToDate(''); }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - 30);
+                      setFromDate(d.toISOString().slice(0, 10));
+                      setToDate('');
+                    }}
+                  >
+                    Last 30 days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setFromDate(`${new Date().getFullYear()}-01-01`);
+                      setToDate('');
+                    }}
+                  >
+                    This year
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Filtered on the date written on the document or note.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Archive switch. Kept beside the folders because that is what it
@@ -285,7 +366,7 @@ const HealthVault = () => {
               <p className="text-sm text-muted-foreground">
                 {showArchived
                   ? 'Showing your archive. These are not shared with anyone through whole-Vault access.'
-                  : `${archivedCount} document${archivedCount === 1 ? '' : 's'} in your archive`}
+                  : `${archivedCount} item${archivedCount === 1 ? '' : 's'} in your archive`}
               </p>
               <Button
                 variant="outline"
@@ -297,6 +378,7 @@ const HealthVault = () => {
               </Button>
             </div>
           )}
+
 
           {/* Folders */}
           <div className="mb-4">
