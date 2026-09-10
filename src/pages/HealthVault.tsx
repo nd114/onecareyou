@@ -1,20 +1,43 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files, FolderPlus } from 'lucide-react';
+import {
+  FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files, FolderPlus,
+  NotebookPen, Pencil, Trash2, CalendarRange,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { DocumentCard } from '@/components/documents/DocumentCard';
+import { PersonalNoteCard } from '@/components/documents/PersonalNoteCard';
+import { PersonalNoteDialog } from '@/components/documents/PersonalNoteDialog';
 import type { HealthDocument } from '@/hooks/useHealthDocuments';
 import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
+import { useDocumentFolders } from '@/hooks/useDocumentFolders';
+import { usePersonalNotes, type PersonalNote } from '@/hooks/usePersonalNotes';
+import { noteHtmlToText } from '@/lib/sanitize-html';
 import { didYouMean, search as searchList } from '@/lib/search';
+import { formatDateOnly } from '@/lib/date-only';
+
+/**
+ * A date, written the ways people actually type it.
+ *
+ * Search was name-only, so "2025" or "March" found nothing even when the date
+ * was on screen. Folding the document's own date into the searchable text is
+ * the smallest way to make typing a year or a month work.
+ */
+const dateSearchText = (value: string | null | undefined) => {
+  if (!value) return null;
+  const long = formatDateOnly(value, { year: 'numeric', month: 'long', day: 'numeric' });
+  const short = formatDateOnly(value, { year: 'numeric', month: 'short', day: 'numeric' });
+  return [value, long, short].filter(Boolean).join(' ');
+};
 
 /** Most important first: a hit in the title outranks one in a summary. */
 const vaultSearchFields = (d: HealthDocument) => [
@@ -24,11 +47,29 @@ const vaultSearchFields = (d: HealthDocument) => [
   ...(d.ai_tags ?? []),
   d.notes,
   d.ai_summary,
+  dateSearchText(d.document_date),
+];
+
+const noteSearchFields = (n: PersonalNote) => [
+  n.title,
+  ...(n.tags ?? []),
+  noteHtmlToText(n.body_html),
+  dateSearchText(n.note_date),
 ];
 import { VisitSummariesSection } from '@/components/documents/VisitSummariesSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FREE_DOCUMENT_LIMIT } from '@/lib/pricing-constants';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -40,23 +81,25 @@ import {
 
 const HealthVault = () => {
   const { profile } = useAuth();
-  const { documents, folders: usedFolders, isLoading } = useHealthDocuments();
-  // A folder is only a label on documents, so an empty one does not exist yet.
-  // Names created here are remembered for this visit so they can be selected,
-  // filed into and seen — instead of vanishing the moment they are made.
-  const [draftFolders, setDraftFolders] = useState<string[]>([]);
-  const folders = useMemo(
-    () =>
-      [...usedFolders, ...draftFolders.filter((f) => !usedFolders.includes(f))].sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [usedFolders, draftFolders],
-  );
+  const { documents, isLoading } = useHealthDocuments();
+  // Folders are records of their own now, so an empty one survives a reload and
+  // can be renamed or removed.
+  const { folders: folderRecords, folderNames, createFolder, renameFolder, deleteFolder } =
+    useDocumentFolders();
+  const { notes, isLoading: notesLoading } = usePersonalNotes();
+  const folders = folderNames;
   const { checkSubscription, isPremium } = useSubscription();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<DocumentCategory | 'all'>('all');
   const [activeFolder, setActiveFolder] = useState<string>('all');
   const [checkedSub, setCheckedSub] = useState(false);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [showDates, setShowDates] = useState(false);
+  const [showNewNote, setShowNewNote] = useState(false);
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     checkSubscription().then(() => setCheckedSub(true));
@@ -71,7 +114,18 @@ const HealthVault = () => {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const isArchived = (d: HealthDocument) => Boolean(d.archived_at);
-  const archivedCount = useMemo(() => documents.filter(isArchived).length, [documents]);
+  const archivedCount = useMemo(
+    () => documents.filter(isArchived).length + notes.filter((n) => n.archived_at).length,
+    [documents, notes],
+  );
+
+  const withinDates = (value: string | null) => {
+    if (!fromDate && !toDate) return true;
+    if (!value) return false;
+    if (fromDate && value < fromDate) return false;
+    if (toDate && value > toDate) return false;
+    return true;
+  };
 
   const filteredDocuments = useMemo(() => {
     let filtered = documents.filter((d) => (showArchived ? isArchived(d) : !isArchived(d)));
@@ -83,6 +137,7 @@ const HealthVault = () => {
     if (activeCategory !== 'all') {
       filtered = filtered.filter((d) => d.category === activeCategory || d.ai_category === activeCategory);
     }
+    filtered = filtered.filter((d) => withinDates(d.document_date));
     if (search.trim()) {
       // Ranked, accent- and typo-tolerant, and the title outranks a passing
       // mention in a summary — a substring filter treated all five fields as
@@ -90,7 +145,21 @@ const HealthVault = () => {
       filtered = searchList(filtered, search, vaultSearchFields);
     }
     return filtered;
-  }, [documents, activeCategory, activeFolder, search]);
+    // showArchived belongs here: leaving it out was why switching to the
+    // archive changed nothing until a folder was clicked.
+  }, [documents, activeCategory, activeFolder, search, showArchived, fromDate, toDate]);
+
+  /** Notes live beside the documents and answer to the same filters. */
+  const filteredNotes = useMemo(() => {
+    let filtered = notes.filter((n) => (showArchived ? !!n.archived_at : !n.archived_at));
+    if (activeFolder === '__unfiled__') filtered = filtered.filter((n) => !n.folder);
+    else if (activeFolder !== 'all') filtered = filtered.filter((n) => n.folder === activeFolder);
+    // Notes are not one of the document types, so any type filter excludes them.
+    if (activeCategory !== 'all') return [];
+    filtered = filtered.filter((n) => withinDates(n.note_date));
+    if (search.trim()) filtered = searchList(filtered, search, noteSearchFields);
+    return filtered;
+  }, [notes, activeCategory, activeFolder, search, showArchived, fromDate, toDate]);
 
   // Only computed when the search found nothing, which is the only moment the
   // question helps — offering a correction beside results teaches people to
@@ -115,13 +184,19 @@ const HealthVault = () => {
   }, [documents, activeFolder]);
 
   const folderCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: documents.length, __unfiled__: 0 };
-    documents.forEach((d) => {
-      if (d.folder) counts[d.folder] = (counts[d.folder] || 0) + 1;
+    const counts: Record<string, number> = { all: documents.length + notes.length, __unfiled__: 0 };
+    const tally = (folder: string | null) => {
+      if (folder) counts[folder] = (counts[folder] || 0) + 1;
       else counts.__unfiled__ += 1;
-    });
+    };
+    documents.forEach((d) => tally(d.folder));
+    notes.forEach((n) => tally(n.folder));
     return counts;
-  }, [documents]);
+  }, [documents, notes]);
+
+  const activeFolderRecord = folderRecords.find((f) => f.name === activeFolder) ?? null;
+  const hasResults = filteredDocuments.length > 0 || filteredNotes.length > 0;
+
 
   return (
     <div className="min-h-screen bg-background">
