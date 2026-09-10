@@ -61,6 +61,8 @@ import { usePractice } from '@/hooks/usePractice';
 import { PatientSectionNav } from '@/components/clinician/PatientSectionNav';
 import { PatientOverviewTab } from '@/components/clinician/PatientOverviewTab';
 import { AdherenceSummary } from '@/components/clinician/AdherenceSummary';
+import { RecordVitalDialog } from '@/components/clinician/RecordVitalDialog';
+
 
 const ClinicianPatientDetail = () => {
   // What this staff member's role is for. The database decides what they can
@@ -89,6 +91,8 @@ const ClinicianPatientDetail = () => {
   const autoScribe = searchParams.get('scribe') === '1';
 
   const [showRiskDetails, setShowRiskDetails] = useState(false);
+  const [recordingVital, setRecordingVital] = useState(false);
+
   // What the clinician is proposing, if anything. One piece of state rather
   // than a flag per dialog, so two cannot be open at once.
   const [proposing, setProposing] = useState<
@@ -566,11 +570,22 @@ const ClinicianPatientDetail = () => {
             <TabsContent value="vitals">
               <Card>
                 <CardHeader>
-                  <CardTitle>Vital Signs History</CardTitle>
-                  <CardDescription>
-                    Track patient's vital signs over time
-                  </CardDescription>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <CardTitle>Vital Signs History</CardTitle>
+                      <CardDescription>
+                        Track patient's vital signs over time
+                      </CardDescription>
+                    </div>
+                    {clinicalStaff && patient.permissions?.vitals && patient.share_active !== false && (
+                      <Button size="sm" variant="outline" onClick={() => setRecordingVital(true)}>
+                        <Plus className="h-4 w-4 mr-1.5" />
+                        Record a reading
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
+
                 <CardContent>
                   {loadingVitals ? (
                     <div className="flex items-center justify-center py-8">
