@@ -2,7 +2,9 @@
 // side-by-side with the transcript, then apply it to the encounter note.
 // Nothing reaches the encounter's clinical fields until the clinician applies.
 import { useEffect, useRef, useState } from "react";
-import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle, Activity } from "lucide-react";
+import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle, Activity, Pause, Play } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLiveScribe } from "@/hooks/useLiveScribe";
 import { Checkbox } from "@/components/ui/checkbox";
 import { parseMentionedVital } from "@/lib/mentioned-vitals";
 import { Button } from "@/components/ui/button";
@@ -51,26 +53,43 @@ function fmt(ms: number) {
 
 export function EncounterScribePanel({ encounter, onApply }: Props) {
   const { user } = useAuth();
-  const [recording, setRecording] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
   const [busy, setBusy] = useState<null | "uploading" | "processing">(null);
   const [transcript, setTranscript] = useState(encounter.scribe_transcript ?? "");
   const [draft, setDraft] = useState<ScribeDraft>((encounter.scribe_draft as ScribeDraft) ?? {});
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
-  const tickRef = useRef<number | null>(null);
+  const [noteStyle, setNoteStyle] = useState<NoteStyle>("soap");
+  const [liveText, setLiveText] = useState("");
+  const [accepted, setAccepted] = useState<Set<SectionKey>>(new Set(ALL_SECTIONS));
+  const liveTextRef = useRef("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [pickedVitals, setPickedVitals] = useState<Set<number>>(new Set());
   const [recordingVitals, setRecordingVitals] = useState(false);
 
-  useEffect(() => {
-    return () => {
-      if (tickRef.current) window.clearInterval(tickRef.current);
-      recorderRef.current?.stream.getTracks().forEach((t) => t.stop());
-    };
-  }, []);
+  /**
+   * Live transcription: each window of audio comes back as words while the
+   * consultation is still happening, so the clinician can see the scribe is
+   * listening instead of trusting a timer.
+   */
+  const appendLive = async (wav: Blob) => {
+    try {
+      const form = new FormData();
+      form.append("file", wav, "segment.wav");
+      const { data, error } = await supabase.functions.invoke("transcribe-segment", { body: form });
+      if (error || data?.error) return; // a lost window is not worth interrupting a visit for
+      const text = typeof data?.text === "string" ? data.text.trim() : "";
+      if (!text) return;
+      liveTextRef.current = `${liveTextRef.current} ${text}`.trim();
+      setLiveText(liveTextRef.current);
+    } catch {
+      /* ignore — the full recording is still drafted at the end */
+    }
+  };
 
-  const process = async (blob: Blob, ext: string) => {
+  const live = useLiveScribe({
+    onWindow: appendLive,
+    onError: (m) => toast.error(m),
+  });
+
+  const process = async (blob: Blob, ext: string, liveTranscript?: string) => {
     if (!user?.id) return;
     try {
       setBusy("uploading");
@@ -82,12 +101,18 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
 
       setBusy("processing");
       const { data, error } = await supabase.functions.invoke("encounter-scribe", {
-        body: { encounterId: encounter.id, audioPath: path },
+        body: {
+          encounterId: encounter.id,
+          audioPath: path,
+          noteStyle,
+          liveTranscript: liveTranscript ?? "",
+        },
       });
       if (data?.error) throw new Error(data.error);
       if (error) throw new Error((await edgeFunctionError(error)).message);
       setTranscript(data.transcript ?? "");
       setDraft((data.draft ?? {}) as ScribeDraft);
+      setAccepted(new Set(ALL_SECTIONS));
       toast.success("Draft ready — review before applying");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Scribe failed");
@@ -97,30 +122,18 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
   };
 
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream, pickMime() ? { mimeType: pickMime() } : undefined);
-      chunksRef.current = [];
-      rec.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-      rec.onstop = () => {
-        const type = rec.mimeType || "audio/webm";
-        const blob = new Blob(chunksRef.current, { type });
-        stream.getTracks().forEach((t) => t.stop());
-        if (tickRef.current) window.clearInterval(tickRef.current);
-        setRecording(false);
-        setElapsed(0);
-        if (blob.size > 0) process(blob, type.includes("mp4") ? "mp4" : "webm");
-      };
-      recorderRef.current = rec;
-      rec.start();
-      setRecording(true);
-      const startedAt = Date.now();
-      tickRef.current = window.setInterval(() => setElapsed(Date.now() - startedAt), 500);
-    } catch {
-      toast.error("Microphone unavailable — check browser permissions");
+    liveTextRef.current = "";
+    setLiveText("");
+    await live.start();
+  };
+
+  const stopRecording = () => {
+    const wav = live.stop();
+    if (!wav) {
+      toast.error("That recording was empty — try again");
+      return;
     }
+    process(wav, "wav", liveTextRef.current);
   };
 
   /**
@@ -169,17 +182,26 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
     }
   };
 
+  const keep = (k: SectionKey) => (accepted.has(k) ? (draft[k] ?? "") : "");
+
   const applyDraft = () => {
     onApply({
-      chief_complaint: draft.chief_complaint ?? "",
-      subjective: draft.subjective ?? "",
-      objective: draft.objective ?? "",
-      assessment: draft.assessment ?? "",
-      plan: draft.plan ?? "",
+      chief_complaint: keep("chief_complaint"),
+      subjective: keep("subjective"),
+      objective: keep("objective"),
+      assessment: keep("assessment"),
+      plan: keep("plan"),
       follow_up_in_days: draft.follow_up_in_days != null ? String(draft.follow_up_in_days) : "",
     });
     toast.success("Draft copied into the note — edit and sign when ready");
   };
+
+  const toggleSection = (k: SectionKey) =>
+    setAccepted((prev) => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
 
   const hasDraft = Boolean(
     draft.subjective || draft.objective || draft.assessment || draft.plan || draft.chief_complaint,
