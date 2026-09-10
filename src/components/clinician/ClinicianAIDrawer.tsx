@@ -232,7 +232,7 @@ export function ClinicianAIDrawer({
           <div className="flex items-end gap-2">
             <Textarea
               ref={inputRef}
-              value={input}
+              value={input + (interim ? (input ? ' ' : '') + interim : '')}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -240,14 +240,26 @@ export function ClinicianAIDrawer({
                   handleSend();
                 }
               }}
-              placeholder="Ask about your panel or draft something…"
+              placeholder="Ask about your panel, dictate, or draft something…"
               rows={2}
               className="resize-none"
+            />
+            {/* Dictation, so a clinician can speak a request between patients.
+                Speech lands in the box for them to read back — nothing is sent
+                or saved by voice alone. */}
+            <DictateButton
+              disabled={isLoading}
+              onInterimText={setInterim}
+              onFinalText={(text) => {
+                setInterim('');
+                setInput((prev) => (prev ? `${prev} ${text}` : text));
+              }}
             />
             <Button size="icon" onClick={() => handleSend()} disabled={isLoading || !input.trim()}>
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
+
           <p className="mt-2 text-[11px] text-muted-foreground">
             Decision support only — no diagnosis or prescribing. You remain responsible for every approved action.
           </p>
