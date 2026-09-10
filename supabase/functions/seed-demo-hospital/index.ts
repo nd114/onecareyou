@@ -16,7 +16,10 @@ const corsHeaders = {
 
 const PASSWORD = "Demo123!";
 const HOSPITAL_NAME = "OneCare Demo Hospital";
-const HOSPITAL_SLUG = "demo-hospital";
+// 3-7 characters: the app only treats a slug of that shape as a tenant address
+// (see isValidSlug in src/lib/tenant-host.ts), so demoh.onecare.you resolves.
+const HOSPITAL_SLUG = "demoh";
+
 const DEPARTMENT = "Internal Medicine";
 
 type Role =
