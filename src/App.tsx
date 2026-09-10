@@ -461,7 +461,9 @@ const App = () => (
             } />
             <Route path="/clinician/templates" element={
               <ClinicianRoute>
-                <ClinicianTemplates />
+                <RequireCapability capability="edit_clinical">
+                  <ClinicianTemplates />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/audit" element={
