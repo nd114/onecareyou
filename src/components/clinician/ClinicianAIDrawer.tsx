@@ -12,7 +12,9 @@ import {
 import { useClinicianAIChat, ClinicianChatMessage } from '@/hooks/useClinicianAIChat';
 import { describeClinicianAction } from '@/lib/clinician-ai-actions';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
+import { DictateButton } from '@/components/ai/DictateButton';
 import { cn } from '@/lib/utils';
+
 
 const SUGGESTIONS = [
   'Who on my panel needs attention today, and why?',
@@ -106,6 +108,8 @@ export function ClinicianAIDrawer({
   const navigate = useNavigate();
   const { messages, isLoading, sendMessage, clearChat, approveActions, discardActions } = useClinicianAIChat();
   const [input, setInput] = useState('');
+  const [interim, setInterim] = useState('');
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
