@@ -21,6 +21,21 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+/**
+ * Every style writes into the same five fields so the note editor, the signing
+ * rules and the audit trail stay exactly as they were — only the voice of the
+ * writing changes.
+ */
+const STYLE_GUIDES: Record<string, string> = {
+  soap: "Write a classic SOAP note: concise clinical prose or short bullet lines per section.",
+  narrative:
+    "Write a flowing narrative consultation note in full sentences. Put the story of the visit in subjective, examination findings in objective, your impression in assessment and what happens next in plan.",
+  referral:
+    "Write a referral letter to a specialist colleague. Subjective carries the history and reason for referral, objective the findings, assessment the working diagnosis, plan the specific question you are asking of them and what you have already done.",
+  discharge:
+    "Write a discharge summary for the patient and their next clinician. Subjective covers why they came, objective the course and findings, assessment the final diagnoses, plan the discharge medicines, follow-up and warning signs to return for.",
+};
+
 const SOAP_SYSTEM = `You are a clinical scribe drafting a visit note from a transcript of a real consultation.
 
 Rules:
@@ -46,6 +61,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const encounterId = typeof body.encounterId === "string" ? body.encounterId : "";
     const audioPath = typeof body.audioPath === "string" ? body.audioPath : "";
+    const noteStyle = typeof body.noteStyle === "string" && body.noteStyle in STYLE_GUIDES
+      ? body.noteStyle
+      : "soap";
+    // The browser may already have the words from live transcription. Reusing
+    // them keeps the draft quick and avoids paying to transcribe twice.
+    const liveTranscript = typeof body.liveTranscript === "string" ? body.liveTranscript.trim() : "";
     if (!encounterId || !audioPath) return json({ error: "encounterId and audioPath are required" }, 400);
 
     const authHeader = req.headers.get("Authorization") || "";
@@ -76,9 +97,13 @@ Deno.serve(async (req) => {
     const buf = new Uint8Array(await file.arrayBuffer());
     if (buf.byteLength === 0) return json({ error: "Recording is empty" }, 400);
     const b64 = base64(buf);
-    const format = audioPath.endsWith(".mp4") || audioPath.endsWith(".m4a") ? "m4a" : "webm";
+    const format = audioPath.endsWith(".wav")
+      ? "wav"
+      : audioPath.endsWith(".mp4") || audioPath.endsWith(".m4a")
+        ? "m4a"
+        : "webm";
 
-    const transcript = await callGateway([
+    const transcript = liveTranscript || await callGateway([
       {
         role: "user",
         content: [
@@ -94,7 +119,7 @@ Deno.serve(async (req) => {
     if (!transcript) throw new Error("Transcription returned nothing");
 
     const raw = await callGateway([
-      { role: "system", content: SOAP_SYSTEM },
+      { role: "system", content: `${SOAP_SYSTEM}\n\nStyle: ${STYLE_GUIDES[noteStyle]}` },
       { role: "user", content: transcript },
     ]);
 
@@ -121,12 +146,12 @@ Deno.serve(async (req) => {
       patient_user_id: enc.patient_user_id,
       clinician_user_id: userId,
       action: "scribe_draft_generated",
-      summary: "Generated an AI scribe draft from visit audio (unsigned)",
+      summary: `Generated an AI scribe draft from visit audio (${noteStyle}, unsigned)`,
       ref_table: "encounters",
       ref_id: encounterId,
     });
 
-    return json({ transcript, draft, generatedAt });
+    return json({ transcript, draft, generatedAt, noteStyle });
   } catch (e) {
     console.error("encounter-scribe error", e);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
