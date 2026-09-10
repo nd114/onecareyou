@@ -145,7 +145,10 @@ export function useClinicianCapabilities() {
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["clinician-capabilities", user?.id ?? null, isClinician, workspaceId],
-    queryFn: () => fetchCapabilities(user!.id, isClinician, workspaceId),
+    queryFn: () => {
+      if (!user) return Promise.resolve(EMPTY);
+      return fetchCapabilities(user.id, isClinician, workspaceId);
+    },
     enabled,
     // A role change is an administrative act, not a per-navigation event.
     staleTime: 5 * 60 * 1000,

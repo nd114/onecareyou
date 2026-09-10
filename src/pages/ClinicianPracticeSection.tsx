@@ -133,14 +133,18 @@ const ClinicianPracticeSection = () => {
             )}
 
             {section.id === 'details' && (
-              <>
-                <PracticeContactCard />
-                <HospitalCodeCard />
-                {can('manage_billing') && <PracticeCurrencyCard />}
-                {subscriptionReady && hasFeatureAccess(tier, 'practice_branding') && (
-                  <PracticeBrandingCard />
-                )}
-              </>
+              can('manage_settings') ? (
+                <>
+                  <PracticeContactCard />
+                  <HospitalCodeCard />
+                  {can('manage_billing') && <PracticeCurrencyCard />}
+                  {subscriptionReady && hasFeatureAccess(tier, 'practice_branding') && (
+                    <PracticeBrandingCard />
+                  )}
+                </>
+              ) : (
+                <Card><CardContent className="py-8 text-sm text-muted-foreground">Practice settings are available to authorised personnel.</CardContent></Card>
+              )
             )}
 
             {section.id === 'plan' && (
