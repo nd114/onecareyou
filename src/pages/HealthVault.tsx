@@ -493,22 +493,22 @@ const HealthVault = () => {
             ))}
           </div>
 
-          {/* Documents List */}
-          {isLoading ? (
+          {/* Documents and notes */}
+          {isLoading || notesLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : filteredDocuments.length === 0 ? (
+          ) : !hasResults ? (
             <div className="text-center py-16">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="font-medium mb-2">
                 {showArchived
                   ? 'Nothing archived'
-                  : documents.length === 0
-                    ? 'No documents yet'
-                    : draftFolders.includes(activeFolder)
+                  : documents.length === 0 && notes.length === 0
+                    ? 'Nothing here yet'
+                    : activeFolderRecord
                       ? `"${activeFolder}" is empty`
-                      : 'No documents match your search'}
+                      : 'Nothing matches your search'}
               </h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 {vaultSuggestion ? (
@@ -523,24 +523,29 @@ const HealthVault = () => {
                     </button>
                     ?
                   </>
-                ) : documents.length === 0 ? (
-                  'Upload prescriptions, lab results, discharge summaries, and other health documents to keep them organized and accessible.'
-                ) : draftFolders.includes(activeFolder) ? (
-                  'Choose "All documents", then use the folder icon on any document to file it in here. Upload straight into it with the Upload button.'
+                ) : documents.length === 0 && notes.length === 0 ? (
+                  'Upload prescriptions, lab results and discharge summaries, or write a note of your own.'
+                ) : activeFolderRecord ? (
+                  'Use the folder icon on any document to file it in here, or upload straight into it with the Upload button.'
                 ) : (
-                  'Try adjusting your search terms or category filter.'
+                  'Try a different search, date range or type.'
                 )}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
+              {filteredNotes.map((note) => (
+                <motion.div key={note.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <PersonalNoteCard note={note} />
+                </motion.div>
+              ))}
               {filteredDocuments.map((doc) => (
                 <motion.div
                   key={doc.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <DocumentCard document={doc} isPremium={isPremium} extraFolders={draftFolders} />
+                  <DocumentCard document={doc} isPremium={isPremium} />
                 </motion.div>
               ))}
             </div>
@@ -548,31 +553,30 @@ const HealthVault = () => {
         </motion.div>
       </main>
 
-      {/* A folder here is just a label on documents — there is no folder table.
-          Creating one selects it, so the next thing you file goes into it. */}
+      {/* A folder is its own record now: it survives being empty, and renaming
+          it moves its documents with it. */}
       <Dialog open={showNewFolder} onOpenChange={setShowNewFolder}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New folder</DialogTitle>
             <DialogDescription>
-              Name it, then use the folder icon on any document to file it here. An empty folder
-              disappears again, so file something into it to keep it.
+              Name it and it stays, empty or not. File documents into it with the folder icon on
+              any document, or upload straight into it.
             </DialogDescription>
           </DialogHeader>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               const name = newFolderName.trim();
               if (!name) return;
-              if (folders.includes(name)) {
+              if (folders.some((f) => f.toLowerCase() === name.toLowerCase())) {
                 toast.error('You already have a folder with that name');
                 return;
               }
-              setDraftFolders((prev) => [...prev, name]);
+              await createFolder.mutateAsync(name);
               setActiveFolder(name);
               setShowNewFolder(false);
               setNewFolderName('');
-              toast.success(`"${name}" is ready — file documents into it to keep it`);
             }}
             className="space-y-4"
           >
@@ -591,15 +595,93 @@ const HealthVault = () => {
               <Button type="button" variant="outline" onClick={() => setShowNewFolder(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!newFolderName.trim()}>
+              <Button type="submit" disabled={!newFolderName.trim() || createFolder.isPending}>
                 Create folder
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Rename */}
+      <Dialog open={!!renaming} onOpenChange={(v) => !v && setRenaming(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rename folder</DialogTitle>
+            <DialogDescription>
+              Everything filed in "{renaming?.name}" moves with the new name.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const name = renameDraft.trim();
+              if (!name || !renaming) return;
+              if (
+                name.toLowerCase() !== renaming.name.toLowerCase() &&
+                folders.some((f) => f.toLowerCase() === name.toLowerCase())
+              ) {
+                toast.error('You already have a folder with that name');
+                return;
+              }
+              await renameFolder.mutateAsync({ id: renaming.id, name });
+              if (activeFolder === renaming.name) setActiveFolder(name);
+              setRenaming(null);
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="rename-folder">Folder name</Label>
+              <Input
+                id="rename-folder"
+                autoFocus
+                value={renameDraft}
+                onChange={(e) => setRenameDraft(e.target.value)}
+                maxLength={60}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRenaming(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!renameDraft.trim() || renameFolder.isPending}>
+                Save name
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove */}
+      <AlertDialog open={!!removing} onOpenChange={(v) => !v && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove "{removing?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The folder goes; nothing inside it is deleted. Anything filed in it moves back to
+              Unfiled, where you can find it again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!removing) return;
+                await deleteFolder.mutateAsync(removing.id);
+                if (activeFolder === removing.name) setActiveFolder('all');
+                setRemoving(null);
+              }}
+            >
+              Remove folder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <PersonalNoteDialog open={showNewNote} onOpenChange={setShowNewNote} />
     </div>
   );
 };
 
 export default HealthVault;
+
