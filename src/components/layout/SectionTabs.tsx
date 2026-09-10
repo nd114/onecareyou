@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -37,12 +37,18 @@ export function SectionTabs({ section, variant = "patient" }: Props) {
   // A practice role decides which sub-tabs exist at all. Patient tabs are never
   // filtered, so the capability answer is only consulted on the clinician side.
   const { can, loading: capsLoading } = useClinicianCapabilities();
-  const tabs =
-    variant === "clinician" && !capsLoading && pillarDef
-      ? visibleTabs(pillarDef.tabs, can)
-      : pillarDef?.tabs ?? [];
+  const tabs = useMemo(
+    () =>
+      variant === "clinician" && !capsLoading && pillarDef
+        ? visibleTabs(pillarDef.tabs, can)
+        : pillarDef?.tabs ?? [],
+    // `can` is a fresh closure on every capability render, so key the memo on
+    // the answer it gives rather than on its identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [variant, capsLoading, pillarDef, capsLoading ? "" : (pillarDef?.tabs ?? []).map((t) => t.to).join("|")],
+  );
   const pillar = pillarDef ? { ...pillarDef, tabs } : undefined;
-
+  const tabsKey = tabs.map((t) => t.to).join("|");
 
   const scroller = useRef<HTMLElement | null>(null);
   const [overflow, setOverflow] = useState({ start: false, end: false });
@@ -51,12 +57,13 @@ export function SectionTabs({ section, variant = "patient" }: Props) {
     const el = scroller.current;
     if (!el) return;
     const max = el.scrollWidth - el.clientWidth;
-    setOverflow({
-      start: el.scrollLeft > 1,
-      // A pixel of slack: fractional widths otherwise leave the fade on
-      // permanently at the end of the scroll.
-      end: el.scrollLeft < max - 1,
-    });
+    const start = el.scrollLeft > 1;
+    // A pixel of slack: fractional widths otherwise leave the fade on
+    // permanently at the end of the scroll.
+    const end = el.scrollLeft < max - 1;
+    // Only swap state when the answer changed: a fresh object every measure
+    // re-ran the effect below on every render and pinned the page in a loop.
+    setOverflow((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
   }, []);
 
   useEffect(() => {
@@ -70,7 +77,8 @@ export function SectionTabs({ section, variant = "patient" }: Props) {
       el.removeEventListener("scroll", measure);
       observer.disconnect();
     };
-  }, [measure, pillar]);
+  }, [measure, tabsKey]);
+
 
   // Bring the tab you are on into view, without dragging the page with it.
   // Read off the DOM rather than holding a ref on whichever link is active:
