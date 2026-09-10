@@ -174,18 +174,20 @@ serve(async (req) => {
       practiceId = data.id;
     }
 
-    // 3. Department
-    const { data: dept } = await admin
-      .from("practice_departments")
-      .upsert({ practice_id: practiceId, name: DEPARTMENT, description: "Demo department", created_by: ownerId },
-        { onConflict: "practice_id,name", ignoreDuplicates: false })
-      .select("id").maybeSingle();
-    let departmentId = dept?.id as string | undefined;
+    // 3. Department. Uniqueness is a functional index on lower(name), which
+    //    ON CONFLICT cannot target, so look first and insert only if absent.
+    let departmentId: string | undefined;
+    const { data: found } = await admin.from("practice_departments")
+      .select("id").eq("practice_id", practiceId).ilike("name", DEPARTMENT).maybeSingle();
+    departmentId = found?.id;
     if (!departmentId) {
-      const { data: found } = await admin.from("practice_departments")
-        .select("id").eq("practice_id", practiceId).eq("name", DEPARTMENT).maybeSingle();
-      departmentId = found?.id;
+      const { data: created, error } = await admin.from("practice_departments")
+        .insert({ practice_id: practiceId, name: DEPARTMENT, description: "Demo department", created_by: ownerId })
+        .select("id").single();
+      if (error) notes.push(`department: ${error.message}`);
+      departmentId = created?.id;
     }
+
 
     // 4. Seats
     for (const s of STAFF) {
