@@ -753,7 +753,7 @@ const ClinicianPatientDetail = () => {
 
                       {/* Recent Entries */}
                       <div className="space-y-2">
-                        {scheduleEntries.slice(0, 20).map((entry: any) => (
+                        {adherenceSlice.map((entry: any) => (
                           <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg border">
                             <div className="flex items-center gap-3">
                               {entry.status === 'taken' ? (
@@ -779,6 +779,32 @@ const ClinicianPatientDetail = () => {
                           </div>
                         ))}
                       </div>
+
+                      {adherencePages > 1 && (
+                        <div className="flex items-center justify-between border-t pt-3">
+                          <p className="text-xs text-muted-foreground">
+                            Page {adherencePage + 1} of {adherencePages} · {scheduleEntries.length} doses
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={adherencePage === 0}
+                              onClick={() => setAdherencePage((p) => Math.max(0, p - 1))}
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={adherencePage >= adherencePages - 1}
+                              onClick={() => setAdherencePage((p) => Math.min(adherencePages - 1, p + 1))}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
