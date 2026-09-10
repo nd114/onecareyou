@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -18,12 +18,13 @@ import {
   BarChart3,
   FileText,
   MessageSquare,
+  Mic,
   Plus
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { VitalTrendChart } from '@/components/vitals/VitalTrendChart';
@@ -57,6 +58,9 @@ import { formatDay } from '@/lib/format-date';
 import { ProposeMedicationChange, ProposalsAwaitingPatient } from '@/components/clinician/ProposeMedicationChange';
 import { isClinicalRole } from '@/lib/staff-roles';
 import { usePractice } from '@/hooks/usePractice';
+import { PatientSectionNav } from '@/components/clinician/PatientSectionNav';
+import { PatientOverviewTab } from '@/components/clinician/PatientOverviewTab';
+import { AdherenceSummary } from '@/components/clinician/AdherenceSummary';
 
 const ClinicianPatientDetail = () => {
   // What this staff member's role is for. The database decides what they can
@@ -71,7 +75,19 @@ const ClinicianPatientDetail = () => {
   const { clinicianGuidance } = useClinicianGuidance();
   const { alertRules, alertLogs } = useAlertRules();
 
-  const [activeTab, setActiveTab] = useState<string>('encounters');
+  // Which part of the chart is open lives in the URL, so a section can be
+  // linked to and a refresh does not throw the clinician back to the start.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'overview';
+  const setActiveTab = (tab: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', tab);
+    setSearchParams(next, { replace: true });
+  };
+  // Arriving with ?scribe=1 (from Today, or the button on this page) opens the
+  // visit-note recorder straight away instead of asking for three more clicks.
+  const autoScribe = searchParams.get('scribe') === '1';
+
   const [showRiskDetails, setShowRiskDetails] = useState(false);
   // What the clinician is proposing, if anything. One piece of state rather
   // than a flag per dialog, so two cannot be open at once.
@@ -173,15 +189,9 @@ const ClinicianPatientDetail = () => {
     [scheduleEntries],
   );
 
-  // Adherence used to stop dead at the twenty most recent doses, so a month of
-  // history simply was not reachable. Paged, like the patients list.
-  const ADHERENCE_PER_PAGE = 20;
-  const [adherencePage, setAdherencePage] = useState(0);
-  const adherencePages = Math.max(1, Math.ceil(scheduleEntries.length / ADHERENCE_PER_PAGE));
-  const adherenceSlice = scheduleEntries.slice(
-    adherencePage * ADHERENCE_PER_PAGE,
-    adherencePage * ADHERENCE_PER_PAGE + ADHERENCE_PER_PAGE,
-  );
+  // Adherence is summary-first now — the dose-by-dose list, its filters and its
+  // paging all live in <AdherenceSummary>.
+
 
   // Filter guidance for this patient
   const patientGuidance = useMemo(() => 
@@ -280,7 +290,23 @@ const ClinicianPatientDetail = () => {
               </div>
             </div>
 
+            {/* The one thing a clinician does at the start of a visit, in reach
+                from the top of the chart instead of three tabs down. */}
+            {patient.share_active !== false && (
+              <Button
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams);
+                  next.set('tab', 'encounters');
+                  next.set('scribe', '1');
+                  setSearchParams(next);
+                }}
+                className="gap-2"
+              >
+                <Mic className="h-4 w-4" /> Start visit note
+              </Button>
+            )}
           </div>
+
 
           {/* How this clinician came to see this record, said plainly. It was
               only inferable from the Encounters tab before, which is the wrong
@@ -465,62 +491,27 @@ const ClinicianPatientDetail = () => {
           className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4"
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 min-w-0">
+            <PatientSectionNav
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              clinicalStaff={!!clinicalStaff}
+            />
+
+            <TabsContent value="overview">
+              <PatientOverviewTab
+                vitals={vitals}
+                medications={medications}
+                adherenceRate={adherenceRate}
+                guidance={patientGuidance}
+                onJump={setActiveTab}
+              />
+            </TabsContent>
+
             {/* Fifteen tabs in one undifferentiated row meant every one was
                 equally prominent, so none was. Grouped by what a clinician is
                 actually doing — reading the record, planning what happens next,
                 corresponding, and the admin around it — and ordered to match.
                 Still one row of tabs, so nothing is buried a level down. */}
-            <TabsList className="flex flex-wrap w-full justify-start gap-1 h-auto p-1.5">
-              {/* Non-clinical staff — front desk, billing — are not shown the
-                  clinical bands. The database already returns nothing for them
-                  (see practice_role_is_clinical), so leaving the tabs visible
-                  would show a receptionist ten empty screens and read as the
-                  product being broken rather than working. */}
-              {clinicalStaff && (
-                <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-0.5">
-                  The record
-                </span>
-              )}
-{clinicalStaff && (<>              <TabsTrigger value="encounters">Encounters</TabsTrigger>
-              <TabsTrigger value="vitals">Vitals</TabsTrigger>
-              <TabsTrigger value="medications">Meds</TabsTrigger>
-              <TabsTrigger value="adherence">Adherence</TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-1">
-                <BarChart3 className="h-3 w-3" />
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                Docs
-              </TabsTrigger></>)}
-
-              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
-                What happens next
-              </span>
-{clinicalStaff && (<>              <TabsTrigger value="careplan">Care plan</TabsTrigger></>)}
-              <TabsTrigger value="appointments">Appointments</TabsTrigger>
-{clinicalStaff && (<>              <TabsTrigger value="guidance">Guidance</TabsTrigger></>)}
-
-              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
-                Correspondence
-              </span>
-              <TabsTrigger value="messages" className="flex items-center gap-1">
-                <MessageSquare className="h-3 w-3" />
-                Messages
-              </TabsTrigger>
-              {/* Both are notes; the difference is who reads them, so that is what
-                  the labels say. "Notes" and "Internal" said nothing. */}
-{clinicalStaff && (<>              <TabsTrigger value="notes">My notes</TabsTrigger>
-              <TabsTrigger value="internal">Team notes</TabsTrigger></>)}
-
-              <span className="w-full text-[10px] font-medium uppercase tracking-wide text-muted-foreground px-1 pt-2">
-                Around the care
-              </span>
-              <TabsTrigger value="billing">Billing</TabsTrigger>
-              {/* Network is hidden until outside-record matching is finished —
-                  a tab that cannot yet be trusted reads worse than no tab. */}
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-            </TabsList>
 
             <TabsContent value="internal">
               <InternalNotesTab patientUserId={patient.user_id} />
@@ -530,6 +521,7 @@ const ClinicianPatientDetail = () => {
               <EncountersTab
                 patientUserId={patient.user_id}
                 patientName={patient.patient_name || 'Patient'}
+                autoStartScribe={autoScribe}
               />
             </TabsContent>
 
@@ -732,111 +724,18 @@ const ClinicianPatientDetail = () => {
 
             {/* Adherence Tab */}
             <TabsContent value="adherence">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Medication Adherence</CardTitle>
-                  <CardDescription>
-                    30-day adherence history
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!patient.permissions?.adherence ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Adherence access not granted by patient</p>
-                    </div>
-                  ) : loadingSchedule ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : scheduleEntries.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No schedule entries in the last 30 days</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Overall Stats */}
-                      <div className="grid grid-cols-3 gap-4 p-4 rounded-lg bg-muted/50">
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-green-600">
-                            {scheduleEntries.filter(e => e.status === 'taken').length}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Taken</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-amber-600">
-                            {scheduleEntries.filter(e => e.status === 'skipped').length}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Skipped</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-red-600">
-                            {scheduleEntries.filter(e => e.status === 'missed').length}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Missed</p>
-                        </div>
-                      </div>
-
-                      {/* Recent Entries */}
-                      <div className="space-y-2">
-                        {adherenceSlice.map((entry: any) => (
-                          <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg border">
-                            <div className="flex items-center gap-3">
-                              {entry.status === 'taken' ? (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              ) : entry.status === 'skipped' ? (
-                                <Clock className="h-4 w-4 text-amber-500" />
-                              ) : (
-                                <AlertTriangle className="h-4 w-4 text-red-500" />
-                              )}
-                              <div>
-                                <p className="font-medium text-sm">{entry.medication?.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(entry.scheduled_time), 'MMM d, h:mm a')}
-                                </p>
-                              </div>
-                            </div>
-                            <Badge 
-                              variant={entry.status === 'taken' ? 'default' : 'secondary'}
-                              className="capitalize"
-                            >
-                              {entry.status}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-
-                      {adherencePages > 1 && (
-                        <div className="flex items-center justify-between border-t pt-3">
-                          <p className="text-xs text-muted-foreground">
-                            Page {adherencePage + 1} of {adherencePages} · {scheduleEntries.length} doses
-                          </p>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={adherencePage === 0}
-                              onClick={() => setAdherencePage((p) => Math.max(0, p - 1))}
-                            >
-                              Previous
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={adherencePage >= adherencePages - 1}
-                              onClick={() => setAdherencePage((p) => Math.min(adherencePages - 1, p + 1))}
-                            >
-                              Next
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              {!patient.permissions?.adherence ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Adherence access not granted by patient</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <AdherenceSummary entries={scheduleEntries} loading={loadingSchedule} />
+              )}
             </TabsContent>
+
 
             {/* Analytics Tab */}
             <TabsContent value="analytics">
