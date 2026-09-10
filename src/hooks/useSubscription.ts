@@ -108,6 +108,14 @@ export function useSubscription() {
         throw error;
       }
 
+      if (data?.no_customer) {
+        toast({
+          title: 'No billing account yet',
+          description: data.message || 'Choose a plan to start a subscription.',
+        });
+        return;
+      }
+
       if (data?.url) {
         window.open(data.url, '_blank');
       } else {
