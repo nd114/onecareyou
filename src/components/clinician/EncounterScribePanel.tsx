@@ -211,10 +211,34 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          {recording ? (
-            <Button size="sm" variant="destructive" className="gap-2" onClick={() => recorderRef.current?.stop()}>
-              <Square className="h-3.5 w-3.5" /> Stop · {fmt(elapsed)}
-            </Button>
+          {live.recording ? (
+            <>
+              <Button size="sm" variant="destructive" className="gap-2" onClick={stopRecording}>
+                <Square className="h-3.5 w-3.5" /> Stop · {fmt(live.elapsed)}
+              </Button>
+              {live.paused ? (
+                <Button size="sm" variant="outline" className="gap-2" onClick={live.resume}>
+                  <Play className="h-3.5 w-3.5" /> Resume
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" className="gap-2" onClick={live.pause}>
+                  <Pause className="h-3.5 w-3.5" /> Pause
+                </Button>
+              )}
+              <span className="flex items-center gap-1" aria-hidden>
+                {[0.15, 0.35, 0.6].map((t) => (
+                  <span
+                    key={t}
+                    className={`h-3 w-1 rounded-full transition-colors ${
+                      !live.paused && live.level > t ? "bg-primary" : "bg-muted-foreground/30"
+                    }`}
+                  />
+                ))}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {live.paused ? "Paused — nothing is being heard" : "Listening…"}
+              </span>
+            </>
           ) : (
             <Button size="sm" className="gap-2" onClick={startRecording} disabled={!!busy}>
               <Mic className="h-3.5 w-3.5" /> Record visit
@@ -236,10 +260,21 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
             variant="outline"
             className="gap-2"
             onClick={() => fileRef.current?.click()}
-            disabled={recording || !!busy}
+            disabled={live.recording || !!busy}
           >
             <Upload className="h-3.5 w-3.5" /> Upload audio
           </Button>
+          <Select value={noteStyle} onValueChange={(v) => setNoteStyle(v as NoteStyle)}>
+            <SelectTrigger className="h-8 w-[190px] text-xs" aria-label="Note style">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="soap">SOAP note</SelectItem>
+              <SelectItem value="narrative">Narrative note</SelectItem>
+              <SelectItem value="referral">Referral letter</SelectItem>
+              <SelectItem value="discharge">Discharge summary</SelectItem>
+            </SelectContent>
+          </Select>
           {busy && (
             <span className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
