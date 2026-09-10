@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   Users,
+  User,
   Bell,
   Settings,
   LifeBuoy,
