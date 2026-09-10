@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
+import { useActiveWorkspace } from '@/hooks/useActiveWorkspace';
 
 export type PracticeRole =
   | 'owner'
@@ -100,6 +101,7 @@ export interface CreatePracticeData {
 export function usePractice() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { workspaceId } = useActiveWorkspace();
 
   // Get user's practice memberships
   const { data: memberships = [], isLoading: loadingMemberships } = useQuery({
@@ -139,8 +141,13 @@ export function usePractice() {
   });
 
   // Get the user's current/primary practice (first one for now)
-  const currentPractice = practices[0] || null;
-  const currentMembership = memberships[0] || null;
+  const selectedPractice = workspaceId && workspaceId !== 'personal'
+    ? practices.find((practice) => practice.id === workspaceId)
+    : undefined;
+  const currentPractice = workspaceId === 'personal' ? null : selectedPractice || practices[0] || null;
+  const currentMembership = currentPractice
+    ? memberships.find((membership) => membership.practice_id === currentPractice.id) || null
+    : null;
 
   // Get members of a practice.
   //
