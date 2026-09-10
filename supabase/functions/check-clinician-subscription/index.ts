@@ -46,16 +46,19 @@ const TIER_LIMITS: Record<string, number> = {
  * same defect class the August 2026 security review found three of. Keeping the
  * rule in the function means a client cannot reach it at all.
  *
- * The pattern is deliberately narrow: `demo-clinician-<n>@onecare.you` and
- * nothing else. It must never widen to the whole onecare.you domain, or every
- * staff account would silently become an unpaid enterprise account.
+ * The pattern is deliberately narrow: the fixed demo prefixes followed by a
+ * number, on onecare.you, and nothing else. It must never widen to the whole
+ * onecare.you domain, or every staff account would silently become an unpaid
+ * enterprise account.
  */
-const DEMO_CLINICIAN_PATTERN = /^demo-clinician-\d+@onecare\.you$/i;
+const DEMO_CLINICIAN_PATTERN =
+  /^demo-(clinician|nurse|frontdesk|billing|readonly|staff)-\d+@onecare\.you$/i;
 const DEMO_TIER = 'enterprise';
 
 function isDemoClinician(email: string): boolean {
   return DEMO_CLINICIAN_PATTERN.test(email.trim().toLowerCase());
 }
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

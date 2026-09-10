@@ -7,9 +7,11 @@ import { describe, it, expect } from 'vitest';
  * patients, so a pattern that is one character too loose hands free enterprise
  * accounts to real users — most dangerously to anyone on the onecare.you domain.
  */
-const DEMO_CLINICIAN_PATTERN = /^demo-clinician-\d+@onecare\.you$/i;
+const DEMO_CLINICIAN_PATTERN =
+  /^demo-(clinician|nurse|frontdesk|billing|readonly|staff)-\d+@onecare\.you$/i;
 const isDemoClinician = (email: string) =>
   DEMO_CLINICIAN_PATTERN.test(email.trim().toLowerCase());
+
 
 describe('demo clinician billing exemption', () => {
   it('matches the seeded demo clinicians', () => {
