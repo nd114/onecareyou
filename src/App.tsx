@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
+import { RequireCapability } from "@/components/clinician/RequireCapability";
 import { PatientRoute } from "@/components/auth/PatientRoute";
 import { PracticeAdminRoute } from "@/components/auth/PracticeAdminRoute";
 import PracticeAdmin from "./pages/PracticeAdmin";
@@ -183,14 +184,21 @@ const App = () => (
                 <ClinicianPatients />
               </ClinicianRoute>
             } />
+            {/* Practice roles: the database already refuses these reads to a
+                receptionist or a biller. Turning them away at the door is
+                clearer than handing them an empty screen. */}
             <Route path="/clinician/guidance" element={
               <ClinicianRoute>
-                <ClinicianGuidance />
+                <RequireCapability capability="send_guidance">
+                  <ClinicianGuidance />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/alerts" element={
               <ClinicianRoute>
-                <ClinicianAlerts />
+                <RequireCapability capability="view_phi">
+                  <ClinicianAlerts />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             {/* The practice diary and the practice ledger. The per-patient
@@ -203,17 +211,23 @@ const App = () => (
             } />
             <Route path="/clinician/invoices" element={
               <ClinicianRoute>
-                <ClinicianInvoices />
+                <RequireCapability capability="manage_billing">
+                  <ClinicianInvoices />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/messages" element={
               <ClinicianRoute>
-                <ClinicianMessages />
+                <RequireCapability capability="message_patients">
+                  <ClinicianMessages />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/patients/import" element={
               <ClinicianRoute>
-                <ClinicianPatientImport />
+                <RequireCapability capability="invite_patients">
+                  <ClinicianPatientImport />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/records/:recordId" element={
@@ -448,7 +462,9 @@ const App = () => (
             } />
             <Route path="/clinician/templates" element={
               <ClinicianRoute>
-                <ClinicianTemplates />
+                <RequireCapability capability="edit_clinical">
+                  <ClinicianTemplates />
+                </RequireCapability>
               </ClinicianRoute>
             } />
             <Route path="/clinician/audit" element={

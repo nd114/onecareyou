@@ -50,7 +50,8 @@ import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive } from "@/lib/nav-ia";
+import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
+import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
 
 export function ClinicianHeader() {
@@ -148,8 +149,14 @@ export function ClinicianHeader() {
   const initials = getInitials();
 
   const activePillar = getClinicianPillarForRoute(location.pathname);
+  // A nurse, a receptionist and a biller do not share a menu. Tabs their role
+  // cannot open are removed rather than shown and refused.
+  const { can, loading: capsLoading } = useClinicianCapabilities();
+  const pillars = capsLoading
+    ? CLINICIAN_PILLARS
+    : CLINICIAN_PILLARS.map((p) => ({ ...p, tabs: visibleTabs(p.tabs, can) }));
   // Navigation IA v2 — 4 pillars. Sub-tabs render via SectionTabs inside each pillar page.
-  const navLinks = CLINICIAN_PILLARS.map((p) => ({
+  const navLinks = pillars.map((p) => ({
     to: p.primary,
     label: p.label,
     pillarKey: p.key,
@@ -387,7 +394,7 @@ export function ClinicianHeader() {
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-border bg-background">
           <nav className="container py-4 space-y-1">
-            {CLINICIAN_PILLARS.map((pillar) => {
+            {pillars.map((pillar) => {
               const isExpanded =
                 expandedPillar === pillar.key ||
                 (expandedPillar === null && activePillar === pillar.key);

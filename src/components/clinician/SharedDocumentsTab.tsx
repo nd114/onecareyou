@@ -42,6 +42,9 @@ export function SharedDocumentsTab({
             ai_summary, ai_tags, mime_type, file_size, notes, created_at
           `)
           .eq('user_id', patientUserId)
+          // Archiving is the patient saying "not part of my current picture".
+          // Whole-vault access respects that; the row stays, the listing does not.
+          .is('archived_at', null)
           .order('document_date', { ascending: false, nullsFirst: false });
 
         if (error) throw error;
