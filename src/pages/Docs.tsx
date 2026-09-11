@@ -136,8 +136,8 @@ export default function Docs() {
                   {hits.length === 0 && (
                     <li className="text-sm text-muted-foreground">
                       Nothing here matches that.{' '}
-                      <Link to="/help" className="underline underline-offset-4">
-                        Try the help centre
+                      <Link to="/contact" className="underline underline-offset-4">
+                        Ask us directly
                       </Link>
                       .
                     </li>
@@ -225,15 +225,11 @@ export default function Docs() {
             <div className="mt-10 rounded-xl border border-border/60 bg-muted/30 p-5 text-sm">
               <p className="font-medium">Still stuck?</p>
               <p className="mt-1 text-muted-foreground">
-                The{' '}
-                <Link to="/help" className="underline underline-offset-4">
-                  help centre
-                </Link>{' '}
-                answers questions you arrived with, and you can always{' '}
+                You can always{' '}
                 <Link to="/contact" className="underline underline-offset-4">
                   get in touch
-                </Link>
-                .
+                </Link>{' '}
+                and we will point you the right way.
               </p>
             </div>
 
