@@ -6,10 +6,15 @@ import {
 } from "../../supabase/functions/_shared/ehr-credentials";
 
 /**
- * `ehr_connections.credentials_encrypted` is plain TEXT. Nothing writes it
- * encrypted and nothing decrypts it — the column name is the only encryption
- * in the system. This module does not fix that; it makes it legible and gives
- * it one place to change. These assertions hold that shape.
+ * `ehr_connections.credentials_encrypted` is plain TEXT and used to be the
+ * only place a connection's secret lived. Every connection is now moved into
+ * Supabase Vault on migration (store_ehr_credential_in_vault, service_role
+ * only — see 20261002000000_ehr_credentials_move_to_vault.sql), so this
+ * module's plain-column branch is a read-side fallback for an environment
+ * that has not migrated yet, not the steady state. These assertions hold
+ * that shape either way: vault preferred, no silent fallback on a failed
+ * vault read, and a loud warning naming the connection on the rare path that
+ * still uses the plain column.
  */
 const connection = {
   id: "conn-1",
