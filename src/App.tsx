@@ -55,8 +55,8 @@ import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import MedicalDisclaimer from "./pages/MedicalDisclaimer";
-import HelpCenter from "./pages/HelpCenter";
-import Guide from "./pages/Guide";
+
+import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
 import AdherenceReport from "./pages/AdherenceReport";
 import KnowledgeBase from "./pages/KnowledgeBase";
@@ -161,8 +161,11 @@ const App = () => (
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/data-processing" element={<DataProcessing />} />
             <Route path="/disclaimer" element={<MedicalDisclaimer />} />
-            <Route path="/help" element={<HelpCenter />} />
-            <Route path="/guide" element={<Guide />} />
+            <Route path="/help" element={<Navigate to="/docs" replace />} />
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/docs/:slug" element={<Docs />} />
+            {/* The guide became the documentation site; old links still land. */}
+            <Route path="/guide" element={<Navigate to="/docs" replace />} />
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/careers/:jobId" element={<JobDetail />} />

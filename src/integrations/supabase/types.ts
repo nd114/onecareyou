@@ -2631,6 +2631,7 @@ export type Database = {
           quantity: number | null
           refill_date: string | null
           source: string
+          source_document_id: string | null
           start_date: string
           stopped_by: string | null
           stopped_reason: string | null
@@ -2659,6 +2660,7 @@ export type Database = {
           quantity?: number | null
           refill_date?: string | null
           source?: string
+          source_document_id?: string | null
           start_date?: string
           stopped_by?: string | null
           stopped_reason?: string | null
@@ -2687,6 +2689,7 @@ export type Database = {
           quantity?: number | null
           refill_date?: string | null
           source?: string
+          source_document_id?: string | null
           start_date?: string
           stopped_by?: string | null
           stopped_reason?: string | null
@@ -2709,6 +2712,13 @@ export type Database = {
             columns: ["family_member_id"]
             isOneToOne: false
             referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medications_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "health_documents"
             referencedColumns: ["id"]
           },
         ]
@@ -4402,6 +4412,7 @@ export type Database = {
           recorded_by_user_id: string | null
           secondary_value: number | null
           source: string | null
+          source_document_id: string | null
           type: string
           unit: string
           user_id: string
@@ -4418,6 +4429,7 @@ export type Database = {
           recorded_by_user_id?: string | null
           secondary_value?: number | null
           source?: string | null
+          source_document_id?: string | null
           type: string
           unit: string
           user_id: string
@@ -4434,6 +4446,7 @@ export type Database = {
           recorded_by_user_id?: string | null
           secondary_value?: number | null
           source?: string | null
+          source_document_id?: string | null
           type?: string
           unit?: string
           user_id?: string
@@ -4452,6 +4465,13 @@ export type Database = {
             columns: ["family_member_id"]
             isOneToOne: false
             referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vitals_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "health_documents"
             referencedColumns: ["id"]
           },
         ]
@@ -5571,6 +5591,7 @@ export type Database = {
           quantity: number | null
           refill_date: string | null
           source: string
+          source_document_id: string | null
           start_date: string
           stopped_by: string | null
           stopped_reason: string | null
@@ -5586,6 +5607,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      store_ehr_credential_in_vault: {
+        Args: { _connection_id: string; _secret: string }
+        Returns: undefined
       }
       suggest_medication_name: { Args: { query: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }

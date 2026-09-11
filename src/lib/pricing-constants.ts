@@ -101,33 +101,42 @@ export interface EnterpriseTier {
 export const ENTERPRISE_TIERS: EnterpriseTier[] = [
   {
     key: 'practice',
-    name: 'Practice',
-    from: 399,
-    shape: 'Single practice or clinic',
-    metrics: ['Up to ~5 clinicians', 'Up to 1,000 patients', 'Single department'],
+    name: 'Single site',
+    from: 2500,
+    shape: 'One hospital site or multi-department clinic',
+    metrics: ['Up to ~10 clinicians', 'Up to 2,500 patients', 'Up to 3 departments'],
   },
   {
     key: 'mid',
     name: 'Mid-sized',
-    from: 1500,
-    shape: 'Multi-department clinic or small hospital',
-    metrics: ['Up to ~12 clinicians', 'Up to 5,000 patients', 'Up to 7 departments'],
+    from: 4000,
+    shape: 'Multi-department hospital',
+    metrics: ['Up to ~30 clinicians', 'Up to 10,000 patients', 'Up to 7 departments'],
   },
   {
     key: 'high',
     name: 'High',
-    from: 3000,
+    from: 6500,
     shape: 'Hospital with established departments',
-    metrics: ['Up to ~30 clinicians', 'Up to 15,000 patients', '7–10 departments'],
+    metrics: ['Up to ~75 clinicians', 'Up to 25,000 patients', '7–12 departments'],
   },
   {
     key: 'enterprise_plus',
     name: 'Enterprise+',
-    from: 4000,
+    from: 9000,
     shape: 'Large hospital or hospital group',
-    metrics: ['31+ clinicians', '15,000+ patients', '10+ departments'],
+    metrics: ['76+ clinicians', '25,000+ patients', 'Multi-site, 12+ departments'],
   },
 ];
+
+/** Storage included per clinician plan. Extra storage is a roadmap item. */
+export const CLINICIAN_STORAGE_ALLOWANCE = {
+  community: '500 MB',
+  solo: '10 GB',
+  pro: '100 GB',
+  enterprise: 'Negotiated',
+} as const;
+
 
 /** Commercial items published as coming, not billed yet. */
 export const PRICING_ROADMAP = [

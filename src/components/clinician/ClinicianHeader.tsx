@@ -54,7 +54,6 @@ import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
-import { WorkspaceSelector } from "@/components/clinician/WorkspaceSelector";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -208,7 +207,7 @@ export function ClinicianHeader() {
 
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
         <div className="flex-1 flex items-center justify-end gap-1">
-          <WorkspaceSelector />
+
 
           {/* Theme Toggle Icon */}
           <Button
@@ -360,12 +359,12 @@ export function ClinicianHeader() {
                   </Link>
                 </DropdownMenuItem>
                 {/* Help Centre is unfinished, so it stays out of navigation for
-                    now; the Guide below is what actually answers questions. */}
+                    now; the documentation below is what actually answers questions. */}
 
                 <DropdownMenuItem asChild>
-                  <Link to="/guide" className="flex items-center gap-2 cursor-pointer">
+                  <Link to="/docs" className="flex items-center gap-2 cursor-pointer">
                     <BookOpen className="h-4 w-4" />
-                    Guide
+                    Documentation
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (
@@ -475,12 +474,12 @@ export function ClinicianHeader() {
               My profile &amp; settings
             </Link>
             <Link
-              to="/guide"
+              to="/docs"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
             >
               <BookOpen className="h-4 w-4" />
-              Guide
+              Documentation
             </Link>
 
 

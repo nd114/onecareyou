@@ -61,12 +61,9 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {/* The Help Centre is still being written, so it is not linked
-                  anywhere public yet — the Guide is the real answer today. */}
-
               <li>
-                <Link to="/guide" className="hover:text-foreground transition-colors">
-                  Guide
+                <Link to="/docs" className="hover:text-foreground transition-colors">
+                  Documentation
                 </Link>
               </li>
               <li>
@@ -162,8 +159,8 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} OneCare. All rights reserved. ·{" "}
-            <span className="text-foreground/70 font-medium">Early access beta | Proudly Loveworld 💚 </span>{" "}
+             © {new Date().getFullYear()} OneCare. All rights reserved. •{" "}
+             <span className="text-foreground/70 font-medium">Early access beta • Proudly Loveworld 💚</span>{" "}
           </p>
           <p className="text-xs text-muted-foreground text-center md:text-right max-w-lg">
             OneCare is not a substitute for professional medical advice. Always consult your healthcare provider.

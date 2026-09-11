@@ -2,7 +2,7 @@
 
 ## Create your account
 
-Sign up with an email address and a password, or with Google. You will get a
+Sign up with an email address and a password, or with a sign in partner. You will get a
 confirmation email — open it before signing in. That step is not decoration:
 some things in OneCare are released to whoever proves they own an address, so an
 unconfirmed address gets nothing.

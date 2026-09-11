@@ -132,7 +132,10 @@ export function usePractice() {
       const { data, error } = await supabase
         .from('practices')
         .select(SAFE_PRACTICE_COLUMNS)
-        .in('id', practiceIds);
+        .in('id', practiceIds)
+        // A retired workspace is not a workspace to choose between. Membership
+        // rows stay for the record; the practice simply stops being offered.
+        .eq('is_active', true);
       if (error) throw error;
       return (data || []) as Practice[];
     },

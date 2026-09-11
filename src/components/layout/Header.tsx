@@ -373,12 +373,12 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
                       {/* The Help Centre is still thin, so it is not offered in
-                          navigation yet — the Guide is the honest answer. */}
+                          navigation yet — the documentation is the honest answer. */}
 
                 <DropdownMenuItem asChild>
-                        <Link to="/guide" className="flex items-center gap-2">
+                        <Link to="/docs" className="flex items-center gap-2">
                           <BookOpen className="h-4 w-4" />
-                          Guide
+                          Documentation
                         </Link>
                       </DropdownMenuItem>
                     </>
@@ -540,11 +540,11 @@ export function Header() {
                   Settings
                 </Link>
                 <Link
-                  to="/guide"
+                  to="/docs"
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Guide
+                  Documentation
                 </Link>
                 <div className="flex items-center justify-between px-4 py-2">
                   <span className="text-sm text-muted-foreground">Theme</span>

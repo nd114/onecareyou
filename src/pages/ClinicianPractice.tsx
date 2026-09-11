@@ -8,6 +8,7 @@ import { SectionTabs } from '@/components/layout/SectionTabs';
 import { Panel, PanelHeader, PanelRow, PanelRows } from '@/components/ui/panel';
 import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitationsCard';
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
+import { WorkspaceSelector } from '@/components/clinician/WorkspaceSelector';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
@@ -94,6 +95,12 @@ const ClinicianPractice = () => {
               </p>
             </div>
           </div>
+
+          {/* Only renders for the rare account that belongs to more than one
+              active workspace. It used to sit in the top navigation, where it
+              implied a choice almost nobody has. */}
+          <WorkspaceSelector />
+
 
           {/* Anything waiting on an answer. Both of these render nothing when
               there is nothing pending, so they do not leave a gap. */}

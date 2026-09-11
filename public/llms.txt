@@ -16,7 +16,8 @@ OneCare gives patients (and their families) a single home for their health data 
 - [About](/about): Mission — eliminate post-discharge information asymmetry
 - [Contact](/contact): Get in touch with the OneCare team
 - [Careers](/careers): Open roles — remote-first, patient-first culture
-- [Help Center](/help): FAQs and product guides
+- [Documentation](/docs): How OneCare works — record, sharing, assistant, privacy, clinician workflows
+
 - [Knowledge Base](/knowledge): Health-literacy articles and guides
 
 ## Open roles
