@@ -54,7 +54,6 @@ import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
-import { WorkspaceSelector } from "@/components/clinician/WorkspaceSelector";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
