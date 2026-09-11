@@ -60,7 +60,11 @@ export function RecordVitalDialog({ open, onOpenChange, patientUserId, patientNa
     const [h, m] = time.split(':').map(Number);
     const d = new Date(`${date}T00:00:00`);
     d.setHours(h || 0, m || 0, 0, 0);
-    return d.toISOString();
+    // A reading cannot have been taken later than now — a clock skew or a
+    // mistyped date would otherwise file it in the future, where the patient's
+    // trend lines and the alert checks would not know what to do with it.
+    const now = new Date();
+    return (d > now ? now : d).toISOString();
   };
 
   const isValid =
