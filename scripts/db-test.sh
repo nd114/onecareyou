@@ -134,6 +134,32 @@ CREATE OR REPLACE FUNCTION cron.schedule(text, text, text) RETURNS bigint
 CREATE OR REPLACE FUNCTION cron.unschedule(text) RETURNS boolean
   LANGUAGE sql AS $fn$ SELECT true $fn$;
 
+-- Supabase Vault exists as a pre-built extension on a hosted project; plain
+-- Postgres has no such thing to CREATE EXTENSION. Stubbed to the same real
+-- shape (vault.create_secret, vault.decrypted_secrets) with no actual
+-- encryption, so a migration that stores a secret in it replays locally and a
+-- suite can assert the round trip really happened, not just that the call
+-- did not error.
+CREATE SCHEMA IF NOT EXISTS vault;
+CREATE TABLE IF NOT EXISTS vault.secrets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text,
+  description text DEFAULT '',
+  secret text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+CREATE OR REPLACE FUNCTION vault.create_secret(new_secret text, new_name text DEFAULT NULL, new_description text DEFAULT '')
+RETURNS uuid LANGUAGE plpgsql AS $fn$
+DECLARE _id uuid;
+BEGIN
+  INSERT INTO vault.secrets (name, description, secret) VALUES (new_name, new_description, new_secret)
+  RETURNING id INTO _id;
+  RETURN _id;
+END $fn$;
+CREATE OR REPLACE VIEW vault.decrypted_secrets AS
+  SELECT id, name, description, secret, secret AS decrypted_secret, created_at, updated_at FROM vault.secrets;
+
 -- Schema usage. Without it a test that SET ROLEs to authenticated gets
 -- "permission denied for schema auth" and reads as a policy failure.
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;

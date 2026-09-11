@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
+import { useWorkspaceSelection } from './useWorkspaceSelection';
 
 export type PracticeRole =
   | 'owner'
@@ -138,8 +139,18 @@ export function usePractice() {
     enabled: !!user && memberships.length > 0,
   });
 
-  // One account, one hospital: whichever practice the person belongs to.
-  const currentPractice = practices[0] || null;
+  const { selectedWorkspaceId, selectWorkspace } = useWorkspaceSelection(user?.id);
+
+  // An explicit choice wins outright. Absent one, this still falls back to
+  // the first practice exactly as before — nobody's current landing page
+  // moves just because a selector now exists — but "first" is no longer the
+  // only option, and needsWorkspaceSelection says when it would be worth
+  // asking rather than assuming.
+  const selectedPractice = selectedWorkspaceId
+    ? practices.find((p) => p.id === selectedWorkspaceId) || null
+    : null;
+  const needsWorkspaceSelection = practices.length > 1 && !selectedPractice;
+  const currentPractice = selectedPractice || practices[0] || null;
   const currentMembership = currentPractice
     ? memberships.find((membership) => membership.practice_id === currentPractice.id) || null
     : null;
@@ -435,6 +446,8 @@ export function usePractice() {
     memberships,
     currentPractice,
     currentMembership,
+    needsWorkspaceSelection,
+    selectWorkspace,
     myInvitations,
     
     // Loading states

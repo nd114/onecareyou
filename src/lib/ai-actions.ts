@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { VITAL_CONFIG, VitalType, isMedicationEditable, describeMedicationSource, medicationSourceSyncs } from '@/types/health';
 import { isVitalEditable, describeVitalSource } from '@/hooks/useVitals';
-import { formatDay, formatDayTime } from '@/lib/format-date';
+import { formatDay, formatDayTime, localTimeToISOString, localTimeOfDay } from '@/lib/format-date';
 
 /**
  * Approval-gated AI actions.
@@ -212,7 +212,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
               user_id: userId,
               medication_id: data.id,
               family_member_id: null,
-              scheduled_time: `${today}T${time}:00`,
+              scheduled_time: localTimeToISOString(today, time),
               status: 'pending' as const,
             }))
           );
@@ -253,7 +253,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
 
         const wanted = p.scheduled_time ? pad(p.scheduled_time) : null;
         const target =
-          (wanted && entries.find((e) => String(e.scheduled_time).slice(11, 16) === wanted)) || entries[0];
+          (wanted && entries.find((e) => localTimeOfDay(e.scheduled_time) === wanted)) || entries[0];
 
         const { error } = await supabase
           .from('schedule_entries')
@@ -318,7 +318,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
 
         const existing = todayEntries ?? [];
         const staleIds = existing
-          .filter((e) => e.status === 'pending' && !times.includes(String(e.scheduled_time).slice(11, 16)))
+          .filter((e) => e.status === 'pending' && !times.includes(localTimeOfDay(e.scheduled_time) ?? ''))
           .map((e) => e.id);
         if (staleIds.length > 0) {
           await supabase.from('schedule_entries').delete().in('id', staleIds);
@@ -327,7 +327,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
         const kept = new Set(
           existing
             .filter((e) => !staleIds.includes(e.id))
-            .map((e) => String(e.scheduled_time).slice(11, 16))
+            .map((e) => localTimeOfDay(e.scheduled_time))
         );
         const missing = times.filter((t) => !kept.has(t));
         if (missing.length > 0) {
@@ -336,7 +336,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
               user_id: userId,
               medication_id: med.id,
               family_member_id: null,
-              scheduled_time: `${today}T${time}:00`,
+              scheduled_time: localTimeToISOString(today, time),
               status: 'pending' as const,
             }))
           );
@@ -394,7 +394,7 @@ export async function executeAction(action: ProposedAction, userId: string): Pro
           .gte('scheduled_time', dayStart.toISOString())
           .lt('scheduled_time', dayEnd.toISOString());
         const stale = (todayEntries ?? [])
-          .filter((e) => e.status === 'pending' && String(e.scheduled_time).slice(11, 16) === time)
+          .filter((e) => e.status === 'pending' && localTimeOfDay(e.scheduled_time) === time)
           .map((e) => e.id);
         if (stale.length > 0) await supabase.from('schedule_entries').delete().in('id', stale);
 

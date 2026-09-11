@@ -4,6 +4,16 @@
 import { useRef, useState } from "react";
 import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle, Activity, Pause, Play } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useLiveScribe } from "@/hooks/useLiveScribe";
 import { Checkbox } from "@/components/ui/checkbox";
 import { parseMentionedVital } from "@/lib/mentioned-vitals";
@@ -64,6 +74,13 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pickedVitals, setPickedVitals] = useState<Set<number>>(new Set());
   const [recordingVitals, setRecordingVitals] = useState(false);
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false);
+  // Confirmed once per encounter, not once per recording within it: it is the
+  // same conversation. Read from the row first so a page reload mid-visit
+  // does not ask again for a visit already disclosed.
+  const [consentConfirmedLocally, setConsentConfirmedLocally] = useState(false);
+  const hasRecordingConsent =
+    consentConfirmedLocally || Boolean(encounter.metadata?.recording_consent_confirmed_at);
 
   /**
    * Live transcription: each window of audio comes back as words while the
@@ -123,6 +140,44 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
   };
 
   const startRecording = async () => {
+    if (!hasRecordingConsent) {
+      setConsentDialogOpen(true);
+      return;
+    }
+    liveTextRef.current = "";
+    setLiveText("");
+    await live.start();
+  };
+
+  /**
+   * Records that the patient was told the visit is being recorded and
+   * agreed, before the microphone is enabled — not just copy suggesting a
+   * clinician do this themselves. Written to the encounter itself, the
+   * clinical record of the visit, rather than only a client-side flag: a
+   * button that merely hides itself after being clicked is not evidence
+   * anyone was actually told.
+   */
+  const confirmConsentAndRecord = async () => {
+    setConsentConfirmedLocally(true);
+    setConsentDialogOpen(false);
+    if (user?.id) {
+      const { error } = await supabase
+        .from("encounters")
+        .update({
+          metadata: {
+            ...(encounter.metadata ?? {}),
+            recording_consent_confirmed_at: new Date().toISOString(),
+            recording_consent_confirmed_by: user.id,
+          },
+        })
+        .eq("id", encounter.id);
+      if (error) {
+        // The recording still proceeds — the clinician just confirmed consent
+        // out loud to the patient, and losing the write should not undo that
+        // or block the visit. It does mean the record of it did not land.
+        console.error("Could not record scribe consent confirmation", error);
+      }
+    }
     liveTextRef.current = "";
     setLiveText("");
     await live.start();
@@ -209,6 +264,7 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
   );
 
   return (
+    <>
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -435,5 +491,24 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
         </div>
       )}
     </div>
+
+    <AlertDialog open={consentDialogOpen} onOpenChange={setConsentDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tell the patient first</AlertDialogTitle>
+          <AlertDialogDescription>
+            Confirm you have told the patient this visit is being recorded and they have agreed,
+            before the microphone starts. This is recorded against the encounter.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Not yet</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmConsentAndRecord}>
+            They've agreed — start recording
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

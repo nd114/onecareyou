@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDay, formatDayTime, formatTime, formatWhen } from '@/lib/format-date';
+import { formatDay, formatDayTime, formatTime, formatWhen, localTimeToISOString, localTimeOfDay } from '@/lib/format-date';
 
 const iso = '2026-09-03T15:47:42.000Z';
 // Built from parts so the test does not depend on the runner's zone.
@@ -70,6 +70,35 @@ describe('formatWhen', () => {
 describe('the ISO strings the database returns', () => {
   it('parses without complaint', () => {
     expect(formatDay(iso)).toMatch(/^Sep [23], 2026$/);
+  });
+});
+
+describe('localTimeToISOString', () => {
+  it('round-trips the wall-clock time regardless of the runner\'s zone', () => {
+    // The property that matters: whatever "HH:mm" goes in comes back out.
+    // A naive `${date}T${time}:00` string does not have this property once a
+    // `timestamptz` column re-labels it in the database's own zone — this
+    // helper is what stands between a patient's typed time and that drift.
+    for (const time of ['00:05', '08:00', '13:30', '23:55']) {
+      const iso = localTimeToISOString('2026-09-10', time);
+      expect(localTimeOfDay(iso)).toBe(time);
+    }
+  });
+
+  it('produces a real instant, not an unlabeled local-looking string', () => {
+    const iso = localTimeToISOString('2026-09-10', '08:00');
+    // toISOString() always carries 'Z' — this is a genuine instant, so every
+    // later reader (Postgres, another timezone, format()) agrees on when it is.
+    expect(iso.endsWith('Z')).toBe(true);
+    expect(Number.isNaN(new Date(iso).getTime())).toBe(false);
+  });
+});
+
+describe('localTimeOfDay', () => {
+  it('shows nothing usable as null rather than throwing', () => {
+    for (const bad of [null, undefined, '', 'not a date']) {
+      expect(localTimeOfDay(bad as never)).toBeNull();
+    }
   });
 });
 

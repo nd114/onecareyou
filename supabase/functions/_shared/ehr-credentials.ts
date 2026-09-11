@@ -1,24 +1,23 @@
 /**
  * The secret used to talk to a connected EHR.
  *
- * `ehr_connections.credentials_encrypted` is a plain `TEXT` column. Nothing
- * writes it encrypted and nothing decrypts it: three functions read it and use
- * it directly, each carrying its own comment saying "in production this would
- * be decrypted". It never is. The column name is the only encryption in the
- * system.
+ * `ehr_connections.credentials_encrypted` is a plain `TEXT` column, and was
+ * once the only place a connection's secret lived. As of
+ * 20261002000000_ehr_credentials_move_to_vault.sql it no longer is: every
+ * connection's secret is moved into Supabase Vault on migration, the
+ * database only ever writes it back there
+ * (`public.store_ehr_credential_in_vault`, service_role only — the RLS
+ * policy on `ehr_connections` is row-level and cannot stop a client from
+ * PATCHing this column directly, so a trigger guards it instead), and
+ * `credentials_encrypted` is nulled out the moment a connection is migrated.
  *
- * This does not fix that — a real fix is a key-management decision (Supabase
- * Vault, which key, who rotates it, how existing values migrate) and not
- * something to invent quietly in a helper. What it does is make the situation
- * legible and give it one place to change:
+ * The plain-column branch below stays as a read-side fallback rather than
+ * being deleted — for a connection on an environment that has not yet run
+ * that migration — and still warns loudly, naming the connection, when it is
+ * actually used. On a fully migrated project it should never fire.
  *
- *   - one function reads the secret instead of three;
- *   - the log says plainly that a plaintext credential was used, naming the
- *     connection, so it shows up in operations rather than only in a comment;
- *   - `vaultSecretId` is read first, so the migration path is already wired
- *     and moving a connection across is a data change rather than a code one.
- *
- * See docs/ehr-integration-plan.md for what the real fix requires.
+ * See docs/ehr-integration-plan.md for the remaining, still-open piece:
+ * rotation policy for a bearer token that never expires.
  */
 
 export interface EhrConnectionSecret {

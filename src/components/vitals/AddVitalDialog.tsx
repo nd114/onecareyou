@@ -29,7 +29,7 @@ import { edgeFunctionError } from '@/lib/edge-function-error';
 interface AddVitalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (type: VitalType, value: number, secondaryValue?: number, notes?: string, date?: Date, familyMemberId?: string | null) => Promise<any>;
+  onSave: (type: VitalType, value: number, secondaryValue?: number, notes?: string, date?: Date, familyMemberId?: string | null, sourceDocumentId?: string | null) => Promise<any>;
 }
 
 interface ExtractedVital {
@@ -358,25 +358,18 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
 
   const handleSaveExtracted = async () => {
     setSaving(true);
-    
+
     try {
       const selectedVitals = extractedVitals.filter(v => v.selected);
-      
-      for (const vital of selectedVitals) {
-        await onSave(
-          vital.type, 
-          vital.value, 
-          vital.secondary_value || undefined, 
-          'Extracted from lab report', 
-          selectedDate,
-          familyMemberId
-        );
-      }
 
-      // Save to Health Vault if enabled and we have the file
+      // Uploaded first, and its id threaded into every vital below: if this
+      // document is later withdrawn as filed to the wrong person, the values
+      // it produced need to be found and removed with it. A vital saved with
+      // no document link is one a retraction can never find.
+      let documentId: string | null = null;
       if (saveToVault && uploadedFile) {
         try {
-          await uploadDocument.mutateAsync({
+          const uploaded = await uploadDocument.mutateAsync({
             file: uploadedFile,
             title: `Lab Report - ${format(selectedDate, 'MMM d, yyyy')}`,
             category: 'lab_result',
@@ -384,10 +377,23 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
             notes: `Extracted ${selectedVitals.length} health metrics`,
             sourceContext: 'vitals_upload',
           });
+          documentId = uploaded?.id ?? null;
         } catch (err) {
           console.error('Failed to save to vault:', err);
           // Don't fail the whole save
         }
+      }
+
+      for (const vital of selectedVitals) {
+        await onSave(
+          vital.type,
+          vital.value,
+          vital.secondary_value || undefined,
+          'Extracted from lab report',
+          selectedDate,
+          familyMemberId,
+          documentId
+        );
       }
 
       toast.success(`Saved ${selectedVitals.length} health metrics!`);
