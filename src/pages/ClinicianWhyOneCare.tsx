@@ -1,38 +1,29 @@
 import { motion } from "framer-motion";
-import { SEOHead } from '@/components/seo/SEOHead';
-import { 
-  Check, 
-  X, 
-  Users, 
-  Heart, 
-  Shield, 
-  Smartphone, 
-  Bell, 
-  Share2,
-  Building2,
-  UserCircle,
-  ArrowRight,
-  Zap,
-  Clock,
-  DollarSign,
-  Globe,
-  TrendingUp,
-  Activity,
-  BarChart3,
-  FileText,
-  Link2,
-  Upload,
-  ClipboardList,
-  MessageSquare,
+import { Link, useNavigate } from "react-router-dom";
+import {
   AlertTriangle,
-  ShieldCheck
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Building2,
+  Check,
+  FileText,
+  Globe,
+  Link2,
+  MessageSquare,
+  Share2,
+  ShieldCheck,
+  Upload,
+  Users,
+  X,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
+import { SEOHead } from "@/components/seo/SEOHead";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { Footer } from "@/components/layout/Footer";
-import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const ClinicianWhyOneCare = () => {
   const navigate = useNavigate();
