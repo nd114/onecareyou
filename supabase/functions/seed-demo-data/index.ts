@@ -609,7 +609,22 @@ serve(async (req) => {
       }
     }
 
+    // Re-file the demo patient's Health Vault documents. The loop above wipes
+    // health_documents for each demo patient so re-runs don't double up, which
+    // would otherwise leave the Vault empty after every daily refresh. The
+    // dates are relative to today, so the demo stays recent.
+    // Files themselves live in the health-documents bucket and are untouched.
+    const { data: vaultCount, error: vaultError } = await supabaseAdmin.rpc(
+      "seed_demo_vault_documents",
+    );
+    if (vaultError) {
+      console.error("Error seeding demo vault documents:", vaultError);
+    } else {
+      results.health_documents = vaultCount ?? 0;
+    }
+
     console.log("Demo data seeding complete!", results);
+
 
     return new Response(
       JSON.stringify({
