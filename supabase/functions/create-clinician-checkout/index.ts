@@ -10,8 +10,8 @@ const corsHeaders = {
 
 // Clinician tier price IDs
 const CLINICIAN_PRICES = {
-  solo_monthly: "price_1SsbOVDycAbKvlfcXquEUSq6",
-  pro_monthly: "price_1SsbOmDycAbKvlfcM3mH6ER9",
+  solo_monthly: "price_1UEWquDycAbKvlfcHGRwg9HO",
+  pro_monthly: "price_1UEWqvDycAbKvlfcgkECMwx6",
   enterprise_monthly: "price_1SsbQwDycAbKvlfc5P9A9nVn",
 };
 
@@ -133,8 +133,8 @@ serve(async (req) => {
 
     // Determine patient limit based on tier
     const patientLimits: Record<string, number> = {
-      solo: 25,
-      pro: 100,
+      solo: 150,
+      pro: 1000,
       enterprise: 999999, // Unlimited
     };
 

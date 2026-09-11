@@ -91,7 +91,7 @@ const Pricing = () => {
       <div className="min-h-screen flex flex-col">
         <SEOHead
           title="Clinician Pricing — Plans for Healthcare Providers"
-          description="OneCare clinician plans: Solo, Pro, and Enterprise. HIPAA-ready, BAA on Enterprise, per-clinician pricing."
+          description="OneCare clinician plans: Community, Individual, Practice, and Enterprise. HIPAA-ready, BAA on Enterprise, transparent pricing."
           canonical="/pricing?audience=clinicians"
         />
         <ClinicianPricing

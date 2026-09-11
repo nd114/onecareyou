@@ -21,13 +21,17 @@ const PRICE_TIER_MAP: Record<string, string> = {
   "price_1SuKweDycAbKvlfcGepIUqjl": "solo",
   "price_1SuKyqDycAbKvlfcVWUKk03a": "pro",
   "price_1SuL1ADycAbKvlfcmvKgb99I": "enterprise",
+  // Sep 2026 ladder: Individual $99 (solo key), Practice $299 (pro key).
+  "price_1UEWquDycAbKvlfcHGRwg9HO": "solo",
+  "price_1UEWqvDycAbKvlfcgkECMwx6": "pro",
 };
 
 // Patient limits per tier
 const TIER_LIMITS: Record<string, number> = {
   trial: 5,
-  solo: 25,
-  pro: 100,
+  community: 25,
+  solo: 150,
+  pro: 1000,
   enterprise: 999999,
 };
 

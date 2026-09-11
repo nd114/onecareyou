@@ -54,7 +54,6 @@ import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
-import { WorkspaceSelector } from "@/components/clinician/WorkspaceSelector";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -208,7 +207,7 @@ export function ClinicianHeader() {
 
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
         <div className="flex-1 flex items-center justify-end gap-1">
-          <WorkspaceSelector />
+
 
           {/* Theme Toggle Icon */}
           <Button

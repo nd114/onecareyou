@@ -15,12 +15,14 @@ Checked the live data: `Mitchell's Private Care` on demo-clinician-1 has 0 patie
 
 Current ladder (Solo $79 / Pro $149 / Enterprise $399) prices a mini EHR like a reminder app. Recommended ladder:
 
-| Plan | Price | For | Patients |
-| --- | --- | --- | --- |
-| Community | $0 | Volunteer and community health workers, single-handed clinics | 25 |
-| Individual | $99/mo | Independent practitioner | 150 |
-| Practice | $299/mo | Small practice or clinic, up to 5 clinicians | 1,000 |
-| Enterprise | from $2,500/mo | Hospitals and groups, scoped per agreement | Unlimited |
+
+| Plan       | Price          | For                                                           | Patients  |
+| ---------- | -------------- | ------------------------------------------------------------- | --------- |
+| Community  | $0             | Volunteer and community health workers, single-handed clinics | 25        |
+| Individual | $99/mo         | Independent practitioner                                      | 150       |
+| Practice   | $299/mo        | Small practice or clinic, up to 5 clinicians                  | 1,000     |
+| Enterprise | from $2,500/mo | Hospitals and groups, scoped per agreement                    | Unlimited |
+
 
 Reasoning: $99 sits under SimplePractice/Elation while offering more on the patient side; $299 for a whole small practice is still a fraction of per-seat EHR pricing; $2,500 is the honest floor for a multi-department deployment with BAA, tenancy, storage and onboarding, and leaves room to quote up. Annual stays at two months free. The $2,500 onboarding fee stays as-is for enterprise.
 
@@ -30,7 +32,7 @@ The Community tier is the accessibility answer: everything a lone clinician need
 
 Gate on three axes, not a long feature checklist:
 
-- **Volume** — patient cap and document storage per plan (Community 1 GB, Individual 10 GB, Practice 100 GB, Enterprise negotiated).
+- **Volume** — patient cap and document storage per plan (Community 500 MB, Individual 10 GB, Practice 100 GB, Enterprise negotiated).
 - **Team** — seats and role range. Community and Individual are single-user, no staff roles. Practice unlocks staff invitations and the non-clinical roles (nurse, front desk, billing, read-only). Enterprise unlocks departments, patient routing, sub-admins and tenant ownership.
 - **Depth** — the tools that cost real money to run or carry compliance weight: ambient scribe and AI assistant actions (metered on Individual, generous on Practice, negotiated on Enterprise), compliance exports and audit export, practice branding, EHR/FHIR connections, BAA, and revenue/invoicing. Community gets the assistant read-only, no scribe.
 

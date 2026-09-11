@@ -35,19 +35,27 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
   const { subscription, createCheckout, loading, tier: currentTier } = useClinicianSubscription();
   const [showAnnual, setShowAnnual] = useState(false);
 
-  const tiers: { key: 'solo' | 'pro' | 'enterprise'; highlight?: boolean }[] = [
+  type CardTier = 'community' | 'solo' | 'pro' | 'enterprise';
+
+  const tiers: { key: CardTier; highlight?: boolean }[] = [
+    { key: 'community' },
     { key: 'solo' },
     { key: 'pro', highlight: true },
     { key: 'enterprise' },
   ];
 
-  const handleSubscribe = async (tier: 'solo' | 'pro' | 'enterprise') => {
+  const handleSubscribe = async (tier: CardTier) => {
     if (!user) {
       navigate('/clinician/sign-up');
       return;
     }
     
     if (!isClinician) {
+      navigate('/clinician/sign-up');
+      return;
+    }
+
+    if (tier === 'community') {
       navigate('/clinician/sign-up');
       return;
     }
@@ -59,6 +67,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
 
     await createCheckout(tier);
   };
+
 
   const isCurrentTier = (tier: string) => {
     return currentTier === tier && subscription?.subscribed;
@@ -72,7 +81,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
     <div className="min-h-screen bg-background">
       <SEOHead
         title="Clinician Plans & Pricing — For Healthcare Providers"
-        description="HIPAA-ready clinician portal with continuous patient monitoring, clinical guidance tools, and care coordination. Start free or choose a plan that fits your practice."
+        description="HIPAA-ready clinician tools: Community free for community health workers, Individual $99/mo, Practice $299/mo, Enterprise from $2,500/mo for hospitals."
         canonical="/clinician/pricing"
       />
       {isClinician ? <ClinicianHeader /> : <Header />}
@@ -97,7 +106,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
             Empower your practice with continuous patient monitoring, clinical guidance tools, 
-            and seamless care coordination—all at a fraction of traditional EHR costs.
+            and seamless care coordination—all at a fraction of traditional EHR costs. Community health workers and underfunded clinics start free.
           </p>
 
           {/* Billing Toggle */}
@@ -117,11 +126,14 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
         </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-16">
           {tiers.map(({ key, highlight }, index) => {
             const tierInfo = CLINICIAN_TIER_INFO[key];
-            const price = showAnnual ? getAnnualPrice(tierInfo.price) : tierInfo.price;
-            const period = showAnnual ? 'year' : 'month';
+            // Community is free and Enterprise is quoted, so neither has an
+            // annual figure to show — only the two self-serve plans do.
+            const isBillable = key === 'solo' || key === 'pro';
+            const price = isBillable && showAnnual ? getAnnualPrice(tierInfo.price) : tierInfo.price;
+            const period = isBillable && showAnnual ? 'year' : 'month';
             
             return (
               <motion.div
@@ -130,7 +142,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className={`h-full relative ${highlight ? 'border-primary shadow-lg scale-105' : ''}`}>
+                <Card className={`h-full relative ${highlight ? 'border-primary shadow-lg lg:scale-105' : ''}`}>
                   {highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <Badge className="gradient-primary border-0">Most Popular</Badge>
@@ -140,29 +152,33 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                   <CardHeader className="text-center pb-2">
                     <CardTitle className="text-2xl">{tierInfo.name}</CardTitle>
                     <CardDescription>
+                      {key === 'community' && 'For community health workers & underfunded clinics'}
                       {key === 'solo' && 'For independent practitioners'}
-                      {key === 'pro' && 'For growing practices'}
-                      {key === 'enterprise' && 'For healthcare organizations'}
+                      {key === 'pro' && 'For practices and clinics'}
+                      {key === 'enterprise' && 'For hospitals and groups'}
                     </CardDescription>
                     
                     <div className="pt-4">
                       {key === 'enterprise' && (
                         <span className="text-sm text-muted-foreground">From </span>
                       )}
-                      <span className="text-4xl font-bold">${price}</span>
+                      <span className="text-4xl font-bold">${price.toLocaleString()}</span>
                       <span className="text-muted-foreground">/{period}</span>
                     </div>
                     
-                    {showAnnual && (
+                    {isBillable && showAnnual && (
                       <p className="text-sm text-green-600">
-                        ${tierInfo.price * 2} savings vs monthly
+                        ${(tierInfo.price * 2).toLocaleString()} savings vs monthly
                       </p>
                     )}
                     
                     <p className="text-sm font-medium text-primary mt-2">
                       {tierInfo.patientLimit === 999999 
                         ? 'Unlimited patients' 
-                        : `Up to ${tierInfo.patientLimit} patients`}
+                        : `Up to ${tierInfo.patientLimit.toLocaleString()} patients`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {tierInfo.storage} document storage
                     </p>
                   </CardHeader>
                   
@@ -175,6 +191,13 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                         </li>
                       ))}
                     </ul>
+
+                    {key === 'enterprise' && (
+                      <p className="text-xs text-muted-foreground">
+                        Enterprise capabilities are scoped in your agreement — the final price
+                        depends on departments, clinicians, storage and the integrations you choose.
+                      </p>
+                    )}
                     
                     <Button
                       className={`w-full ${highlight ? 'gradient-primary border-0' : ''}`}
@@ -187,7 +210,9 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                       ) : isCurrentTier(key) ? (
                         'Current Plan'
                       ) : key === 'enterprise' ? (
-                        <>Contact Sales <ArrowRight className="h-4 w-4 ml-2" /></>
+                        <>Talk to Sales <ArrowRight className="h-4 w-4 ml-2" /></>
+                      ) : key === 'community' ? (
+                        <>Start Free <ArrowRight className="h-4 w-4 ml-2" /></>
                       ) : (
                         <>Get Started <ArrowRight className="h-4 w-4 ml-2" /></>
                       )}
@@ -199,12 +224,14 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           })}
         </div>
 
+
+
         {/* Feature Comparison */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="max-w-4xl mx-auto mb-16"
+          className="max-w-5xl mx-auto mb-16"
         >
           <h2 className="text-2xl font-bold text-center mb-8">Feature Comparison</h2>
           
@@ -213,49 +240,51 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">Feature</th>
-                  <th className="text-center py-3 px-4">Solo</th>
-                  <th className="text-center py-3 px-4">Pro</th>
+                  <th className="text-center py-3 px-4">Community</th>
+                  <th className="text-center py-3 px-4">Individual</th>
+                  <th className="text-center py-3 px-4">Practice</th>
                   <th className="text-center py-3 px-4">Enterprise</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { feature: 'Patient Limit', solo: '25', pro: '100', enterprise: 'Unlimited' },
-                  { feature: 'Vital Alerts', solo: true, pro: true, enterprise: true },
-                  { feature: 'Custom Alert Thresholds', solo: true, pro: true, enterprise: true },
-                  { feature: 'Clinical Guidance Tools', solo: true, pro: true, enterprise: true },
-                  { feature: 'Patient Adherence Reports', solo: true, pro: true, enterprise: true },
-                  { feature: 'Email & Push Notifications', solo: true, pro: true, enterprise: true },
-                  { feature: 'Patient Engagement Analytics', solo: false, pro: true, enterprise: true },
-                  { feature: 'Team Members', solo: false, pro: '2 seats', enterprise: 'Unlimited' },
-                  { feature: 'Guidance Templates', solo: false, pro: 'Coming soon', enterprise: 'Coming soon' },
-                  { feature: 'Practice Branding', solo: false, pro: false, enterprise: true },
-                  { feature: 'EHR/FHIR Integration', solo: false, pro: false, enterprise: 'Coming soon' },
-                  { feature: 'API Access', solo: false, pro: false, enterprise: 'Coming soon' },
-                  { feature: 'HIPAA BAA', solo: false, pro: false, enterprise: true },
-                  { feature: 'Support', solo: 'Email', pro: 'Priority', enterprise: 'Dedicated' },
+                  { feature: 'Patient limit', community: '25', solo: '150', pro: '1,000', enterprise: 'Unlimited' },
+                  { feature: 'Document storage', community: '500 MB', solo: '10 GB', pro: '100 GB', enterprise: 'Negotiated' },
+                  { feature: 'Vitals, medications & adherence', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Vital alerts', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Custom alert thresholds', community: false, solo: true, pro: true, enterprise: true },
+                  { feature: 'Secure patient messaging', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Clinical guidance tools', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Encounters, templates & referrals', community: false, solo: true, pro: true, enterprise: true },
+                  { feature: 'Ambient scribe', community: false, solo: 'Metered', pro: 'Included', enterprise: 'Negotiated' },
+                  { feature: 'Assistant actions', community: 'Read-only', solo: 'Metered', pro: 'Included', enterprise: 'Negotiated' },
+                  { feature: 'Team seats', community: false, solo: false, pro: '5 seats', enterprise: 'Unlimited' },
+                  { feature: 'Non-clinical staff roles', community: false, solo: false, pro: true, enterprise: true },
+                  { feature: 'Invoicing & revenue tracking', community: false, solo: false, pro: true, enterprise: true },
+                  { feature: 'Compliance & audit exports', community: false, solo: false, pro: true, enterprise: true },
+                  { feature: 'Departments & patient routing', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'Practice branding', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'EHR/FHIR connections', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'HIPAA BAA', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'Support', community: 'Community', solo: 'Email', pro: 'Priority', enterprise: 'Dedicated' },
                 ].map((row, i) => (
                   <tr key={i} className="border-b">
                     <td className="py-3 px-4 font-medium">{row.feature}</td>
-                    <td className="text-center py-3 px-4">
-                      {typeof row.solo === 'boolean' ? (
-                        row.solo ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                      ) : row.solo}
-                    </td>
-                    <td className="text-center py-3 px-4">
-                      {typeof row.pro === 'boolean' ? (
-                        row.pro ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                      ) : row.pro}
-                    </td>
-                    <td className="text-center py-3 px-4">
-                      {typeof row.enterprise === 'boolean' ? (
-                        row.enterprise ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                      ) : row.enterprise}
-                    </td>
+                    {(['community', 'solo', 'pro', 'enterprise'] as const).map((col) => {
+                      const value = row[col];
+                      return (
+                        <td key={col} className="text-center py-3 px-4">
+                          {typeof value === 'boolean' ? (
+                            value ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
+                          ) : value}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
             </table>
+
           </div>
         </motion.div>
 
@@ -269,7 +298,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold mb-2">Enterprise &amp; hospitals</h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Hospital pricing scales with departments, clinicians and patient volume. Every
+              Enterprise starts at $2,500/month and scales with departments, clinicians, storage and integrations; the capabilities in an agreement are scoped with you, so not every listed capability is included at the entry price. Every
               enterprise agreement includes a one-time onboarding fee of $
               {ENTERPRISE_ONBOARDING_FEE.toLocaleString()}, covering multi-department setup,
               staff onboarding and EHR integration scope.

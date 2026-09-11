@@ -3,10 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-// Clinician Stripe price IDs (Updated pricing: Solo $79, Pro $149, Enterprise $399)
+// Clinician Stripe price IDs.
+// Ladder as of Sep 2026: Community $0, Individual $99, Practice $299,
+// Enterprise from $2,500 (quoted, not self-serve). The tier *keys* stay
+// `solo`/`pro`/`enterprise` so existing subscriptions, Stripe metadata and
+// stored patient limits keep resolving; only the labels and amounts changed.
 export const CLINICIAN_STRIPE_PRICES = {
-  solo_monthly: 'price_1SuKweDycAbKvlfcGepIUqjl',
-  pro_monthly: 'price_1SuKyqDycAbKvlfcVWUKk03a',
+  solo_monthly: 'price_1UEWquDycAbKvlfcHGRwg9HO',
+  pro_monthly: 'price_1UEWqvDycAbKvlfcgkECMwx6',
   enterprise_monthly: 'price_1SuL1ADycAbKvlfcmvKgb99I',
 } as const;
 
@@ -16,6 +20,7 @@ export const CLINICIAN_TIER_INFO = {
     price: 0,
     period: 'month',
     patientLimit: 5,
+    storage: '500 MB',
     features: [
       'Up to 5 patients',
       'Vital threshold alerts',
@@ -23,50 +28,69 @@ export const CLINICIAN_TIER_INFO = {
       '14-day trial period',
     ],
   },
-  solo: {
-    name: 'Solo',
-    price: 79,
+  community: {
+    name: 'Community',
+    price: 0,
     period: 'month',
     patientLimit: 25,
+    storage: '500 MB',
     features: [
       'Up to 25 patients',
+      'Vitals, medications & adherence tracking',
       'Vital threshold alerts',
+      'Secure patient messaging',
+      'Assistant in read-only mode',
+      'Community support',
+    ],
+  },
+  solo: {
+    name: 'Individual',
+    price: 99,
+    period: 'month',
+    patientLimit: 150,
+    storage: '10 GB',
+    features: [
+      'Up to 150 patients',
+      'Everything in Community, plus:',
       'Custom alert thresholds',
-      'Clinical guidance tools',
+      'Ambient scribe & assistant actions (metered)',
       'Patient adherence reports',
-      'Email & push notifications',
-      'Standard support',
+      'Encounters, templates & referrals',
+      'Email support',
     ],
   },
   pro: {
-    name: 'Pro',
-    price: 149,
+    name: 'Practice',
+    price: 299,
     period: 'month',
-    patientLimit: 100,
+    patientLimit: 1000,
+    storage: '100 GB',
     features: [
-      'Up to 100 patients',
-      'Everything in Solo, plus:',
+      'Up to 1,000 patients',
+      'Everything in Individual, plus:',
+      'Staff seats & non-clinical roles',
       'Patient engagement analytics',
-      'Team member access (2 seats)',
-      'Guidance templates (coming soon)',
+      'Invoicing & revenue tracking',
+      'Compliance & audit exports',
       'Priority support',
     ],
   },
   enterprise: {
     name: 'Enterprise',
-    price: 399,
+    price: 2500,
     period: 'month',
     patientLimit: 999999,
+    storage: 'Negotiated',
     features: [
       'Unlimited patients',
-      'Everything in Pro, plus:',
+      'Everything in Practice, plus:',
+      'Departments, patient routing & sub-admins',
       'Practice branding (logo & colors)',
       'Unlimited team seats',
       'HIPAA BAA included',
-      'EHR/FHIR integration (coming soon)',
-      'API access (coming soon)',
-      'Dedicated account manager',
-      'Custom onboarding',
+      'EHR/FHIR connections',
+      'Dedicated account manager & custom onboarding',
+      'Capabilities scoped in your agreement',
     ],
   },
 } as const;
@@ -78,12 +102,18 @@ export const CLINICIAN_FEATURE_TIERS = {
   team_management: ['pro', 'enterprise'] as string[],
   hipaa_baa: ['enterprise'] as string[],
   ehr_integration: ['enterprise'] as string[],
+  ambient_scribe: ['trial', 'solo', 'pro', 'enterprise'] as string[],
+  assistant_actions: ['trial', 'solo', 'pro', 'enterprise'] as string[],
+  compliance_export: ['pro', 'enterprise'] as string[],
+  revenue_tracking: ['pro', 'enterprise'] as string[],
+  departments: ['enterprise'] as string[],
 } as const;
 
 export const TEAM_SEAT_LIMITS: Record<string, number> = {
   trial: 1,
+  community: 1,
   solo: 1,
-  pro: 3, // owner + 2 seats
+  pro: 6, // owner + 5 seats
   enterprise: 999999,
 };
 
@@ -91,7 +121,8 @@ export function hasFeatureAccess(tier: string, feature: keyof typeof CLINICIAN_F
   return CLINICIAN_FEATURE_TIERS[feature].includes(tier);
 }
 
-export type ClinicianTier = 'trial' | 'solo' | 'pro' | 'enterprise' | 'expired';
+export type ClinicianTier = 'trial' | 'community' | 'solo' | 'pro' | 'enterprise' | 'expired';
+
 
 export interface ClinicianSubscriptionStatus {
   subscribed: boolean;
