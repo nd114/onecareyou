@@ -19,9 +19,7 @@ export function Footer() {
               </div>
               <span className="font-display text-xl font-bold">OneCare</span>
             </Link>
-            <p className="text-sm text-muted-foreground">
-              {BRAND.shortDescription}
-            </p>
+            <p className="text-sm text-muted-foreground">{BRAND.shortDescription}</p>
           </div>
 
           {/* Product */}
@@ -67,7 +65,9 @@ export function Footer() {
                   anywhere public yet — the Guide is the real answer today. */}
 
               <li>
-                <Link to="/guide" className="hover:text-foreground transition-colors">Guide</Link>
+                <Link to="/guide" className="hover:text-foreground transition-colors">
+                  Guide
+                </Link>
               </li>
               <li>
                 <Link to="/contact" className="hover:text-foreground transition-colors">
@@ -78,10 +78,7 @@ export function Footer() {
                 {/* The address has no space to break at, so on a narrow phone
                     it overflowed its column and clipped. break-all lets it
                     wrap rather than run off the edge. */}
-                <a
-                  href="mailto:support@onecare.you"
-                  className="break-all transition-colors hover:text-foreground"
-                >
+                <a href="mailto:support@onecare.you" className="break-all transition-colors hover:text-foreground">
                   support@onecare.you
                 </a>
               </li>
@@ -164,7 +161,10 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} OneCare. All rights reserved. · <span className="text-foreground/70 font-medium">Early access beta</span></p>
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} OneCare. All rights reserved. ·{" "}
+            <span className="text-foreground/70 font-medium">Early access beta | Proudly Loveworld 💚 </span>{" "}
+          </p>
           <p className="text-xs text-muted-foreground text-center md:text-right max-w-lg">
             OneCare is not a substitute for professional medical advice. Always consult your healthcare provider.
             <Link to="/disclaimer" className="ml-1 underline hover:text-foreground">
