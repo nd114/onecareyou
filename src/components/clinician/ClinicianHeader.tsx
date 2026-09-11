@@ -208,7 +208,7 @@ export function ClinicianHeader() {
 
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
         <div className="flex-1 flex items-center justify-end gap-1">
-          <WorkspaceSelector />
+
 
           {/* Theme Toggle Icon */}
           <Button
