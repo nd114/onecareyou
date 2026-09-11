@@ -110,7 +110,8 @@ export function useVitals() {
     secondaryValue?: number,
     notes?: string,
     recordedAt?: Date,
-    familyMemberId?: string | null
+    familyMemberId?: string | null,
+    sourceDocumentId?: string | null
   ) => {
     if (!user) {
       toast.error('Please sign in to record vitals');
@@ -128,6 +129,9 @@ export function useVitals() {
       notes: notes || null,
       source: 'manual' as VitalSource,
       family_member_id: familyMemberId !== undefined ? familyMemberId : activeMemberId,
+      // The Vault document this value was read from, if any — so a document
+      // withdrawn as another patient's stops leaving its numbers behind here.
+      source_document_id: sourceDocumentId ?? null,
     };
 
     // Offline path: optimistically add locally + queue for later sync.
