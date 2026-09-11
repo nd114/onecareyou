@@ -65,3 +65,30 @@ export function formatWhen(
   if (days < 7) return `${days}d ago`;
   return formatDay(d);
 }
+
+/**
+ * A dose time, as a correct instant rather than a string that looks like one.
+ *
+ * `\`${date}T${time}:00\`` has no offset, so a `timestamptz` column stores it
+ * in the database session's timezone (UTC on Supabase) rather than the
+ * patient's. A patient at UTC+1 asking for "08:00" gets a dose that is
+ * actually due at 07:00 their time — an hour early or late on every reminder
+ * and every adherence count, and the drift is the offset, so it is worse the
+ * further the patient is from UTC.
+ *
+ * `date` and `time` are read as wall-clock numbers and handed to the local
+ * `Date` constructor, which resolves them in whatever timezone is actually
+ * running this code — the patient's own device. That is the instant that was
+ * meant, and `toISOString()` is then unambiguous everywhere else it is read.
+ */
+export function localTimeToISOString(dateStr: string, time: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1, hour || 0, minute || 0, 0, 0).toISOString();
+}
+
+/** The inverse: a stored instant, read back as "HH:mm" in this device's local time. */
+export function localTimeOfDay(value: string | number | Date | null | undefined): string | null {
+  const d = toDate(value);
+  return d ? format(d, 'HH:mm') : null;
+}

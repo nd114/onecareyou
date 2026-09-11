@@ -8,6 +8,7 @@ import { useMedications, Medication } from './useMedications';
 import { startOfDay, endOfDay, format, parseISO, isToday } from 'date-fns';
 import { useEffect } from 'react';
 import { enqueueWrite, cacheRead, getCachedRead } from '@/lib/offline';
+import { localTimeToISOString } from '@/lib/format-date';
 
 export type ScheduleEntry = Tables<'schedule_entries'>;
 export type ScheduleEntryInsert = TablesInsert<'schedule_entries'>;
@@ -64,7 +65,7 @@ export const useScheduleEntries = (date?: Date) => {
               user_id: user.id,
               medication_id: med.id,
               family_member_id: activeMemberId,
-              scheduled_time: `${targetDateStr}T${time}:00`,
+              scheduled_time: localTimeToISOString(targetDateStr, time),
               status: 'pending',
             });
           }
