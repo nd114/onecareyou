@@ -5540,6 +5540,7 @@ export type Database = {
           score: number
         }[]
       }
+      seed_demo_vault_documents: { Args: never; Returns: number }
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }
         Returns: string
