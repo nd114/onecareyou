@@ -490,6 +490,7 @@ serve(async (req) => {
       await supabaseAdmin.from("vitals").delete().eq("user_id", userId);
       await supabaseAdmin.from("health_documents").delete().eq("user_id", userId);
 
+
       // 3. Create medications for this patient
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 90);
