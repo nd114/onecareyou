@@ -74,6 +74,20 @@ const ClinicianWhyOneCare = () => {
       athenahealth: { value: "Secure portal messaging", good: false },
     },
     {
+      feature: "Cross-Provider Portability",
+      onecare: { value: "Record travels with patient", good: true },
+      veradigm: { value: "New portal per practice", good: false },
+      epic: { value: "Care Everywhere (limited)", good: false },
+      athenahealth: { value: "New portal per organization", good: false },
+    },
+    {
+      feature: "Instruction Completion Tracking",
+      onecare: { value: "Seen, started, completed", good: true },
+      veradigm: { value: "Message status only", good: false },
+      epic: { value: "In-basket reply only", good: false },
+      athenahealth: { value: "Message reply only", good: false },
+    },
+    {
       feature: "Adherence Analytics",
       onecare: { value: "Dose-level tracking + export", good: true },
       veradigm: { value: "Rx fill data only", good: false },
