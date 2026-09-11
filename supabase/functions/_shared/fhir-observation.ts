@@ -42,7 +42,6 @@ export interface FhirObservation {
 /** How a connection remembers which FHIR patient is which OneCare account. */
 export interface PatientMapping {
   fhirPatientId: string;
-  /** Named for the product's previous name; the column is what it is. */
   onecareUserId: string;
 }
 
