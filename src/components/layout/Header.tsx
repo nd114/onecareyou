@@ -373,7 +373,7 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
                       {/* The Help Centre is still thin, so it is not offered in
-                          navigation yet — the Documentation is the honest answer. */}
+                          navigation yet — the documentation is the honest answer. */}
 
                 <DropdownMenuItem asChild>
                         <Link to="/docs" className="flex items-center gap-2">

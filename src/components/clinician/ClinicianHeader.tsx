@@ -359,7 +359,7 @@ export function ClinicianHeader() {
                   </Link>
                 </DropdownMenuItem>
                 {/* Help Centre is unfinished, so it stays out of navigation for
-                    now; the Documentation below is what actually answers questions. */}
+                    now; the documentation below is what actually answers questions. */}
 
                 <DropdownMenuItem asChild>
                   <Link to="/docs" className="flex items-center gap-2 cursor-pointer">
