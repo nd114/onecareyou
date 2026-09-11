@@ -348,6 +348,8 @@ serve(async (req) => {
       vitals: 0,
       schedule_entries: 0,
       provider_shares: 0,
+      health_documents: 0,
+
     };
 
     // Map to store user IDs by email
