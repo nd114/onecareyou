@@ -240,49 +240,51 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">Feature</th>
-                  <th className="text-center py-3 px-4">Solo</th>
-                  <th className="text-center py-3 px-4">Pro</th>
+                  <th className="text-center py-3 px-4">Community</th>
+                  <th className="text-center py-3 px-4">Individual</th>
+                  <th className="text-center py-3 px-4">Practice</th>
                   <th className="text-center py-3 px-4">Enterprise</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { feature: 'Patient Limit', solo: '25', pro: '100', enterprise: 'Unlimited' },
-                  { feature: 'Vital Alerts', solo: true, pro: true, enterprise: true },
-                  { feature: 'Custom Alert Thresholds', solo: true, pro: true, enterprise: true },
-                  { feature: 'Clinical Guidance Tools', solo: true, pro: true, enterprise: true },
-                  { feature: 'Patient Adherence Reports', solo: true, pro: true, enterprise: true },
-                  { feature: 'Email & Push Notifications', solo: true, pro: true, enterprise: true },
-                  { feature: 'Patient Engagement Analytics', solo: false, pro: true, enterprise: true },
-                  { feature: 'Team Members', solo: false, pro: '2 seats', enterprise: 'Unlimited' },
-                  { feature: 'Guidance Templates', solo: false, pro: 'Coming soon', enterprise: 'Coming soon' },
-                  { feature: 'Practice Branding', solo: false, pro: false, enterprise: true },
-                  { feature: 'EHR/FHIR Integration', solo: false, pro: false, enterprise: 'Coming soon' },
-                  { feature: 'API Access', solo: false, pro: false, enterprise: 'Coming soon' },
-                  { feature: 'HIPAA BAA', solo: false, pro: false, enterprise: true },
-                  { feature: 'Support', solo: 'Email', pro: 'Priority', enterprise: 'Dedicated' },
+                  { feature: 'Patient limit', community: '25', solo: '150', pro: '1,000', enterprise: 'Unlimited' },
+                  { feature: 'Document storage', community: '500 MB', solo: '10 GB', pro: '100 GB', enterprise: 'Negotiated' },
+                  { feature: 'Vitals, medications & adherence', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Vital alerts', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Custom alert thresholds', community: false, solo: true, pro: true, enterprise: true },
+                  { feature: 'Secure patient messaging', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Clinical guidance tools', community: true, solo: true, pro: true, enterprise: true },
+                  { feature: 'Encounters, templates & referrals', community: false, solo: true, pro: true, enterprise: true },
+                  { feature: 'Ambient scribe', community: false, solo: 'Metered', pro: 'Included', enterprise: 'Negotiated' },
+                  { feature: 'Assistant actions', community: 'Read-only', solo: 'Metered', pro: 'Included', enterprise: 'Negotiated' },
+                  { feature: 'Team seats', community: false, solo: false, pro: '5 seats', enterprise: 'Unlimited' },
+                  { feature: 'Non-clinical staff roles', community: false, solo: false, pro: true, enterprise: true },
+                  { feature: 'Invoicing & revenue tracking', community: false, solo: false, pro: true, enterprise: true },
+                  { feature: 'Compliance & audit exports', community: false, solo: false, pro: true, enterprise: true },
+                  { feature: 'Departments & patient routing', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'Practice branding', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'EHR/FHIR connections', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'HIPAA BAA', community: false, solo: false, pro: false, enterprise: true },
+                  { feature: 'Support', community: 'Community', solo: 'Email', pro: 'Priority', enterprise: 'Dedicated' },
                 ].map((row, i) => (
                   <tr key={i} className="border-b">
                     <td className="py-3 px-4 font-medium">{row.feature}</td>
-                    <td className="text-center py-3 px-4">
-                      {typeof row.solo === 'boolean' ? (
-                        row.solo ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                      ) : row.solo}
-                    </td>
-                    <td className="text-center py-3 px-4">
-                      {typeof row.pro === 'boolean' ? (
-                        row.pro ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                      ) : row.pro}
-                    </td>
-                    <td className="text-center py-3 px-4">
-                      {typeof row.enterprise === 'boolean' ? (
-                        row.enterprise ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                      ) : row.enterprise}
-                    </td>
+                    {(['community', 'solo', 'pro', 'enterprise'] as const).map((col) => {
+                      const value = row[col];
+                      return (
+                        <td key={col} className="text-center py-3 px-4">
+                          {typeof value === 'boolean' ? (
+                            value ? <Check className="h-4 w-4 text-green-500 mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />
+                          ) : value}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
             </table>
+
           </div>
         </motion.div>
 
