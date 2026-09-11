@@ -212,6 +212,14 @@ export function Header() {
           ) : isAuthenticated ? (
             <>
               {!isClinician && FAMILY_HEALTH_ENABLED && <HeaderFamilySwitcher />}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+              >
+                {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
               <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
@@ -401,17 +409,6 @@ export function Header() {
                   )}
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem onClick={() => setTheme('light')}>
-                    <Sun className="h-4 w-4 mr-2" /> Light appearance
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('dark')}>
-                    <Moon className="h-4 w-4 mr-2" /> Dark appearance
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('system')}>
-                    <Monitor className="h-4 w-4 mr-2" /> System appearance
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
@@ -549,6 +546,20 @@ export function Header() {
                 >
                   Guide
                 </Link>
+                <div className="flex items-center justify-between px-4 py-2">
+                  <span className="text-sm text-muted-foreground">Theme</span>
+                  <Button variant="ghost" size="sm" onClick={toggleTheme} className="flex items-center gap-2">
+                    {resolvedTheme === "dark" ? (
+                      <>
+                        <Sun className="h-4 w-4" /> Light
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="h-4 w-4" /> Dark
+                      </>
+                    )}
+                  </Button>
+                </div>
 
                 <button
                   onClick={() => {
