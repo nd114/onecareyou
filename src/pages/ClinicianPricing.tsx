@@ -81,7 +81,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
     <div className="min-h-screen bg-background">
       <SEOHead
         title="Clinician Plans & Pricing — For Healthcare Providers"
-        description="HIPAA-ready clinician portal with continuous patient monitoring, clinical guidance tools, and care coordination. Start free or choose a plan that fits your practice."
+        description="HIPAA-ready clinician tools: Community free for community health workers, Individual $99/mo, Practice $299/mo, Enterprise from $2,500/mo for hospitals."
         canonical="/clinician/pricing"
       />
       {isClinician ? <ClinicianHeader /> : <Header />}
@@ -106,7 +106,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
             Empower your practice with continuous patient monitoring, clinical guidance tools, 
-            and seamless care coordination—all at a fraction of traditional EHR costs.
+            and seamless care coordination—all at a fraction of traditional EHR costs. Community health workers and underfunded clinics start free.
           </p>
 
           {/* Billing Toggle */}
@@ -231,7 +231,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="max-w-4xl mx-auto mb-16"
+          className="max-w-5xl mx-auto mb-16"
         >
           <h2 className="text-2xl font-bold text-center mb-8">Feature Comparison</h2>
           
@@ -298,7 +298,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold mb-2">Enterprise &amp; hospitals</h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Hospital pricing scales with departments, clinicians and patient volume. Every
+              Enterprise starts at $2,500/month and scales with departments, clinicians, storage and integrations; the capabilities in an agreement are scoped with you, so not every listed capability is included at the entry price. Every
               enterprise agreement includes a one-time onboarding fee of $
               {ENTERPRISE_ONBOARDING_FEE.toLocaleString()}, covering multi-department setup,
               staff onboarding and EHR integration scope.
