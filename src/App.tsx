@@ -55,7 +55,7 @@ import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
 import MedicalDisclaimer from "./pages/MedicalDisclaimer";
-import HelpCenter from "./pages/HelpCenter";
+
 import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
 import AdherenceReport from "./pages/AdherenceReport";
@@ -161,7 +161,7 @@ const App = () => (
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/data-processing" element={<DataProcessing />} />
             <Route path="/disclaimer" element={<MedicalDisclaimer />} />
-            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/help" element={<Navigate to="/docs" replace />} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/:slug" element={<Docs />} />
             {/* The guide became the documentation site; old links still land. */}
