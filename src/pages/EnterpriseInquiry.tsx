@@ -30,11 +30,11 @@ import { describeSubmissionError } from '@/lib/submission-errors';
 const EHR_SYSTEMS = [
   'Epic',
   'Cerner',
-  'Allscripts',
+  'Veradigm (formerly Allscripts)',
+  'athenahealth',
   'Meditech',
   'NextGen',
   'eClinicalWorks',
-  'Veradigm (Allscripts)',
   'HealthBridge Clinical',
   'Other',
   'None / Custom',

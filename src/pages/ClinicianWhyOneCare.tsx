@@ -43,98 +43,98 @@ const ClinicianWhyOneCare = () => {
       onecare: { value: "Patient-owned, clinician-invited", good: true },
       veradigm: { value: "Practice-owned, patient requests", good: false },
       epic: { value: "Practice-owned, portal access", good: false },
-      healthbridge: { value: "Practice-owned", good: false },
+      athenahealth: { value: "Practice-owned, portal access", good: false },
     },
     {
       feature: "Family Management",
       onecare: { value: "Full family health hub", good: true },
       veradigm: { value: "Individual records only", good: false },
       epic: { value: "Proxy access (limited)", good: false },
-      healthbridge: { value: "Not available", good: false },
+      athenahealth: { value: "Proxy access per dependent (limited)", good: false },
     },
     {
       feature: "Multi-Provider View",
       onecare: { value: "All providers see same data", good: true },
       veradigm: { value: "Siloed per practice", good: false },
       epic: { value: "Care Everywhere (complex)", good: false },
-      healthbridge: { value: "Single practice", good: false },
+      athenahealth: { value: "Siloed per organization", good: false },
     },
     {
       feature: "Caregiver Alerts",
       onecare: { value: "Automated Care Circle", good: true },
       veradigm: { value: "None", good: false },
       epic: { value: "None", good: false },
-      healthbridge: { value: "None", good: false },
+      athenahealth: { value: "None", good: false },
     },
     {
       feature: "Care Communication",
       onecare: { value: "Bidirectional with status", good: true },
       veradigm: { value: "One-way messaging", good: false },
       epic: { value: "MyChart messages", good: false },
-      healthbridge: { value: "Portal messages", good: false },
+      athenahealth: { value: "Secure portal messaging", good: false },
     },
     {
       feature: "Adherence Analytics",
       onecare: { value: "Dose-level tracking + export", good: true },
       veradigm: { value: "Rx fill data only", good: false },
       epic: { value: "Limited", good: false },
-      healthbridge: { value: "Not available", good: false },
+      athenahealth: { value: "Rx history only", good: false },
     },
     {
       feature: "Mobile Experience",
       onecare: { value: "PWA with push notifications", good: true },
       veradigm: { value: "Desktop-first", good: false },
       epic: { value: "MyChart app", good: false },
-      healthbridge: { value: "Basic portal", good: false },
+      athenahealth: { value: "athenaPatient app", good: false },
     },
     {
       feature: "Patient Cost",
       onecare: { value: "Free forever", good: true },
       veradigm: { value: "N/A (practice pays)", good: false },
       epic: { value: "Free portal", good: true },
-      healthbridge: { value: "N/A", good: false },
+      athenahealth: { value: "Free portal", good: true },
     },
     {
       feature: "International Drugs",
       onecare: { value: "190+ countries database", good: true },
       veradigm: { value: "US-only", good: false },
       epic: { value: "US-centric", good: false },
-      healthbridge: { value: "Regional", good: false },
+      athenahealth: { value: "US-centric", good: false },
     },
     {
       feature: "Bulk Patient Import",
       onecare: { value: "CSV upload with deduplication", good: true },
       veradigm: { value: "Manual entry", good: false },
       epic: { value: "HL7 batch (complex)", good: false },
-      healthbridge: { value: "Manual entry", good: false },
+      athenahealth: { value: "HL7 interfaces (complex)", good: false },
     },
     {
       feature: "Clinical Guidance",
       onecare: { value: "Bidirectional with status tracking", good: true },
       veradigm: { value: "One-way orders", good: false },
       epic: { value: "In-basket messages", good: false },
-      healthbridge: { value: "None", good: false },
+      athenahealth: { value: "One-way orders", good: false },
     },
     {
       feature: "Vital Alert Thresholds",
       onecare: { value: "Custom per-patient rules", good: true },
       veradigm: { value: "Basic flags", good: false },
       epic: { value: "BPA alerts (complex setup)", good: false },
-      healthbridge: { value: "None", good: false },
+      athenahealth: { value: "Not a portal feature", good: false },
     },
     {
       feature: "Team/Practice Management",
       onecare: { value: "Multi-role RBAC with permissions", good: true },
       veradigm: { value: "Admin-only", good: false },
       epic: { value: "IT-managed roles", good: false },
-      healthbridge: { value: "Single provider", good: false },
+      athenahealth: { value: "IT/admin-managed roles", good: false },
     },
     {
       feature: "HIPAA/BAA Compliance",
       onecare: { value: "Built-in digital BAA signing", good: true },
       veradigm: { value: "Separate agreement", good: false },
       epic: { value: "Enterprise contract", good: false },
-      healthbridge: { value: "Separate agreement", good: false },
+      athenahealth: { value: "Enterprise contract", good: false },
     },
   ];
 
@@ -275,8 +275,8 @@ const ClinicianWhyOneCare = () => {
                 <span className="text-primary">OneCare</span>?
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                A patient-centric layer that complements your existing EHR, filling gaps 
-                that Veradigm, Epic, and HealthBridge Clinical don't address.
+                A patient-centric layer that complements your existing EHR, filling gaps
+                that Veradigm, Epic, and athenahealth don't address.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button size="lg" onClick={() => navigate('/clinician/sign-up')} className="gradient-primary border-0">
@@ -378,13 +378,13 @@ const ClinicianWhyOneCare = () => {
                       <div className="font-bold text-primary">OneCare</div>
                     </th>
                     <th className="p-4 text-center">
-                      <div className="font-semibold text-muted-foreground">Veradigm</div>
+                      <div className="font-semibold text-muted-foreground">Veradigm EHR</div>
                     </th>
                     <th className="p-4 text-center">
                       <div className="font-semibold text-muted-foreground">Epic MyChart</div>
                     </th>
                     <th className="p-4 text-center">
-                      <div className="font-semibold text-muted-foreground">HealthBridge</div>
+                      <div className="font-semibold text-muted-foreground">athenahealth</div>
                     </th>
                   </tr>
                 </thead>
@@ -426,18 +426,94 @@ const ClinicianWhyOneCare = () => {
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          {row.healthbridge.good ? (
+                          {row.athenahealth.good ? (
                             <Check className="h-4 w-4 text-status-success flex-shrink-0" />
                           ) : (
                             <X className="h-4 w-4 text-destructive flex-shrink-0" />
                           )}
-                          <span className="text-sm text-muted-foreground">{row.healthbridge.value}</span>
+                          <span className="text-sm text-muted-foreground">{row.athenahealth.value}</span>
                         </div>
                       </td>
                     </motion.tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </section>
+
+        {/* The General Pattern — beyond the three named vendors above */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <Badge variant="secondary" className="mb-4">Beyond These Three</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Same Shape, Different Logo
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Swap in NextGen, Oracle Health (Cerner), eClinicalWorks, or any other mainstream
+                EHR and the patient-facing side looks the same. These are structural gaps in the
+                category, not a weakness of any one vendor.
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {[
+                {
+                  icon: Building2,
+                  title: "Practice-Owned, Not Patient-Owned",
+                  description: "The record lives in the vendor's database, licensed to your practice. Patients get a read-mostly window into it, not a copy they can take with them.",
+                },
+                {
+                  icon: Users,
+                  title: "One Login Per Organization",
+                  description: "See a new specialist on a different EHR and you start over: new portal, new password, no merged view of the two records.",
+                },
+                {
+                  icon: MessageSquare,
+                  title: "Messaging, Not Guidance",
+                  description: "Patients can send a message into an inbox. Almost none track whether an instruction was seen, started, or completed.",
+                },
+                {
+                  icon: ClipboardList,
+                  title: "Fill Data, Not Dose Data",
+                  description: "Every portal shows what was prescribed and picked up at the pharmacy. None show whether the dose was actually taken that day.",
+                },
+                {
+                  icon: Activity,
+                  title: "No Household View",
+                  description: "An adult child managing two aging parents opens two separate logins, often with two different vendors, because there's no single family account.",
+                },
+                {
+                  icon: TrendingUp,
+                  title: "Bought by the Practice, Not the Patient",
+                  description: "The buyer is the clinic's IT budget. Patient experience is a line item, not the product — which is why the portal is usually the least-loved part of the system.",
+                },
+              ].map((pattern, index) => (
+                <motion.div
+                  key={pattern.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                >
+                  <Card className="h-full hover-lift">
+                    <CardHeader>
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-muted text-muted-foreground mb-2">
+                        <pattern.icon className="h-6 w-6" />
+                      </div>
+                      <CardTitle className="text-lg">{pattern.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground text-sm">{pattern.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>

@@ -358,7 +358,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
               <div>
                 <h3 className="font-semibold text-lg mb-1">Why choose OneCare over traditional EHRs?</h3>
                 <p className="text-sm text-muted-foreground">
-                  See how we compare to Epic, Veradigm, HealthBridge, and other patient portals
+                  See how we compare to Epic, Veradigm, athenahealth, and other patient portals
                 </p>
               </div>
               <Button variant="outline" asChild className="shrink-0">

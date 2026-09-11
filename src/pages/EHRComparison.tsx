@@ -150,21 +150,21 @@ const EHRComparison = () => {
                 <span className="text-primary">Traditional EHR Systems</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-                A comparison against Vericlaim, HealthBridge Clinical, and other practice-centric 
-                electronic health record systems.
+                A comparison against Veradigm, athenahealth, and other practice-centric
+                electronic health record systems — and the pattern that holds across the category.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-lg border">
                   <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">vs. Vericlaim/Veradigm</span>
+                  <span className="text-sm">vs. Veradigm (formerly Allscripts)</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-lg border">
                   <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">vs. HealthBridge Clinical</span>
+                  <span className="text-sm">vs. athenahealth</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-lg border">
                   <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm">vs. Epic/Cerner/Allscripts</span>
+                  <span className="text-sm">vs. Epic/Cerner (Oracle Health)</span>
                 </div>
               </div>
             </motion.div>
@@ -316,8 +316,8 @@ const EHRComparison = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-muted-foreground">
-                      We're not asking clinicians to abandon their existing EHR systems. Instead, OneCare 
-                      <strong className="text-foreground"> integrates with</strong> Vericlaim, HealthBridge Clinical, 
+                      We're not asking clinicians to abandon their existing EHR systems. Instead, OneCare
+                      <strong className="text-foreground"> integrates with</strong> Veradigm, athenahealth,
                       and other FHIR-compatible systems to become the patient-facing layer.
                     </p>
                     <div className="grid md:grid-cols-2 gap-4 pt-4">
@@ -376,9 +376,9 @@ const EHRComparison = () => {
             >
               <h2 className="text-3xl font-bold mb-4">Ready to Explore Integration?</h2>
               <p className="text-muted-foreground mb-8">
-                If your clinicians are using Vericlaim or HealthBridge Clinical, we can build 
-                a seamless connection that enhances their workflow while giving patients a 
-                superior experience.
+                If your clinicians are using Veradigm, athenahealth, or another mainstream EHR,
+                we can build a seamless connection that enhances their workflow while giving
+                patients a superior experience.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button size="lg" className="gap-2">

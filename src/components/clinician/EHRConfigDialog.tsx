@@ -82,7 +82,7 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
     switch (connection?.provider_type) {
       case "veradigm":
         return {
-          title: "Veradigm (Vericlaim) Setup",
+          title: "Veradigm Setup",
           steps: [
             "Log into your Veradigm Practice Management portal",
             "Navigate to Settings → API & Integrations",
@@ -92,16 +92,16 @@ export function EHRConfigDialog({ open, onOpenChange, connection, onConnectionUp
           ],
           docsUrl: "https://developer.veradigm.com/fhir",
         };
-      case "healthbridge":
+      case "athenahealth":
         return {
-          title: "HealthBridge Clinical Setup",
+          title: "athenahealth Setup",
           steps: [
-            "Contact your HealthBridge administrator for API access",
-            "Request a JWT service account token for FHIR R4 access",
-            "Obtain the FHIR Base URL for your practice",
+            "Register OneCare as an application in the athenahealth Developer Portal",
+            "Request FHIR R4 API access and OAuth credentials for your practice",
+            "Copy the FHIR Base URL for your athenahealth instance",
             "Enter credentials below and test the connection",
           ],
-          docsUrl: null,
+          docsUrl: "https://docs.athenahealth.com/api/docs/fhir-apis",
         };
       case "fhir_generic":
         return {
