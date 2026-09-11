@@ -117,7 +117,7 @@ serve(async (req) => {
         for (const mapping of patientMappings) {
           logStep("Syncing patient", { 
             fhirId: mapping.fhirPatientId, 
-            marpeId: mapping.marpeUserId 
+            onecareId: mapping.onecareUserId 
           });
 
           try {
@@ -166,7 +166,7 @@ serve(async (req) => {
             // drifted in how they handled a code neither recognised.
             for (const obs of observations) {
               const rows = vitalRowsFrom(obs, {
-                userId: mapping.marpeUserId,
+                userId: mapping.onecareUserId,
                 sourceLabel: connection.provider_name,
                 connectionId: connection.id,
               });
@@ -236,7 +236,7 @@ serve(async (req) => {
 
               for (const request of requests) {
                 const { row, warnings, rejected } = medicationRowFromFhir(request, {
-                  userId: mapping.marpeUserId,
+                  userId: mapping.onecareUserId,
                   sourceLabel: connection.provider_name,
                   connectionId: connection.id,
                 });

@@ -172,14 +172,14 @@ serve(async (req) => {
         // ---- 1. Who is this, in our records? ----------------------------
         const mappings = (connection.patient_id_mapping as PatientMapping[] | null) ?? [];
         const mapping = mappings.find((m) => m.fhirPatientId === patientFhirId);
-        if (!mapping?.marpeUserId) {
+        if (!mapping?.onecareUserId) {
           return json({
             error:
               "That patient is not linked to a OneCare account on this connection yet. Link them " +
               "first — importing into a record we guessed at is not something this will do.",
           }, 409);
         }
-        const patientUserId = mapping.marpeUserId;
+        const patientUserId = mapping.onecareUserId;
 
         // ---- 2. May this clinician write there? -------------------------
         // Asked of the database, as the caller, so the answer is the same one

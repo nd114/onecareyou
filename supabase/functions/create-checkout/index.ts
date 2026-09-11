@@ -94,7 +94,7 @@ serve(async (req) => {
       logStep("No existing customer found, will create new");
     }
 
-    const origin = req.headers.get("origin") || "https://marpe.care";
+    const origin = req.headers.get("origin") || "https://onecare.you";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

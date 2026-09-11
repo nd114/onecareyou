@@ -43,7 +43,7 @@ export interface FhirObservation {
 export interface PatientMapping {
   fhirPatientId: string;
   /** Named for the product's previous name; the column is what it is. */
-  marpeUserId: string;
+  onecareUserId: string;
 }
 
 export interface VitalRow {

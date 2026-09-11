@@ -166,7 +166,7 @@ serve(async (req) => {
         }
 
         // Get patient mappings for this connection
-        const patientMappings: Array<{ fhirPatientId: string; marpeUserId: string }> = 
+        const patientMappings: Array<{ fhirPatientId: string; onecareUserId: string }> = 
           (connection.patient_id_mapping as any[]) || [];
 
         let importedCount = 0;
@@ -194,7 +194,7 @@ serve(async (req) => {
           // .single(), which errors when nothing matches, so the guard worked
           // by accident and logged a PostgREST error every time it ran.
           const rows = vitalRowsFrom(obs as unknown as FhirObservation, {
-            userId: mapping.marpeUserId,
+            userId: mapping.onecareUserId,
             sourceLabel: connection.provider_name,
             connectionId: connection.id,
           });

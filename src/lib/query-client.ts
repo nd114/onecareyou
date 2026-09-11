@@ -18,7 +18,7 @@ const USER_SPECIFIC_STORAGE_KEYS = [
   'unitPref_weight', 
   'unitPref_temperature',
   'unitPreferences',
-  'marpe_unit_preferences',
+  'onecare_unit_preferences',
   'lastSelectedFamilyMember',
   'dashboardPreferences',
   'theme', // Reset theme to system on logout
