@@ -35,19 +35,27 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
   const { subscription, createCheckout, loading, tier: currentTier } = useClinicianSubscription();
   const [showAnnual, setShowAnnual] = useState(false);
 
-  const tiers: { key: 'solo' | 'pro' | 'enterprise'; highlight?: boolean }[] = [
+  type CardTier = 'community' | 'solo' | 'pro' | 'enterprise';
+
+  const tiers: { key: CardTier; highlight?: boolean }[] = [
+    { key: 'community' },
     { key: 'solo' },
     { key: 'pro', highlight: true },
     { key: 'enterprise' },
   ];
 
-  const handleSubscribe = async (tier: 'solo' | 'pro' | 'enterprise') => {
+  const handleSubscribe = async (tier: CardTier) => {
     if (!user) {
       navigate('/clinician/sign-up');
       return;
     }
     
     if (!isClinician) {
+      navigate('/clinician/sign-up');
+      return;
+    }
+
+    if (tier === 'community') {
       navigate('/clinician/sign-up');
       return;
     }
@@ -59,6 +67,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
 
     await createCheckout(tier);
   };
+
 
   const isCurrentTier = (tier: string) => {
     return currentTier === tier && subscription?.subscribed;
