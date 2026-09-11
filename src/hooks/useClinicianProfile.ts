@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useWorkspaceSelection } from './useWorkspaceSelection';
 
 export interface ClinicianProfile {
   id: string;
@@ -91,7 +92,17 @@ export const useClinicianProfile = () => {
   const clinicianProfile = staff?.profile ?? null;
   const memberships = staff?.memberships ?? [];
   const pendingTenantInvites = staff?.pendingTenantInvites ?? [];
-  const primaryMembership = memberships[0] ?? null;
+
+  // Shares the same stored choice as usePractice(), so the two hooks never
+  // disagree about which membership is current. An explicit choice wins;
+  // absent one this still falls back to the first membership exactly as
+  // before, so nobody's landing page moves just because a selector now
+  // exists — it only stops being the *only* option.
+  const { selectedWorkspaceId } = useWorkspaceSelection(user?.id);
+  const selectedMembership = selectedWorkspaceId
+    ? memberships.find((m) => m.practice_id === selectedWorkspaceId) ?? null
+    : null;
+  const primaryMembership = selectedMembership ?? memberships[0] ?? null;
 
   const createClinicianProfile = useMutation({
     mutationFn: async (data: CreateClinicianProfileData) => {
