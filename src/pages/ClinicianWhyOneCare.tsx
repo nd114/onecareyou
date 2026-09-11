@@ -1,38 +1,29 @@
 import { motion } from "framer-motion";
-import { SEOHead } from '@/components/seo/SEOHead';
-import { 
-  Check, 
-  X, 
-  Users, 
-  Heart, 
-  Shield, 
-  Smartphone, 
-  Bell, 
-  Share2,
-  Building2,
-  UserCircle,
-  ArrowRight,
-  Zap,
-  Clock,
-  DollarSign,
-  Globe,
-  TrendingUp,
-  Activity,
-  BarChart3,
-  FileText,
-  Link2,
-  Upload,
-  ClipboardList,
-  MessageSquare,
+import { Link, useNavigate } from "react-router-dom";
+import {
   AlertTriangle,
-  ShieldCheck
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Building2,
+  Check,
+  FileText,
+  Globe,
+  Link2,
+  MessageSquare,
+  Share2,
+  ShieldCheck,
+  Upload,
+  Users,
+  X,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
+import { SEOHead } from "@/components/seo/SEOHead";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { Footer } from "@/components/layout/Footer";
-import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const ClinicianWhyOneCare = () => {
   const navigate = useNavigate();
@@ -72,6 +63,20 @@ const ClinicianWhyOneCare = () => {
       veradigm: { value: "One-way messaging", good: false },
       epic: { value: "MyChart messages", good: false },
       athenahealth: { value: "Secure portal messaging", good: false },
+    },
+    {
+      feature: "Cross-Provider Portability",
+      onecare: { value: "Record travels with patient", good: true },
+      veradigm: { value: "New portal per practice", good: false },
+      epic: { value: "Care Everywhere (limited)", good: false },
+      athenahealth: { value: "New portal per organization", good: false },
+    },
+    {
+      feature: "Instruction Completion Tracking",
+      onecare: { value: "Seen, started, completed", good: true },
+      veradigm: { value: "Message status only", good: false },
+      epic: { value: "In-basket reply only", good: false },
+      athenahealth: { value: "Message reply only", good: false },
     },
     {
       feature: "Adherence Analytics",
@@ -442,79 +447,52 @@ const ClinicianWhyOneCare = () => {
           </div>
         </section>
 
-        {/* The General Pattern — beyond the three named vendors above */}
-        <section className="py-20">
+        {/* What the comparison means */}
+        <section className="py-16">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-12"
+              className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-primary/15 bg-card shadow-sm"
             >
-              <Badge variant="secondary" className="mb-4">Beyond These Three</Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Same Shape, Different Logo
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Swap in NextGen, Oracle Health (Cerner), eClinicalWorks, or any other mainstream
-                EHR and the patient-facing side looks the same. These are structural gaps in the
-                category, not a weakness of any one vendor.
-              </p>
-            </motion.div>
+              <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="p-8 sm:p-10">
+                  <Badge variant="secondary" className="mb-4">The Pattern Behind the Table</Badge>
+                  <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                    Portals follow the practice. OneCare follows the patient.
+                  </h2>
+                  <p className="mt-4 max-w-xl text-muted-foreground">
+                    Swap in NextGen, Oracle Health, eClinicalWorks, or another mainstream EHR and the
+                    patient-facing model is largely the same: each organization keeps its own portal,
+                    its own login, and its own partial view.
+                  </p>
+                </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {[
-                {
-                  icon: Building2,
-                  title: "Practice-Owned, Not Patient-Owned",
-                  description: "The record lives in the vendor's database, licensed to your practice. Patients get a read-mostly window into it, not a copy they can take with them.",
-                },
-                {
-                  icon: Users,
-                  title: "One Login Per Organization",
-                  description: "See a new specialist on a different EHR and you start over: new portal, new password, no merged view of the two records.",
-                },
-                {
-                  icon: MessageSquare,
-                  title: "Messaging, Not Guidance",
-                  description: "Patients can send a message into an inbox. Almost none track whether an instruction was seen, started, or completed.",
-                },
-                {
-                  icon: ClipboardList,
-                  title: "Fill Data, Not Dose Data",
-                  description: "Every portal shows what was prescribed and picked up at the pharmacy. None show whether the dose was actually taken that day.",
-                },
-                {
-                  icon: Activity,
-                  title: "No Household View",
-                  description: "An adult child managing two aging parents opens two separate logins, often with two different vendors, because there's no single family account.",
-                },
-                {
-                  icon: TrendingUp,
-                  title: "Bought by the Practice, Not the Patient",
-                  description: "The buyer is the clinic's IT budget. Patient experience is a line item, not the product — which is why the portal is usually the least-loved part of the system.",
-                },
-              ].map((pattern, index) => (
-                <motion.div
-                  key={pattern.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                >
-                  <Card className="h-full hover-lift">
-                    <CardHeader>
-                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-muted text-muted-foreground mb-2">
-                        <pattern.icon className="h-6 w-6" />
+                <div className="border-t bg-muted/30 p-8 sm:p-10 lg:border-l lg:border-t-0">
+                  <div className="space-y-5">
+                    {[
+                      "One patient-owned record, shared by consent",
+                      "The same context available to every invited provider",
+                      "A modern patient layer that complements your EHR",
+                    ].map((point) => (
+                      <div key={point} className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                          <Check className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium leading-6 text-foreground">{point}</p>
                       </div>
-                      <CardTitle className="text-lg">{pattern.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground text-sm">{pattern.description}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                    ))}
+                  </div>
+                  <Button asChild variant="outline" className="mt-8">
+                    <Link to="/how-it-works">
+                      See how it works
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 
