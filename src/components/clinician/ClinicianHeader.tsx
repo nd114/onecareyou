@@ -359,12 +359,12 @@ export function ClinicianHeader() {
                   </Link>
                 </DropdownMenuItem>
                 {/* Help Centre is unfinished, so it stays out of navigation for
-                    now; the Guide below is what actually answers questions. */}
+                    now; the Documentation below is what actually answers questions. */}
 
                 <DropdownMenuItem asChild>
-                  <Link to="/guide" className="flex items-center gap-2 cursor-pointer">
+                  <Link to="/docs" className="flex items-center gap-2 cursor-pointer">
                     <BookOpen className="h-4 w-4" />
-                    Guide
+                    Documentation
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (
@@ -474,12 +474,12 @@ export function ClinicianHeader() {
               My profile &amp; settings
             </Link>
             <Link
-              to="/guide"
+              to="/docs"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-2 py-2 rounded-md text-muted-foreground hover:bg-muted/50"
             >
               <BookOpen className="h-4 w-4" />
-              Guide
+              Documentation
             </Link>
 
 
