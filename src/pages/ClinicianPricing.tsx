@@ -126,11 +126,14 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
         </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-16">
           {tiers.map(({ key, highlight }, index) => {
             const tierInfo = CLINICIAN_TIER_INFO[key];
-            const price = showAnnual ? getAnnualPrice(tierInfo.price) : tierInfo.price;
-            const period = showAnnual ? 'year' : 'month';
+            // Community is free and Enterprise is quoted, so neither has an
+            // annual figure to show — only the two self-serve plans do.
+            const isBillable = key === 'solo' || key === 'pro';
+            const price = isBillable && showAnnual ? getAnnualPrice(tierInfo.price) : tierInfo.price;
+            const period = isBillable && showAnnual ? 'year' : 'month';
             
             return (
               <motion.div
@@ -139,7 +142,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className={`h-full relative ${highlight ? 'border-primary shadow-lg scale-105' : ''}`}>
+                <Card className={`h-full relative ${highlight ? 'border-primary shadow-lg lg:scale-105' : ''}`}>
                   {highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <Badge className="gradient-primary border-0">Most Popular</Badge>
@@ -149,29 +152,33 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                   <CardHeader className="text-center pb-2">
                     <CardTitle className="text-2xl">{tierInfo.name}</CardTitle>
                     <CardDescription>
+                      {key === 'community' && 'For community health workers & underfunded clinics'}
                       {key === 'solo' && 'For independent practitioners'}
-                      {key === 'pro' && 'For growing practices'}
-                      {key === 'enterprise' && 'For healthcare organizations'}
+                      {key === 'pro' && 'For practices and clinics'}
+                      {key === 'enterprise' && 'For hospitals and groups'}
                     </CardDescription>
                     
                     <div className="pt-4">
                       {key === 'enterprise' && (
                         <span className="text-sm text-muted-foreground">From </span>
                       )}
-                      <span className="text-4xl font-bold">${price}</span>
+                      <span className="text-4xl font-bold">${price.toLocaleString()}</span>
                       <span className="text-muted-foreground">/{period}</span>
                     </div>
                     
-                    {showAnnual && (
+                    {isBillable && showAnnual && (
                       <p className="text-sm text-green-600">
-                        ${tierInfo.price * 2} savings vs monthly
+                        ${(tierInfo.price * 2).toLocaleString()} savings vs monthly
                       </p>
                     )}
                     
                     <p className="text-sm font-medium text-primary mt-2">
                       {tierInfo.patientLimit === 999999 
                         ? 'Unlimited patients' 
-                        : `Up to ${tierInfo.patientLimit} patients`}
+                        : `Up to ${tierInfo.patientLimit.toLocaleString()} patients`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {tierInfo.storage} document storage
                     </p>
                   </CardHeader>
                   
@@ -184,6 +191,13 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                         </li>
                       ))}
                     </ul>
+
+                    {key === 'enterprise' && (
+                      <p className="text-xs text-muted-foreground">
+                        Enterprise capabilities are scoped in your agreement — the final price
+                        depends on departments, clinicians, storage and the integrations you choose.
+                      </p>
+                    )}
                     
                     <Button
                       className={`w-full ${highlight ? 'gradient-primary border-0' : ''}`}
@@ -196,11 +210,20 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                       ) : isCurrentTier(key) ? (
                         'Current Plan'
                       ) : key === 'enterprise' ? (
-                        <>Contact Sales <ArrowRight className="h-4 w-4 ml-2" /></>
+                        <>Talk to Sales <ArrowRight className="h-4 w-4 ml-2" /></>
+                      ) : key === 'community' ? (
+                        <>Start Free <ArrowRight className="h-4 w-4 ml-2" /></>
                       ) : (
                         <>Get Started <ArrowRight className="h-4 w-4 ml-2" /></>
                       )}
                     </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+
                   </CardContent>
                 </Card>
               </motion.div>
