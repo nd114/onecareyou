@@ -61,12 +61,9 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {/* The Help Centre is still being written, so it is not linked
-                  anywhere public yet — the Guide is the real answer today. */}
-
               <li>
-                <Link to="/guide" className="hover:text-foreground transition-colors">
-                  Guide
+                <Link to="/docs" className="hover:text-foreground transition-colors">
+                  Documentation
                 </Link>
               </li>
               <li>
