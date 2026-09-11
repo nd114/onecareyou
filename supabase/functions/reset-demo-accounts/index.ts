@@ -3,7 +3,10 @@
 // from three months ago. Delegates to the existing seed-demo-data function.
 //
 // Triggered by pg_cron daily at 03:00 UTC.
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 import { requireServiceRole } from '../_shared/auth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
