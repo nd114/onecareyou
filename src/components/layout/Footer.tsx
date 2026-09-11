@@ -159,7 +159,7 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-             © {new Date().getFullYear()} OneCare. A DGI Agency Product. All rights reserved. •{" "}
+             © {new Date().getFullYear()} OneCare. DGI Agency. All rights reserved. •{" "}
              <span className="text-foreground/70 font-medium">Early access beta • Proudly Loveworld 💚</span>{" "}
           </p>
           <p className="text-xs text-muted-foreground text-center md:text-right max-w-lg">
