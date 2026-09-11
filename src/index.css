@@ -4,13 +4,13 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Epilogue:wght@400;500;600;700&display=swap");
 
-/* Marpe Design System - Health & Wellness Theme */
+/* OneCare Design System - Health & Wellness Theme */
 
 @layer base {
   :root {
     /* Emerald Prestige — forest/cream/gold */
-    --background: 45 56% 92%;         /* cream #f5f0e0 */
-    --foreground: 0 0% 5%;            /* ink #0d0d0d */
+    --background: 45 56% 92%; /* cream #f5f0e0 */
+    --foreground: 0 0% 5%; /* ink #0d0d0d */
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 5%;
@@ -19,7 +19,7 @@
     --popover-foreground: 0 0% 5%;
 
     /* Primary — deep emerald */
-    --primary: 158 78% 17%;           /* #064e3b */
+    --primary: 158 78% 17%; /* #064e3b */
     --primary-foreground: 45 56% 92%; /* cream */
 
     /* Secondary — soft cream surface */
@@ -30,7 +30,7 @@
     --muted-foreground: 158 20% 30%;
 
     /* Accent — gold */
-    --accent: 43 55% 54%;             /* #c9a84c */
+    --accent: 43 55% 54%; /* #c9a84c */
     --accent-foreground: 0 0% 5%;
 
     --destructive: 0 72% 45%;
@@ -44,7 +44,7 @@
 
     /* Brand tokens */
     --emerald: 158 78% 17%;
-    --emerald-mid: 163 80% 26%;       /* #0d7a5f */
+    --emerald-mid: 163 80% 26%; /* #0d7a5f */
     --emerald-light: 158 40% 92%;
     --gold: 43 55% 54%;
     --gold-light: 43 55% 85%;
@@ -80,7 +80,7 @@
 
     --shadow-sm: 0 1px 2px 0 hsl(158 78% 8% / 0.06);
     --shadow-md: 0 4px 6px -1px hsl(158 78% 8% / 0.08), 0 2px 4px -2px hsl(158 78% 8% / 0.08);
-    --shadow-lg: 0 10px 15px -3px hsl(158 78% 8% / 0.10), 0 4px 6px -4px hsl(158 78% 8% / 0.10);
+    --shadow-lg: 0 10px 15px -3px hsl(158 78% 8% / 0.1), 0 4px 6px -4px hsl(158 78% 8% / 0.1);
     --shadow-xl: 0 20px 25px -5px hsl(158 78% 8% / 0.12), 0 8px 10px -6px hsl(158 78% 8% / 0.12);
     --shadow-glow: 0 0 20px hsl(43 55% 54% / 0.3);
 
@@ -96,8 +96,8 @@
 
   .dark {
     /* Emerald Prestige — dark */
-    --background: 158 30% 7%;         /* deep forest ink */
-    --foreground: 45 40% 92%;         /* cream */
+    --background: 158 30% 7%; /* deep forest ink */
+    --foreground: 45 40% 92%; /* cream */
 
     --card: 158 25% 11%;
     --card-foreground: 45 40% 92%;
@@ -198,7 +198,7 @@
    * row can be brought somewhere it is readable.
    */
   @media (max-width: 767px) {
-    body[data-app-chrome='mobile-nav'] {
+    body[data-app-chrome="mobile-nav"] {
       padding-bottom: calc(9rem + env(safe-area-inset-bottom));
     }
   }
@@ -284,22 +284,28 @@
 }
 
 .oc-aurora-a {
-  width: 44rem; height: 44rem;
-  top: -26rem; left: -19rem;
+  width: 44rem;
+  height: 44rem;
+  top: -26rem;
+  left: -19rem;
   background: radial-gradient(circle at 30% 30%, hsl(var(--emerald-mid) / 0.9), transparent 66%);
   animation: oc-drift-a 34s ease-in-out infinite alternate;
 }
 
 .oc-aurora-b {
-  width: 36rem; height: 36rem;
-  top: -6rem; right: -17rem;
+  width: 36rem;
+  height: 36rem;
+  top: -6rem;
+  right: -17rem;
   background: radial-gradient(circle at 60% 40%, hsl(var(--gold) / 0.75), transparent 64%);
   animation: oc-drift-b 42s ease-in-out infinite alternate;
 }
 
 .oc-aurora-c {
-  width: 32rem; height: 32rem;
-  bottom: -16rem; left: 32%;
+  width: 32rem;
+  height: 32rem;
+  bottom: -16rem;
+  left: 32%;
   background: radial-gradient(circle at 50% 50%, hsl(var(--emerald) / 0.5), transparent 68%);
   animation: oc-drift-a 50s ease-in-out infinite alternate-reverse;
 }
@@ -314,13 +320,21 @@
 }
 
 @keyframes oc-drift-a {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to   { transform: translate3d(4rem, 2.5rem, 0) scale(1.08); }
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4rem, 2.5rem, 0) scale(1.08);
+  }
 }
 
 @keyframes oc-drift-b {
-  from { transform: translate3d(0, 0, 0) scale(1.04); }
-  to   { transform: translate3d(-3.5rem, 3rem, 0) scale(1); }
+  from {
+    transform: translate3d(0, 0, 0) scale(1.04);
+  }
+  to {
+    transform: translate3d(-3.5rem, 3rem, 0) scale(1);
+  }
 }
 
 /* A quiet entrance, staggered by the element's own delay. */
@@ -329,13 +343,25 @@
 }
 
 @keyframes oc-rise {
-  from { opacity: 0; transform: translate3d(0, 14px, 0); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .oc-aurora, .oc-rise { animation: none; }
-  .oc-rise { opacity: 1; transform: none; }
+  .oc-aurora,
+  .oc-rise {
+    animation: none;
+  }
+  .oc-rise {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* The hero's own ground: a soft emerald wash so the aurora has something to

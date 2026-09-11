@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Epilogue', 'system-ui', 'sans-serif'],
-        display: ['Fraunces', 'Times New Roman', 'serif'],
+        sans: ["Epilogue", "system-ui", "sans-serif"],
+        display: ["Fraunces", "Times New Roman", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,7 +51,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Marpe specific colors
+
         emerald: {
           DEFAULT: "hsl(var(--emerald))",
           light: "hsl(var(--emerald-light))",
