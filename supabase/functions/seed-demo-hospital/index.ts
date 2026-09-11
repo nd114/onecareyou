@@ -127,7 +127,7 @@ serve(async (req) => {
         specialty: s.specialty,
         practice_name: HOSPITAL_NAME,
         license_number: `DEMO-${s.role.toUpperCase()}-${id.slice(0, 6)}`,
-        country: "GH",
+        country: "NG",
         is_verified: true,
         onboarding_completed: true,
         subscription_tier: "enterprise",
@@ -148,10 +148,10 @@ serve(async (req) => {
       slug: HOSPITAL_SLUG,
       tenant_type: "hospital",
       created_by: ownerId,
-      country: "GH",
-      city: "Accra",
-      address: "12 Independence Avenue",
-      phone: "+233302000000",
+      country: "NG",
+      city: "Lagos",
+      address: "14 Adeola Odeku Street, Victoria Island",
+      phone: "+23412010000",
       email: "hospital@onecare.you",
       subscription_tier: "enterprise",
       subscription_status: "active",
@@ -163,7 +163,7 @@ serve(async (req) => {
       // once the hospital assigns them.
       assignment_first_access: true,
       allowed_email_domains: [] as string[],
-      default_currency: "GHS",
+      default_currency: "NGN",
     };
 
     let practiceId: string;
