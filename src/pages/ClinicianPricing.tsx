@@ -224,12 +224,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           })}
         </div>
 
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
+
 
         {/* Feature Comparison */}
         <motion.div
