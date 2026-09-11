@@ -27,9 +27,12 @@ DECLARE
   _hosp   uuid := 'aa111111-0000-0000-0000-000000000001';
   _status text;
 BEGIN
-  INSERT INTO auth.users (id, email) VALUES
-    (_chief,'chief@lmc.org'), (_known,'known@gmail.com'),
-    (_domain,'doc@lmc.org'), (_rando,'someone@else.com');
+  -- Confirmed: this suite is about allowlist and domain matching, not about
+  -- the separate confirmed-email requirement request_practice_affiliation()
+  -- now carries (see share_claim_confirmation.test.sql for that).
+  INSERT INTO auth.users (id, email, email_confirmed_at) VALUES
+    (_chief,'chief@lmc.org', now()), (_known,'known@gmail.com', now()),
+    (_domain,'doc@lmc.org', now()), (_rando,'someone@else.com', now());
 
   UPDATE public.profiles SET email = 'chief@lmc.org'    WHERE user_id = _chief;
   UPDATE public.profiles SET email = 'known@gmail.com'  WHERE user_id = _known;
@@ -99,6 +102,25 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM LIKE 'FAILED%' THEN RAISE; END IF;
     RAISE NOTICE '  ok — the last owner cannot be offboarded';
+  END;
+
+  -- Registering an allowlisted address is not the same as proving it. Before
+  -- this was fixed, an unconfirmed address matching the allowlist or the
+  -- domain was granted active staff status immediately — full hospital
+  -- membership on an address nobody had verified. Run last so it does not
+  -- disturb the pending-queue counts asserted above.
+  DECLARE
+    _unconfirmed uuid := 'aa000000-0000-0000-0000-000000000005';
+  BEGIN
+    INSERT INTO auth.users (id, email, email_confirmed_at)
+    VALUES (_unconfirmed, 'known@gmail.com', NULL);
+    PERFORM set_config('request.jwt.claim.sub', _unconfirmed::text, true);
+    SELECT public.request_practice_affiliation('afftest') INTO _status;
+    PERFORM pg_temp.assert(_status = 'pending_approval',
+      'an unconfirmed address matching the allowlist does not get active status');
+    PERFORM pg_temp.assert(
+      NOT public.has_practice_capability(_unconfirmed, 'view_phi', _hosp),
+      'an unconfirmed address holds no hospital capability even if the allowlist would otherwise match');
   END;
 
   RAISE NOTICE 'ALL CLINICIAN AFFILIATION TESTS PASSED';
