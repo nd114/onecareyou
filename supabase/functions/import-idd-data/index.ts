@@ -52,18 +52,14 @@ serve(async (req) => {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const adminAllowlist = (Deno.env.get('ADMIN_EMAIL_ALLOWLIST') ?? '')
-      .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
-    const userEmail = (userData.user.email ?? '').toLowerCase();
-    if (adminAllowlist.length > 0 && !adminAllowlist.includes(userEmail)) {
+    // Admin status comes from the roles table, never from an email list.
+    const { data: isAdmin, error: roleErr } = await supabase.rpc('has_role', {
+      _user_id: userData.user.id,
+      _role: 'admin',
+    });
+    if (roleErr || isAdmin !== true) {
       return new Response(JSON.stringify({ error: 'Forbidden: admin only' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    if (adminAllowlist.length === 0) {
-      // Fail closed if no allowlist configured
-      return new Response(JSON.stringify({ error: 'Admin allowlist not configured' }), {
-        status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
