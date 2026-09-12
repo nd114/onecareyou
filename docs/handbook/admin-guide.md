@@ -6,11 +6,30 @@ signing in as an admin lands on the console.
 
 ## 1. Shell
 
-Every `/admin*` route uses the admin header: **Console · Careers · Docs · Changelog · Import**, plus
-the account menu. The patient bottom nav and FABs are suppressed.
+Every `/admin*` route renders inside `AdminShell`: a fixed left rail, a slim topbar carrying the
+page title and any page-level control, and the content column. Below `lg` the rail becomes a
+slide-over and the topbar grows a menu button. The patient bottom nav and FABs are suppressed.
 
-The console itself has six areas — **Today, Accounts, Revenue, Reliability, Trust, Workshop** —
-addressable individually via `?tab=`.
+The rail carries three things, top to bottom:
+
+- **Vitals** — four readouts in fixed positions (needs you, failures 24h, new accounts 24h,
+  assistant 24h), visible from every section. Only the two that can mean trouble ever take a
+  colour, and only when they do, so the rail is read by position and colour rather than parsed.
+- **Oversight** — Today, Accounts, Revenue, Reliability, Trust. Today and Reliability carry a live
+  count, so the rail says where to go before you click.
+- **Workshop** — Workshop, Careers, Changelog, Docs, Import.
+
+Each area is a real route (`/admin`, `/admin/accounts`, `/admin/revenue`, `/admin/reliability`,
+`/admin/trust`, `/admin/workshop`). The earlier `?tab=` links still work: `/admin?tab=trust` and the
+names from the shape before it redirect to the matching route.
+
+**The console has its own palette.** `AdminShell` puts `.admin-surface` on `<html>` while it is
+mounted, which redefines the design tokens to a near-white ground with the emerald kept — the
+platform's cream is the patient and clinician brand, and it flattens the contrast that status
+colours depend on when the job is scanning for what is wrong. It goes on `<html>` rather than a
+wrapper because dialogs, sheets, dropdowns and toasts render through a portal at the end of
+`<body>`; scoped to a wrapper they inherit the cream tokens instead, which is how the mobile rail
+first shipped transparent.
 
 ## 2. The privacy stance (read this before adding a new query)
 
@@ -40,9 +59,14 @@ clinician, ask whether it needs a search gate before it ships, not after someone
 ### Today
 The founder home: an attention queue of things with a deadline (storage over threshold, stale
 invitations, unanswered contact/bug reports, long trials, empty tenants, sync failures), movement
-over a chosen window with sparklines, the last 24 hours' signal, platform-wide totals, storage
-against allowance, and recent sign-ups (browsable — see §2; this is a monitoring signal capped to the
-newest accounts, not a support lookup tool, and shows no relationship or connection detail).
+over the window chosen in the topbar with sparklines, the last 24 hours' signal, platform-wide
+totals and storage against allowance.
+
+**Just arrived** shows the eight newest accounts, with nothing to type into. It used to hold five
+hundred behind a search box and two filters, which made it a way to page through everyone who had
+ever signed up — the browsing §2 rules out. What is left is the part that was a founder signal: the
+handful of people who arrived, for a welcome or a call. Looking anyone else up is what Accounts is
+for, and it asks for a name first.
 
 ### Accounts
 One directory across tenants, clinicians and patients, described in §2. Selecting **Tenants** lists
@@ -58,10 +82,18 @@ owner invitations** (see §4).
 
 ### Revenue
 Monthly run rate by tier — computed client-side from `src/lib/pricing-constants.ts` and
-`CLINICIAN_TIER_INFO`, so a price change is a one-line edit there rather than a migration. A tier the
-constants have no price for is named on the page rather than silently counted as zero. Trials and
+`CLINICIAN_TIER_INFO`, so a price change is a one-line edit there rather than a migration. Trials and
 lapses, invoices and platform fee, storage allowance vs. use, and a per-tenant billing table with an
 **Extend** action.
+
+Two things the run rate cannot know, both said on the page rather than left to be discovered:
+
+- **A tier with no published price** counts as zero, so any tier the constants don't recognise is
+  named under the total instead of quietly shortening it.
+- **Billing interval is not stored.** `practices` and `clinician_profiles` carry a Stripe
+  subscription id and a tier, and no interval, so every plan is priced monthly and anyone on an
+  annual plan (two months free) counts about a sixth high. Stripe holds the exact figure. Storing
+  the interval alongside the tier is what would fix it properly.
 
 ### Reliability
 Failure signals this database actually holds: EHR sync failures and the export queue per connection,

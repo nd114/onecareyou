@@ -154,6 +154,105 @@
     --sidebar-border: 158 20% 22%;
     --sidebar-ring: 158 55% 40%;
   }
+
+  /* ---- The console surface ----------------------------------------------
+   *
+   * The platform's cream is the patient and clinician brand: warm, unhurried,
+   * a room you sit down in. The console is the opposite job — it is read at
+   * speed, first thing, to find what is wrong. Cream flattens the contrast
+   * every status colour depends on, so this surface trades it for near-white
+   * and keeps the emerald.
+   *
+   * Redefining the tokens rather than restyling components: every shadcn
+   * primitive already reads hsl(var(--card)) and friends, so the whole console
+   * re-skins from here and nothing else has to know.
+   *
+   * AdminShell puts this class on <html>, not on its own wrapper, because
+   * dialogs, dropdowns, sheets and toasts render through a portal at the end of
+   * <body>. Scoped to a wrapper, those portals sit outside it, inherit the
+   * cream tokens, and a sheet whose background is an admin-only variable comes
+   * out transparent — which is exactly what happened.
+   */
+  .admin-surface {
+    --background: 160 20% 99%; /* paper — near-white, faint cool green */
+    --foreground: 162 30% 6%; /* graphite — near-black, green undertone */
+
+    --card: 0 0% 100%; /* chalk — cards lift by being brighter than paper */
+    --card-foreground: 162 30% 6%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 162 30% 6%;
+
+    --primary: 163 80% 22%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 160 22% 96%;
+    --secondary-foreground: 163 45% 16%;
+
+    --muted: 160 20% 96.5%;
+    --muted-foreground: 165 12% 42%; /* slate — green-grey, not neutral */
+
+    --accent: 160 22% 95%;
+    --accent-foreground: 163 45% 16%;
+
+    --destructive: 347 72% 42%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 160 16% 91%;
+    --input: 160 16% 89%;
+    --ring: 163 80% 32%;
+
+    --radius: 0.625rem;
+
+    --status-success: 163 72% 28%;
+    --status-pending: 32 85% 42%;
+    --status-missed: 347 72% 42%;
+
+    /* The rail's own ground, one step off paper so the chrome reads as chrome */
+    --console-rail: 162 22% 97.5%;
+    --console-rail-border: 160 16% 90%;
+    --console-signal: 163 78% 32%;
+  }
+
+  /* Both selectors: the class sits on <html> beside .dark, not inside it. */
+  .dark .admin-surface,
+  .dark.admin-surface {
+    --background: 168 24% 5%; /* ink */
+    --foreground: 158 14% 93%;
+
+    --card: 168 20% 8%;
+    --card-foreground: 158 14% 93%;
+
+    --popover: 168 20% 8%;
+    --popover-foreground: 158 14% 93%;
+
+    --primary: 160 62% 46%;
+    --primary-foreground: 168 40% 6%;
+
+    --secondary: 168 16% 13%;
+    --secondary-foreground: 158 14% 93%;
+
+    --muted: 168 16% 12%;
+    --muted-foreground: 160 10% 62%;
+
+    --accent: 168 16% 14%;
+    --accent-foreground: 158 14% 93%;
+
+    --destructive: 347 65% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 168 14% 16%;
+    --input: 168 14% 18%;
+    --ring: 160 62% 46%;
+
+    --status-success: 160 62% 46%;
+    --status-pending: 35 85% 58%;
+    --status-missed: 347 65% 58%;
+
+    --console-rail: 168 22% 7%;
+    --console-rail-border: 168 14% 15%;
+    --console-signal: 160 62% 50%;
+  }
 }
 
 @layer base {

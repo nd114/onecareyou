@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Briefcase, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AdminHeader } from '@/components/layout/AdminHeader';
+import { AdminShell } from '@/components/admin/AdminShell';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { AdminApplications } from '@/components/admin/AdminApplications';
 import { AdminJobs } from '@/components/admin/AdminJobs';
@@ -23,20 +23,13 @@ export default function AdminCareers() {
   }, [applications, jobs]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <AdminShell
+      title="Careers"
+      description="Post openings, review applications, and track candidate status."
+    >
       <SEOHead title="Careers Admin" description="Manage job postings and applications." noIndex />
 
-      <AdminHeader />
-
-      <div className="container px-4 py-8 max-w-6xl">
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Careers admin</h1>
-          <p className="text-muted-foreground mt-1">
-            Post openings, review applications, and track candidate status.
-          </p>
-        </div>
-
+      <div>
         <div className="grid grid-cols-3 gap-4 mb-8">
           {[
             { label: 'Applications', value: stats.total, icon: Users },
@@ -68,6 +61,6 @@ export default function AdminCareers() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AdminShell>
   );
 }

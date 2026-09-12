@@ -35,11 +35,6 @@ export function AdminReliabilityPanel() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Everything below is read from this database. Edge function and auth service logs live
-        outside it and are not counted here.
-      </p>
-
       <div className="grid gap-4 lg:grid-cols-3 items-start">
         <Card>
           <CardHeader>

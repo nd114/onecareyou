@@ -3,7 +3,7 @@ import { CHANGELOG, type ChangelogTag } from '@/lib/changelog-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles } from 'lucide-react';
-import { AdminHeader } from '@/components/layout/AdminHeader';
+import { AdminShell } from '@/components/admin/AdminShell';
 
 const TAG_LABELS: Record<ChangelogTag, string> = {
   patient: 'Patient',
@@ -16,15 +16,13 @@ const TAG_LABELS: Record<ChangelogTag, string> = {
 
 export default function AdminChangelog() {
   return (
-    <div className="min-h-screen bg-background">
+    <AdminShell title="Changelog" description="The internal release log.">
       <Helmet>
         <title>OneCare Changelog (internal)</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
-      <AdminHeader />
-
-      <main className="container max-w-3xl py-12 px-4">
+      <main className="max-w-3xl">
         <div className="mb-10">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
             <Sparkles className="h-4 w-4" />
@@ -67,6 +65,6 @@ export default function AdminChangelog() {
           ))}
         </div>
       </main>
-    </div>
+    </AdminShell>
   );
 }

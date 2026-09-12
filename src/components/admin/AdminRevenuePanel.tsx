@@ -68,8 +68,8 @@ export function AdminRevenuePanel() {
             Monthly run rate
           </CardTitle>
           <CardDescription>
-            Subscriptions currently running, priced from the published plans. Nothing here is a
-            forecast — it is what would bill again this month if nobody moved.
+            Subscriptions currently running, priced from the published plans. Not a forecast — it
+            is what bills again this month if nobody moves.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -94,11 +94,17 @@ export function AdminRevenuePanel() {
             ].map(([label, value, hint]) => (
               <div key={label}>
                 <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="text-xl font-semibold mt-0.5">{value}</p>
+                <p className="text-2xl font-semibold mt-0.5 tabular-nums tracking-tight">{value}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p>
               </div>
             ))}
           </div>
+
+          <p className="text-[11px] text-muted-foreground mt-4 pt-3 border-t leading-relaxed">
+            Every plan counts at its monthly rate. No billing interval is stored, so anyone on an
+            annual plan — two months free — counts about a sixth high here. Stripe holds the exact
+            figure.
+          </p>
 
           {recurring.unpricedTiers.length > 0 && (
             <p className="text-xs text-destructive mt-4 flex items-start gap-1.5">

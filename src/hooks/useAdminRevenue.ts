@@ -73,6 +73,13 @@ export interface RevenueTenant {
  * What a tier is worth stays in the pricing constants, so a price change is a
  * one-line edit there rather than a migration. The database counts who is on
  * what; the arithmetic happens here.
+ *
+ * Every subscription is priced at its monthly rate, because nothing records
+ * which ones bill annually — `practices` and `clinician_profiles` carry a
+ * Stripe subscription id and a tier, and no interval. Annual plans are two
+ * months free, so each annual subscriber is counted about a sixth high. The
+ * page says so rather than presenting the total as exact; the real figure
+ * lives in Stripe until a billing interval is stored alongside the tier.
  */
 function monthlyPriceForTier(tier: string): number {
   const info = CLINICIAN_TIER_INFO[tier as keyof typeof CLINICIAN_TIER_INFO];

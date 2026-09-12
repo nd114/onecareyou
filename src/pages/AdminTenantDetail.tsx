@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Building2, HardDrive, Link2, Loader2, Users } from 'lucide-react';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { AdminHeader } from '@/components/layout/AdminHeader';
+import { AdminShell } from '@/components/admin/AdminShell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,11 +26,10 @@ export default function AdminTenantDetail() {
     limitBytes > 0 ? Math.min(100, (Number(tenant?.storage_bytes ?? 0) / limitBytes) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <AdminShell title="Tenant">
       <SEOHead title="Tenant details" description="OneCare platform administration." noIndex />
-      <AdminHeader />
 
-      <div className="container px-4 py-8 max-w-5xl">
+      <div className="max-w-5xl">
         <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2">
           <Link to="/admin">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -208,6 +207,6 @@ export default function AdminTenantDetail() {
           </div>
         )}
       </div>
-    </div>
+    </AdminShell>
   );
 }

@@ -69,7 +69,13 @@ import AdminChangelog from "./pages/AdminChangelog";
 import AdminDocs from "./pages/AdminDocs";
 
 import AdminCareers from "./pages/AdminCareers";
-import AdminConsole from "./pages/AdminConsole";
+import AdminConsole, {
+  AdminAccountsPage,
+  AdminRevenuePage,
+  AdminReliabilityPage,
+  AdminTrustPage,
+  AdminWorkshopPage,
+} from "./pages/AdminConsole";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import ClinicianPricing from "./pages/ClinicianPricing";
 import EnterpriseInquiry from "./pages/EnterpriseInquiry";
@@ -397,6 +403,31 @@ const App = () => (
             <Route path="/admin" element={
               <AdminRoute>
                 <AdminConsole />
+              </AdminRoute>
+            } />
+            <Route path="/admin/accounts" element={
+              <AdminRoute>
+                <AdminAccountsPage />
+              </AdminRoute>
+            } />
+            <Route path="/admin/revenue" element={
+              <AdminRoute>
+                <AdminRevenuePage />
+              </AdminRoute>
+            } />
+            <Route path="/admin/reliability" element={
+              <AdminRoute>
+                <AdminReliabilityPage />
+              </AdminRoute>
+            } />
+            <Route path="/admin/trust" element={
+              <AdminRoute>
+                <AdminTrustPage />
+              </AdminRoute>
+            } />
+            <Route path="/admin/workshop" element={
+              <AdminRoute>
+                <AdminWorkshopPage />
               </AdminRoute>
             } />
             <Route path="/admin/tenants/:id" element={

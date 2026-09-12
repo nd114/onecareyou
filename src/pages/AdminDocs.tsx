@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { BookOpen, FileText } from 'lucide-react';
-import { AdminHeader } from '@/components/layout/AdminHeader';
+import { AdminShell } from '@/components/admin/AdminShell';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -54,15 +54,13 @@ export default function AdminDocs() {
   const listed = results ?? DOCS;
 
   return (
-    <div className="min-h-screen bg-background">
+    <AdminShell title="Docs" description="The internal handbook and platform reference.">
       <Helmet>
         <title>OneCare Documentation (internal)</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
-      <AdminHeader />
-
-      <main className="container max-w-screen-2xl py-8 px-4">
+      <main>
         <div className="mb-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
             <BookOpen className="h-4 w-4" />
@@ -119,6 +117,6 @@ export default function AdminDocs() {
           </Card>
         </div>
       </main>
-    </div>
+    </AdminShell>
   );
 }

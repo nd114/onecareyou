@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { AlertTriangle, HardDrive, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAdminTenants } from '@/hooks/useAdminTenants';
 import { formatBytes } from '@/lib/storage-constants';
 import { AdminSignupsPanel } from '@/components/admin/AdminSignupsPanel';
@@ -14,20 +12,12 @@ import type { AdminRange } from '@/hooks/useAdminToday';
 
 const GB = 1024 ** 3;
 
-const RANGES: Array<{ value: AdminRange; label: string }> = [
-  { value: '1', label: '24h' },
-  { value: '7', label: '7d' },
-  { value: '30', label: '30d' },
-  { value: '90', label: '90d' },
-];
-
 /**
  * Today — the founder home. The attention queue first, then movement over the
  * chosen window, then the last 24 hours, storage pressure and newest accounts.
  */
-export function AdminOverviewPanel() {
+export function AdminOverviewPanel({ range }: { range: AdminRange }) {
   const { tenants, isLoading } = useAdminTenants();
-  const [range, setRange] = useState<AdminRange>('7');
 
   const storageRows = tenants
     .map((t) => {
@@ -60,25 +50,6 @@ export function AdminOverviewPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-sm text-muted-foreground">
-          What changed, what needs you, and one click to act on it.
-        </p>
-        <ToggleGroup
-          type="single"
-          value={range}
-          onValueChange={(v) => v && setRange(v as AdminRange)}
-          className="rounded-lg border bg-card p-0.5"
-          aria-label="Time range"
-        >
-          {RANGES.map((r) => (
-            <ToggleGroupItem key={r.value} value={r.value} className="h-7 px-3 text-xs">
-              {r.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </div>
-
       <AdminAttentionQueue />
 
       <AdminMovementStrip range={range} />

@@ -1,39 +1,137 @@
-import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import {
-  Briefcase,
-  Building2,
-  BookOpen,
-  FileText,
-  HardDrive,
-  Loader2,
-  Search,
-  Upload,
-  Users,
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { BookOpen, Briefcase, FileText, Upload } from 'lucide-react';
 import { SEOHead } from '@/components/seo/SEOHead';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAdminTenants } from '@/hooks/useAdminTenants';
-import { formatBytes } from '@/lib/storage-constants';
-import { CreateTenantDialog } from '@/components/admin/CreateTenantDialog';
-import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions';
-import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { AdminShell } from '@/components/admin/AdminShell';
+import type { AdminRange } from '@/hooks/useAdminToday';
 import { AdminOverviewPanel } from '@/components/admin/AdminOverviewPanel';
 import { AdminAccountsPanel } from '@/components/admin/AdminAccountsPanel';
+import { AdminTenantsCard } from '@/components/admin/AdminTenantsCard';
+import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
 import { AdminRevenuePanel } from '@/components/admin/AdminRevenuePanel';
 import { AdminReliabilityPanel } from '@/components/admin/AdminReliabilityPanel';
 import { AdminTrustPanel } from '@/components/admin/AdminTrustPanel';
 import { AdminDemoDataCard } from '@/components/admin/AdminDemoDataCard';
 
-import { AdminHeader } from '@/components/layout/AdminHeader';
-import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
+/**
+ * The six areas were tabs on one page while there were six of them. With the
+ * rail they are routes, which is what the plan asked for: each area is
+ * linkable, and the browser's back button means what it says.
+ */
 
-// The plan's five Workshop tools: careers, changelog, docs, imports, demo
-// seeding. Demo seeding is a card of its own below, since it acts rather
-// than links.
+/** Tabs shipped first, so ?tab= links are still out there. Send them onward. */
+const TAB_ROUTES: Record<string, string> = {
+  overview: '/admin',
+  accounts: '/admin/accounts',
+  revenue: '/admin/revenue',
+  reliability: '/admin/reliability',
+  trust: '/admin/trust',
+  workshop: '/admin/workshop',
+  // Names from the shape before the six areas existed.
+  tenants: '/admin/accounts',
+  access: '/admin/accounts',
+  activity: '/admin/trust',
+  audit: '/admin/trust',
+  tools: '/admin/workshop',
+};
+
+const RANGES: Array<{ value: AdminRange; label: string }> = [
+  { value: '1', label: '24h' },
+  { value: '7', label: '7d' },
+  { value: '30', label: '30d' },
+  { value: '90', label: '90d' },
+];
+
+export default function AdminConsole() {
+  const [params, setParams] = useSearchParams();
+  const [range, setRange] = useState<AdminRange>('7');
+  const tab = params.get('tab');
+  const redirect = tab ? TAB_ROUTES[tab] : undefined;
+
+  // Strip the parameter so a refresh does not bounce through here again.
+  useEffect(() => {
+    if (tab && !redirect) {
+      params.delete('tab');
+      setParams(params, { replace: true });
+    }
+  }, [tab, redirect, params, setParams]);
+
+  if (redirect && redirect !== '/admin') return <Navigate to={redirect} replace />;
+
+  return (
+    <AdminShell
+      title="Today"
+      description="What changed, what needs you, and one click to act on it."
+      actions={
+        <ToggleGroup
+          type="single"
+          value={range}
+          onValueChange={(v) => v && setRange(v as AdminRange)}
+          className="rounded-lg border bg-card p-0.5 mr-1"
+          aria-label="Time range"
+        >
+          {RANGES.map((r) => (
+            <ToggleGroupItem key={r.value} value={r.value} className="h-7 px-2.5 text-xs">
+              {r.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      }
+    >
+      <SEOHead title="Platform Admin" description="OneCare platform administration." noIndex />
+      <AdminOverviewPanel range={range} />
+    </AdminShell>
+  );
+}
+
+export function AdminAccountsPage() {
+  return (
+    // No page description here: the Accounts card states the rule in full.
+    <AdminShell title="Accounts">
+      <SEOHead title="Accounts — Platform Admin" description="Accounts." noIndex />
+      <div className="space-y-6">
+        <AdminAccountsPanel />
+        <AdminTenantsCard />
+        <AdminAccessPanel />
+      </div>
+    </AdminShell>
+  );
+}
+
+export function AdminRevenuePage() {
+  return (
+    <AdminShell title="Revenue" description="Who is paying, who is about to stop, and what is owed.">
+      <SEOHead title="Revenue — Platform Admin" description="Revenue." noIndex />
+      <AdminRevenuePanel />
+    </AdminShell>
+  );
+}
+
+export function AdminReliabilityPage() {
+  return (
+    <AdminShell
+      title="Reliability"
+      description="What broke, read from this database. Edge function and auth service logs live outside it and are not counted here."
+    >
+      <SEOHead title="Reliability — Platform Admin" description="Reliability." noIndex />
+      <AdminReliabilityPanel />
+    </AdminShell>
+  );
+}
+
+export function AdminTrustPage() {
+  return (
+    <AdminShell
+      title="Trust"
+      description="Who can see whom, what was agreed, and the record of both."
+    >
+      <SEOHead title="Trust — Platform Admin" description="Trust." noIndex />
+      <AdminTrustPanel />
+    </AdminShell>
+  );
+}
+
 const TOOLS = [
   {
     to: '/admin/careers',
@@ -61,201 +159,27 @@ const TOOLS = [
   },
 ];
 
-export default function AdminConsole() {
-  const { tenants, totals, isLoading } = useAdminTenants();
-  const [search, setSearch] = useState('');
-  // Each area is its own ?tab= value, so a card or a colleague can link straight
-  // to one, e.g. /admin?tab=reliability.
-  const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') ?? 'overview';
-
-  const filtered = tenants.filter((t) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return [t.name, t.slug, t.city, t.country].some((v) => v?.toLowerCase().includes(q));
-  });
-
-  const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(filtered, 10);
-
+export function AdminWorkshopPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <SEOHead title="Platform Admin" description="OneCare platform administration." noIndex />
-
-      <AdminHeader />
-
-      <div className="container px-4 py-8 max-w-6xl">
-
-        <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold tracking-tight">Command centre</h1>
-          <p className="text-muted-foreground mt-1">
-            The one screen to open every morning — oversight across every practice, hospital and
-            account on OneCare.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Tenants', value: String(totals.tenants), icon: Building2 },
-            { label: 'Hospitals', value: String(totals.hospitals), icon: Building2 },
-            { label: 'Team members', value: String(totals.members), icon: Users },
-            {
-              label: 'Storage used',
-              value: formatBytes(totals.storageBytes),
-              icon: HardDrive,
-            },
-          ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Icon className="h-4 w-4" />
-                {label}
-              </div>
-              <div className="text-2xl font-semibold mt-1">{value}</div>
-            </div>
+    <AdminShell title="Workshop" description="The tools behind the platform.">
+      <SEOHead title="Workshop — Platform Admin" description="Internal tools." noIndex />
+      <div className="space-y-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {TOOLS.map(({ to, title, description, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Icon className="h-4 w-4 text-primary" />
+              <div className="mt-2.5 font-medium text-sm">{title}</div>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{description}</p>
+            </Link>
           ))}
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setParams({ tab: v }, { replace: true })}>
-          <TabsList className="mb-6 flex w-full max-w-full overflow-x-auto justify-start scrollbar-none sm:w-auto">
-            <TabsTrigger value="overview">Today</TabsTrigger>
-            <TabsTrigger value="accounts">Accounts</TabsTrigger>
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="reliability">Reliability</TabsTrigger>
-            <TabsTrigger value="trust">Trust</TabsTrigger>
-            <TabsTrigger value="workshop">Workshop</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <AdminOverviewPanel />
-          </TabsContent>
-
-          <TabsContent value="revenue">
-            <AdminRevenuePanel />
-          </TabsContent>
-
-          <TabsContent value="reliability">
-            <AdminReliabilityPanel />
-          </TabsContent>
-
-          <TabsContent value="trust">
-            <AdminTrustPanel />
-          </TabsContent>
-
-          <TabsContent value="accounts" className="space-y-6">
-            <AdminAccountsPanel />
-            <Card>
-              <CardHeader className="gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-base">Tenants</CardTitle>
-                    <CardDescription>
-                      Practices and hospitals, with team size, patient connections and pooled
-                      storage.
-                    </CardDescription>
-                  </div>
-                  <CreateTenantDialog />
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name, code or location"
-                    className="pl-9"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex justify-center py-6">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-4">
-                    {tenants.length === 0 ? 'No tenants yet.' : 'No tenants match that search.'}
-                  </p>
-                ) : (
-                  <>
-                  <div className="space-y-2">
-                    {pageItems.map((t) => (
-                      <div
-                        key={t.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border p-3"
-                      >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Link to={`/admin/tenants/${t.id}`} className="font-medium text-sm truncate hover:underline">
-                              {t.name}
-                            </Link>
-                            <Badge variant="secondary" className="capitalize">
-                              {t.tenant_type ?? 'practice'}
-                            </Badge>
-                            {t.subscription_tier && (
-                              <Badge variant="outline" className="capitalize">
-                                {t.subscription_tier}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {t.slug ? (
-                              <span className="font-mono">{t.slug}</span>
-                            ) : (
-                              'No hospital code'
-                            )}
-                            {' · '}
-                            {[t.city, t.country].filter(Boolean).join(', ') || 'Location not set'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground shrink-0">
-                          <span>{t.member_count} members</span>
-                          <span>{t.active_share_count} connected</span>
-                          <span>
-                            {formatBytes(Number(t.storage_bytes))} / {t.storage_limit_gb ?? 0} GB
-                          </span>
-                          {Number(t.revenue_share_pct) > 0 && (
-                            <span>{Number(t.revenue_share_pct)}% share</span>
-                          )}
-                          <AdminTenantRowActions tenant={t} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <AdminPagination
-                    page={page}
-                    pageCount={pageCount}
-                    total={total}
-                    pageSize={pageSize}
-                    onPageChange={setPage}
-                    label="tenants"
-                  />
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <AdminAccessPanel />
-          </TabsContent>
-
-          <TabsContent value="workshop" className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {TOOLS.map(({ to, title, description, icon: Icon }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="rounded-xl border bg-card p-4 hover:border-primary/40 transition-colors"
-                >
-                  <div className="flex items-center gap-2 font-medium">
-                    <Icon className="h-4 w-4 text-primary" />
-                    {title}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">{description}</p>
-                </Link>
-              ))}
-            </div>
-
-            <AdminDemoDataCard />
-          </TabsContent>
-        </Tabs>
+        <AdminDemoDataCard />
       </div>
-    </div>
+    </AdminShell>
   );
 }
