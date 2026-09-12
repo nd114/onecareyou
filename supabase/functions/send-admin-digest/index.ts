@@ -111,8 +111,8 @@ serve(async (req) => {
   }
 
   // Cron, or an admin asking for their own copy.
-  const denied = await requireServiceRoleOrAdmin(req, corsHeaders);
-  if (denied) return denied;
+  const caller = await requireServiceRoleOrAdmin(req, corsHeaders);
+  if (caller instanceof Response) return caller;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -121,7 +121,9 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const testFor: string | null = typeof body?.test_for === "string" ? body.test_for : null;
+    // A "send me one now" request always resolves to the calling admin, so it
+    // can never be aimed at somebody else's inbox.
+    const testFor: string | null = body?.test === true && caller.user ? caller.user.id : null;
     const hour = new Date().getUTCHours();
     const dateLabel = new Date().toUTCString().slice(0, 16);
 
