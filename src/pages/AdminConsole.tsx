@@ -51,6 +51,9 @@ const TOOLS = [
 export default function AdminConsole() {
   const { tenants, totals, isLoading } = useAdminTenants();
   const [search, setSearch] = useState('');
+  // Cards in the attention queue link straight to the right area, e.g. /admin?tab=activity.
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') ?? 'overview';
 
   const filtered = tenants.filter((t) => {
     const q = search.trim().toLowerCase();
