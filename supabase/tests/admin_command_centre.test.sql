@@ -181,9 +181,10 @@ BEGIN
     FROM public.admin_accounts_directory('tenant', 'Command Centre', 50, 0);
   PERFORM pg_temp.assert(_count = 1, 'searching tenants by name finds the hospital');
 
-  -- total_count describes the whole result, not the page.
+  -- total_count describes the whole result, not the page. Both fixtures share
+  -- the test.local domain, so this also exercises 'all' spanning two kinds.
   SELECT total_count INTO _count
-    FROM public.admin_accounts_directory('all', NULL, 1, 0) LIMIT 1;
+    FROM public.admin_accounts_directory('all', 'test.local', 1, 0) LIMIT 1;
   PERFORM pg_temp.assert(_count > 1, 'total_count counts past the end of the page');
 
   PERFORM pg_temp.assert(pg_temp.refused(
@@ -210,20 +211,25 @@ BEGIN
     'the drawer never names the medication');
 
   -- ==========================================================================
-  -- 6. An access review shows the grant, not what the grant opens
+  -- 6. An access review shows the grant, not what the grant opens — and only
+  --    once you already know one of the two parties (section 11 covers that
+  --    gate directly; every lookup here searches for a party by design).
   -- ==========================================================================
-  SELECT count(*) INTO _count FROM public.admin_access_reviews(NULL, 50, 0)
+  SELECT count(*) INTO _count
+    FROM public.admin_access_reviews('cc-doctor@test.local', 50, 0)
    WHERE share_id = _share;
-  PERFORM pg_temp.assert(_count = 1, 'the clinician share appears in the access review');
+  PERFORM pg_temp.assert(_count = 1, 'searching the clinician finds the share in the access review');
 
-  SELECT permission_count INTO _int FROM public.admin_access_reviews(NULL, 50, 0)
+  SELECT permission_count INTO _int
+    FROM public.admin_access_reviews('cc-doctor@test.local', 50, 0)
    WHERE share_id = _share;
   PERFORM pg_temp.assert(_int = 2,
     'the review counts the two granted categories and not the third');
 
-  SELECT count(*) INTO _count FROM public.admin_access_reviews(NULL, 50, 0)
+  SELECT count(*) INTO _count
+    FROM public.admin_access_reviews('Command Centre', 50, 0)
    WHERE share_id = _pshare AND share_type = 'institution';
-  PERFORM pg_temp.assert(_count = 1, 'the institution share appears too');
+  PERFORM pg_temp.assert(_count = 1, 'searching the institution finds its share too');
 
   -- ==========================================================================
   -- 7. Revoking from the console narrows access, and says who and why
@@ -246,7 +252,8 @@ BEGIN
   PERFORM pg_temp.assert(_count = 1, 'and the revocation is in the admin action log');
   EXECUTE 'SET LOCAL ROLE authenticated';
 
-  SELECT count(*) INTO _count FROM public.admin_access_reviews(NULL, 50, 0)
+  SELECT count(*) INTO _count
+    FROM public.admin_access_reviews('cc-doctor@test.local', 50, 0)
    WHERE share_id = _share;
   PERFORM pg_temp.assert(_count = 0, 'a closed share drops out of the access review');
 
@@ -351,6 +358,45 @@ BEGIN
   EXECUTE 'SET LOCAL ROLE postgres';
   SELECT is_active INTO _bool FROM public.provider_shares WHERE id = _share3;
   PERFORM pg_temp.assert(NOT _bool, 'the patient can still close their own share');
+
+  -- ==========================================================================
+  -- 11. Individuals require a search; organisations do not
+  --
+  -- sharing-access-consent-model.md is built on the patient holding the
+  -- power over who sees their relationships. A platform admin browsing every
+  -- clinician-patient pairing on the platform, or every patient's account,
+  -- with no search and no reason, is the thing that principle rules out.
+  -- Tenants are OneCare's business customers, not patients, and stay
+  -- browsable — matching the pre-existing Tenants and Revenue panels.
+  -- ==========================================================================
+  PERFORM set_config('request.jwt.claim.sub', _admin::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+
+  SELECT count(*) INTO _count FROM public.admin_accounts_directory('all', NULL, 50, 0);
+  PERFORM pg_temp.assert(_count = 0,
+    'an empty search returns nothing for "all", though matching accounts exist');
+
+  SELECT count(*) INTO _count FROM public.admin_accounts_directory('patient', '', 50, 0);
+  PERFORM pg_temp.assert(_count = 0, 'an empty-string search on patients returns nothing');
+
+  SELECT count(*) INTO _count FROM public.admin_accounts_directory('clinician', 'c', 50, 0);
+  PERFORM pg_temp.assert(_count = 0, 'a one-character search on clinicians returns nothing');
+
+  SELECT count(*) INTO _count
+    FROM public.admin_accounts_directory('clinician', 'cc-doctor@test.local', 50, 0);
+  PERFORM pg_temp.assert(_count = 1, 'a real search on clinicians finds the clinician');
+
+  -- Tenants are the one kind that stays browsable without a search.
+  SELECT count(*) INTO _count FROM public.admin_accounts_directory('tenant', NULL, 50, 0);
+  PERFORM pg_temp.assert(_count >= 1,
+    'tenants remain browsable with no search — they are business customers, not patients');
+
+  SELECT count(*) INTO _count FROM public.admin_access_reviews(NULL, 50, 0);
+  PERFORM pg_temp.assert(_count = 0,
+    'an empty search returns no relationships, though active shares exist');
+
+  SELECT count(*) INTO _count FROM public.admin_access_reviews('d', 50, 0);
+  PERFORM pg_temp.assert(_count = 0, 'a one-character search returns no relationships');
 
   RAISE NOTICE 'admin_command_centre: all assertions passed';
 END $$;

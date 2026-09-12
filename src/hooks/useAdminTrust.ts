@@ -59,12 +59,20 @@ export interface AuditExportRow {
 
 const PAGE_SIZE = 20;
 
+/**
+ * A relationship only surfaces once you already know one of its two parties.
+ * Matches the floor admin_access_reviews enforces server-side — this just
+ * saves a round trip; the RPC is what actually keeps a direct call honest.
+ */
+const MIN_SEARCH_LENGTH = 2;
+
 export function useAdminTrust() {
   const { isAdmin } = useAdminRole();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const debouncedSearch = useDebouncedValue(search, 300);
+  const needsSearch = debouncedSearch.trim().length < MIN_SEARCH_LENGTH;
 
   const overview = useQuery({
     queryKey: ['admin-trust-overview'],
@@ -79,7 +87,7 @@ export function useAdminTrust() {
 
   const reviews = useQuery({
     queryKey: ['admin-access-reviews', debouncedSearch, page],
-    enabled: isAdmin,
+    enabled: isAdmin && !needsSearch,
     staleTime: 30_000,
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<AccessReviewRow[]> => {
@@ -110,7 +118,7 @@ export function useAdminTrust() {
     onError: (e: Error) => toast.error(e.message || 'Could not close that access'),
   });
 
-  const rows = reviews.data ?? [];
+  const rows = needsSearch ? [] : (reviews.data ?? []);
   const total = rows[0]?.total_count ?? 0;
 
   return {
@@ -126,7 +134,9 @@ export function useAdminTrust() {
       setSearch(next);
       setPage(0);
     },
-    isLoading: overview.isLoading || reviews.isLoading,
+    needsSearch,
+    minSearchLength: MIN_SEARCH_LENGTH,
+    isLoading: overview.isLoading || (needsSearch ? false : reviews.isLoading),
     isFetching: reviews.isFetching,
     revoke: revoke.mutate,
     isRevoking: revoke.isPending,

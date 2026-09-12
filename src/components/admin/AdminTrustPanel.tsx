@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminAuditSearchPanel } from '@/components/admin/AdminAuditSearchPanel';
+import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
 import { useAdminTrust, useAuditExport, type AccessReviewRow } from '@/hooks/useAdminTrust';
 import { formatDay } from '@/lib/format-date';
 import { toast } from 'sonner';
@@ -32,6 +33,8 @@ export function AdminTrustPanel() {
     pageSize,
     search,
     setSearch,
+    needsSearch,
+    minSearchLength,
     isLoading,
     isFetching,
     revoke,
@@ -129,8 +132,11 @@ export function AdminTrustPanel() {
           <div>
             <CardTitle className="text-base">Access review</CardTitle>
             <CardDescription>
-              Every grant that is open right now. It shows who can look and how widely — never
-              what they would see. Closing a grant only narrows access and is always logged.
+              A patient's relationship with a named clinician or institution is theirs, not a
+              standing list for OneCare staff to browse. Search for a patient, clinician or
+              institution you already have a reason to look up — it shows who can look and how
+              widely, never what they would see. Closing a grant only narrows access and is
+              always logged.
             </CardDescription>
           </div>
           <div className="relative">
@@ -145,14 +151,20 @@ export function AdminTrustPanel() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {needsSearch ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <Search className="h-5 w-5 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Nothing is listed until you search ({minSearchLength}+ characters). Relationships
+                surface one lookup at a time, never as a browsable list.
+              </p>
+            </div>
+          ) : isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">
-              {search.trim() ? 'Nothing matches that search.' : 'No access is open right now.'}
-            </p>
+            <p className="text-sm text-muted-foreground py-2">Nothing matches that search.</p>
           ) : (
             <>
               <div className={`space-y-2 ${isFetching ? 'opacity-60' : ''}`}>
@@ -211,6 +223,8 @@ export function AdminTrustPanel() {
       <AuditExportCard />
 
       <AdminAuditSearchPanel />
+
+      <AdminActivityPanel />
 
       <Dialog
         open={!!closing}

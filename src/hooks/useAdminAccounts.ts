@@ -55,6 +55,14 @@ export interface AccountDetail {
 
 const PAGE_SIZE = 20;
 
+/**
+ * Individuals only surface once named — matches the floor the RPC itself
+ * enforces (an empty client-side check just saves a round trip; the RPC is
+ * what actually keeps a direct API call honest). Tenants are OneCare's
+ * business customers, not patients, and stay browsable without a search.
+ */
+const MIN_SEARCH_LENGTH = 2;
+
 /** The unified people-and-organisations directory. Paged and searched server-side. */
 export function useAdminAccounts() {
   const { isAdmin } = useAdminRole();
@@ -63,9 +71,11 @@ export function useAdminAccounts() {
   const [page, setPage] = useState(0);
   const debouncedSearch = useDebouncedValue(search, 300);
 
+  const needsSearch = kind !== 'tenant' && debouncedSearch.trim().length < MIN_SEARCH_LENGTH;
+
   const query = useQuery({
     queryKey: ['admin-accounts', kind, debouncedSearch, page],
-    enabled: isAdmin,
+    enabled: isAdmin && !needsSearch,
     staleTime: 30_000,
     // Holding the previous page while the next one loads stops the table
     // collapsing to a spinner on every keystroke.
@@ -82,7 +92,7 @@ export function useAdminAccounts() {
     },
   });
 
-  const rows = query.data ?? [];
+  const rows = needsSearch ? [] : (query.data ?? []);
   const total = rows[0]?.total_count ?? 0;
 
   const changeKind = (next: AccountKind) => {
@@ -106,7 +116,10 @@ export function useAdminAccounts() {
     setKind: changeKind,
     search,
     setSearch: changeSearch,
-    isLoading: query.isLoading,
+    /** True while an individual-kind view has too short a search to answer. */
+    needsSearch,
+    minSearchLength: MIN_SEARCH_LENGTH,
+    isLoading: needsSearch ? false : query.isLoading,
     isFetching: query.isFetching,
   };
 }

@@ -49,6 +49,8 @@ export function AdminAccountsPanel() {
     setKind,
     search,
     setSearch,
+    needsSearch,
+    minSearchLength,
     isLoading,
     isFetching,
   } = useAdminAccounts();
@@ -61,8 +63,9 @@ export function AdminAccountsPanel() {
           <div>
             <CardTitle className="text-base">Accounts</CardTitle>
             <CardDescription>
-              Everyone and every organisation on OneCare. Searching and paging happen on the
-              server, so this stays quick as the platform grows.
+              Tenants are browsable, since they are OneCare's business customers. A clinician or
+              patient only surfaces once you search for them by name or email — nobody's account
+              is a scroll away without a reason to look it up.
             </CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -92,13 +95,21 @@ export function AdminAccountsPanel() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {needsSearch ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <Search className="h-5 w-5 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Search by name or email to look up a specific clinician or patient
+                ({minSearchLength}+ characters). Individual accounts aren't listed until you do.
+              </p>
+            </div>
+          ) : isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground py-2">
-              {search.trim() ? 'Nothing matches that search.' : 'No accounts yet.'}
+              {search.trim() ? 'Nothing matches that search.' : 'No tenants yet.'}
             </p>
           ) : (
             <>

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   Briefcase,
   Building2,
+  BookOpen,
   FileText,
   HardDrive,
   Loader2,
@@ -20,16 +21,19 @@ import { formatBytes } from '@/lib/storage-constants';
 import { CreateTenantDialog } from '@/components/admin/CreateTenantDialog';
 import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions';
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
-import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
 import { AdminOverviewPanel } from '@/components/admin/AdminOverviewPanel';
 import { AdminAccountsPanel } from '@/components/admin/AdminAccountsPanel';
 import { AdminRevenuePanel } from '@/components/admin/AdminRevenuePanel';
 import { AdminReliabilityPanel } from '@/components/admin/AdminReliabilityPanel';
 import { AdminTrustPanel } from '@/components/admin/AdminTrustPanel';
+import { AdminDemoDataCard } from '@/components/admin/AdminDemoDataCard';
 
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 
+// The plan's five Workshop tools: careers, changelog, docs, imports, demo
+// seeding. Demo seeding is a card of its own below, since it acts rather
+// than links.
 const TOOLS = [
   {
     to: '/admin/careers',
@@ -38,16 +42,22 @@ const TOOLS = [
     icon: Briefcase,
   },
   {
-    to: '/admin/import',
-    title: 'Data import',
-    description: 'Internal import utilities.',
-    icon: Upload,
-  },
-  {
     to: '/admin/changelog',
     title: 'Changelog',
     description: 'Publish release notes.',
     icon: FileText,
+  },
+  {
+    to: '/admin/docs',
+    title: 'Docs',
+    description: 'The internal handbook: patient, clinician, admin, data model, runbook.',
+    icon: BookOpen,
+  },
+  {
+    to: '/admin/import',
+    title: 'Data import',
+    description: 'Internal import utilities.',
+    icon: Upload,
   },
 ];
 
@@ -226,7 +236,7 @@ export default function AdminConsole() {
           </TabsContent>
 
           <TabsContent value="workshop" className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {TOOLS.map(({ to, title, description, icon: Icon }) => (
                 <Link
                   key={to}
@@ -242,7 +252,7 @@ export default function AdminConsole() {
               ))}
             </div>
 
-            <AdminActivityPanel />
+            <AdminDemoDataCard />
           </TabsContent>
         </Tabs>
       </div>
