@@ -1,15 +1,33 @@
+import { useState } from 'react';
 import { AlertTriangle, HardDrive, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAdminTenants } from '@/hooks/useAdminTenants';
 import { formatBytes } from '@/lib/storage-constants';
 import { AdminSignupsPanel } from '@/components/admin/AdminSignupsPanel';
+import { AdminAttentionQueue } from '@/components/admin/AdminAttentionQueue';
+import { AdminMovementStrip } from '@/components/admin/AdminMovementStrip';
+import { AdminLivePulse } from '@/components/admin/AdminLivePulse';
+import { AdminDigestCard } from '@/components/admin/AdminDigestCard';
+import type { AdminRange } from '@/hooks/useAdminToday';
 
 const GB = 1024 ** 3;
 
-/** Console overview: tenants approaching their storage allowance, plus the newest accounts. */
+const RANGES: Array<{ value: AdminRange; label: string }> = [
+  { value: '1', label: '24h' },
+  { value: '7', label: '7d' },
+  { value: '30', label: '30d' },
+  { value: '90', label: '90d' },
+];
+
+/**
+ * Today — the founder home. The attention queue first, then movement over the
+ * chosen window, then the last 24 hours, storage pressure and newest accounts.
+ */
 export function AdminOverviewPanel() {
   const { tenants, isLoading } = useAdminTenants();
+  const [range, setRange] = useState<AdminRange>('7');
 
   const storageRows = tenants
     .map((t) => {
@@ -42,6 +60,34 @@ export function AdminOverviewPanel() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-muted-foreground">
+          What changed, what needs you, and one click to act on it.
+        </p>
+        <ToggleGroup
+          type="single"
+          value={range}
+          onValueChange={(v) => v && setRange(v as AdminRange)}
+          className="rounded-lg border bg-card p-0.5"
+          aria-label="Time range"
+        >
+          {RANGES.map((r) => (
+            <ToggleGroupItem key={r.value} value={r.value} className="h-7 px-3 text-xs">
+              {r.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
+
+      <AdminAttentionQueue />
+
+      <AdminMovementStrip range={range} />
+
+      <div className="grid gap-4 lg:grid-cols-2 items-start">
+        <AdminLivePulse />
+        <AdminDigestCard />
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Platform at a glance</CardTitle>
@@ -67,53 +113,51 @@ export function AdminOverviewPanel() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2 items-start">
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-primary" />
-            Storage against allowance
-          </CardTitle>
-          <CardDescription>
-            {nearing > 0
-              ? `${nearing} tenant${nearing === 1 ? '' : 's'} above 75% of allowance — a good moment to offer a pack.`
-              : 'No tenant is close to its allowance.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : storageRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">No tenants yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {storageRows.map((r) => (
-                <div key={r.id}>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="font-medium truncate">{r.name}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {formatBytes(r.used)} / {Number(r.storage_limit_gb ?? 0)} GB
-                    </span>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-primary" />
+              Storage against allowance
+            </CardTitle>
+            <CardDescription>
+              {nearing > 0
+                ? `${nearing} tenant${nearing === 1 ? '' : 's'} above 75% of allowance — a good moment to offer a pack.`
+                : 'No tenant is close to its allowance.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : storageRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No tenants yet.</p>
+            ) : (
+              <div className="space-y-4">
+                {storageRows.map((r) => (
+                  <div key={r.id}>
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-medium truncate">{r.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {formatBytes(r.used)} / {Number(r.storage_limit_gb ?? 0)} GB
+                      </span>
+                    </div>
+                    <Progress value={r.pct} className="h-1.5 mt-1.5" />
+                    {r.pct >= 90 && (
+                      <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Over 90% — raise the allowance before writes start failing.
+                      </p>
+                    )}
                   </div>
-                  <Progress value={r.pct} className="h-1.5 mt-1.5" />
-                  {r.pct >= 90 && (
-                    <p className="text-xs text-destructive mt-1 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      Over 90% — raise the allowance before writes start failing.
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <AdminSignupsPanel />
       </div>
     </div>
-
   );
 }
