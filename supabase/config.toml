@@ -33,3 +33,6 @@ verify_jwt = false
 [functions.system-health]
 verify_jwt = false
 
+
+[functions.send-admin-digest]
+verify_jwt = false
