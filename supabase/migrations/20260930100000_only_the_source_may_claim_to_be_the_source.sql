@@ -56,6 +56,7 @@
 -- silently skipped.
 
 DROP POLICY IF EXISTS "Users can create their own vitals" ON public.vitals;
+DROP POLICY IF EXISTS "Patients record only their own manual readings" ON public.vitals;
 CREATE POLICY "Patients record only their own manual readings"
   ON public.vitals FOR INSERT TO authenticated
   WITH CHECK (
@@ -73,6 +74,7 @@ COMMENT ON POLICY "Patients record only their own manual readings" ON public.vit
   '(service_role, bypasses RLS) instead.';
 
 DROP POLICY IF EXISTS "Users can create their own medications" ON public.medications;
+DROP POLICY IF EXISTS "Patients enter only their own medications" ON public.medications;
 CREATE POLICY "Patients enter only their own medications"
   ON public.medications FOR INSERT TO authenticated
   WITH CHECK (
@@ -116,6 +118,7 @@ COMMENT ON POLICY "Patients enter only their own medications" ON public.medicati
 -- writing this, rather than assumed. The fix is a denylist on the one
 -- reserved value, not an allowlist that would have broken the others.
 DROP POLICY IF EXISTS "Users can upload their own documents" ON public.health_documents;
+DROP POLICY IF EXISTS "Patients upload only as themselves, never as their clinician" ON public.health_documents;
 CREATE POLICY "Patients upload only as themselves, never as their clinician"
   ON public.health_documents FOR INSERT TO authenticated
   WITH CHECK (

@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS auth.users (
   email text,
   raw_user_meta_data jsonb DEFAULT '{}'::jsonb,
   email_confirmed_at timestamptz,
+  last_sign_in_at timestamptz,
   created_at timestamptz DEFAULT now()
 );
 

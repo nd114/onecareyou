@@ -39,11 +39,11 @@ BEGIN
   INSERT INTO public.clinician_profiles (user_id, first_name, last_name, title, specialty,
       license_number, country, is_verified, practice_name, onboarding_completed, subscription_tier)
   VALUES (clinician, 'Naomi', 'Adeyemi', 'Dr', 'Internal Medicine', 'GH-MDC-40213', 'GH', true,
-      'Ridge Family Practice', true, 'professional')
+      'Ridge Family Practice', true, 'pro')
   ON CONFLICT (user_id) DO NOTHING;
 
   INSERT INTO public.practices (id, name, created_by, country, slug, tenant_type, is_active, subscription_tier)
-  VALUES (prac, 'Ridge Family Practice', clinician, 'GH', 'ridge', 'practice', true, 'professional')
+  VALUES (prac, 'Ridge Family Practice', clinician, 'GH', 'ridge', 'practice', true, 'pro')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO public.practice_members (practice_id, user_id, role, status, accepted_at,

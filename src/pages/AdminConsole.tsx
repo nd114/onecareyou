@@ -22,7 +22,10 @@ import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions'
 import { AdminAccessPanel } from '@/components/admin/AdminAccessPanel';
 import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
 import { AdminOverviewPanel } from '@/components/admin/AdminOverviewPanel';
-import { AdminAuditSearchPanel } from '@/components/admin/AdminAuditSearchPanel';
+import { AdminAccountsPanel } from '@/components/admin/AdminAccountsPanel';
+import { AdminRevenuePanel } from '@/components/admin/AdminRevenuePanel';
+import { AdminReliabilityPanel } from '@/components/admin/AdminReliabilityPanel';
+import { AdminTrustPanel } from '@/components/admin/AdminTrustPanel';
 
 import { AdminHeader } from '@/components/layout/AdminHeader';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
@@ -51,7 +54,8 @@ const TOOLS = [
 export default function AdminConsole() {
   const { tenants, totals, isLoading } = useAdminTenants();
   const [search, setSearch] = useState('');
-  // Cards in the attention queue link straight to the right area, e.g. /admin?tab=activity.
+  // Each area is its own ?tab= value, so a card or a colleague can link straight
+  // to one, e.g. /admin?tab=reliability.
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') ?? 'overview';
 
@@ -103,19 +107,31 @@ export default function AdminConsole() {
         <Tabs value={tab} onValueChange={(v) => setParams({ tab: v }, { replace: true })}>
           <TabsList className="mb-6 flex w-full max-w-full overflow-x-auto justify-start scrollbar-none sm:w-auto">
             <TabsTrigger value="overview">Today</TabsTrigger>
-            <TabsTrigger value="tenants">Tenants</TabsTrigger>
-            <TabsTrigger value="access">Access</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="audit">Audit</TabsTrigger>
-            <TabsTrigger value="tools">Tools</TabsTrigger>
+            <TabsTrigger value="accounts">Accounts</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
+            <TabsTrigger value="reliability">Reliability</TabsTrigger>
+            <TabsTrigger value="trust">Trust</TabsTrigger>
+            <TabsTrigger value="workshop">Workshop</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <AdminOverviewPanel />
           </TabsContent>
 
+          <TabsContent value="revenue">
+            <AdminRevenuePanel />
+          </TabsContent>
 
-          <TabsContent value="tenants">
+          <TabsContent value="reliability">
+            <AdminReliabilityPanel />
+          </TabsContent>
+
+          <TabsContent value="trust">
+            <AdminTrustPanel />
+          </TabsContent>
+
+          <TabsContent value="accounts" className="space-y-6">
+            <AdminAccountsPanel />
             <Card>
               <CardHeader className="gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -205,23 +221,11 @@ export default function AdminConsole() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="access">
             <AdminAccessPanel />
           </TabsContent>
 
-          <TabsContent value="activity">
-            <AdminActivityPanel />
-          </TabsContent>
-
-          <TabsContent value="audit">
-            <AdminAuditSearchPanel />
-          </TabsContent>
-
-
-
-          <TabsContent value="tools">
+          <TabsContent value="workshop" className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-3">
               {TOOLS.map(({ to, title, description, icon: Icon }) => (
                 <Link
@@ -237,6 +241,8 @@ export default function AdminConsole() {
                 </Link>
               ))}
             </div>
+
+            <AdminActivityPanel />
           </TabsContent>
         </Tabs>
       </div>
