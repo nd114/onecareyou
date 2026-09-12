@@ -64,6 +64,54 @@ export type Database = {
           },
         ]
       }
+      admin_attention_dismissals: {
+        Row: {
+          admin_user_id: string
+          dismissed_at: string
+          id: string
+          item_key: string
+        }
+        Insert: {
+          admin_user_id: string
+          dismissed_at?: string
+          id?: string
+          item_key: string
+        }
+        Update: {
+          admin_user_id?: string
+          dismissed_at?: string
+          id?: string
+          item_key?: string
+        }
+        Relationships: []
+      }
+      admin_digest_preferences: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          last_sent_at: string | null
+          send_hour: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          last_sent_at?: string | null
+          send_hour?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          last_sent_at?: string | null
+          send_hour?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           created_at: string
@@ -4739,6 +4787,19 @@ export type Database = {
           target_email: string
         }[]
       }
+      admin_attention_queue: {
+        Args: { _for_admin?: string }
+        Returns: {
+          detail: string
+          item_key: string
+          kind: string
+          occurred_at: string
+          severity: string
+          target_id: string
+          target_type: string
+          title: string
+        }[]
+      }
       admin_cancel_tenant_invitation: {
         Args: { _invitation_id: string }
         Returns: undefined
@@ -4764,6 +4825,7 @@ export type Database = {
         }
         Returns: string
       }
+      admin_digest_snapshot: { Args: { _for_admin: string }; Returns: Json }
       admin_grant_platform_admin: { Args: { _email: string }; Returns: string }
       admin_invite_tenant_owner: {
         Args: { _email: string; _practice_id: string }
@@ -4788,6 +4850,25 @@ export type Database = {
           practice_id: string
           practice_name: string
           status: string
+        }[]
+      }
+      admin_live_pulse: { Args: never; Returns: Json }
+      admin_metric_series: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          metric_key: string
+          value: number
+        }[]
+      }
+      admin_movement_metrics: {
+        Args: { _days?: number }
+        Returns: {
+          current_value: number
+          label: string
+          metric_key: string
+          previous_value: number
+          total_value: number
         }[]
       }
       admin_recent_actions: {
