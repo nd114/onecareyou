@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Briefcase,
   Building2,
@@ -72,9 +72,10 @@ export default function AdminConsole() {
       <div className="container px-4 py-8 max-w-6xl">
 
         <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold tracking-tight">Platform admin</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">Command centre</h1>
           <p className="text-muted-foreground mt-1">
-            Oversight across every practice and hospital on OneCare.
+            The one screen to open every morning — oversight across every practice, hospital and
+            account on OneCare.
           </p>
         </div>
 
@@ -99,9 +100,9 @@ export default function AdminConsole() {
           ))}
         </div>
 
-        <Tabs defaultValue="overview">
+        <Tabs value={tab} onValueChange={(v) => setParams({ tab: v }, { replace: true })}>
           <TabsList className="mb-6 flex w-full max-w-full overflow-x-auto justify-start scrollbar-none sm:w-auto">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="overview">Today</TabsTrigger>
             <TabsTrigger value="tenants">Tenants</TabsTrigger>
             <TabsTrigger value="access">Access</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
