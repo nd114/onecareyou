@@ -39,10 +39,6 @@ function actionFor(item: AttentionItem): { to: string; label: string } | null {
   switch (item.target_type) {
     case 'tenant':
       return item.target_id ? { to: `/admin/tenants/${item.target_id}`, label: 'Open tenant' } : null;
-    case 'contact_submission':
-      return { to: '/admin?tab=activity', label: 'Review' };
-    case 'bug_report':
-      return { to: '/admin?tab=activity', label: 'Review' };
     default:
       return null;
   }
