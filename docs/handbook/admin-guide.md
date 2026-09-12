@@ -15,6 +15,7 @@ The rail carries three things, top to bottom:
 - **Vitals** — four readouts in fixed positions (needs you, failures 24h, new accounts 24h,
   assistant 24h), visible from every section. Only the two that can mean trouble ever take a
   colour, and only when they do, so the rail is read by position and colour rather than parsed.
+  Collapsed, each becomes a dot in the same order, colour still meaningful, value on hover.
 - **Oversight** — Today, Accounts, Revenue, Reliability, Trust. Today and Reliability carry a live
   count, so the rail says where to go before you click.
 - **Workshop** — Workshop, Careers, Changelog, Docs, Import.
@@ -23,13 +24,28 @@ Each area is a real route (`/admin`, `/admin/accounts`, `/admin/revenue`, `/admi
 `/admin/trust`, `/admin/workshop`). The earlier `?tab=` links still work: `/admin?tab=trust` and the
 names from the shape before it redirect to the matching route.
 
-**The console has its own palette.** `AdminShell` puts `.admin-surface` on `<html>` while it is
-mounted, which redefines the design tokens to a near-white ground with the emerald kept — the
-platform's cream is the patient and clinician brand, and it flattens the contrast that status
-colours depend on when the job is scanning for what is wrong. It goes on `<html>` rather than a
-wrapper because dialogs, sheets, dropdowns and toasts render through a portal at the end of
-`<body>`; scoped to a wrapper they inherit the cream tokens instead, which is how the mobile rail
-first shipped transparent.
+**The desktop rail collapses.** The toggle (`PanelLeftClose` / `PanelLeftOpen`, top of the rail)
+shrinks it to a 68px icon column and remembers the choice in `localStorage`
+(`onecare-admin-rail-collapsed`) across visits. Collapsed, every icon still carries its label —
+as an `aria-label` on the link, not only the hover tooltip — because the tooltip is pointer-only
+and the accessible name is what a screen reader and `getByRole` both actually see; the first pass
+left the link with no name at all when collapsed, found by a Playwright assertion using the
+same query a screen reader would. Only the desktop rail collapses; the mobile sheet is a temporary
+overlay and stays at full width.
+
+**The console has its own palette**, not the platform's cream: the patient and clinician surfaces
+are a room you sit down in, and this one is read at speed, first thing, to find what is wrong —
+cream flattens the contrast status colours depend on. `AdminShell` puts `.admin-surface` on
+`<html>` while mounted, which redefines the design tokens to a light, slightly cool ground with
+the emerald kept. It goes on `<html>` rather than a wrapper because dialogs, sheets, dropdowns and
+toasts render through a portal at the end of `<body>`; scoped to a wrapper they inherit the cream
+tokens instead, which is how the mobile rail first shipped transparent.
+
+The first pass put the page background at 99% lightness and cards at 100% — one point apart — with
+text at 6%. Two surfaces that close to pure white read as one flat glare rather than a layered
+page, and near-black text against it is a harder edge than a screen read continuously wants. It is
+a real three-step ladder now: rail (93%) sits behind page (95.5%) sits behind card (100%), each a
+visible step, and text is a dark charcoal (12%) rather than ink.
 
 ## 2. The privacy stance (read this before adding a new query)
 

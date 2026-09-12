@@ -174,33 +174,42 @@
    * out transparent — which is exactly what happened.
    */
   .admin-surface {
-    --background: 160 20% 99%; /* paper — near-white, faint cool green */
-    --foreground: 162 30% 6%; /* graphite — near-black, green undertone */
+    /*
+     * The first pass put the page background at 99% lightness and cards at
+     * 100% — one point apart — against text at 6%. Two surfaces that close
+     * to pure white read as one flat glare, and pure-white-on-near-black is
+     * a harder edge than continuous reading wants. This is a real three-step
+     * ladder instead: rail (93%) sits behind page (95.5%) sits behind card
+     * (100%), each a visible step, and text is a dark charcoal rather than
+     * ink, so the contrast is legible without being a floodlight.
+     */
+    --background: 160 15% 95.5%; /* paper */
+    --foreground: 162 20% 12%; /* charcoal — dark, not near-black */
 
-    --card: 0 0% 100%; /* chalk — cards lift by being brighter than paper */
-    --card-foreground: 162 30% 6%;
+    --card: 0 0% 100%; /* chalk — now a real step above paper, not a rounding error */
+    --card-foreground: 162 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 162 30% 6%;
+    --popover-foreground: 162 20% 12%;
 
     --primary: 163 80% 22%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 22% 96%;
-    --secondary-foreground: 163 45% 16%;
+    --secondary: 160 15% 92%;
+    --secondary-foreground: 163 40% 16%;
 
-    --muted: 160 20% 96.5%;
-    --muted-foreground: 165 12% 42%; /* slate — green-grey, not neutral */
+    --muted: 160 13% 92.5%;
+    --muted-foreground: 165 10% 40%; /* slate — green-grey, not neutral */
 
-    --accent: 160 22% 95%;
-    --accent-foreground: 163 45% 16%;
+    --accent: 160 15% 91%;
+    --accent-foreground: 163 40% 16%;
 
     --destructive: 347 72% 42%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 160 16% 91%;
-    --input: 160 16% 89%;
-    --ring: 163 80% 32%;
+    --border: 160 13% 87%;
+    --input: 160 13% 85%;
+    --ring: 163 78% 30%;
 
     --radius: 0.625rem;
 
@@ -209,8 +218,8 @@
     --status-missed: 347 72% 42%;
 
     /* The rail's own ground, one step off paper so the chrome reads as chrome */
-    --console-rail: 162 22% 97.5%;
-    --console-rail-border: 160 16% 90%;
+    --console-rail: 161 17% 93%;
+    --console-rail-border: 160 13% 86%;
     --console-signal: 163 78% 32%;
   }
 
