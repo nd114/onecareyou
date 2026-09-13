@@ -66,7 +66,10 @@ const MIN_SEARCH_LENGTH = 2;
 /** The unified people-and-organisations directory. Paged and searched server-side. */
 export function useAdminAccounts() {
   const { isAdmin } = useAdminRole();
-  const [kind, setKind] = useState<AccountKind>('all');
+  // Tenants, not 'all', because tenants are the one kind that needs no search —
+  // landing on a gated kind by default made the page look empty on first
+  // visit, as if the directory (or search itself) were broken.
+  const [kind, setKind] = useState<AccountKind>('tenant');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const debouncedSearch = useDebouncedValue(search, 300);
