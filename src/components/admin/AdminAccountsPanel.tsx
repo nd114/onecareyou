@@ -30,6 +30,14 @@ const KINDS: Array<{ value: AccountKind; label: string }> = [
   { value: 'patient', label: 'Patients' },
 ];
 
+/** What each kind actually searches, per admin_accounts_directory — not a fixed claim. */
+const SEARCH_PLACEHOLDER: Record<AccountKind, string> = {
+  all: 'Search by name or email',
+  tenant: 'Search by name, hospital code or email',
+  clinician: 'Search by name, email or specialty',
+  patient: 'Search by name or email',
+};
+
 const ICON = {
   tenant: Building2,
   clinician: Stethoscope,
@@ -74,7 +82,7 @@ export function AdminAccountsPanel() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name, email, hospital code or specialty"
+                placeholder={SEARCH_PLACEHOLDER[kind]}
                 className="pl-9"
                 aria-label="Search accounts"
               />
@@ -99,8 +107,17 @@ export function AdminAccountsPanel() {
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <Search className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground max-w-sm">
-                Search by name or email to look up a specific clinician or patient
-                ({minSearchLength}+ characters). Individual accounts aren't listed until you do.
+                {search.trim().length === 0 ? (
+                  <>
+                    Search by name or email to look up a specific clinician or patient
+                    ({minSearchLength}+ characters). Individual accounts aren't listed until you do.
+                  </>
+                ) : (
+                  // The box was silently rejecting a too-short query, which reads as
+                  // "search doesn't work" — this makes it visibly react to typing instead.
+                  <>Keep typing — {minSearchLength - search.trim().length} more character
+                  {minSearchLength - search.trim().length === 1 ? '' : 's'} to search.</>
+                )}
               </p>
             </div>
           ) : isLoading ? (

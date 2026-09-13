@@ -202,6 +202,11 @@ export function AdminReliabilityPanel() {
                       <span className="font-medium text-sm truncate">
                         {f.provider_name ?? 'Unnamed connection'}
                       </span>
+                      {f.provider_type && (
+                        <Badge variant="outline" className="capitalize">
+                          {f.provider_type}
+                        </Badge>
+                      )}
                       <Badge
                         variant={f.sync_status === 'error' ? 'destructive' : 'secondary'}
                         className="capitalize"
@@ -220,6 +225,7 @@ export function AdminReliabilityPanel() {
                         : f.last_sync_at
                           ? `Last synced ${formatDayTime(f.last_sync_at)}`
                           : 'Never synced'}
+                      {f.last_failed_at ? ` · last failed ${formatDayTime(f.last_failed_at)}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
@@ -241,6 +247,12 @@ export function AdminReliabilityPanel() {
           )}
         </CardContent>
       </Card>
+
+      {overview?.checked_at && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          Numbers as of {formatDayTime(overview.checked_at)}
+        </p>
+      )}
     </div>
   );
 }

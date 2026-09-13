@@ -65,6 +65,7 @@ import MedicationInfo from "./pages/MedicationInfo";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import EHRComparison from "./pages/EHRComparison";
 import AdminImport from "./pages/AdminImport";
+import AdminBugReports from "./pages/AdminBugReports";
 import AdminChangelog from "./pages/AdminChangelog";
 import AdminDocs from "./pages/AdminDocs";
 
@@ -439,6 +440,11 @@ const App = () => (
             <Route path="/admin/import" element={
               <AdminRoute>
                 <AdminImport />
+              </AdminRoute>
+            } />
+            <Route path="/admin/bugs" element={
+              <AdminRoute>
+                <AdminBugReports />
               </AdminRoute>
             } />
             <Route path="/admin/careers" element={

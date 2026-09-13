@@ -1,6 +1,8 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Loader2, Maximize2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminSparkline } from '@/components/admin/AdminSparkline';
+import { AdminMetricChart } from '@/components/admin/AdminMetricChart';
 import { useAdminMovement, type AdminRange } from '@/hooks/useAdminToday';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +21,8 @@ function change(current: number, previous: number) {
 
 /** Movement, not raw counts: each metric against the period before it, with a trend line. */
 export function AdminMovementStrip({ range }: { range: AdminRange }) {
-  const { metrics, seriesByKey, isLoading } = useAdminMovement(range);
+  const { metrics, seriesByKey, pointsByKey, isLoading } = useAdminMovement(range);
+  const [analysing, setAnalysing] = useState<string | null>(null);
 
   return (
     <Card>
@@ -27,6 +30,7 @@ export function AdminMovementStrip({ range }: { range: AdminRange }) {
         <CardTitle className="text-base">Movement</CardTitle>
         <CardDescription>
           The {RANGE_LABEL[range]} against the {RANGE_LABEL[range].replace('last', 'previous')}.
+          Click a card for the full trend.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -44,11 +48,18 @@ export function AdminMovementStrip({ range }: { range: AdminRange }) {
               const Icon =
                 direction === 'up' ? ArrowUpRight : direction === 'down' ? ArrowDownRight : ArrowRight;
               return (
-                <div
+                <button
                   key={m.metric_key}
-                  className="rounded-xl border bg-card/60 p-4 transition-colors hover:border-primary/40"
+                  type="button"
+                  onClick={() => setAnalysing(m.metric_key)}
+                  className="group text-left rounded-xl border bg-card/60 p-4 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{m.label}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      {m.label}
+                    </p>
+                    <Maximize2 className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                   <div className="flex items-end justify-between gap-3 mt-1">
                     <div>
                       <p className="text-2xl font-semibold leading-none">
@@ -74,12 +85,20 @@ export function AdminMovementStrip({ range }: { range: AdminRange }) {
                   <p className="text-[11px] text-muted-foreground mt-2">
                     {Number(m.total_value).toLocaleString()} in total
                   </p>
-                </div>
+                </button>
               );
             })}
           </div>
         )}
       </CardContent>
+
+      <AdminMetricChart
+        open={!!analysing}
+        onOpenChange={(open) => !open && setAnalysing(null)}
+        metrics={metrics}
+        pointsByKey={pointsByKey}
+        initialKey={analysing ?? metrics[0]?.metric_key ?? ''}
+      />
     </Card>
   );
 }

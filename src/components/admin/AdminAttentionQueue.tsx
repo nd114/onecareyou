@@ -40,7 +40,9 @@ function actionFor(item: AttentionItem): { to: string; label: string } | null {
     case 'tenant':
       return item.target_id ? { to: `/admin/tenants/${item.target_id}`, label: 'Open tenant' } : null;
     case 'ehr_sync':
-      return { to: '/admin?tab=reliability', label: 'Open reliability' };
+      return { to: '/admin/reliability', label: 'Open reliability' };
+    case 'bug_report':
+      return { to: '/admin/bugs', label: 'Manage bug reports' };
     default:
       return null;
   }

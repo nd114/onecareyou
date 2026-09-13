@@ -4,6 +4,7 @@ import {
   Activity,
   BookOpen,
   Briefcase,
+  Bug,
   FileText,
   Gauge,
   Heart,
@@ -189,6 +190,7 @@ function RailContents({
     { to: '/admin/changelog', label: 'Changelog', icon: FileText },
     { to: '/admin/docs', label: 'Docs', icon: BookOpen },
     { to: '/admin/import', label: 'Import', icon: Upload },
+    { to: '/admin/bugs', label: 'Bug reports', icon: Bug },
   ];
 
   const isActive = (item: NavItem) =>

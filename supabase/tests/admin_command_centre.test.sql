@@ -51,6 +51,8 @@ DECLARE
   _json     jsonb;
   _txt      text;
   _bool     boolean;
+  _bug1     uuid;
+  _bug2     uuid;
 BEGIN
   INSERT INTO auth.users (id, email) VALUES
     (_admin,    'cc-admin@test.local'),
@@ -76,6 +78,15 @@ BEGIN
   INSERT INTO public.practice_shares (practice_id, user_id, permissions, is_active, share_all)
   VALUES (_hosp, _patient, '{"vitals":true}'::jsonb, true, false)
   RETURNING id INTO _pshare;
+
+  INSERT INTO public.beta_bug_reports (user_id, page_url, category, description)
+  VALUES (_patient, '/patient/vitals', 'bug',
+          repeat('The save button did nothing when I tapped it twice. ', 4))
+  RETURNING id INTO _bug1;
+
+  INSERT INTO public.beta_bug_reports (user_id, page_url, category, description)
+  VALUES (_doctor, '/clinician/dictations', 'suggestion', 'A short one, from a clinician.')
+  RETURNING id INTO _bug2;
 
   -- ==========================================================================
   -- 1. Nothing in the command centre answers somebody without the role
@@ -114,11 +125,23 @@ BEGIN
   PERFORM pg_temp.assert(pg_temp.refused(
     'SELECT * FROM public.admin_audit_export(NULL, NULL, NULL, 10)'),
     'a non-admin cannot export the audit log');
+  PERFORM pg_temp.assert(pg_temp.refused(
+    'SELECT * FROM public.admin_bug_reports(''open'', 25, 0)'),
+    'a non-admin cannot list bug reports');
+  PERFORM pg_temp.assert(pg_temp.refused(
+    format('SELECT public.admin_archive_bug_reports(ARRAY[%L]::uuid[])', _bug1)),
+    'a non-admin cannot archive a bug report');
+  PERFORM pg_temp.assert(pg_temp.refused(
+    format('SELECT public.admin_restore_bug_reports(ARRAY[%L]::uuid[])', _bug1)),
+    'a non-admin cannot restore a bug report');
 
   -- The refusal is real, not merely an empty result: the share still stands.
   EXECUTE 'SET LOCAL ROLE postgres';
   SELECT is_active INTO _bool FROM public.provider_shares WHERE id = _share;
   PERFORM pg_temp.assert(_bool, 'the refused revoke left the share active');
+
+  SELECT status INTO _txt FROM public.beta_bug_reports WHERE id = _bug1;
+  PERFORM pg_temp.assert(_txt = 'new', 'the refused archive left the bug report untouched');
 
   -- ==========================================================================
   -- 2. The admin sees the tenant, and sees it once
@@ -397,6 +420,79 @@ BEGIN
 
   SELECT count(*) INTO _count FROM public.admin_access_reviews('d', 50, 0);
   PERFORM pg_temp.assert(_count = 0, 'a one-character search returns no relationships');
+
+  -- ==========================================================================
+  -- 12. Bug reports: archive instead of delete, full detail, real reporter
+  --
+  -- The attention queue's bug item is a nudge (140 characters, no reporter) —
+  -- this is the actual triage surface behind it: whoever sent the report, the
+  -- whole description, and a status a founder can move without losing the row.
+  -- ==========================================================================
+  SELECT count(*) INTO _count FROM public.admin_bug_reports('open', 50, 0)
+   WHERE id IN (_bug1, _bug2);
+  PERFORM pg_temp.assert(_count = 2, 'both fresh reports are open by default');
+
+  SELECT length(description) INTO _int FROM public.admin_bug_reports('open', 50, 0)
+   WHERE id = _bug1;
+  PERFORM pg_temp.assert(_int > 140,
+    'the triage view carries the full description, not the queue''s 140-character nudge');
+
+  SELECT reporter_email INTO _txt FROM public.admin_bug_reports('open', 50, 0) WHERE id = _bug1;
+  PERFORM pg_temp.assert(_txt = 'cc-patient@test.local', 'the patient reporter is named on their report');
+
+  SELECT reporter_email INTO _txt FROM public.admin_bug_reports('open', 50, 0) WHERE id = _bug2;
+  PERFORM pg_temp.assert(_txt = 'cc-doctor@test.local', 'the clinician reporter is named on theirs');
+
+  PERFORM pg_temp.assert(pg_temp.refused(
+    'SELECT * FROM public.admin_bug_reports(''bogus'', 50, 0)'),
+    'an unknown status filter is refused rather than silently widened');
+
+  -- Archiving is a bulk action tolerant of a stale selection, not a single
+  -- all-or-nothing call: a nonexistent id alongside a real one still archives
+  -- the real one instead of refusing the whole batch.
+  SELECT public.admin_archive_bug_reports(ARRAY[_bug1, gen_random_uuid()]) INTO _int;
+  PERFORM pg_temp.assert(_int = 1, 'archiving counts only the row that actually matched');
+
+  SELECT count(*) INTO _count FROM public.admin_bug_reports('open', 50, 0) WHERE id = _bug1;
+  PERFORM pg_temp.assert(_count = 0, 'an archived report drops out of the open filter');
+
+  SELECT count(*) INTO _count FROM public.admin_bug_reports('archived', 50, 0) WHERE id = _bug1;
+  PERFORM pg_temp.assert(_count = 1, 'and appears in the archived filter instead');
+
+  SELECT count(*) INTO _count FROM public.admin_bug_reports('all', 50, 0)
+   WHERE id IN (_bug1, _bug2);
+  PERFORM pg_temp.assert(_count = 2, 'archiving never removes the row itself — "all" still sees both');
+
+  SELECT count(*) INTO _count FROM public.admin_attention_queue() WHERE item_key = 'bug:' || _bug1;
+  PERFORM pg_temp.assert(_count = 0, 'an archived bug report stops nudging the attention queue');
+
+  SELECT count(*) INTO _count FROM public.admin_attention_queue() WHERE item_key = 'bug:' || _bug2;
+  PERFORM pg_temp.assert(_count = 1, 'its still-open sibling keeps nudging it');
+
+  -- Archiving an already-archived report is a no-op, not a second log entry.
+  SELECT public.admin_archive_bug_reports(ARRAY[_bug1]) INTO _int;
+  PERFORM pg_temp.assert(_int = 0, 're-archiving an already-archived report matches nothing');
+
+  EXECUTE 'SET LOCAL ROLE postgres';
+  SELECT count(*) INTO _count FROM public.platform_admin_actions
+   WHERE action = 'archive_bug_report' AND target_id = _bug1;
+  PERFORM pg_temp.assert(_count = 1, 'the archive is in the admin action log exactly once');
+  EXECUTE 'SET LOCAL ROLE authenticated';
+
+  SELECT public.admin_restore_bug_reports(ARRAY[_bug1]) INTO _int;
+  PERFORM pg_temp.assert(_int = 1, 'restoring counts the row it actually moved back');
+
+  SELECT count(*) INTO _count FROM public.admin_bug_reports('open', 50, 0) WHERE id = _bug1;
+  PERFORM pg_temp.assert(_count = 1, 'a restored report is open again');
+
+  SELECT count(*) INTO _count FROM public.admin_attention_queue() WHERE item_key = 'bug:' || _bug1;
+  PERFORM pg_temp.assert(_count = 1, 'and nudges the attention queue again');
+
+  EXECUTE 'SET LOCAL ROLE postgres';
+  SELECT count(*) INTO _count FROM public.platform_admin_actions
+   WHERE action = 'restore_bug_report' AND target_id = _bug1;
+  PERFORM pg_temp.assert(_count = 1, 'the restore is in the admin action log too');
+  EXECUTE 'SET LOCAL ROLE authenticated';
 
   RAISE NOTICE 'admin_command_centre: all assertions passed';
 END $$;
