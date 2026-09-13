@@ -4787,6 +4787,32 @@ export type Database = {
           target_email: string
         }[]
       }
+      admin_account_detail: {
+        Args: { _id: string; _kind: string }
+        Returns: Json
+      }
+      admin_accounts_directory: {
+        Args: {
+          _kind?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+        }
+        Returns: {
+          connections: number
+          created_at: string
+          detail: string
+          display_name: string
+          email: string
+          id: string
+          kind: string
+          last_seen: string
+          storage_bytes: number
+          tenant_name: string
+          total_count: number
+          user_id: string
+        }[]
+      }
       admin_attention_queue: {
         Args: { _for_admin?: string }
         Returns: {
@@ -4826,6 +4852,10 @@ export type Database = {
         Returns: string
       }
       admin_digest_snapshot: { Args: { _for_admin: string }; Returns: Json }
+      admin_extend_trial: {
+        Args: { _days: number; _practice_id: string }
+        Returns: string
+      }
       admin_grant_platform_admin: { Args: { _email: string }; Returns: string }
       admin_invite_tenant_owner: {
         Args: { _email: string; _practice_id: string }
@@ -4891,6 +4921,31 @@ export type Database = {
           is_clinician: boolean
           name: string
           user_id: string
+        }[]
+      }
+      admin_revenue_overview: { Args: never; Returns: Json }
+      admin_revenue_tenants: {
+        Args: never
+        Returns: {
+          connected_patients: number
+          created_at: string
+          currency: string
+          days_remaining: number
+          id: string
+          is_active: boolean
+          member_count: number
+          member_limit: number
+          name: string
+          patient_limit: number
+          revenue_share_pct: number
+          storage_bytes: number
+          storage_limit_gb: number
+          subscription_ends_at: string
+          subscription_status: string
+          subscription_tier: string
+          tenant_type: string
+          unpaid_invoice_count: number
+          unpaid_invoice_minor: number
         }[]
       }
       admin_revoke_platform_admin: {
