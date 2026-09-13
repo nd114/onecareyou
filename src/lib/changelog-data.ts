@@ -14,6 +14,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-13',
+    version: '0.9.10',
+    title: 'Founder command centre: a real admin console',
+    tags: ['platform', 'security'],
+    bullets: [
+      'New /admin shell: a collapsible sidebar rail (Today, Accounts, Revenue, Reliability, Trust, plus a Workshop group) on real, linkable routes instead of tabs on one page, with its own palette tuned for fast scanning rather than the patient/clinician cream.',
+      'Accounts and Trust only surface a clinician or patient after a 2+ character search — neither is ever a browsable list, matching sharing-access-consent-model.md\'s stance that a platform admin is not a party to a patient\'s sharing decisions. Tenants, OneCare\'s business customers, stay freely browsable, and the Accounts page now opens on that browsable view instead of a search box with nothing behind it.',
+      'Bug reports get their own triage view (Workshop → Bug reports): the full description and the reporter\'s name, not the attention queue\'s 140-character clip with nobody attached. Select one or many and archive or restore them, in place of the old all-or-nothing "restore all".',
+      'Revenue, Reliability and Trust now show several numbers their own RPCs already computed but never displayed — cancellations, invoice volume, revenue-share terms, a failing sync\'s provider and last-failure time, a week of audit-log activity — plus a "numbers as of" timestamp on each page.',
+      'Today\'s movement sparklines are clickable: a day-by-day chart with a metric switcher, for actually reading a trend rather than eyeballing a shape with no axis.',
+      'Known gap, left for a follow-up rather than bundled in here: none of this persists a trend over time for MRR, churn, active users, storage growth or cohort retention — every number above is computed fresh for right now.',
+    ],
+  },
+  {
     date: '2026-05-22',
     version: '0.9.9',
     title: 'Navigation IA v2 — 4 pillars for patients + clinicians',
