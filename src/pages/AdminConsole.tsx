@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, Briefcase, FileText, Upload } from 'lucide-react';
+import { BookOpen, Briefcase, Bug, FileText, Upload } from 'lucide-react';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AdminShell } from '@/components/admin/AdminShell';
@@ -156,6 +156,12 @@ const TOOLS = [
     title: 'Data import',
     description: 'Internal import utilities.',
     icon: Upload,
+  },
+  {
+    to: '/admin/bugs',
+    title: 'Bug reports',
+    description: 'Every report in full, with who sent it. Archive, restore, one or many.',
+    icon: Bug,
   },
 ];
 
