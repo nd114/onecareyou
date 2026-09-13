@@ -71,17 +71,29 @@ export function useAdminMovement(range: AdminRange) {
     },
   });
 
-  const seriesByKey = useMemo(() => {
-    const map: Record<string, number[]> = {};
+  // The dated points, for a real chart with an axis. Sparklines only ever
+  // wanted the bare numbers, so that shape stays derived from this one
+  // instead of the RPC's `day` being read once and thrown away.
+  const pointsByKey = useMemo(() => {
+    const map: Record<string, Array<{ day: string; value: number }>> = {};
     for (const p of series.data ?? []) {
-      (map[p.metric_key] ||= []).push(Number(p.value));
+      (map[p.metric_key] ||= []).push({ day: p.day, value: Number(p.value) });
     }
     return map;
   }, [series.data]);
 
+  const seriesByKey = useMemo(() => {
+    const map: Record<string, number[]> = {};
+    for (const key of Object.keys(pointsByKey)) {
+      map[key] = pointsByKey[key].map((p) => p.value);
+    }
+    return map;
+  }, [pointsByKey]);
+
   return {
     metrics: metrics.data ?? [],
     seriesByKey,
+    pointsByKey,
     isLoading: metrics.isLoading,
   };
 }

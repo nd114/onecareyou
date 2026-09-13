@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, FileCheck, Loader2, Search, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Download, FileCheck, Loader2, Search, ShieldCheck, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,7 @@ import { AdminPagination } from '@/components/admin/AdminPagination';
 import { AdminAuditSearchPanel } from '@/components/admin/AdminAuditSearchPanel';
 import { AdminActivityPanel } from '@/components/admin/AdminActivityPanel';
 import { useAdminTrust, useAuditExport, type AccessReviewRow } from '@/hooks/useAdminTrust';
-import { formatDay } from '@/lib/format-date';
+import { formatDay, formatDayTime } from '@/lib/format-date';
 import { toast } from 'sonner';
 
 /** Trust — who can see whom, what was agreed, and the record of both. */
@@ -46,6 +46,7 @@ export function AdminTrustPanel() {
   const shares = overview?.shares;
   const consent = overview?.consent;
   const legal = overview?.legal;
+  const audit = overview?.audit;
 
   const confirmClose = () => {
     if (!closing || !reason.trim()) return;
@@ -62,7 +63,7 @@ export function AdminTrustPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-3 items-start">
+      <div className="grid gap-4 lg:grid-cols-4 items-start">
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
@@ -125,6 +126,21 @@ export function AdminTrustPanel() {
             <Row label="BAAs pending" value={overview?.baa.pending ?? 0} />
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              Audit activity
+            </CardTitle>
+            <CardDescription className="text-xs">Three logs, three different questions.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Row label="Record changes, 7d" value={audit?.entries_7d ?? 0} />
+            <Row label="Access-log entries, 7d" value={audit?.access_entries_7d ?? 0} />
+            <Row label="Admin actions, 7d" value={audit?.admin_actions_7d ?? 0} />
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -155,8 +171,15 @@ export function AdminTrustPanel() {
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <Search className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm text-muted-foreground max-w-sm">
-                Nothing is listed until you search ({minSearchLength}+ characters). Relationships
-                surface one lookup at a time, never as a browsable list.
+                {search.trim().length === 0 ? (
+                  <>
+                    Nothing is listed until you search ({minSearchLength}+ characters).
+                    Relationships surface one lookup at a time, never as a browsable list.
+                  </>
+                ) : (
+                  <>Keep typing — {minSearchLength - search.trim().length} more character
+                  {minSearchLength - search.trim().length === 1 ? '' : 's'} to search.</>
+                )}
               </p>
             </div>
           ) : isLoading ? (
@@ -225,6 +248,12 @@ export function AdminTrustPanel() {
       <AdminAuditSearchPanel />
 
       <AdminActivityPanel />
+
+      {overview?.checked_at && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          Numbers as of {formatDayTime(overview.checked_at)}
+        </p>
+      )}
 
       <Dialog
         open={!!closing}

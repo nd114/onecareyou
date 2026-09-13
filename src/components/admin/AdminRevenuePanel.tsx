@@ -25,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 import { useAdminRevenue, type RevenueTenant } from '@/hooks/useAdminRevenue';
 import { formatBytes } from '@/lib/storage-constants';
-import { formatDay } from '@/lib/format-date';
+import { formatDay, formatDayTime } from '@/lib/format-date';
 
 const money = (n: number) =>
   n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -139,6 +139,19 @@ export function AdminRevenuePanel() {
               value={overview?.trials.already_lapsed ?? 0}
               warn={(overview?.trials.already_lapsed ?? 0) > 0}
             />
+            <Row
+              label="Cancelled, last 30 days"
+              value={overview?.cancellations.last_30_days ?? 0}
+            />
+            <Row
+              label="Cancelled, last 90 days"
+              value={overview?.cancellations.last_90_days ?? 0}
+            />
+            <Row
+              label="Tenants deactivated"
+              value={overview?.cancellations.tenants_deactivated ?? 0}
+              warn={(overview?.cancellations.tenants_deactivated ?? 0) > 0}
+            />
           </CardContent>
         </Card>
 
@@ -167,6 +180,10 @@ export function AdminRevenuePanel() {
               label="Platform fee collected"
               value={minorToMoney(overview?.invoices.platform_fee_minor ?? 0)}
             />
+            <Row
+              label="Issued, last 30 days"
+              value={overview?.invoices.issued_last_30_days ?? 0}
+            />
           </CardContent>
         </Card>
 
@@ -191,6 +208,14 @@ export function AdminRevenuePanel() {
             <Row
               label="Revenue share agreed"
               value={`${overview?.revenue_share.tenant_count ?? 0} tenants`}
+            />
+            <Row
+              label="Highest share agreed"
+              value={`${overview?.revenue_share.highest_pct ?? 0}%`}
+            />
+            <Row
+              label="Patients under a share"
+              value={overview?.revenue_share.attributed_patients ?? 0}
             />
           </CardContent>
         </Card>
@@ -225,6 +250,9 @@ export function AdminRevenuePanel() {
                         >
                           {t.name}
                         </Link>
+                        <Badge variant="secondary" className="capitalize">
+                          {t.tenant_type ?? 'practice'}
+                        </Badge>
                         <Badge variant="outline" className="capitalize">
                           {t.subscription_tier}
                         </Badge>
@@ -236,9 +264,13 @@ export function AdminRevenuePanel() {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {t.member_count} members · {t.connected_patients} connected ·{' '}
+                        {t.member_count}
+                        {t.member_limit ? `/${t.member_limit}` : ''} members ·{' '}
+                        {t.connected_patients}
+                        {t.patient_limit ? `/${t.patient_limit}` : ''} connected ·{' '}
                         {formatBytes(Number(t.storage_bytes))} / {t.storage_limit_gb ?? 0} GB
                         {Number(t.revenue_share_pct) > 0 && ` · ${t.revenue_share_pct}% share`}
+                        {` · joined ${formatDay(t.created_at)}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 text-xs shrink-0">
@@ -280,6 +312,12 @@ export function AdminRevenuePanel() {
           )}
         </CardContent>
       </Card>
+
+      {overview?.checked_at && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          Numbers as of {formatDayTime(overview.checked_at)}
+        </p>
+      )}
 
       <Dialog open={!!extending} onOpenChange={(open) => !open && setExtending(null)}>
         <DialogContent>
