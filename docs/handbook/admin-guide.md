@@ -18,7 +18,7 @@ The rail carries three things, top to bottom:
   Collapsed, each becomes a dot in the same order, colour still meaningful, value on hover.
 - **Oversight** — Today, Accounts, Revenue, Reliability, Trust. Today and Reliability carry a live
   count, so the rail says where to go before you click.
-- **Workshop** — Workshop, Careers, Changelog, Docs, Import.
+- **Workshop** — Workshop, Careers, Changelog, Docs, Import, Bug reports.
 
 Each area is a real route (`/admin`, `/admin/accounts`, `/admin/revenue`, `/admin/reliability`,
 `/admin/trust`, `/admin/workshop`). The earlier `?tab=` links still work: `/admin?tab=trust` and the
@@ -70,13 +70,24 @@ patient chose to share with. That has a direct consequence for this console:
 If a new admin query is about to list every instance of something that belongs to a named patient or
 clinician, ask whether it needs a search gate before it ships, not after someone notices.
 
+**Not everything that names a person needs this gate — a bug report does not.** `admin_bug_reports`
+(§5) lists every report unsearched, in full, with the reporter's name and email. The test that
+matters is not "does this name a person" but who put the information in OneCare's hands and why: a
+bug report was sent to OneCare on purpose, by the person who filed it, for staff to read and act on —
+the same footing as `contact_submissions`, which the console has always shown in full. That is a
+different act from an admin browsing who a patient is connected to, which nobody submitting a support
+ticket agreed to and which this gate exists to rule out.
+
 ## 3. Console areas
 
 ### Today
 The founder home: an attention queue of things with a deadline (storage over threshold, stale
 invitations, unanswered contact/bug reports, long trials, empty tenants, sync failures), movement
 over the window chosen in the topbar with sparklines, the last 24 hours' signal, platform-wide
-totals and storage against allowance.
+totals and storage against allowance. A sparkline is decoration by design — no axis, no tooltip —
+but the movement card it sits on is a button: click it for `AdminMetricChart`, the same
+`admin_metric_series` data as a real day-by-day line with a date axis and a switcher across all six
+metrics, for actually reading a trend rather than eyeballing a shape.
 
 **Just arrived** shows the eight newest accounts, with nothing to type into. It used to hold five
 hundred behind a search box and two filters, which made it a way to page through everyone who had
@@ -85,10 +96,14 @@ handful of people who arrived, for a welcome or a call. Looking anyone else up i
 for, and it asks for a name first.
 
 ### Accounts
-One directory across tenants, clinicians and patients, described in §2. Selecting **Tenants** lists
-them all; selecting **Clinicians**, **Patients** or **Everyone** requires a search. Opening a row's
-drawer shows roles, workspace membership, connection *counts*, storage, record *counts* and a log of
-recent action names and timestamps — never a document, a medication name or a reading.
+One directory across tenants, clinicians and patients, described in §2. **Tenants is the kind the
+page opens on** — it is the one browsable without a search, so the page has something to show
+immediately instead of opening on the gate itself. Selecting **Clinicians**, **Patients** or
+**Everyone** requires a search: the empty state counts down as you type ("2 more characters", then
+"1 more") rather than showing the same static line at zero characters and at one, which is what
+first read as the search being broken rather than gated. Opening a row's drawer shows roles,
+workspace membership, connection *counts*, storage, record *counts* and a log of recent action names
+and timestamps — never a document, a medication name or a reading.
 
 Below the directory: the pre-existing **Tenants** table (name, type, tier, hospital code, location,
 team size, connected patients, pooled storage, revenue share — search by name, code or location,
@@ -111,11 +126,19 @@ Two things the run rate cannot know, both said on the page rather than left to b
   annual plan (two months free) counts about a sixth high. Stripe holds the exact figure. Storing
   the interval alongside the tier is what would fix it properly.
 
+Also shown: cancellations (30d/90d, tenants deactivated), invoices issued in the last 30 days,
+revenue-share terms (highest percentage agreed, patients under a share), and each tenant row's type,
+member/patient limits and join date — all fields `admin_revenue_overview` and `admin_revenue_tenants`
+already computed before they were surfaced. A "numbers as of" line at the foot of the page carries
+the RPC's own `checked_at`, since these are fetched, not pushed.
+
 ### Reliability
 Failure signals this database actually holds: EHR sync failures and the export queue per connection,
 assistant volume (counts, not spend — spend is billed by the model provider), dictation failures,
 sign-in throttling, alert delivery. Says plainly that edge-function and auth-service logs live
-outside Postgres and are not counted here. **Requeue** clears a stuck export's attempt count.
+outside Postgres and are not counted here. **Requeue** clears a stuck export's attempt count. A
+failing connection's row also names its provider type and when it last failed, and the page carries
+a "numbers as of" line — both already returned by `admin_sync_failures` and `admin_reliability_overview`.
 
 ### Trust
 Live-access and consent totals, agreement coverage, an **access review** (§2 — search-gated), an
@@ -123,7 +146,10 @@ Live-access and consent totals, agreement coverage, an **access review** (§2 �
 `details` column), the cross-tenant **access log search** (`admin_access_log_search` — an
 accountability trail of past events, which is why it stays browsable where the access review is not:
 a permission is current state; a log entry already happened and is being reviewed for who did what),
-and the **platform-admin action log** (every admin mutation, read-only, cannot be edited).
+and the **platform-admin action log** (every admin mutation, read-only, cannot be edited). An
+**audit activity** card counts a week of all three logs side by side (record changes, access-log
+entries, admin actions) — three different questions, deliberately not summed into one number — next
+to a "numbers as of" line for the whole page.
 
 **Close access** on a review row revokes a `provider_shares` or `practice_shares` row and demands a
 reason. This needed `guard_provider_share_consent` widened: the trigger pins every other term of a
@@ -133,10 +159,10 @@ one exception, and only that — widening permissions, reassigning to another pa
 closed share all still revert. `admin_command_centre.test.sql` asserts both halves of that.
 
 ### Workshop
-Tool cards for **Careers**, **Changelog**, **Docs** (this handbook, in-app) and **Data import**, plus
-**Demo data** — buttons to run `seed-demo-data` and `seed-demo-hospital`, previously only invocable by
-hand. Both are idempotent and already gated by `requireServiceRoleOrAdmin`; the button adds the
-console surface, not new access.
+Tool cards for **Careers**, **Changelog**, **Docs** (this handbook, in-app), **Data import** and
+**Bug reports** (§5), plus **Demo data** — buttons to run `seed-demo-data` and `seed-demo-hospital`,
+previously only invocable by hand. Both are idempotent and already gated by
+`requireServiceRoleOrAdmin`; the button adds the console surface, not new access.
 
 ## 4. Tenant owner invitations end to end
 
@@ -162,6 +188,12 @@ someone else's invitation.
 - **Changelog** (`/admin/changelog`) — internal release log, `noindex`, useful for investor updates.
 - **Docs** (`/admin/docs`) — this handbook and the platform/architecture reference, readable in-app.
 - **Import** (`/admin/import`) — internal CSV utilities (e.g. international drug mappings).
+- **Bug reports** (`/admin/bugs`) — every report from `beta_bug_reports` in full, with the reporter's
+  name and email (not gated — see §2) and an Open/Archived/All filter. Checkboxes select any number
+  of rows for a bulk **Archive** or **Restore**; `admin_archive_bug_reports` and
+  `admin_restore_bug_reports` skip an id that no longer matches rather than failing the whole batch,
+  since the caller is a set of checkboxes that can go stale between render and click. Archived, never
+  deleted — an archived report also stops appearing as an open item in Today's attention queue.
 
 ## 6. Security rules that must not be relaxed
 
@@ -171,6 +203,8 @@ someone else's invitation.
 - Every mutation logs to `platform_admin_actions` via `log_platform_admin_action`.
 - Admin-facing edge functions gate with `requireServiceRoleOrAdmin` from `_shared/auth.ts`.
 - Service-role keys and database passwords are not retrievable and must never be echoed anywhere.
-- Anything that lists people rather than organisations is search-gated per §2. This is enforced in
-  the `SECURITY DEFINER` function itself, not only the client, so a direct API call cannot bypass it
-  either.
+- Anything that lists people rather than organisations because an admin wants to browse them is
+  search-gated per §2, enforced in the `SECURITY DEFINER` function itself, not only the client, so a
+  direct API call cannot bypass it either. Content someone sent to OneCare on purpose (bug reports,
+  contact submissions) is not the same case, and §2 explains why — that distinction is not licence to
+  gate less elsewhere without the same reasoning.
