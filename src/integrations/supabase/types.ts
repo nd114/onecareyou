@@ -4787,6 +4787,24 @@ export type Database = {
           target_email: string
         }[]
       }
+      admin_access_reviews: {
+        Args: { _limit?: number; _offset?: number; _search?: string }
+        Returns: {
+          connected_at: string
+          expires_at: string
+          is_suspended: boolean
+          last_accessed_at: string
+          patient_name: string
+          patient_user_id: string
+          permission_count: number
+          share_all: boolean
+          share_id: string
+          share_type: string
+          total_count: number
+          viewer_name: string
+          viewer_user_id: string
+        }[]
+      }
       admin_account_detail: {
         Args: { _id: string; _kind: string }
         Returns: Json
@@ -4824,6 +4842,22 @@ export type Database = {
           target_id: string
           target_type: string
           title: string
+        }[]
+      }
+      admin_audit_export: {
+        Args: {
+          _action?: string
+          _from?: string
+          _limit?: number
+          _to?: string
+        }
+        Returns: {
+          action: string
+          actor_email: string
+          created_at: string
+          id: string
+          patient_email: string
+          resource_type: string
         }[]
       }
       admin_cancel_tenant_invitation: {
@@ -4923,6 +4957,11 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_reliability_overview: { Args: never; Returns: Json }
+      admin_requeue_ehr_exports: {
+        Args: { _connection_id: string }
+        Returns: number
+      }
       admin_revenue_overview: { Args: never; Returns: Json }
       admin_revenue_tenants: {
         Args: never
@@ -4947,6 +4986,10 @@ export type Database = {
           unpaid_invoice_count: number
           unpaid_invoice_minor: number
         }[]
+      }
+      admin_revoke_patient_share: {
+        Args: { _reason: string; _share_id: string; _share_type: string }
+        Returns: undefined
       }
       admin_revoke_platform_admin: {
         Args: { _user_id: string }
@@ -4974,6 +5017,20 @@ export type Database = {
           _zip_code?: string
         }
         Returns: undefined
+      }
+      admin_sync_failures: {
+        Args: { _limit?: number }
+        Returns: {
+          connection_id: string
+          failures_7d: number
+          last_error: string
+          last_failed_at: string
+          last_sync_at: string
+          provider_name: string
+          provider_type: string
+          queued_exports: number
+          sync_status: string
+        }[]
       }
       admin_tenant_detail: {
         Args: { _practice_id: string }
@@ -5039,6 +5096,7 @@ export type Database = {
           tenant_type: string
         }[]
       }
+      admin_trust_overview: { Args: never; Returns: Json }
       admin_update_tenant: {
         Args: {
           _city?: string
