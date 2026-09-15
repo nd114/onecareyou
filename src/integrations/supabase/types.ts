@@ -4831,6 +4831,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_archive_bug_reports: { Args: { _ids: string[] }; Returns: number }
       admin_attention_queue: {
         Args: { _for_admin?: string }
         Returns: {
@@ -4858,6 +4859,22 @@ export type Database = {
           id: string
           patient_email: string
           resource_type: string
+        }[]
+      }
+      admin_bug_reports: {
+        Args: { _limit?: number; _offset?: number; _status?: string }
+        Returns: {
+          browser_info: Json
+          category: string
+          created_at: string
+          description: string
+          id: string
+          page_url: string
+          reporter_email: string
+          reporter_name: string
+          reporter_user_id: string
+          status: string
+          total_count: number
         }[]
       }
       admin_cancel_tenant_invitation: {
@@ -4962,6 +4979,7 @@ export type Database = {
         Args: { _connection_id: string }
         Returns: number
       }
+      admin_restore_bug_reports: { Args: { _ids: string[] }; Returns: number }
       admin_revenue_overview: { Args: never; Returns: Json }
       admin_revenue_tenants: {
         Args: never
