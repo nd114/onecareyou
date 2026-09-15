@@ -10,11 +10,18 @@
 > next prioritization conversation has real numbers instead of "how hard would this be."
 > **This document describes an intention, not current work.** Nothing below is a
 > commitment, and no code or schema here exists yet.
+> **Update (2026-09-15):** OC-LMC's actual systems have been named directly by the product
+> owner — **HealthWyse** (Bravo Health Limited) for billing, and **eClinic** (eClat
+> Healthcare / Interswitch) at the radiology/imaging sister company. This supersedes Part
+> B's original Sage-only framing; see §A3b and §B2b for what's known about each.
 
-Two hospital systems OC-LMC likely runs today that OneCare does not yet reach: the PACS
-that holds their imaging, and Sage for accounting. Both are asked about together because
-they are the same shape of problem — *a hospital's own system holds something about the
-patient's care that the patient and their clinician should not have to chase down in
+Two hospital systems OC-LMC runs today that OneCare does not yet reach: **eClinic**, at the
+radiology/imaging sister company, and **HealthWyse**, run by Bravo Health Limited, for
+billing. Both names come directly from the product owner and supersede this document's
+original secondhand lead — Sage — which does not appear to be what OC-LMC actually uses for
+patient billing (§B1 covers what changes because of that). Both are asked about together
+because they are the same shape of problem — *a hospital's own system holds something about
+the patient's care that the patient and their clinician should not have to chase down in
 person* — which is exactly the sentence `docs/ehr-integration-plan.md` opens with for labs
 and vitals. That architecture (tenant-owned connection, consent-gated, provenance on every
 row, narrow and never-automatic write-back, credentials in Vault, refuse rather than guess)
@@ -23,8 +30,9 @@ two new frameworks.
 
 They are **not** the same size of problem, though, and the research this document is built
 on found a real asymmetry: imaging turns out to plug into infrastructure already planned;
-billing turns out to probably be aimed at the wrong system entirely. Both findings changed
-what's recommended below from what a first guess would have produced.
+billing turns out to have probably been aimed at the wrong system entirely before OC-LMC's
+own billing platform was named. Both findings changed what's recommended below from what a
+first guess would have produced.
 
 ---
 
@@ -111,6 +119,33 @@ If this holds up, imaging is not a new integration category. It's the EHR integr
 existing tenant-owned connection, pointed at one more Medplum-backed endpoint, with its own
 consent category and provenance rule — smaller than the QHIN build, not bigger.
 
+## A3b. The sister company's system: eClinic (eClat Healthcare / Interswitch)
+
+Named directly by the product owner: OC-LMC's radiology/imaging sister company runs
+**eClinic**, built by eClat Healthcare — a Nigerian health-tech company Interswitch (the
+payments/fintech group) acquired in 2019 and has continued to invest in, including a 2022
+relaunch and further hospital rollouts through 2025. This is the best-documented vendor in
+this whole document: independent Nigerian tech press (TechCabal, Vanguard, ThisDay,
+Businessday, Techpoint Africa) all covered the acquisition and relaunch, not just eClat's
+own marketing — unlike HealthWyse below (§B2b), this isn't resting on a single source.
+
+What's confirmed: eClinic is a general hospital EMR/HIS, in production at 350+ facilities
+across Nigeria, covering patient records, appointments/queueing, inventory, medical coding,
+and — the relevant part — **medical and insurance billing integrated with Interswitch's own
+payment rails**, plus an explicitly advertised **third-party API integration** capability.
+
+What's *not* confirmed: whether eClinic itself is a DICOM/PACS system, or whether it's the
+RIS/EMR layer the sister company runs its business on while actual image acquisition and
+storage sits in a separate, dedicated PACS from an imaging-equipment vendor (the far more
+common architecture — see §A1's RIS-vs-PACS split). No source found here describes eClinic
+handling DICOM, image storage, or a viewer. **Working assumption: eClinic is the ordering/
+reporting/billing wrapper, not the pixel store** — meaning §A2's DICOMweb question (does the
+underlying PACS speak it, or does it need a DIMSE-bridging gateway) is still the first
+technical question to ask, just now aimed at a named institution instead of an abstract one.
+eClinic's own API may still matter independently, though, as a second integration path for
+the *report and order* side (`DiagnosticReport`-shaped data) even if pixel retrieval has to
+go through a different endpoint entirely.
+
 ## A4. What "v1" should actually mean
 
 Two very different asks hide inside "let the patient see their imaging":
@@ -169,16 +204,24 @@ retrieval (not whole-study download) is the right default.
 
 ## A7. Open questions for OC-LMC's radiology/IT team
 
-None of these are answerable from here, same discipline as the EHR plan's own §4:
+Now aimed at a named system instead of an abstract one, but still not answerable from here —
+same discipline as the EHR plan's own §4:
 
-1. What PACS/RIS do they actually run, and does it speak DICOMweb natively, or would it need
-   the Medplum Agent (or an equivalent gateway) bridging classic DIMSE?
-2. Is the imaging endpoint reachable from outside the hospital network at all, or does
-   everything have to go through an inside-the-network agent?
-3. Do finalized reports already exist as structured `DiagnosticReport` data anywhere, or
-   only as dictated text/PDF in the RIS?
-4. Who can authorize an outbound connection from their imaging systems, and what's their own
-   policy on image data leaving their network (even to a HIPAA-covered destination)?
+1. Does eClinic sit in front of a separate PACS for actual image storage, and if so, which
+   one — and does *that* system speak DICOMweb natively, or would it need the Medplum Agent
+   (or an equivalent gateway) bridging classic DIMSE?
+2. Does eClinic's own advertised third-party API expose study/report metadata in a form
+   worth integrating against directly (even if pixel retrieval has to go elsewhere), and can
+   eClat/Interswitch provide real API documentation rather than relying on their marketing
+   copy?
+3. Is the imaging endpoint (eClinic's, or the underlying PACS's) reachable from outside the
+   hospital network at all, or does everything have to go through an inside-the-network
+   agent?
+4. Do finalized reports already exist as structured `DiagnosticReport`-shaped data anywhere,
+   or only as dictated text/PDF?
+5. Who at eClat/Interswitch or OC-LMC can authorize an outbound connection from their
+   imaging systems, and what's their own policy on image data leaving their network (even to
+   a HIPAA-covered destination)?
 
 ## A8. Non-goals for v1
 
@@ -190,7 +233,11 @@ close the "patient shouldn't have to ask for their own scan" gap.
 WADO-RS/WADO-URI comparison; Google Cloud Healthcare API DICOM docs (OAuth2 pattern);
 Medplum's DICOM, DICOM data-model, agent-DIMSE and OHIF-viewer docs (via search excerpt,
 flagged above for direct re-verification); OHIF Viewer and Cornerstone3D GitHub repos; PMC
-literature on DICOM de-identification; Orthanc and dcm4che DICOMweb gateway docs.
+literature on DICOM de-identification; Orthanc and dcm4che DICOMweb gateway docs. On eClinic
+specifically: TechCabal, Vanguard, ThisDay, Businessday and Techpoint Africa coverage of the
+2019 Interswitch/eClat acquisition and 2022 eClinic relaunch (independent press, not just
+eClat's own materials); Interswitch Group's own eClinic pages (site itself unreachable from
+this session — represented via search excerpt).
 
 ---
 
@@ -198,11 +245,20 @@ literature on DICOM de-identification; Orthanc and dcm4che DICOMweb gateway docs
 
 ## B1. The premise, and the finding that complicates it
 
-The ask: a patient sees an itemized breakdown of what they were billed for and why, the
-hospital manages billing on their side, and the integration point is Sage, which OC-LMC is
-known to use for accounting. The research this document is built on turned up a real problem
-with that plan as stated: **itemized, patient-level billing detail very likely does not live
-in Sage at all.**
+**Update — this question is now largely answered.** The product owner has since confirmed
+directly that OC-LMC's patient billing runs through **HealthWyse**, operated by **Bravo
+Health Limited**, not Sage. The reasoning below (written when Sage was the only lead) is
+kept because it's still the right general reasoning — it correctly predicted that the
+itemized-detail system and the accounting system would turn out to be different things —
+and because it explains *why* asking "what system generates the bill" was the right first
+move rather than assuming Sage. §B2b covers what's known about HealthWyse specifically;
+Sage's own product table (§B2) is kept as reference in case OC-LMC's finance team still uses
+Sage as a downstream ledger, or in case another OneCare hospital client uses Sage directly.
+
+The original ask assumed the integration point was Sage, based on secondhand information
+that OC-LMC used it for accounting. The research this document is built on turned up a real
+problem with that plan even before the vendor was confirmed: **itemized, patient-level
+billing detail very likely does not live in a general accounting product like Sage at all.**
 
 The evidence is consistent across three angles:
 
@@ -228,17 +284,20 @@ consultation and this $40 was the lab fee." **The itemized, per-visit detail a p
 actually wants to see almost certainly lives in whatever PM/RCM/billing system OC-LMC's
 billing staff use day to day — not yet identified — with Sage downstream of it.**
 
-This is the single most important thing for the product owner to read out of this document:
-**the first real question is not "how do we call the Sage API," it's "what system do OC-LMC's
-billing staff actually use to generate a patient's bill."** Sage may still matter — for
-payment/balance status, or if OC-LMC turns out to be small enough to bill directly out of
-their accounting software without a separate PM layer — but it's very unlikely to be the
-whole answer, and designing only for Sage risks building against the wrong system.
+That question has now been answered directly rather than inferred: OC-LMC's billing staff
+use HealthWyse. Sage may still matter downstream — for OC-LMC's own general-ledger
+accounting, separate from patient billing, or for a different OneCare client — but it's very
+unlikely to be where itemized charges live, and the rest of Part B is written around
+HealthWyse as the primary target.
 
-## B2. What's actually true about Sage's API, by product
+## B2. Sage's API, by product — kept for reference, not the primary target
 
-"Sage" names several genuinely different products with different API realities. Which one
-OC-LMC runs has to be confirmed before anything below is more than a menu of possibilities.
+Written when Sage was still the working assumption; kept because OC-LMC's own accounting
+team may still use one of these products downstream of HealthWyse (§B2b), and because this
+table is reusable if another OneCare hospital client turns out to bill directly out of Sage.
+Not acted on further in this document. "Sage" names several genuinely different products
+with different API realities — which one, if any, OC-LMC's finance team actually touches
+would have to be confirmed before anything below is more than a menu of possibilities.
 
 | Product | API reality | Auth | Verdict |
 | --- | --- | --- | --- |
@@ -247,25 +306,63 @@ OC-LMC runs has to be confirmed before anything below is more than a menu of pos
 | **Sage 50cloud / Sage 50** | On-prem Windows desktop software ("cloud" refers only to bolt-on Office 365 features). **No modern REST/OAuth2 API.** Access is a paid Windows COM SDK (Sage Developers Programme membership, quoted around £2,500–3,100+VAT/year) or an unsupported read-only ODBC driver. | N/A | If this is what OC-LMC actually runs, a standard hosted integration is not available — this becomes a materially harder project needing a licensed SDK and an on-prem bridge process. **Worth ruling in or out early**, since it changes the whole feasibility picture. |
 | **Sage X3** | REST web services (SData 2.0) plus SOAP; X3 Online (cloud) documents OAuth2. | OAuth2 (cloud SKU) | Only plausible if OC-LMC runs full multi-entity ERP, not just accounting — unlikely for a single hospital, flagged for completeness. |
 
-## B3. Two branches, because the answer to B1 changes the design
+## B2b. What's known about HealthWyse (Bravo Health Limited)
 
-**Branch 1 — a PM/RCM/billing system exists and holds the itemized detail (expected).**
-The integration target is that system, not Sage. This document can't design it yet because
-it isn't named — the recommendation is to find out what it is (§B5, question 1) before
-scoping further. Sage, in this branch, is used only for **balance/payment status**
-reconciliation if even that turns out to be useful — "is this invoice paid" is exactly the
-kind of summarized fact a GL is built to answer, unlike "why was I charged this."
+Confirmed directly by the product owner: OC-LMC's patient billing runs through HealthWyse,
+operated by **Bravo Health Limited**. This is a materially different shape of vendor than
+Sage — not a general accounting product a hospital bolts billing onto, but (per its own
+marketing) a single cloud platform doing **EHR, billing, and telemedicine together**, with
+claimed HL7 FHIR interoperability, SOC 2 and HIPAA/GDPR compliance, and a 99.99% uptime SLA
+across Africa.
 
-**Branch 2 — OC-LMC bills directly out of Sage, no separate PM layer.** Plausible for a
-smaller operation. If confirmed, and if it's Intacct or Business Cloud Accounting (not
-50cloud), the integration is a straightforward read: pull `sales_invoices`/AR-invoice
-objects with their line items, map to a patient by whatever customer-matching field Sage
-uses (a real identity-matching problem, same discipline as `ehr_patient_links` in the EHR
-plan — never auto-link on name alone), and surface line item description, amount, date, and
-paid/outstanding status.
+**Confidence check, stated as plainly as §A3's Medplum caveat:** every one of those claims
+traces back to what looks like a single marketing-listing source, repeated across search
+results, not independent verification — and Bravo Health Limited's own site was unreachable
+from this session (egress-blocked, same as most primary vendor domains throughout this
+document). Unlike eClinic (§A3b), no independent Nigerian tech-press coverage of Bravo
+Health Limited turned up in this research. There's also a real name-collision risk worth
+flagging: "HealthWyse" is *also* the name of an unrelated, long-established U.S. home-health/
+hospice EMR company (Massachusetts, founded 1998, now owned by Casamba) that has nothing to
+do with Nigeria or Bravo Health Limited. Search results for "HealthWyse" return a mix of
+both, and this document cannot confirm from here whether "HealthWyse" is Bravo Health
+Limited's actual product branding or a coincidence of naming. **Get this confirmed directly
+— exact legal/product name, and real API documentation instead of marketing copy — before
+any of the rest of this section is trusted.**
 
-Both branches produce the same patient-facing shape once the source system is confirmed —
-what changes is which API is called and how deep the CPT/ICD-level detail goes.
+If the "EHR and billing on one platform" claim holds up, though, it changes the design in a
+good way: the hardest part of §B4's differentiating idea (linking a charge to the real visit
+it came from) may already be close to *trivial* on HealthWyse's own data model, if clinical
+encounters and billing line items already live in the same system rather than being
+reconciled across two — the opposite problem from Sage, where that link would have had to be
+rebuilt from scratch on OneCare's side. And if the FHIR claim is real, the integration shape
+may look much more like `docs/ehr-integration-plan.md`'s existing Medplum-based pull than a
+bespoke accounting-API integration — another point of architectural reuse, not a third
+pattern.
+
+## B3. Two branches, now that the system is named
+
+The open question is no longer *which* system — it's *whether HealthWyse's billing module
+is where the itemized, patient-level detail actually lives*, or whether it's still one layer
+removed from what billing staff actually use day to day. Hospital EHR vendors often ship a
+"billing module" that tracks charges at a summary level while coders/billers still finalize
+claims in something more specialized — the same EHR-vs-PM split §B1 describes can still
+exist *inside* a single vendor's marketed platform.
+
+**Branch 1 — HealthWyse's billing module holds real itemized detail (what its marketing
+implies, not yet confirmed).** The integration is a pull against HealthWyse's own API,
+shaped like the rest of this document's architecture: a tenant-owned connection, patient-
+level consent, and — if the FHIR claim in §B2b holds — potentially reusable against the same
+FHIR-client code path the EHR integration already needs. Sage, if OC-LMC uses it here at
+all, would sit downstream for the general ledger only.
+
+**Branch 2 — HealthWyse tracks charges, but a biller-facing tool further upstream owns the
+itemized/coded detail.** Plausible even with an EHR-native billing module; ask directly
+rather than assuming either way. If this is the case, this document doesn't yet have enough
+to design against that unnamed system — the recommendation is the same discipline as before
+HealthWyse was named: find out what it is (§B5) before scoping further.
+
+Both branches produce the same patient-facing shape once resolved — what changes is which
+system is actually called, and how deep the CPT/ICD-level detail goes.
 
 ## B4. What this should and shouldn't try to be
 
@@ -287,17 +384,24 @@ patient can't see what they were charged for, not re-platforming revenue cycle m
 
 ## B5. Open questions for OC-LMC's finance/billing team
 
-In priority order — question 1 gates everything else:
+Question 1 from the original version of this document — what system generates the bill — is
+now answered (HealthWyse). What's open now is everything needed to trust and integrate
+against it:
 
-1. **What system generates a patient's actual itemized bill?** Name of the PM/billing/RCM
-   software, if any, separate from Sage.
-2. **Which Sage product**, specifically — Intacct, Business Cloud Accounting, 50cloud, or
-   something else? (If 50cloud: flag immediately, since §B2 means this is a different, much
-   harder project.)
-3. Does Sage (or the PM system, once named) expose a developer/API program OC-LMC can
-   request credentials for, and who authorizes that on their side?
-4. Is patient-level billing detail (not just totals) held in either system today, or does it
-   only exist as PDF statements/printouts?
+1. **Is itemized, CPT/ICD-level detail actually in HealthWyse**, or does billing staff still
+   finalize charges in something further upstream (§B3, branch 2)? Ask billing staff
+   directly, not whoever owns the EHR relationship — they may not be the same team.
+2. **Does HealthWyse expose a real developer/API program** — documentation, sandbox,
+   credentialing process — or is the "HL7 FHIR integrations" claim in §B2b marketing
+   language for something that in practice means point-to-point vendor integrations only?
+   Who at Bravo Health Limited can OC-LMC (or OneCare, with OC-LMC's introduction) reach for
+   real technical docs?
+3. **Confirm the exact product/legal name.** "HealthWyse (Bravo)" needs to be pinned down
+   precisely enough to find its actual documentation — §B2b flags a real name-collision risk
+   with an unrelated U.S. company of the same name.
+4. **Is Sage used at all**, and for what — OC-LMC's own general-ledger accounting only, or
+   something billing-adjacent? (Keeps §B2's table from being fully wasted effort if the
+   answer is "yes, downstream.")
 5. Does OC-LMC's own compliance posture treat billing data as within the same BAA as clinical
    data, or as a separate agreement? This decides whether the existing sharing/consent model
    extends cleanly or needs its own disclosure step (the same kind of decision the QHIN plan
@@ -318,8 +422,8 @@ vice versa.
 ## B7. Non-goals for v1
 
 Payment collection, claims submission, CPT/ICD coding, editing any charge, and — until
-branch 1 vs. branch 2 (§B3) is resolved — any Sage-specific code at all. The only v1-safe
-first step is the discovery conversation in §B5.
+branch 1 vs. branch 2 (§B3) is resolved — any HealthWyse-specific code at all. The only
+v1-safe first step is the discovery conversation in §B5.
 
 **Sources (billing):** Sage Intacct developer docs (developer.intacct.com, mirrored under
 developer.sage.com/intacct); Sage Business Cloud Accounting developer portal
@@ -331,7 +435,11 @@ Billing Office descriptions (osplabs.com, folio3.com); "Practice Management Syst
 vendor domains were unreachable from this session's network and are represented here via
 cross-checked search excerpts rather than a direct fetch — treat specifics (exact rate
 limits, exact scope names, the "Sage Active" product question) as strong leads requiring
-direct verification against developer.sage.com before being relied on.
+direct verification against developer.sage.com before being relied on. On HealthWyse/Bravo
+Health Limited: search results converging on what appears to be a single marketing-listing
+source (Bravo Health Limited's own site was unreachable from this session), not independent
+press — materially lower confidence than every other vendor claim in this document, flagged
+throughout §B2b and worth verifying before anything there is relied on.
 
 ---
 
@@ -345,5 +453,10 @@ gates before any import, provenance on everything that lands in a patient's reco
 refusing rather than guessing whenever identity-matching or mapping is ambiguous. And the
 same honest note the QHIN plan opens with applies here even more: **this document describes
 an intention, not current work** — Part A rests on one unverified (though well-corroborated)
-claim about Medplum, and Part B's entire shape depends on a discovery conversation that
-hasn't happened yet. Both are worth having before either is scoped into sprints.
+claim about Medplum, plus now a second, named-but-unverified system (eClinic) whose
+relationship to actual image storage is still assumed rather than confirmed. Part B knows
+its target by name now (HealthWyse) but not yet whether that name holds up under direct
+verification, or whether its billing module actually reaches the itemized detail patients
+want to see. Both parts are closer than they were, and both still need a real conversation —
+with OC-LMC's radiology/IT team, and separately with Bravo Health Limited's technical
+contact — before either is scoped into sprints.
