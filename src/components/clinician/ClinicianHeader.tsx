@@ -173,6 +173,10 @@ export function ClinicianHeader() {
 
 
   return (
+    <>
+    {/* In rail mode the rail is the desktop navigation; the header stays for
+        notifications, the account menu and everything a phone needs. */}
+    {navLayout === 'rail' && <ClinicianRail />}
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         {/* Logo - fixed width for symmetry */}
