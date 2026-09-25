@@ -48,6 +48,7 @@ import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { usePractice } from '@/hooks/usePractice';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { BRAND } from '@/lib/brand-constants';
+import { ClinicianAppearanceCard } from '@/components/clinician/ClinicianAppearanceCard';
 
 const ClinicianSettings = () => {
   const navigate = useNavigate();
@@ -531,6 +532,12 @@ const ClinicianSettings = () => {
           </TabsContent>
 
           <TabsContent value="prefs" className="mt-6">
+          {/* Their own screen first: how it looks and where navigation sits,
+              ahead of what it tells them. */}
+          <div className="mb-6">
+            <ClinicianAppearanceCard />
+          </div>
+
           {/* Notification Settings */}
           <Card>
 
