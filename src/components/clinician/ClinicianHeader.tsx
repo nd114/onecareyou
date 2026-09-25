@@ -529,5 +529,6 @@ export function ClinicianHeader() {
         </div>
       )}
     </header>
+    </>
   );
 }
