@@ -311,6 +311,34 @@
     }
   }
 
+  /* ---- The clinician rail layout ----------------------------------------
+   *
+   * The alternative to the two stacked bars. The rail is fixed to the left of
+   * the viewport, so the page itself is moved over by padding on <body> rather
+   * than by rewriting every clinician page into a flex shell. Fixed elements
+   * (toasts, dialogs, the floating buttons) are positioned against the viewport
+   * and so are untouched by that padding, which is the point.
+   *
+   * Only from lg up. Below that the phone chrome — bottom bar and hamburger —
+   * is what a thumb on a ward round actually wants, whatever was chosen here.
+   */
+  @media (min-width: 1024px) {
+    html.clinician-rail body {
+      padding-left: 15rem;
+    }
+
+    html.clinician-rail.clinician-rail-collapsed body {
+      padding-left: 4.5rem;
+    }
+
+    /* The rail carries both pillars and their sub-tabs, so the two horizontal
+       bars they came from would be a second copy of the same navigation. */
+    html.clinician-rail [data-clinician-pillars],
+    html.clinician-rail [data-section-tabs] {
+      display: none;
+    }
+  }
+
   /*
    * viewport-fit=cover lets the page paint under the notch, which is what we
    * want for backgrounds and wrong for a sticky header's contents.
