@@ -93,7 +93,12 @@ export function SectionTabs({ section, variant = "patient" }: Props) {
   if (!pillar || pillar.tabs.length <= 1) return null;
 
   return (
-    <div className="border-b border-border/60 bg-background/60 backdrop-blur">
+    <div
+      // The clinician rail layout hides this row from CSS: it lists the same
+      // sub-tabs in the rail, and two copies is worse than either.
+      data-section-tabs={variant}
+      className="border-b border-border/60 bg-background/60 backdrop-blur"
+    >
       <div className="container max-w-screen-2xl">
         <div className="relative">
           <nav

@@ -54,6 +54,8 @@ import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
+import { useApplyClinicianAppearance } from "@/hooks/useClinicianAppearance";
+import { ClinicianRail } from "@/components/clinician/ClinicianRail";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -69,6 +71,11 @@ export function ClinicianHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
+
+  // Their chosen surface and desktop layout. Called before the visitor branch
+  // below so the hook order never changes, and switched off for visitors so a
+  // marketing page is always the brand's own cream.
+  const { navLayout } = useApplyClinicianAppearance(!!user);
 
   // Public clinician marketing pages (why-onecare, EHR comparison, etc.) render
   // this header too. Without a session there is no clinician identity to show —
@@ -166,6 +173,10 @@ export function ClinicianHeader() {
 
 
   return (
+    <>
+    {/* In rail mode the rail is the desktop navigation; the header stays for
+        notifications, the account menu and everything a phone needs. */}
+    {navLayout === 'rail' && <ClinicianRail />}
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         {/* Logo - fixed width for symmetry */}
@@ -187,7 +198,7 @@ export function ClinicianHeader() {
         </div>
 
         {/* Desktop Navigation - 4 pillars, truly centered */}
-        <nav className="hidden lg:flex items-center justify-center gap-1">
+        <nav data-clinician-pillars className="hidden lg:flex items-center justify-center gap-1">
           {navLinks.map((link) => {
             const isActive = activePillar === link.pillarKey;
             return (
@@ -518,5 +529,6 @@ export function ClinicianHeader() {
         </div>
       )}
     </header>
+    </>
   );
 }
