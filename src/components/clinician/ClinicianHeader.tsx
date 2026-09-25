@@ -54,6 +54,8 @@ import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
+import { useApplyClinicianAppearance } from "@/hooks/useClinicianAppearance";
+import { ClinicianRail } from "@/components/clinician/ClinicianRail";
 
 export function ClinicianHeader() {
   const { user, signOut } = useAuth();
@@ -187,7 +189,7 @@ export function ClinicianHeader() {
         </div>
 
         {/* Desktop Navigation - 4 pillars, truly centered */}
-        <nav className="hidden lg:flex items-center justify-center gap-1">
+        <nav data-clinician-pillars className="hidden lg:flex items-center justify-center gap-1">
           {navLinks.map((link) => {
             const isActive = activePillar === link.pillarKey;
             return (
