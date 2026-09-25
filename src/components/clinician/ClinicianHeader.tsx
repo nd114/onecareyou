@@ -72,6 +72,11 @@ export function ClinicianHeader() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [expandedPillar, setExpandedPillar] = useState<string | null>(null);
 
+  // Their chosen surface and desktop layout. Called before the visitor branch
+  // below so the hook order never changes, and switched off for visitors so a
+  // marketing page is always the brand's own cream.
+  const { navLayout } = useApplyClinicianAppearance(!!user);
+
   // Public clinician marketing pages (why-onecare, EHR comparison, etc.) render
   // this header too. Without a session there is no clinician identity to show —
   // fall back to the public marketing header so visitors don't see a fake
