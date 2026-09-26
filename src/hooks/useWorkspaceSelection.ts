@@ -18,21 +18,30 @@ const storageKey = (userId: string) => `onecare:workspace:${userId}`;
  * clinical data, and switching devices asking again is the acceptable side
  * of that trade-off, not a server round trip nobody else needs to see.
  */
-export function useWorkspaceSelection(userId: string | undefined) {
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
+function readSelection(userId: string | undefined): string | null {
+  if (!userId) return null;
+  try {
+    return localStorage.getItem(storageKey(userId));
+  } catch {
+    // A private window or blocked storage should not crash the app — it
+    // just means a selector is offered again this session.
+    return null;
+  }
+}
 
+export function useWorkspaceSelection(userId: string | undefined) {
+  // Read on the first render rather than in an effect. useClinicianCapabilities
+  // asks which workspace is current in order to answer `can(...)`, and a single
+  // tick of "nothing chosen" resolves to the wrong membership — briefly gating
+  // routes on another tenant's role before the effect corrects it.
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(() =>
+    readSelection(userId),
+  );
+
+  // Still an effect, for the account changing under the same mount. Re-setting
+  // an identical value is a no-op, so the common case does not re-render.
   useEffect(() => {
-    if (!userId) {
-      setSelectedWorkspaceId(null);
-      return;
-    }
-    try {
-      setSelectedWorkspaceId(localStorage.getItem(storageKey(userId)));
-    } catch {
-      // A private window or blocked storage should not crash the app — it
-      // just means a selector is offered again this session.
-      setSelectedWorkspaceId(null);
-    }
+    setSelectedWorkspaceId(readSelection(userId));
   }, [userId]);
 
   const selectWorkspace = useCallback(

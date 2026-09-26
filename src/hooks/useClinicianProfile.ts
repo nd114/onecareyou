@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useWorkspaceSelection } from './useWorkspaceSelection';
+import { activeMembership } from '@/lib/staff-roles';
 
 export interface ClinicianProfile {
   id: string;
@@ -99,10 +100,7 @@ export const useClinicianProfile = () => {
   // before, so nobody's landing page moves just because a selector now
   // exists — it only stops being the *only* option.
   const { selectedWorkspaceId } = useWorkspaceSelection(user?.id);
-  const selectedMembership = selectedWorkspaceId
-    ? memberships.find((m) => m.practice_id === selectedWorkspaceId) ?? null
-    : null;
-  const primaryMembership = selectedMembership ?? memberships[0] ?? null;
+  const primaryMembership = activeMembership(memberships, selectedWorkspaceId);
 
   const createClinicianProfile = useMutation({
     mutationFn: async (data: CreateClinicianProfileData) => {

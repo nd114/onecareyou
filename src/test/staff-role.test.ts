@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { activeMembership } from '@/lib/staff-roles';
 
 /**
  * The rule that decides which side of the product someone lands on.
@@ -9,7 +10,10 @@ import { describe, it, expect } from 'vitest';
  * invitation can be accepted. They had to sign out and back in to escape it.
  *
  * Mirrors the derivation in useClinicianProfile so the rule itself is covered
- * without standing up Supabase.
+ * without standing up Supabase — but the membership resolution inside it is the
+ * real `activeMembership`, not a copy. A copy is what let
+ * useClinicianCapabilities drift onto a different workspace than the screens it
+ * gates.
  */
 function deriveRole(input: {
   hasClinicalProfile: boolean;
@@ -21,10 +25,7 @@ function deriveRole(input: {
   const { hasClinicalProfile, memberships, pendingTenantInvites, selectedPracticeId } = input;
   const isClinician =
     hasClinicalProfile || memberships.length > 0 || pendingTenantInvites > 0;
-  const selected = selectedPracticeId
-    ? memberships.find((m) => m.practice_id === selectedPracticeId) ?? null
-    : null;
-  const primary = selected ?? memberships[0] ?? null;
+  const primary = activeMembership(memberships, selectedPracticeId);
   const isTenantAdmin =
     primary?.role === 'owner' || primary?.role === 'admin' || pendingTenantInvites > 0;
   return { isClinician, isTenantAdmin };
@@ -108,5 +109,35 @@ describe('which side of the product a user belongs on', () => {
       selectedPracticeId: 'a-practice-this-account-no-longer-belongs-to',
     });
     expect(r.isTenantAdmin).toBe(true);
+  });
+});
+
+describe('activeMembership', () => {
+  // The dual-role shape that exposed this: a clinician owning their own
+  // practice, created first, who later joined a hospital as an ordinary
+  // clinician. useClinicianCapabilities resolved the earliest membership
+  // regardless of the choice, so `can('manage_team')` and every
+  // RequireCapability gate answered "owner" while the screens showed the
+  // hospital.
+  const memberships = [
+    { practice_id: 'own-practice', role: 'owner' },
+    { practice_id: 'hospital', role: 'clinician' },
+  ];
+
+  it('does not carry owner rights into a hospital the clinician merely works at', () => {
+    expect(activeMembership(memberships, 'hospital')?.role).toBe('clinician');
+  });
+
+  it('gives an owner their own rights back when they choose their own practice', () => {
+    expect(activeMembership(memberships, 'own-practice')?.role).toBe('owner');
+  });
+
+  it('falls back to the first membership when nothing has been chosen', () => {
+    expect(activeMembership(memberships, null)?.role).toBe('owner');
+    expect(activeMembership(memberships, undefined)?.role).toBe('owner');
+  });
+
+  it('has no answer for an account with no memberships', () => {
+    expect(activeMembership([], 'hospital')).toBeNull();
   });
 });

@@ -21,6 +21,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useWorkspaceSelection } from "@/hooks/useWorkspaceSelection";
+import { activeMembership } from "@/lib/staff-roles";
 
 export type PracticeCapability =
   | "view_phi"
@@ -83,7 +85,11 @@ interface CapabilityAnswer {
 
 const EMPTY: CapabilityAnswer = { membership: null, memberships: [], grants: [] };
 
-async function fetchCapabilities(userId: string, isClinician: boolean): Promise<CapabilityAnswer> {
+async function fetchCapabilities(
+  userId: string,
+  isClinician: boolean,
+  selectedWorkspaceId: string | null,
+): Promise<CapabilityAnswer> {
   // 1. Look up active practice memberships.
   //    A clinician can be affiliated with several hospitals at once (sharing
   //    model §6), so this reads the full set. maybeSingle() used to error on
@@ -96,9 +102,12 @@ async function fetchCapabilities(userId: string, isClinician: boolean): Promise<
     .eq("status", "active")
     .order("created_at", { ascending: true });
 
-  // Until there is a tenant switcher, the earliest affiliation is the active
-  // one — deterministic, and the same row the database-side default resolves.
-  const memberRow = ((memberRows ?? [])[0]) as MembershipRow | undefined;
+  const rows = (memberRows ?? []) as MembershipRow[];
+
+  // Shared with useClinicianProfile so capabilities and the screens they gate
+  // cannot disagree about which workspace is current. See activeMembership for
+  // what went wrong when this hook resolved it alone.
+  const memberRow = activeMembership(rows, selectedWorkspaceId) ?? undefined;
 
   if (!memberRow) {
     // Solo clinician (verified clinician profile, no practice yet) is the
@@ -127,7 +136,7 @@ async function fetchCapabilities(userId: string, isClinician: boolean): Promise<
 
   return {
     membership: memberRow,
-    memberships: (memberRows ?? []) as MembershipRow[],
+    memberships: rows,
     grants: results.filter(([, ok]) => ok).map(([cap]) => cap),
   };
 }
@@ -135,15 +144,19 @@ async function fetchCapabilities(userId: string, isClinician: boolean): Promise<
 export function useClinicianCapabilities() {
   const { user } = useAuth();
   const { isClinician, isLoading: profileLoading } = useClinicianProfile();
+  const { selectedWorkspaceId } = useWorkspaceSelection(user?.id);
   const queryClient = useQueryClient();
 
   const enabled = !!user && !profileLoading;
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["clinician-capabilities", user?.id ?? null, isClinician],
+    // The chosen workspace is part of the key: switching workspace has to give a
+    // fresh answer rather than serve the previous tenant's cached grants for
+    // the next five minutes.
+    queryKey: ["clinician-capabilities", user?.id ?? null, isClinician, selectedWorkspaceId],
     queryFn: () => {
       if (!user) return Promise.resolve(EMPTY);
-      return fetchCapabilities(user.id, isClinician);
+      return fetchCapabilities(user.id, isClinician, selectedWorkspaceId);
     },
     enabled,
     // A role change is an administrative act, not a per-navigation event.

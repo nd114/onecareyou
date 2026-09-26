@@ -92,6 +92,34 @@ export function isClinicalRole(role: string | null | undefined): boolean {
   return roleProfile(role).clinical;
 }
 
+/**
+ * Which of a clinician's memberships is the current one.
+ *
+ * One function because it used to be several. When `useWorkspaceSelection`
+ * arrived, `usePractice` and `useClinicianProfile` were moved onto the stored
+ * choice and `useClinicianCapabilities` was not — so the Practice screens
+ * showed one workspace while every `can(...)` and every `RequireCapability`
+ * route gate answered for another. A clinician whose own practice predated
+ * their hospital post kept owner capabilities while looking at the hospital.
+ *
+ * An explicit choice wins. Absent one, the first membership, so a clinician
+ * with a single workspace sees no change. A choice naming a workspace they are
+ * no longer a member of falls back the same way rather than resolving to
+ * nothing.
+ *
+ * `usePractice` applies this same rule to the practice list it has already
+ * loaded, keyed by `id` rather than `practice_id`.
+ */
+export function activeMembership<T extends { practice_id?: string | null }>(
+  memberships: readonly T[],
+  selectedWorkspaceId: string | null | undefined,
+): T | null {
+  const chosen = selectedWorkspaceId
+    ? memberships.find((membership) => membership.practice_id === selectedWorkspaceId)
+    : undefined;
+  return chosen ?? memberships[0] ?? null;
+}
+
 /** The roles a practice can assign, grouped so the difference is visible. */
 export const ASSIGNABLE_ROLES: { group: string; roles: PracticeRole[] }[] = [
   { group: "Clinical", roles: ["provider", "nurse", "sub_admin", "admin"] },
