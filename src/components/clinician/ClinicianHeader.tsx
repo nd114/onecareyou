@@ -52,6 +52,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
+import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
 import { useApplyClinicianAppearance } from "@/hooks/useClinicianAppearance";
@@ -219,6 +220,10 @@ export function ClinicianHeader() {
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
         <div className="flex-1 flex items-center justify-end gap-1">
 
+          {/* One instance only: each mounts its own ⌘K listener, so a second
+              would open two stacked dialogs. The button collapses to its icon
+              on small screens by itself. */}
+          <GlobalSearch audience="clinician" />
 
           {/* Theme Toggle Icon */}
           <Button
