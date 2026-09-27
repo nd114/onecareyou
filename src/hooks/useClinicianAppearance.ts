@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 /**
  * Clinician workspace appearance.
@@ -7,8 +7,11 @@ import { useCallback, useEffect, useState } from 'react';
  *  - surface: the warm brand cream, or the console's paper/chalk ladder that the
  *    founder console already uses (high contrast, so amber and rose triage
  *    badges carry).
- *  - desktop navigation: the familiar top pillars + sub-tabs, or a left rail
- *    that gives back the ~130px the two stacked bars cost.
+ *  - desktop navigation: the familiar top pillars + sub-tabs, or a left rail.
+ *    Measured, the rail gives back the sub-tab row — 49px — on pages that have
+ *    one, and nothing on pages that don't. The header stays, because it carries
+ *    search, notifications and the account menu. It was first described as
+ *    returning ~130px, which assumed the header went too.
  *
  * Phones and small tablets are untouched either way — the bottom bar and
  * hamburger stay, because a rail or a tab row is not what a thumb wants on a
@@ -82,16 +85,31 @@ export function useClinicianAppearance() {
 export function useApplyClinicianAppearance(enabled = true) {
   const { surface, navLayout } = useClinicianAppearance();
 
-  useEffect(() => {
-    const root = document.documentElement;
+  // A layout effect, not a plain one. A plain effect runs after the browser has
+  // painted, so every clinician page was drawn once without the classes and
+  // then again with them: about a quarter of a second of the warm surface, and
+  // with the rail on, the whole page jumping 240px sideways on every load. A
+  // layout effect lands before that first paint.
+  useLayoutEffect(() => {
     if (!enabled) return;
+    const root = document.documentElement;
 
-    if (surface === 'console') root.classList.add('admin-surface');
-    if (navLayout === 'rail') root.classList.add('clinician-rail');
+    // Only take off what this effect put on. `admin-surface` has a second
+    // owner — AdminShell puts it on the founder console — and removing it
+    // unconditionally on the way out meant a warm-surface clinician screen
+    // could strip a class it never added.
+    const added: string[] = [];
+    const add = (name: string) => {
+      if (root.classList.contains(name)) return;
+      root.classList.add(name);
+      added.push(name);
+    };
+
+    if (surface === 'console') add('admin-surface');
+    if (navLayout === 'rail') add('clinician-rail');
 
     return () => {
-      root.classList.remove('admin-surface');
-      root.classList.remove('clinician-rail');
+      for (const name of added) root.classList.remove(name);
     };
   }, [enabled, surface, navLayout]);
 

@@ -20,7 +20,12 @@ Status keys: **Built**, **Needs checking**, **Next**, **Later**, **Dropped**.
   - Colour theme: *Warm Sanctuary* (current) or *Crisp Console* (founder-console paper and
     charcoal look, where red and amber alerts stand out more).
   - Navigation on larger screens: *Top tabs* (current two stacked bars) or *Side panel*
-    (collapsible list down the left, like the founder console, freeing about 130–140px of height).
+    (collapsible list down the left, like the founder console). Measured on 19 clinician pages it
+    frees **49px** of height — the row of sub-tabs — on pages that have one, and nothing on pages
+    that don't (Settings, for one). The header stays because it carries search, notifications and
+    the account menu. An earlier estimate of 130–140px assumed the header went too; worth knowing
+    before choosing a default, since the side panel's case now rests on one-click navigation more
+    than on height.
 - Phones do not change. They keep the bottom bar and menu for one-handed use on ward rounds.
 - We did not offer a phone layout choice: a top bar and a side panel both work badly on a phone,
   and keeping two phone layouts would double testing on every new feature.
