@@ -96,7 +96,7 @@ Status keys: **Built**, **Needs checking**, **Next**, **Later**, **Dropped**.
 | Idea | Decision | Why |
 | --- | --- | --- |
 | AI writes discharge instructions and sends them to the patient | **Dropped** as automatic. Allowed only as a draft the clinician edits and signs before it reaches the patient | Wrong doses or missing warnings would be the platform's fault |
-| Prescriptions that pharmacies scan and fill inside OneCare | **Moved to a separate product** (Part B) | It is pharmacy regulation, not care continuity, and would bloat OneCare |
+| Prescriptions that pharmacies scan and fill inside OneCare | **Moved to OnePharm**, a separate product (Part B) | It is pharmacy regulation, not care continuity, and would bloat OneCare. The implementation blueprint is in [`docs/plans/onepharm-specification.md`](../plans/onepharm-specification.md) |
 | Medication summary after a visit | **Kept**, as a copy in the patient's Vault, labelled "Clinical record copy — not a pharmacy prescription" | Useful to patients with no pharmacy liability |
 
 ### A5. Suggested build order
@@ -116,10 +116,19 @@ security warnings, and the five-role walkthrough.
 
 ---
 
-## Part B — Separate product: prescription verification network
+## Part B — Separate product: OnePharm prescription network
 
-Kept outside OneCare on purpose. OneCare can be its first user, but the product is its own
-company-scale project.
+Kept outside OneCare on purpose. OneCare can be its first customer, but OnePharm is an independent,
+vendor-neutral product that other hospitals, clinical systems and pharmacies can use without
+adopting OneCare.
+
+**This section is a strategic summary, not the build specification.** The complete and current
+architecture, prescription lifecycle, API contracts, pharmacy integration options, offline
+operation, security controls, regulatory position, rollout phases and OneCare adapter are in:
+
+> **[OnePharm — System Architecture and Engineering Specification](../plans/onepharm-specification.md)**
+
+If this summary and the specification differ, the specification is the source of truth.
 
 ### B1. The problem
 - In Nigeria and similar markets most prescriptions are paper with a handwritten signature.
@@ -179,3 +188,7 @@ company-scale project.
    for a handful of partner pharmacies, filled status shown back in the chart.
 2. **Then spin out**: open the network to other hospitals and software, sign software suppliers,
    seek regulator recognition, then expand country by country.
+
+The detailed delivery sequence, including the standalone switch, dispenser web app, OneCare
+connector, low-connectivity fallbacks and pharmacy-software integrations, is maintained in the
+[OnePharm specification](../plans/onepharm-specification.md).
