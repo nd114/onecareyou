@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Search, User, ArrowRight } from 'lucide-react';
 import {
@@ -10,19 +10,25 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
-import { useGlobalSearch, type SearchResultKind } from '@/hooks/useGlobalSearch';
+import {
+  useGlobalSearch,
+  type SearchResultKind,
+  type SearchSources,
+} from '@/hooks/useGlobalSearch';
+import { useClinicianCapabilities } from '@/hooks/useClinicianCapabilities';
+import { useClinicianPatients } from '@/hooks/useClinicianPatients';
+import { CLINICIAN_PILLARS, PATIENT_PILLARS, navTargets } from '@/lib/nav-ia';
 import { cn } from '@/lib/utils';
 
 /**
  * Finding a patient or a page by typing, instead of by remembering where it is.
  *
- * Both triggers live here — the keyboard shortcut and the button phones get,
- * since there is no keyboard to press on a ward round — so the two can never
- * open different dialogs.
- *
- * What is offered is decided in useGlobalSearch, which draws only on what the
- * caller already had: pages the navigation would show them, patients already on
- * their list, documents their own RLS returns.
+ * Split in two on purpose. This outer part is always mounted — it owns the
+ * header button and the keyboard shortcut, so the two can never open different
+ * dialogs. The results live in a body that only exists while the dialog is
+ * open (Radix does not mount a closed dialog's content), so nothing is fetched
+ * for somebody who never searches, and each audience's body calls only its own
+ * hooks: the patient side never asks for a clinician's panel.
  */
 
 const ICONS: Record<SearchResultKind, typeof User> = {
@@ -31,49 +37,41 @@ const ICONS: Record<SearchResultKind, typeof User> = {
   document: FileText,
 };
 
+type Audience = 'clinician' | 'patient';
+
 interface GlobalSearchProps {
-  audience: 'clinician' | 'patient';
+  audience: Audience;
   /** Compact, for a crowded header. */
   iconOnly?: boolean;
   className?: string;
 }
 
+/** Cmd+K on a Mac, Ctrl+K elsewhere — and nothing else that happens to include K. */
+export function isSearchShortcut(event: KeyboardEvent): boolean {
+  if (event.repeat) return false;
+  if (!(event.metaKey || event.ctrlKey)) return false;
+  // Shift and Alt variants belong to other people: Ctrl+Shift+K opens
+  // Firefox's web console, and taking it would break a developer tool.
+  if (event.shiftKey || event.altKey) return false;
+  // Lower-cased so Caps Lock does not make the shortcut stop working.
+  return event.key.toLowerCase() === 'k';
+}
+
 export function GlobalSearch({ audience, iconOnly = false, className }: GlobalSearchProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const navigate = useNavigate();
-
-  const { groups, suggestion, isSearching, hasQuery, isEmpty } = useGlobalSearch(query, {
-    audience,
-    enabled: open,
-  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'k' || !(event.metaKey || event.ctrlKey)) return;
-      // Cmd+K is ours wherever it is pressed, including inside a text box —
-      // otherwise the one place somebody reaches for search is the one place it
-      // does not answer.
+      if (!isSearchShortcut(event)) return;
+      // Ours wherever it is pressed, including inside a text box — otherwise the
+      // one place somebody reaches for search is the one place it does not
+      // answer.
       event.preventDefault();
       setOpen((wasOpen) => !wasOpen);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
-
-  // A dialog that reopens holding the last search is a dialog that shows stale
-  // results for a moment before catching up.
-  useEffect(() => {
-    if (!open) setQuery('');
-  }, [open]);
-
-  const go = useCallback(
-    (to: string) => {
-      setOpen(false);
-      navigate(to);
-    },
-    [navigate],
-  );
 
   return (
     <>
@@ -108,57 +106,121 @@ export function GlobalSearch({ audience, iconOnly = false, className }: GlobalSe
         commandProps={{ shouldFilter: false }}
         title={audience === 'clinician' ? 'Search patients and pages' : 'Search your record'}
       >
-        <CommandInput
-          value={query}
-          onValueChange={setQuery}
-          placeholder={
-            audience === 'clinician'
-              ? 'Search patients and pages…'
-              : 'Search your record and pages…'
-          }
-        />
-        <CommandList>
-          {!hasQuery && (
-            <CommandEmpty>
-              {audience === 'clinician'
-                ? 'Type a patient name, or the name of a page.'
-                : 'Type what you are looking for.'}
-            </CommandEmpty>
-          )}
-
-          {isEmpty && !isSearching && (
-            <CommandEmpty>
-              {suggestion ? `No matches. Did you mean ${suggestion}?` : 'No matches.'}
-            </CommandEmpty>
-          )}
-
-          {groups.map((group) => (
-            <CommandGroup key={group.kind} heading={group.heading}>
-              {group.results.map((result) => {
-                const Icon = ICONS[result.kind];
-                return (
-                  <CommandItem
-                    // Kind is part of the key: a page and a patient can share a
-                    // route, and cmdk needs them distinct.
-                    key={`${result.kind}:${result.id}`}
-                    value={`${result.kind}:${result.id}`}
-                    onSelect={() => go(result.to)}
-                    className="gap-2"
-                  >
-                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{result.label}</span>
-                    {result.detail && (
-                      <span className="ml-auto truncate pl-2 text-xs text-muted-foreground">
-                        {result.detail}
-                      </span>
-                    )}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          ))}
-        </CommandList>
+        {audience === 'clinician' ? (
+          <ClinicianSearchBody onClose={() => setOpen(false)} />
+        ) : (
+          <PatientSearchBody onClose={() => setOpen(false)} />
+        )}
       </CommandDialog>
+    </>
+  );
+}
+
+interface BodyProps {
+  onClose: () => void;
+}
+
+function ClinicianSearchBody({ onClose }: BodyProps) {
+  const { can } = useClinicianCapabilities();
+  const { patients } = useClinicianPatients();
+
+  const sources = useMemo<SearchSources>(
+    () => ({
+      pages: navTargets(CLINICIAN_PILLARS, can),
+      patients,
+      documents: false,
+    }),
+    [can, patients],
+  );
+
+  return (
+    <SearchBody
+      sources={sources}
+      onClose={onClose}
+      placeholder="Search patients and pages…"
+      hint="Type a patient name, or the name of a page."
+    />
+  );
+}
+
+/** Patient tabs carry no capability requirement, so nothing is ever withheld here. */
+const PATIENT_SOURCES: SearchSources = {
+  pages: navTargets(PATIENT_PILLARS, () => false),
+  patients: [],
+  documents: true,
+};
+
+function PatientSearchBody({ onClose }: BodyProps) {
+  return (
+    <SearchBody
+      sources={PATIENT_SOURCES}
+      onClose={onClose}
+      placeholder="Search your record and pages…"
+      hint="Type what you are looking for."
+    />
+  );
+}
+
+interface SearchBodyProps extends BodyProps {
+  sources: SearchSources;
+  placeholder: string;
+  hint: string;
+}
+
+function SearchBody({ sources, onClose, placeholder, hint }: SearchBodyProps) {
+  // Lives here rather than in GlobalSearch so that closing the dialog unmounts
+  // it: a reopened search starts empty instead of flashing the last query's
+  // results before catching up.
+  const [query, setQuery] = useState('');
+  const navigate = useNavigate();
+  const { groups, suggestion, isSearching, hasQuery, isEmpty } = useGlobalSearch(query, sources);
+
+  const go = useCallback(
+    (to: string) => {
+      onClose();
+      navigate(to);
+    },
+    [navigate, onClose],
+  );
+
+  return (
+    <>
+      <CommandInput value={query} onValueChange={setQuery} placeholder={placeholder} />
+      <CommandList>
+        {!hasQuery && <CommandEmpty>{hint}</CommandEmpty>}
+
+        {isEmpty && !isSearching && (
+          <CommandEmpty>
+            {suggestion ? `No matches. Did you mean ${suggestion}?` : 'No matches.'}
+          </CommandEmpty>
+        )}
+
+        {groups.map((group) => (
+          <CommandGroup key={group.kind} heading={group.heading}>
+            {group.results.map((result) => {
+              const Icon = ICONS[result.kind];
+              return (
+                <CommandItem
+                  // Kind is part of the key: a page and a patient can share an
+                  // id, and cmdk needs them distinct.
+                  key={`${result.kind}:${result.id}`}
+                  value={`${result.kind}:${result.id}`}
+                  onSelect={() => go(result.to)}
+                  className="gap-2"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{result.label}</span>
+                  {result.detail && (
+                    <span className="ml-auto truncate pl-2 text-xs text-muted-foreground">
+                      {result.detail}
+                    </span>
+                  )}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        ))}
+      </CommandList>
     </>
   );
 }
