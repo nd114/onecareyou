@@ -1,0 +1,25 @@
+BEGIN
+INSERT 0 2
+INSERT 0 2
+              set_config              
+--------------------------------------
+ 5d000000-0000-4000-8000-00000000005d
+
+INSERT 0 1
+              set_config              
+--------------------------------------
+ 5c000000-0000-4000-8000-00000000005c
+
+SET
+--- clinician_has_patient_access (expired share)
+ has_access 
+------------
+ f
+
+--- get_patient_identity
+               user_id                |     name     |      email       | phone_number 
+--------------------------------------+--------------+------------------+--------------
+ 5d000000-0000-4000-8000-00000000005d | Ella Expired | ella@example.com | +1 555 0199
+
+RESET
+ROLLBACK

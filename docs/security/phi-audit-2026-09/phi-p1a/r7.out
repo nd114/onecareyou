@@ -1,0 +1,28 @@
+BEGIN
+INSERT 0 2
+INSERT 0 2
+              set_config              
+--------------------------------------
+ 77000000-0000-4000-8000-000000000077
+
+SET
+INSERT 0 1
+--- attacker writes a membership row for a patient uuid
+INSERT 0 1
+--- practice_member_directory
+               user_id                | display_name |      email       |      status      
+--------------------------------------+--------------+------------------+------------------
+ 88000000-0000-4000-8000-000000000088 | Hana Patient | hana@example.com | pending_approval
+
+--- practice_staff_overview
+               user_id                |     name     |      email       
+--------------------------------------+--------------+------------------
+ 88000000-0000-4000-8000-000000000088 | Hana Patient | hana@example.com
+
+--- practice_pending_affiliations
+               user_id                |     name     |      email       
+--------------------------------------+--------------+------------------
+ 88000000-0000-4000-8000-000000000088 | Hana Patient | hana@example.com
+
+RESET
+ROLLBACK

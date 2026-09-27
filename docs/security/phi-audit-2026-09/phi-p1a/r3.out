@@ -1,0 +1,37 @@
+Expanded display is on.
+BEGIN
+INSERT 0 3
+INSERT 0 3
+-[ RECORD 1 ]------------------------------------
+set_config | 11000000-0000-4000-8000-000000000011
+
+INSERT 0 1
+INSERT 0 1
+SET
+-[ RECORD 1 ]----------------------------------
+event_id | 3b81b5b1-1b12-40a3-a25c-b8efbcf7e14a
+
+RESET
+-[ RECORD 1 ]------------------------------------
+set_config | 33000000-0000-4000-8000-000000000033
+
+SET
+--- 1. stranger reads the event table directly (RLS)
+-[ RECORD 1 ]--+--
+events_visible | 0
+
+--- 2. stranger "withdraws" the same document again
+-[ RECORD 1 ]--------+--------------------------------------------------------
+file_name            | hiv-viral-load-2026-09.pdf
+storage_path         | 22000000-0000-4000-8000-000000000022/hiv-viral-load.pdf
+actual_recipient_id  | 22000000-0000-4000-8000-000000000022
+actual_recipient_ref | P-22000000
+sending_clinician_id | 11000000-0000-4000-8000-000000000011
+sending_practice_id  | cc000000-0000-4000-8000-0000000000cc
+reason_code          | wrong_recipient
+internal_note        | Result belongs to MRN 4471, not this patient
+incident_ref         | INC-2026-044
+access_count         | 0
+
+RESET
+ROLLBACK

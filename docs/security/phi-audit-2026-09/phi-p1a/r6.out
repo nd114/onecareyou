@@ -1,0 +1,40 @@
+BEGIN
+INSERT 0 3
+INSERT 0 3
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+              set_config              
+--------------------------------------
+ ad000000-0000-4000-8000-0000000000ad
+
+SET
+--- floored: admin_accounts_directory(patient, no search) / admin_access_reviews(no search)
+ directory_rows 
+----------------
+              0
+
+ review_rows 
+-------------
+           0
+
+--- not floored: admin_recent_signups()
+     name      |       email       
+---------------+-------------------
+ Priya Patient | priya@example.com
+
+--- not floored: admin_audit_export() -- who read whose record
+   actor_email    |          action           |    resource_type    |   patient_email   
+------------------+---------------------------+---------------------+-------------------
+ dr-c@example.com | view_record               | medications         | priya@example.com
+                  | department_deleted        | practice_department | 
+                  | assignment_first_enabled  | practice            | 
+                  | assignment_first_disabled | practice            | 
+
+--- not floored: admin_access_log_search(NULL)
+   actor_email    |    action    |   target_email    
+------------------+--------------+-------------------
+ dr-c@example.com | share_opened | priya@example.com
+
+RESET
+ROLLBACK

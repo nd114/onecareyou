@@ -1,0 +1,43 @@
+BEGIN
+INSERT 0 3
+INSERT 0 3
+              set_config              
+--------------------------------------
+ 0a000000-0000-4000-8000-00000000000a
+
+INSERT 0 1
+INSERT 0 1
+              set_config              
+--------------------------------------
+ 0e000000-0000-4000-8000-00000000000e
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+--- read-back: Fran's membership as the trigger left it
+    role    | status | can_view_all_patients 
+------------+--------+-----------------------
+ front_desk | active | t
+
+              set_config              
+--------------------------------------
+ 0f000000-0000-4000-8000-00000000000f
+
+SET
+--- front desk: vitals (policy uses institution_has_clinical_permission)
+ vitals_rows 
+-------------
+           0
+
+--- front desk: get_patient_clinical_profile
+               user_id                |          health_conditions           |   allergies    
+--------------------------------------+--------------------------------------+----------------
+ 0e000000-0000-4000-8000-00000000000e | ["Major depressive disorder", "HIV"] | ["Penicillin"]
+
+--- (RLS, outside definer scope) front desk: medications
+    name    | dosage 
+------------+--------
+ Sertraline | 50 mg
+
+RESET
+ROLLBACK

@@ -1,0 +1,54 @@
+BEGIN
+INSERT 0 4
+INSERT 0 4
+              set_config              
+--------------------------------------
+ d4000000-0000-4000-8000-000000000004
+
+INSERT 0 1
+INSERT 0 2
+              set_config              
+--------------------------------------
+ f6000000-0000-4000-8000-000000000006
+
+INSERT 0 1
+INSERT 0 1
+              set_config              
+--------------------------------------
+ c3000000-0000-4000-8000-000000000003
+
+SET
+--- 1. before: attacker resolves Bode
+ user_id | name | email | phone_number 
+---------+------+-------+--------------
+
+--- 2. attacker creates a practice (auto-enrolled as owner) and shares THEMSELVES with it
+INSERT 0 1
+INSERT 0 1
+--- 3. attacker "ends" that share as its admin, rewriting user_id to Bode
+UPDATE 1
+--- 4. attacker enrols hospital B's Dr D as an active member of Front Co (no consent from D)
+INSERT 0 1
+--- 5a. get_patient_identity
+               user_id                |    name     |      email       |  phone_number   
+--------------------------------------+-------------+------------------+-----------------
+ f6000000-0000-4000-8000-000000000006 | Bode Theirs | bode@example.com | +44 7700 900123
+
+--- 5b. practice_patient_overview(Front Co)
+           patient_user_id            |    name     |      email       | is_active 
+--------------------------------------+-------------+------------------+-----------
+ f6000000-0000-4000-8000-000000000006 | Bode Theirs | bode@example.com | f
+
+--- 5c. practice_audit_log(Front Co, search 'Bode') -- hospital B activity
+ actor_name |          action           |             resource_id              | patient_name | ip_address 
+------------+---------------------------+--------------------------------------+--------------+------------
+ Attacker   | institution_share_updated | 35bc6ea4-0d59-4704-9cb0-aa7831778f4f | Bode Theirs  | 
+ Dr D       | internal_note_written     | note-123                             | Bode Theirs  | 10.0.0.7
+
+RESET
+--- read-back as superuser: the forged row
+             practice_id              |               user_id                | is_active 
+--------------------------------------+--------------------------------------+-----------
+ a0000000-0000-4000-8000-00000000000a | f6000000-0000-4000-8000-000000000006 | f
+
+ROLLBACK
