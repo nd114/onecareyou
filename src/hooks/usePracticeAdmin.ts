@@ -60,7 +60,7 @@ export function usePracticeAdminAccess() {
 /**
  * Administrative actions on staff and patients.
  *
- * Nothing here deletes: staff are archived (status flips to `archived`) so the
+ * Nothing here deletes: staff are archived (their membership is ended) so the
  * audit trail and their past actions stay intact, and patient access is
  * suspended rather than erased — the patient's own consent record is theirs.
  */
@@ -78,11 +78,22 @@ export function usePracticeAdminActions(practiceId?: string | null) {
   const setMemberStatus = useMutation({
     mutationFn: async ({ userId, status }: { userId: string; status: 'active' | 'archived' }) => {
       if (!practiceId) throw new Error('No hospital selected');
-      const { error } = await supabase
-        .from('practice_members')
-        .update({ status })
-        .eq('practice_id', practiceId)
-        .eq('user_id', userId);
+      // The row refuses a direct status change. Archiving is ending the
+      // membership (end_practice_membership: owner rules, end stamp, ledger,
+      // audit, department roles closed); restoring goes through the existing
+      // affiliation RPC, which starts a new period and reopens nothing else.
+      const { error } =
+        status === 'archived'
+          ? await supabase.rpc('end_practice_membership', {
+              _practice_id: practiceId,
+              _user_id: userId,
+              _reason: null,
+            })
+          : await supabase.rpc('set_practice_affiliation_status', {
+              _practice_id: practiceId,
+              _user_id: userId,
+              _status: 'active',
+            });
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
@@ -170,7 +181,10 @@ export function usePracticeAdminActions(practiceId?: string | null) {
   };
 }
 
-/** Archived staff, kept for audit — never deleted. */
+/**
+ * Former staff, kept for audit — never deleted. Ending a membership now writes
+ * 'revoked'; rows archived before that keep 'archived' and mean the same.
+ */
 export function useArchivedPracticeMembers(practiceId?: string | null) {
   const query = useQuery({
     queryKey: ['practice-members', 'archived', practiceId],
@@ -180,7 +194,7 @@ export function useArchivedPracticeMembers(practiceId?: string | null) {
         .from('practice_members')
         .select('id, user_id, role, status, created_at')
         .eq('practice_id', practiceId!)
-        .eq('status', 'archived');
+        .in('status', ['archived', 'revoked']);
       if (error) throw error;
       return (data ?? []) as { id: string; user_id: string; role: string; created_at: string }[];
     },

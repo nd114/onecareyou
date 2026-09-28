@@ -3325,6 +3325,9 @@ export type Database = {
           can_manage_settings: boolean | null
           can_view_all_patients: boolean | null
           created_at: string
+          end_reason: string | null
+          ended_at: string | null
+          ended_by: string | null
           id: string
           invited_at: string | null
           invited_by: string | null
@@ -3342,6 +3345,9 @@ export type Database = {
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
           created_at?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -3359,6 +3365,9 @@ export type Database = {
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
           created_at?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -3371,6 +3380,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "practice_members_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_membership_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          member_id: string | null
+          practice_id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          member_id?: string | null
+          practice_id: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          member_id?: string | null
+          practice_id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_membership_events_practice_id_fkey"
             columns: ["practice_id"]
             isOneToOne: false
             referencedRelation: "practices"
@@ -5312,6 +5365,16 @@ export type Database = {
         Returns: boolean
       }
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
+      change_practice_member_access: {
+        Args: {
+          _can_view_all_patients?: boolean | null
+          _practice_id: string
+          _reason?: string | null
+          _role?: Database["public"]["Enums"]["practice_role"] | null
+          _user_id: string
+        }
+        Returns: undefined
+      }
       can_read_resume_object: {
         Args: { object_name: string }
         Returns: boolean
@@ -5359,6 +5422,10 @@ export type Database = {
         Returns: undefined
       }
       document_is_withdrawn: { Args: { _file_path: string }; Returns: boolean }
+      end_practice_membership: {
+        Args: { _practice_id: string; _reason?: string | null; _user_id: string }
+        Returns: undefined
+      }
       enforce_rate_limit: {
         Args: {
           _bucket: string
@@ -5454,6 +5521,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_current_clinical_access: {
+        Args: { _patient_user_id: string; _practice_id?: string | null }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5517,6 +5588,10 @@ export type Database = {
       kingschat_fulfil_login: {
         Args: { _nonce: string; _subject: string; _token_hash: string }
         Returns: string
+      }
+      leave_practice: {
+        Args: { _practice_id: string; _reason?: string | null }
+        Returns: undefined
       }
       led_department_ids: { Args: never; Returns: string[] }
       list_my_snapshot_links: {

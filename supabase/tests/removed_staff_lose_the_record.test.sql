@@ -177,26 +177,27 @@ BEGIN
   -- ==========================================================================
   -- 4. Leaving the team, or the clinical side of it, ends assignments
   -- ==========================================================================
-  -- A manager revokes and archives members the way the client does: a direct
-  -- UPDATE of status, not set_practice_affiliation_status().
+  -- A manager ends one membership, another member leaves, and a third is moved
+  -- off the clinical side. These used to be direct UPDATEs of status and role
+  -- from the client; those are now refused (offboarding_closes_the_door) and
+  -- the client calls the functions below, but the assignment closure under
+  -- test is the trigger's, whichever path changed the row.
   PERFORM pg_temp.as_user(_owner);
-  UPDATE public.practice_members SET status = 'revoked'
-   WHERE practice_id = _prac AND user_id = _leaver;
-  UPDATE public.practice_members SET status = 'archived'
-   WHERE practice_id = _prac AND user_id = _retiree;
-  UPDATE public.practice_members SET role = 'front_desk'
-   WHERE practice_id = _prac AND user_id = _moved;
+  PERFORM public.end_practice_membership(_prac, _leaver, NULL);
+  PERFORM pg_temp.as_user(_retiree);
+  PERFORM public.leave_practice(_prac, NULL);
+  PERFORM pg_temp.as_user(_owner);
+  PERFORM public.change_practice_member_access(_prac, _moved, 'front_desk'::public.practice_role);
   -- A clinical-to-clinical move and an unrelated edit leave assignments alone.
-  UPDATE public.practice_members SET role = 'nurse'
-   WHERE practice_id = _prac AND user_id = _nurse;
+  PERFORM public.change_practice_member_access(_prac, _nurse, 'nurse'::public.practice_role);
   UPDATE public.practice_members SET can_invite_patients = false
    WHERE practice_id = _prac AND user_id = _assigned;
 
   PERFORM pg_temp.as_user(NULL);
   PERFORM pg_temp.assert(pg_temp.open_assignments(_leaver) = 0,
-    'revoking a member by direct UPDATE ends their assignments');
+    'ending a membership ends their assignments');
   PERFORM pg_temp.assert(pg_temp.open_assignments(_retiree) = 0,
-    'archiving a member ends their assignments');
+    'leaving a practice ends their assignments');
   PERFORM pg_temp.assert(pg_temp.open_assignments(_moved) = 0,
     'moving a member to a non-clinical role ends their assignments');
   PERFORM pg_temp.assert(pg_temp.open_assignments(_nurse) = 1,

@@ -255,15 +255,15 @@ BEGIN
   SELECT status INTO _txt FROM public.practice_invitations WHERE id = _inv;
   PERFORM pg_temp.assert(_txt = 'declined', 'the invitee can decline');
 
-  -- A manager still manages the people who did join.
+  -- A manager still manages the people who did join, through the functions
+  -- that record who changed what (offboarding_closes_the_door); a direct
+  -- UPDATE of scope or status is refused.
   PERFORM pg_temp.as_user(_admin_b);
-  UPDATE public.practice_members SET can_view_all_patients = false
-   WHERE practice_id = _hosp_b AND user_id = _invitee;
-  UPDATE public.practice_members SET status = 'archived'
-   WHERE practice_id = _hosp_b AND user_id = _invitee;
+  PERFORM public.change_practice_member_access(_hosp_b, _invitee, NULL, false);
+  PERFORM public.end_practice_membership(_hosp_b, _invitee, NULL);
   PERFORM pg_temp.as_user(NULL);
   SELECT count(*) INTO _n FROM public.practice_members
-   WHERE practice_id = _hosp_b AND user_id = _invitee AND status = 'archived' AND NOT can_view_all_patients;
+   WHERE practice_id = _hosp_b AND user_id = _invitee AND status = 'revoked' AND NOT can_view_all_patients;
   PERFORM pg_temp.assert(_n = 1, 'a manager can still change a member''s access and status');
 
   RAISE NOTICE 'share_rows_belong_to_their_patient: all assertions passed';

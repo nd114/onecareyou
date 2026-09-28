@@ -394,14 +394,36 @@ export function usePractice() {
     },
   });
 
-  // Update member permissions
+  // Update member permissions.
+  //
+  // Role and whole-practice view go through change_practice_member_access: the
+  // row refuses a direct change to either, so that the owner rules hold and the
+  // change is recorded in the membership ledger. Other settings (invite rights
+  // and the like) are still a plain UPDATE under the manager policy.
   const updateMember = useMutation({
-    mutationFn: async ({ memberId, updates }: { memberId: string; updates: Partial<PracticeMember> }) => {
-      const { error } = await supabase
-        .from('practice_members')
-        .update(updates)
-        .eq('id', memberId);
-      if (error) throw error;
+    mutationFn: async ({ member, updates }: { member: PracticeMember; updates: Partial<PracticeMember> }) => {
+      const { role, can_view_all_patients, status, ...rest } = updates;
+      if (status !== undefined) {
+        throw new Error('Use "End their access" to end a membership');
+      }
+      if (role !== undefined || can_view_all_patients !== undefined) {
+        const { error } = await supabase.rpc('change_practice_member_access', {
+          _practice_id: member.practice_id,
+          _user_id: member.user_id,
+          _role: role ?? null,
+          _can_view_all_patients: can_view_all_patients ?? null,
+        });
+        if (error) throw error;
+      }
+      if (Object.keys(rest).length > 0) {
+        const { data, error } = await supabase
+          .from('practice_members')
+          .update(rest)
+          .eq('id', member.id)
+          .select('id');
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error('You cannot change this member');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practice-members'] });
@@ -412,13 +434,17 @@ export function usePractice() {
     },
   });
 
-  // Remove a member
+  // End a member's access. Through end_practice_membership, which the row
+  // requires: it enforces the owner rules, stamps who ended it and when,
+  // closes assignments and department roles, and writes the audit trail. The
+  // membership row is kept; nothing is deleted.
   const removeMember = useMutation({
-    mutationFn: async (memberId: string) => {
-      const { error } = await supabase
-        .from('practice_members')
-        .update({ status: 'revoked', updated_at: new Date().toISOString() })
-        .eq('id', memberId);
+    mutationFn: async (member: Pick<PracticeMember, 'practice_id' | 'user_id'>) => {
+      const { error } = await supabase.rpc('end_practice_membership', {
+        _practice_id: member.practice_id,
+        _user_id: member.user_id,
+        _reason: null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

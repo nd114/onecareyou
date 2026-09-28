@@ -126,7 +126,7 @@ export function PracticeTeamSection() {
 
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
-    await removeMember.mutateAsync(memberToRemove.id);
+    await removeMember.mutateAsync(memberToRemove);
     setMemberToRemove(null);
   };
 
@@ -240,7 +240,7 @@ export function PracticeTeamSection() {
                               key={role}
                               disabled={role === member.role || updateMember.isPending}
                               onClick={() =>
-                                updateMember.mutate({ memberId: member.id, updates: { role } })
+                                updateMember.mutate({ member, updates: { role } })
                               }
                             >
                               <span className="flex items-center gap-2 capitalize">

@@ -1,6 +1,19 @@
 # Clinician Offboarding — when someone leaves a practice or hospital
 
-> **Assessed, not started — September 2026.** What happens today when a
+> **Phase 1 done — September 2026** (migration `20261010030000`, suite
+> `offboarding_closes_the_door.test.sql`). A leaver no longer writes to the
+> hospital's record; membership ends only through `end_practice_membership` /
+> `leave_practice` (role and view-all through `change_practice_member_access`),
+> with owner rules in the row, `ended_at`/`ended_by`/`end_reason`, the
+> `practice_membership_events` ledger and an audit row on every change;
+> department rows end on every path; memberships cannot be deleted; moving to a
+> non-clinical role clears view-all and clinician messaging is role-gated.
+> Not done from the Phase 1 row: the status CHECK constraint (a fixture and
+> possibly live rows use other values) and `ended_at` on department rows (they
+> are removed, and the ledger entry keeps what was held). Phases 2–4 and the §7
+> decisions are open.
+>
+> **Assessed September 2026.** What happens today when a
 > clinician or staff member leaves a tenant, checked against the replayed
 > database, and a design that follows from the founding documents rather than
 > adding a new concept. Restart when: the decisions in §7 are taken. Phase 1 is
@@ -303,7 +316,7 @@ hospital.
 
 | Phase | What | Size | Closes |
 | --- | --- | --- | --- |
-| **1. Close the holes at the row** | `end_practice_membership` and `leave_practice`; trigger blocking direct status, role and view-all changes and enforcing the owner invariant; drop the DELETE policy; `ended_at`/`ended_by`/`end_reason`, status CHECK, membership ledger and audit row; author write policies need current access for hospital-context rows; clear view-all on role change and gate clinical acts on `institution_has_clinical_access`; switch `removeMember` and `archiveMember` to the RPC. New suite `leaving_a_practice.test.sql`, converted from this assessment's probe, each assertion watched failing first | **S–M**, 2–3 days | G1, G3, G4, G8, G11 |
+| **1. Close the holes at the row** (done) | `end_practice_membership` and `leave_practice`; trigger blocking direct status, role and view-all changes and enforcing the owner invariant; drop the DELETE policy; `ended_at`/`ended_by`/`end_reason`, status CHECK, membership ledger and audit row; author write policies need current access for hospital-context rows; clear view-all on role change and gate clinical acts on `institution_has_clinical_access`; switch `removeMember` and `archiveMember` to the RPC. New suite `leaving_a_practice.test.sql`, converted from this assessment's probe, each assertion watched failing first | **S–M**, 2–3 days | G1, G3, G4, G8, G11 |
 | **2. Handover** | Offboarding dialog with required dispositions; reassignment in the same transaction; "needs cover" queue in the Coverage tab; draft and dictation freeze; `practice_id` on dictations; lead role vacancy | **M**, about a week | G5 |
 | **3. The patient side** | `practice_id` on messages and the institutional thread read; departure line and forward routing; patient notice; snapshot on handover | **M**, about a week; needs the §7 decision on thread visibility | G2, G10 |
 | **4. The long tail** | Leaver's read-only "former workplaces" view with the message history helper; correction on behalf of the practice; EHR tenant ownership (with the EHR plan); account closure and the foreign keys | **M** across items; each independent | G6, G7, G9, G12 |
