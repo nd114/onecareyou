@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useWorkspaceSelection } from '@/hooks/useWorkspaceSelection';
 
@@ -75,5 +75,24 @@ describe('useWorkspaceSelection', () => {
     // Every render saw the stored choice — including the very first.
     expect(seen[0]).toBe('hospital');
     expect(seen.every((value) => value === 'hospital')).toBe(true);
+  });
+});
+
+describe('useWorkspaceSelection when storage refuses writes', () => {
+  it('still switches when reads work but writes throw', () => {
+    // A full quota, or a private window that answers getItem and throws on
+    // setItem. The switch landed in the memory fallback, but reads went to
+    // storage first and kept answering with the workspace just left.
+    localStorage.setItem('onecare:workspace:user-q', 'own-practice');
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    try {
+      const { result } = renderHook(() => useWorkspaceSelection('user-q'));
+      act(() => result.current.selectWorkspace('hospital'));
+      expect(result.current.selectedWorkspaceId).toBe('hospital');
+    } finally {
+      setItem.mockRestore();
+    }
   });
 });

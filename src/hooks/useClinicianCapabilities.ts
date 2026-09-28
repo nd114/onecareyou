@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useWorkspaceSelection } from "@/hooks/useWorkspaceSelection";
-import { activeMembership } from "@/lib/staff-roles";
+import { activeMembership, liveMemberships } from "@/lib/staff-roles";
 
 export type PracticeCapability =
   | "view_phi"
@@ -95,19 +95,42 @@ async function fetchCapabilities(
   //    model §6), so this reads the full set. maybeSingle() used to error on
   //    exactly that case, dropping the user through to the solo branch below
   //    and handing them every capability.
-  const { data: memberRows } = await supabase
+  const { data: memberRows, error: memberError } = await supabase
     .from("practice_members")
     .select("practice_id, role, created_at")
     .eq("user_id", userId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
 
-  const rows = (memberRows ?? []) as MembershipRow[];
+  // A failed read is not "no memberships". Treated as one, it fell into the
+  // solo branch below and handed a front-desk account every capability until
+  // the cache expired. Throwing leaves `can` answering no.
+  if (memberError) throw memberError;
 
-  // Shared with useClinicianProfile so capabilities and the screens they gate
-  // cannot disagree about which workspace is current. See activeMembership for
-  // what went wrong when this hook resolved it alone.
+  // Only practices still offered as workspaces, as usePractice does: a retired
+  // practice's membership row stays for the record and must not answer here.
+  const allRows = (memberRows ?? []) as MembershipRow[];
+  let rows: MembershipRow[] = [];
+  if (allRows.length > 0) {
+    const { data: livePractices, error: practiceError } = await supabase
+      .from("practices")
+      .select("id")
+      .in("id", allRows.map((row) => row.practice_id))
+      .eq("is_active", true);
+    if (practiceError) throw practiceError;
+    rows = liveMemberships(allRows, ((livePractices ?? []) as { id: string }[]).map((p) => p.id));
+  }
+
+  // Shared with useClinicianProfile and usePractice so capabilities and the
+  // screens they gate cannot disagree about which workspace is current. See
+  // activeMembership for what went wrong when this hook resolved it alone.
   const memberRow = activeMembership(rows, selectedWorkspaceId) ?? undefined;
+
+  if (!memberRow && allRows.length > 0) {
+    // Every membership is in a retired practice. That is not a solo clinician
+    // owning their own workspace, so it does not get the solo grant below.
+    return EMPTY;
+  }
 
   if (!memberRow) {
     // Solo clinician (verified clinician profile, no practice yet) is the

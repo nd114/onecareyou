@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ASSIGNABLE_ROLES, ROLE_PROFILES, isClinicalRole, roleProfile } from "@/lib/staff-roles";
+import { ASSIGNABLE_ROLES, ROLE_PROFILES, isClinicalRole, roleProfile, showsClinicalRecord } from "@/lib/staff-roles";
 
 /**
  * These mirror public.practice_role_is_clinical. If the two ever disagree, a
@@ -60,5 +60,35 @@ describe("the assignable list", () => {
 
   it("does not offer owner, which is not a role you assign", () => {
     expect(ASSIGNABLE_ROLES.flatMap((g) => g.roles)).not.toContain("owner");
+  });
+});
+
+describe("whose role decides the patient page", () => {
+  // A doctor at the assigning hospital, front desk in the workspace they have
+  // selected. The page used to ask about the selected workspace.
+  const memberships = [
+    { practice_id: "own-clinic", role: "front_desk" },
+    { practice_id: "hospital", role: "provider" },
+  ];
+
+  it("shows a solo clinician the record their patient shared with them", () => {
+    // No practice at all: the old rule read the role of no membership as
+    // non-clinical and hid every clinical tab.
+    expect(showsClinicalRecord({ source: "private", hospital_id: null }, [])).toBe(true);
+  });
+
+  it("judges a hospital patient by the role at that hospital", () => {
+    expect(showsClinicalRecord({ source: "hospital", hospital_id: "hospital" }, memberships)).toBe(true);
+    expect(
+      showsClinicalRecord({ source: "hospital", hospital_id: "hospital" }, [
+        { practice_id: "own-clinic", role: "provider" },
+        { practice_id: "hospital", role: "front_desk" },
+      ]),
+    ).toBe(false);
+  });
+
+  it("shows nothing for a hospital the clinician is not a member of, or no patient", () => {
+    expect(showsClinicalRecord({ source: "hospital", hospital_id: "elsewhere" }, memberships)).toBe(false);
+    expect(showsClinicalRecord(undefined, memberships)).toBe(false);
   });
 });

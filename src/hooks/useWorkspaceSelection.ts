@@ -23,13 +23,17 @@ const memory = new Map<string, string>();
 
 function readSelection(userId: string | undefined): string | null {
   if (!userId) return null;
+  // `memory` holds a choice only while storage is refusing writes (see
+  // selectWorkspace), so it never shadows a choice storage accepted. It is
+  // consulted first because storage that refuses writes can still answer reads
+  // (a full quota, or a private window that allows getItem and throws on
+  // setItem), and would answer with the workspace from before the switch.
+  const remembered = memory.get(userId);
+  if (remembered !== undefined) return remembered;
   try {
-    // Storage is the source of truth whenever it answers. Consulting `memory`
-    // here as well would resurrect a choice another tab, or a cleared site
-    // data, had since removed.
     return localStorage.getItem(storageKey(userId));
   } catch {
-    return memory.get(userId) ?? null;
+    return null;
   }
 }
 
@@ -75,11 +79,14 @@ export function useWorkspaceSelection(userId: string | undefined) {
   const selectWorkspace = useCallback(
     (practiceId: string) => {
       if (!userId) return;
-      memory.set(userId, practiceId);
       try {
         localStorage.setItem(storageKey(userId), practiceId);
+        // Storage has it, so storage is the answer again, including when
+        // another tab or a site-data clear later changes it.
+        memory.delete(userId);
       } catch {
-        // Kept in `memory` above; the choice still applies for this session.
+        // Storage refused; the choice still applies for this session.
+        memory.set(userId, practiceId);
       }
       for (const listener of listeners) listener();
     },

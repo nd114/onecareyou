@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { activeMembership } from '@/lib/staff-roles';
+import { activeMembership, liveMemberships } from '@/lib/staff-roles';
 
 /**
  * The rule that decides which side of the product someone lands on.
@@ -139,5 +139,19 @@ describe('activeMembership', () => {
 
   it('has no answer for an account with no memberships', () => {
     expect(activeMembership([], 'hospital')).toBeNull();
+  });
+});
+
+describe('liveMemberships', () => {
+  it('drops retired practices and orders earliest first, whatever order rows came in', () => {
+    const rows = [
+      { practice_id: 'hospital', role: 'clinician', created_at: '2026-03-01' },
+      { practice_id: 'retired', role: 'owner', created_at: '2026-01-01' },
+      { practice_id: 'own-practice', role: 'owner', created_at: '2026-02-01' },
+    ];
+    const live = liveMemberships(rows, ['hospital', 'own-practice']);
+    expect(live.map((m) => m.practice_id)).toEqual(['own-practice', 'hospital']);
+    // A stored choice of a practice since retired falls back to a live one.
+    expect(activeMembership(live, 'retired')?.practice_id).toBe('own-practice');
   });
 });

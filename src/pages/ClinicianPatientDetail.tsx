@@ -56,7 +56,7 @@ import { AiHistoryForPatient } from '@/components/clinician/AiHistoryForPatient'
 import { CarePlanTab } from '@/components/clinician/CarePlanTab';
 import { formatDay } from '@/lib/format-date';
 import { ProposeMedicationChange, ProposalsAwaitingPatient } from '@/components/clinician/ProposeMedicationChange';
-import { isClinicalRole } from '@/lib/staff-roles';
+import { showsClinicalRecord } from '@/lib/staff-roles';
 import { usePractice } from '@/hooks/usePractice';
 import { PatientSectionNav } from '@/components/clinician/PatientSectionNav';
 import { PatientOverviewTab } from '@/components/clinician/PatientOverviewTab';
@@ -65,11 +65,7 @@ import { RecordVitalDialog } from '@/components/clinician/RecordVitalDialog';
 
 
 const ClinicianPatientDetail = () => {
-  // What this staff member's role is for. The database decides what they can
-  // read; this decides what they are shown, and the two agree by construction
-  // because both consult the same allowlist. See src/lib/staff-roles.ts.
-  const { currentMembership } = usePractice();
-  const clinicalStaff = isClinicalRole(currentMembership?.role);
+  const { memberships } = usePractice();
 
   const { inviteCode } = useParams<{ inviteCode: string }>();
   const navigate = useNavigate();
@@ -104,6 +100,12 @@ const ClinicianPatientDetail = () => {
     patients.find(p => p.invite_code === inviteCode),
     [patients, inviteCode]
   );
+
+  // What this staff member's role is for, with this patient. The database
+  // decides what they can read; this decides what they are shown, and the two
+  // agree because both judge the relationship the patient is reached through,
+  // not whichever workspace happens to be selected. See src/lib/staff-roles.ts.
+  const clinicalStaff = showsClinicalRecord(patient, memberships);
 
   // Opening a patient's record is the access event a compliance reviewer asks
   // about. Logged once per record, server-verified — see useRecordAccessLog.

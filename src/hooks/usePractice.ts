@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 import { useWorkspaceSelection } from './useWorkspaceSelection';
+import { activeMembership, liveMemberships } from '@/lib/staff-roles';
 
 export type PracticeRole =
   | 'owner'
@@ -153,9 +154,16 @@ export function usePractice() {
     ? practices.find((p) => p.id === selectedWorkspaceId) || null
     : null;
   const needsWorkspaceSelection = practices.length > 1 && !selectedPractice;
-  const currentPractice = selectedPractice || practices[0] || null;
-  const currentMembership = currentPractice
-    ? memberships.find((membership) => membership.practice_id === currentPractice.id) || null
+  // The same rule, over the same filtered and ordered rows, as
+  // useClinicianCapabilities. "First" used to be practices[0] in whatever order
+  // the practices query returned, so with nothing chosen the screens could show
+  // a different workspace from the one every can(...) answered for.
+  const currentMembership = activeMembership(
+    liveMemberships(memberships, practices.map((p) => p.id)),
+    selectedWorkspaceId,
+  );
+  const currentPractice = currentMembership
+    ? practices.find((p) => p.id === currentMembership.practice_id) || null
     : null;
 
   // Get members of a practice.
