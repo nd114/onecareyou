@@ -33,14 +33,28 @@ export function AdminTenantRowActions({ tenant }: { tenant: AdminTenantRow }) {
   const [email, setEmail] = useState('');
   const [slug, setSlug] = useState(tenant.slug ?? '');
 
-  const [form, setForm] = useState({
+  // The switch used to open as Active whatever the tenant was, and saving any
+  // edit to a suspended tenant sent is_active: true and reactivated it. It now
+  // starts from the tenant's own state. Should that state be missing (a client
+  // ahead of the database), the switch still shows Active but the save leaves
+  // is_active alone unless the admin actually moved the switch.
+  const initialActive = tenant.is_active ?? true;
+  const formFromTenant = () => ({
     name: tenant.name,
     tenant_type: (tenant.tenant_type ?? 'practice') as 'practice' | 'hospital',
     subscription_tier: tenant.subscription_tier ?? 'trial',
     storage_limit_gb: String(tenant.storage_limit_gb ?? 25),
     revenue_share_pct: String(tenant.revenue_share_pct ?? 0),
-    is_active: true,
+    is_active: initialActive,
   });
+  const [form, setForm] = useState(formFromTenant);
+
+  // Reopening starts from the tenant as it is now, not as it was when the row
+  // first mounted: a suspension made elsewhere must not be undone by a stale form.
+  const openEdit = () => {
+    setForm(formFromTenant());
+    setEditOpen(true);
+  };
 
   const handleSave = async () => {
     await updateTenant({
@@ -50,7 +64,8 @@ export function AdminTenantRowActions({ tenant }: { tenant: AdminTenantRow }) {
       subscription_tier: form.subscription_tier,
       storage_limit_gb: Number(form.storage_limit_gb),
       revenue_share_pct: Number(form.revenue_share_pct),
-      is_active: form.is_active,
+      // admin_update_tenant keeps the current value for a null.
+      is_active: form.is_active !== initialActive ? form.is_active : undefined,
     });
     setEditOpen(false);
   };
@@ -67,7 +82,7 @@ export function AdminTenantRowActions({ tenant }: { tenant: AdminTenantRow }) {
         <Mail className="h-4 w-4" />
         <span className="sr-only">Invite owner</span>
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+      <Button variant="ghost" size="sm" onClick={openEdit}>
         <Settings2 className="h-4 w-4" />
         <span className="sr-only">Edit tenant</span>
       </Button>

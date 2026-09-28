@@ -74,6 +74,9 @@ export function AdminTenantsCard() {
                       <Badge variant="secondary" className="capitalize">
                         {t.tenant_type ?? 'practice'}
                       </Badge>
+                      {t.is_active === false && (
+                        <Badge variant="destructive">Inactive</Badge>
+                      )}
                       {t.subscription_tier && (
                         <Badge variant="outline" className="capitalize">
                           {t.subscription_tier}

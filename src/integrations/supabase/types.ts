@@ -5121,6 +5121,7 @@ export type Database = {
           country: string
           created_at: string
           id: string
+          is_active: boolean
           member_count: number
           name: string
           revenue_share_pct: number

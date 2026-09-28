@@ -49,7 +49,6 @@
      - Background EHR jobs now skip institution-only patients (they honour claimed provider shares only); supporting them needs a service-role SQL helper.
    - **Defects:**
      - `PrivacyPolicy.tsx` (~line 225) says consent changes are logged with IP addresses; nothing records an IP. Legal copy, needs review.
-     - The admin tenant edit dialog always opens as Active (`admin_tenant_overview` does not return `is_active`), so saving any edit reactivates a suspended tenant.
      - `previewAuthStorage.ts` was hand-edited by a bot commit (`0245f1a`); let Lovable regenerate it.
      - Clinician document results in search wait on `search_documents` returning an owning patient.
      - Department leads see every actor in the tenant audit log (deferred as a product call).

@@ -16,6 +16,8 @@ export interface AdminTenantRow {
   member_count: number;
   active_share_count: number;
   created_at: string;
+  /** A suspended tenant cannot be found by patients. */
+  is_active: boolean;
 }
 
 /** Platform-admin oversight: every tenant with team size, connections and storage. */

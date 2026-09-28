@@ -37,6 +37,7 @@ DECLARE
   _patient  uuid := 'd0000000-0000-0000-0000-000000000003';
   _doctor   uuid := 'd0000000-0000-0000-0000-000000000004';
   _hosp     uuid := 'd1111111-0000-0000-0000-000000000001';
+  _suspended uuid := 'd1111111-0000-0000-0000-000000000002';
   _share    uuid;
   _pshare   uuid;
   _profile_id uuid;
@@ -563,6 +564,38 @@ BEGIN
     FROM public.admin_audit_export(NULL, NULL, NULL, 100, 'cc-doctor')
    WHERE action = 'view_record' AND patient_email = 'cc-patient@test.local';
   PERFORM pg_temp.assert(_count = 1, 'naming the clinician exports what they read');
+
+  -- ==========================================================================
+  -- 14. The tenant list says which tenants are suspended
+  --
+  -- The edit dialog starts its Active switch from this column. Without it the
+  -- switch always opened on, and saving any edit to a suspended tenant through
+  -- admin_update_tenant() reactivated it.
+  -- ==========================================================================
+  EXECUTE 'SET LOCAL ROLE postgres';
+  INSERT INTO public.practices (id, name, tenant_type, created_by, is_active)
+  VALUES (_suspended, 'Command Centre Suspended Clinic', 'practice', _admin, false);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+
+  SELECT is_active INTO _bool FROM public.admin_tenant_overview() WHERE id = _suspended;
+  PERFORM pg_temp.assert(_bool IS FALSE, 'the overview reports a suspended tenant as inactive');
+
+  SELECT is_active INTO _bool FROM public.admin_tenant_overview() WHERE id = _hosp;
+  PERFORM pg_temp.assert(_bool IS TRUE, 'and a live tenant as active');
+
+  PERFORM set_config('request.jwt.claim.sub', _outsider::text, true);
+  SELECT count(*) INTO _count FROM public.admin_tenant_overview();
+  PERFORM pg_temp.assert(_count = 0, 'the recreated overview still answers a non-admin with nothing');
+  PERFORM set_config('request.jwt.claim.sub', _admin::text, true);
+
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(
+    NOT has_function_privilege('anon', 'public.admin_tenant_overview()', 'EXECUTE'),
+    'anon still cannot execute the recreated overview');
+  PERFORM pg_temp.assert(
+    has_function_privilege('authenticated', 'public.admin_tenant_overview()', 'EXECUTE'),
+    'authenticated still can');
+  EXECUTE 'SET LOCAL ROLE authenticated';
 
   RAISE NOTICE 'admin_command_centre: all assertions passed';
 END $$;
