@@ -38,6 +38,7 @@
 1. **Mobile-first sweep (patient + clinician).** Scripted 390x844 / 768x1024 passes over every pillar and sub-tab; fix P0 broken flows first, then overlap between bottom nav, FAB stack and sticky sub-tabs, then polish.
 2. **Surface budget discipline.** Every new feature must replace a surface or justify itself against the four pillars per side.
 3. **Open after the September PHI audit** (what was fixed is in [`audit-2026-09.md`](./audit-2026-09.md), pass 8).
+   - **A clinician leaving a practice** is assessed in [`plans/clinician-offboarding.md`](./plans/clinician-offboarding.md): a leaver can still write to the hospital's record and patients can message a departed clinician into a void; Phase 1 (row-level, 2–3 days) closes the first, Phase 3 the second.
    - **Realtime is dead in production.** The websocket answers 500 at handshake on every page, so anything live is silently stale. Check the hosted project's Realtime settings in the Supabase dashboard first; it is probably configuration. The typing indicator now uses a private channel and is unverified live until this is fixed.
    - **Decisions needed:**
      - Should an inactive practice (`practices.is_active = false`, set only by the platform admin's Active switch) lose staff access? Today view-all staff keep reading; only assigned staff lose it.
