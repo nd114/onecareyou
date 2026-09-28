@@ -44,6 +44,7 @@ import Onboarding from "./pages/Onboarding";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import KingsChatComplete from "./pages/KingsChatComplete";
 import Settings from "./pages/Settings";
 import PatientGuidance from "./pages/PatientGuidance";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -158,6 +159,8 @@ const App = () => (
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Where KingsChat's callback returns the approving browser. */}
+            <Route path="/auth/kingschat/complete" element={<KingsChatComplete />} />
             <Route path="/clinician/sign-up" element={<ClinicianSignUp />} />
             <Route path="/about" element={<About />} />
             <Route path="/features" element={<Features />} />

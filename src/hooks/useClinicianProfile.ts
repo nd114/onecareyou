@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useWorkspaceSelection } from './useWorkspaceSelection';
+import { activeMembership, liveMemberships } from '@/lib/staff-roles';
 
 export interface ClinicianProfile {
   id: string;
@@ -77,12 +78,27 @@ export const useClinicianProfile = () => {
       const memberships = (membershipRes.data ?? []) as {
         practice_id: string;
         role: string;
+        created_at: string;
       }[];
       const pendingInvites = (inviteRes?.data ?? []) as { practice_id: string }[];
+
+      // Which of those practices are still offered as workspaces, so the
+      // current membership resolves as it does in usePractice and
+      // useClinicianCapabilities. A retired practice keeps its member rows.
+      let activePracticeIds: string[] = [];
+      if (memberships.length > 0) {
+        const { data: live } = await supabase
+          .from('practices')
+          .select('id')
+          .in('id', memberships.map((m) => m.practice_id))
+          .eq('is_active', true);
+        activePracticeIds = ((live ?? []) as { id: string }[]).map((p) => p.id);
+      }
 
       return {
         profile: profileRes.data as ClinicianProfile | null,
         memberships,
+        activePracticeIds,
         pendingTenantInvites: pendingInvites,
       };
     },
@@ -99,10 +115,10 @@ export const useClinicianProfile = () => {
   // before, so nobody's landing page moves just because a selector now
   // exists — it only stops being the *only* option.
   const { selectedWorkspaceId } = useWorkspaceSelection(user?.id);
-  const selectedMembership = selectedWorkspaceId
-    ? memberships.find((m) => m.practice_id === selectedWorkspaceId) ?? null
-    : null;
-  const primaryMembership = selectedMembership ?? memberships[0] ?? null;
+  const primaryMembership = activeMembership(
+    liveMemberships(memberships, staff?.activePracticeIds ?? []),
+    selectedWorkspaceId,
+  );
 
   const createClinicianProfile = useMutation({
     mutationFn: async (data: CreateClinicianProfileData) => {

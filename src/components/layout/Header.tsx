@@ -50,6 +50,7 @@ import { format } from "date-fns";
 import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { PATIENT_PILLARS, getPatientPillarForRoute, isNavTabActive } from "@/lib/nav-ia";
+import { GlobalSearch } from "@/components/search/GlobalSearch";
 import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 
 export function Header() {
@@ -200,6 +201,14 @@ export function Header() {
 
         {/* Right column: contains both the md+ action cluster and the <lg hamburger */}
         <div className="flex items-center justify-end gap-2 shrink-0">
+
+        {/*
+          Search sits outside the lg-only cluster below, because a phone is
+          where a patient most needs it and least has a ⌘K to press. Signed-in
+          patients only: it searches a record, which a marketing visitor has
+          none of, and a clinician has their own in ClinicianHeader.
+        */}
+        {isAuthenticated && !isClinician && <GlobalSearch audience="patient" iconOnly />}
 
         {/* Right-side cluster: visible from lg+ (desktop only) */}
         <div className="hidden lg:flex items-center justify-end gap-2 shrink-0">

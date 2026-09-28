@@ -21,6 +21,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
+import { useWorkspaceSelection } from "@/hooks/useWorkspaceSelection";
+import { activeMembership, liveMemberships } from "@/lib/staff-roles";
 
 export type PracticeCapability =
   | "view_phi"
@@ -83,22 +85,52 @@ interface CapabilityAnswer {
 
 const EMPTY: CapabilityAnswer = { membership: null, memberships: [], grants: [] };
 
-async function fetchCapabilities(userId: string, isClinician: boolean): Promise<CapabilityAnswer> {
+async function fetchCapabilities(
+  userId: string,
+  isClinician: boolean,
+  selectedWorkspaceId: string | null,
+): Promise<CapabilityAnswer> {
   // 1. Look up active practice memberships.
   //    A clinician can be affiliated with several hospitals at once (sharing
   //    model §6), so this reads the full set. maybeSingle() used to error on
   //    exactly that case, dropping the user through to the solo branch below
   //    and handing them every capability.
-  const { data: memberRows } = await supabase
+  const { data: memberRows, error: memberError } = await supabase
     .from("practice_members")
     .select("practice_id, role, created_at")
     .eq("user_id", userId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
 
-  // Until there is a tenant switcher, the earliest affiliation is the active
-  // one — deterministic, and the same row the database-side default resolves.
-  const memberRow = ((memberRows ?? [])[0]) as MembershipRow | undefined;
+  // A failed read is not "no memberships". Treated as one, it fell into the
+  // solo branch below and handed a front-desk account every capability until
+  // the cache expired. Throwing leaves `can` answering no.
+  if (memberError) throw memberError;
+
+  // Only practices still offered as workspaces, as usePractice does: a retired
+  // practice's membership row stays for the record and must not answer here.
+  const allRows = (memberRows ?? []) as MembershipRow[];
+  let rows: MembershipRow[] = [];
+  if (allRows.length > 0) {
+    const { data: livePractices, error: practiceError } = await supabase
+      .from("practices")
+      .select("id")
+      .in("id", allRows.map((row) => row.practice_id))
+      .eq("is_active", true);
+    if (practiceError) throw practiceError;
+    rows = liveMemberships(allRows, ((livePractices ?? []) as { id: string }[]).map((p) => p.id));
+  }
+
+  // Shared with useClinicianProfile and usePractice so capabilities and the
+  // screens they gate cannot disagree about which workspace is current. See
+  // activeMembership for what went wrong when this hook resolved it alone.
+  const memberRow = activeMembership(rows, selectedWorkspaceId) ?? undefined;
+
+  if (!memberRow && allRows.length > 0) {
+    // Every membership is in a retired practice. That is not a solo clinician
+    // owning their own workspace, so it does not get the solo grant below.
+    return EMPTY;
+  }
 
   if (!memberRow) {
     // Solo clinician (verified clinician profile, no practice yet) is the
@@ -127,7 +159,7 @@ async function fetchCapabilities(userId: string, isClinician: boolean): Promise<
 
   return {
     membership: memberRow,
-    memberships: (memberRows ?? []) as MembershipRow[],
+    memberships: rows,
     grants: results.filter(([, ok]) => ok).map(([cap]) => cap),
   };
 }
@@ -135,15 +167,19 @@ async function fetchCapabilities(userId: string, isClinician: boolean): Promise<
 export function useClinicianCapabilities() {
   const { user } = useAuth();
   const { isClinician, isLoading: profileLoading } = useClinicianProfile();
+  const { selectedWorkspaceId } = useWorkspaceSelection(user?.id);
   const queryClient = useQueryClient();
 
   const enabled = !!user && !profileLoading;
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["clinician-capabilities", user?.id ?? null, isClinician],
+    // The chosen workspace is part of the key: switching workspace has to give a
+    // fresh answer rather than serve the previous tenant's cached grants for
+    // the next five minutes.
+    queryKey: ["clinician-capabilities", user?.id ?? null, isClinician, selectedWorkspaceId],
     queryFn: () => {
       if (!user) return Promise.resolve(EMPTY);
-      return fetchCapabilities(user.id, isClinician);
+      return fetchCapabilities(user.id, isClinician, selectedWorkspaceId);
     },
     enabled,
     // A role change is an administrative act, not a per-navigation event.

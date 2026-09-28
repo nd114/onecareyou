@@ -332,9 +332,16 @@
     }
 
     /* The rail carries both pillars and their sub-tabs, so the two horizontal
-       bars they came from would be a second copy of the same navigation. */
+       bars they came from would be a second copy of the same navigation. It
+       carries the brand as well, so the header's copy goes too — two heart
+       logos fifty pixels apart read as a rendering fault.
+
+       Scoped to the clinician tab row by value: SectionTabs stamps its variant
+       on the attribute, and matching the bare attribute hid the patient
+       variant's rows as well. */
     html.clinician-rail [data-clinician-pillars],
-    html.clinician-rail [data-section-tabs] {
+    html.clinician-rail [data-section-tabs="clinician"],
+    html.clinician-rail [data-clinician-brand] {
       display: none;
     }
   }

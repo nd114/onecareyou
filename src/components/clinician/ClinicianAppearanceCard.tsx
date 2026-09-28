@@ -12,7 +12,8 @@ interface Option<T extends string> {
   value: T;
   label: string;
   description: string;
-  swatch: string[];
+  /** Colour chips shown beside a surface choice. Layouts have none. */
+  swatch?: string[];
 }
 
 const SURFACES: Option<ClinicianSurface>[] = [
@@ -35,13 +36,13 @@ const LAYOUTS: Option<ClinicianNavLayout>[] = [
     value: 'tabs',
     label: 'Top sections & tabs',
     description: 'The familiar two rows across the top of every page.',
-    swatch: [],
   },
   {
     value: 'rail',
+    // Said "with the page taking the full height of the screen", which it does
+    // not: the header stays. What goes is the row of sub-tabs.
     label: 'Side panel',
-    description: 'Every section listed down the left, collapsible, with the page taking the full height of the screen.',
-    swatch: [],
+    description: 'Every section listed down the left, collapsible. The row of tabs under the header goes, so pages start a little higher.',
   },
 ];
 
@@ -88,15 +89,17 @@ export function ClinicianAppearanceCard() {
                     <span className="font-medium">{option.label}</span>
                     {isActive && <Check className="h-4 w-4 text-primary" />}
                   </div>
-                  <div className="mb-2 flex gap-1.5">
-                    {option.swatch.map((colour) => (
-                      <span
-                        key={colour}
-                        style={{ background: colour }}
-                        className="h-5 w-8 rounded-md border border-border/60"
-                      />
-                    ))}
-                  </div>
+                  {option.swatch && (
+                    <div className="mb-2 flex gap-1.5">
+                      {option.swatch.map((colour) => (
+                        <span
+                          key={colour}
+                          style={{ background: colour }}
+                          className="h-5 w-8 rounded-md border border-border/60"
+                        />
+                      ))}
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">{option.description}</p>
                 </button>
               );

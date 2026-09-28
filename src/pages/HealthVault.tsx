@@ -208,8 +208,8 @@ const HealthVault = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <FolderOpen className="h-6 w-6 text-primary" />
                 Health Vault
@@ -218,7 +218,7 @@ const HealthVault = () => {
                 Your visit summaries, health documents and your own notes, in one place
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Button variant="outline" onClick={() => setShowNewNote(true)}>
                 <NotebookPen className="h-4 w-4 mr-2" />
                 New note

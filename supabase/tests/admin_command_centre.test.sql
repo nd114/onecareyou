@@ -293,16 +293,19 @@ BEGIN
           '{"note":"SECRETCLINICALDETAIL"}'::jsonb);
   EXECUTE 'SET LOCAL ROLE authenticated';
 
-  SELECT count(*) INTO _count FROM public.admin_audit_export(NULL, NULL, 'view_record', 100);
+  -- Every export here names a person; section 13 covers the floor itself.
+  SELECT count(*) INTO _count
+    FROM public.admin_audit_export(NULL, NULL, 'view_record', 100, 'cc-patient@test.local');
   PERFORM pg_temp.assert(_count >= 1, 'the export finds the entry by action');
 
   SELECT string_agg(x::text, ' ') INTO _txt
-    FROM public.admin_audit_export(NULL, NULL, NULL, 100) x;
+    FROM public.admin_audit_export(NULL, NULL, NULL, 100, 'cc-patient@test.local') x;
   PERFORM pg_temp.assert(_txt NOT ILIKE '%SECRETCLINICALDETAIL%',
     'the export never carries the details column out with it');
 
   SELECT count(*) INTO _count
-    FROM public.admin_audit_export(now() + interval '1 day', now() + interval '2 days', NULL, 100);
+    FROM public.admin_audit_export(now() + interval '1 day', now() + interval '2 days', NULL, 100,
+                                   'cc-patient@test.local');
   PERFORM pg_temp.assert(_count = 0, 'a window in the future returns nothing');
 
   -- ==========================================================================
@@ -493,6 +496,73 @@ BEGIN
    WHERE action = 'restore_bug_report' AND target_id = _bug1;
   PERFORM pg_temp.assert(_count = 1, 'the restore is in the admin action log too');
   EXECUTE 'SET LOCAL ROLE authenticated';
+
+  -- ==========================================================================
+  -- 13. Signups, the access log and the audit export search, they don't browse
+  --
+  -- Section 11's floor, applied to the three people-listing functions it
+  -- missed. Each named every person on the platform, or who read whose
+  -- record, with no search at all. Converted from
+  -- docs/security/phi-audit-2026-09/phi-p1a/r6_admin_browse.
+  -- ==========================================================================
+  EXECUTE 'SET LOCAL ROLE postgres';
+  UPDATE public.profiles SET name = 'Command Patient', email = 'cc-patient@test.local'
+   WHERE user_id = _patient;
+  UPDATE public.profiles SET email = 'cc-doctor@test.local' WHERE user_id = _doctor;
+  INSERT INTO public.access_audit_logs (action, actor_user_id, target_user_id, resource_type)
+  VALUES ('share_opened', _doctor, _patient, 'provider_share');
+  EXECUTE 'SET LOCAL ROLE authenticated';
+
+  -- Recent signups.
+  SELECT count(*) INTO _count FROM public.admin_recent_signups(_limit => 200);
+  PERFORM pg_temp.assert(_count = 0, 'recent signups with no search names nobody');
+
+  SELECT count(*) INTO _count FROM public.admin_recent_signups(_search => 'c', _limit => 200);
+  PERFORM pg_temp.assert(_count = 0, 'recent signups with a one-character search names nobody');
+
+  SELECT count(*) INTO _count
+    FROM public.admin_recent_signups(_search => 'cc-patient', _limit => 200)
+   WHERE user_id = _patient;
+  PERFORM pg_temp.assert(_count = 1, 'recent signups with a real search finds the patient');
+
+  -- The access log.
+  SELECT count(*) INTO _count FROM public.admin_access_log_search(NULL, 200);
+  PERFORM pg_temp.assert(_count = 0, 'the access log with no search names nobody');
+
+  SELECT count(*) INTO _count FROM public.admin_access_log_search('  ', 200);
+  PERFORM pg_temp.assert(_count = 0, 'the access log with a blank search names nobody');
+
+  SELECT count(*) INTO _count FROM public.admin_access_log_search('c', 200);
+  PERFORM pg_temp.assert(_count = 0, 'the access log with a one-character search names nobody');
+
+  -- An action is not a person. Searching one would list every pair it touched.
+  SELECT count(*) INTO _count FROM public.admin_access_log_search('share_opened', 200);
+  PERFORM pg_temp.assert(_count = 0, 'the access log does not list everyone behind an action');
+
+  SELECT count(*) INTO _count
+    FROM public.admin_access_log_search('cc-patient@test.local', 200)
+   WHERE action = 'share_opened' AND actor_email = 'cc-doctor@test.local';
+  PERFORM pg_temp.assert(_count = 1, 'the access log finds the entry once the patient is named');
+
+  SELECT count(*) INTO _count
+    FROM public.admin_access_log_search('cc-doctor', 200)
+   WHERE action = 'share_opened' AND target_email = 'cc-patient@test.local';
+  PERFORM pg_temp.assert(_count = 1, 'and once the clinician is named');
+
+  -- The audit export.
+  SELECT count(*) INTO _count FROM public.admin_audit_export(NULL, NULL, NULL, 100);
+  PERFORM pg_temp.assert(_count = 0, 'the audit export with no person named exports nothing');
+
+  SELECT count(*) INTO _count FROM public.admin_audit_export(NULL, NULL, 'view_record', 100);
+  PERFORM pg_temp.assert(_count = 0, 'an action filter alone does not stand in for a person');
+
+  SELECT count(*) INTO _count FROM public.admin_audit_export(NULL, NULL, NULL, 100, 'c');
+  PERFORM pg_temp.assert(_count = 0, 'a one-character person search exports nothing');
+
+  SELECT count(*) INTO _count
+    FROM public.admin_audit_export(NULL, NULL, NULL, 100, 'cc-doctor')
+   WHERE action = 'view_record' AND patient_email = 'cc-patient@test.local';
+  PERFORM pg_temp.assert(_count = 1, 'naming the clinician exports what they read');
 
   RAISE NOTICE 'admin_command_centre: all assertions passed';
 END $$;

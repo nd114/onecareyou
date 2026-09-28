@@ -13,6 +13,9 @@ const CheckCareAlertsSchema = z.object({
   user_id: z.string().uuid().optional(),
 }).optional();
 
+const esc = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
 interface CareAlertSetting {
   id: string;
   user_id: string;
@@ -151,6 +154,11 @@ serve(async (req) => {
             .single();
 
           const userName = profile?.name || 'Your loved one';
+          // First name only in the email, and no medication names at all: the
+          // recipient address was typed by the patient and never verified, so
+          // a typo sends this to a stranger — and a list of drug names says
+          // what someone is being treated for. The care contact can call.
+          const firstName = esc(userName.trim().split(/\s+/)[0] || 'Your loved one');
           const missedMeds = missedEntries
             ?.map(e => (e.medication as any)?.name)
             .filter(Boolean)
@@ -168,13 +176,12 @@ serve(async (req) => {
               body: JSON.stringify({
                 from: 'OneCare Alerts <alerts@onecare.you>',
                 to: [setting.alert_recipient_email],
-                subject: `⚠️ Care Alert: ${userName} has missed ${missedCount} medication dose${missedCount > 1 ? 's' : ''}`,
+                subject: '⚠️ OneCare care alert — someone you look out for may need a check-in',
                 html: `
                   <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #ef4444;">Care Alert</h2>
-                    <p>Hello ${setting.alert_recipient_name},</p>
-                    <p>We wanted to let you know that <strong>${userName}</strong> has missed <strong>${missedCount} medication dose${missedCount > 1 ? 's' : ''}</strong> today.</p>
-                    ${missedMeds ? `<p><strong>Missed medications:</strong> ${missedMeds}</p>` : ''}
+                    <p>Hello ${esc(setting.alert_recipient_name ?? '')},</p>
+                    <p>We wanted to let you know that <strong>${firstName}</strong> has missed <strong>${missedCount} scheduled dose${missedCount > 1 ? 's' : ''}</strong> today.</p>
                     <p>You may want to check in with them to ensure they're okay.</p>
                     <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e5e5;" />
                     <p style="color: #666; font-size: 12px;">

@@ -15,6 +15,7 @@
  * Auth: requires a valid JWT (verify_jwt = true is default).
  */
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,6 +36,12 @@ interface ExtractRequest {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  // verify_jwt accepts the public anon key, which is not a person. Health
+  // photos and audio go to a third-party model from here, so require a real
+  // signed-in user.
+  const caller = await requireUser(req, corsHeaders);
+  if (caller instanceof Response) return caller;
+
   try {
     if (!LOVABLE_API_KEY) throw new Error("AI gateway not configured");
     const body = (await req.json()) as ExtractRequest;
@@ -55,7 +62,8 @@ Deno.serve(async (req) => {
     return json({ error: "unknown mode" }, 400);
   } catch (e) {
     console.error("media-extract error", e);
-    return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    // The upstream error text can quote the request back; keep it in the log.
+    return json({ error: "Could not process that file" }, 500);
   }
 });
 

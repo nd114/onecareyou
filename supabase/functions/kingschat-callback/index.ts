@@ -10,6 +10,15 @@
 // Requires verify_jwt = false in config.toml: KingsChat has no Supabase session
 // and sends no Authorization header.
 //
+// The nonce is in the KingsChat link, so it proves nothing about who is asking
+// (20261009110000). When the callback arrives as a browser navigation — the
+// browser where the user approved — this mints a completion code and redirects
+// that browser back to the OneCare origin recorded when the login began, with
+// the code in the fragment. The app page there claims the token with the code
+// and the browser secret it kept when it began the login. A browser that
+// approved someone else's login has no such secret, so the code is useless to
+// it; the browser that began it never sees the code unless it also approved.
+//
 // See docs: https://developers.kingschat.online/docs/login
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
@@ -20,6 +29,11 @@ import {
   placeholderEmail,
   type KingsChatIdentity,
 } from "../_shared/kingschat-identity.ts";
+import {
+  completionUrl,
+  isAllowedReturnOrigin,
+  parseExtraOrigins,
+} from "../_shared/kingschat-return.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,24 +101,44 @@ function json(body: unknown, status = 200) {
 }
 
 /**
- * A closing page instead of raw JSON.
+ * A page instead of raw JSON.
  *
  * KingsChat can deliver the callback as a browser navigation (the window it
  * opened for the login lands here), so a JSON body would be shown to the user
- * as text — which is exactly what the "Invalid JSON body" screenshot was. When
- * the request looks like a browser navigation we answer with a page that tells
- * the opener it is done and closes itself.
+ * as text — which is exactly what the "Invalid JSON body" screenshot was. This
+ * is only for the cases where there is nowhere safe to send the browser back
+ * to; everything else redirects to the app. It says nothing to its opener,
+ * which may be anyone's page.
  */
 function page(message: string, status = 200) {
   const html = `<!doctype html><html><head><meta charset="utf-8">
 <title>KingsChat sign-in</title>
 <style>body{font-family:system-ui,sans-serif;background:#faf7ef;color:#14342b;display:grid;place-items:center;height:100vh;margin:0}p{max-width:28rem;text-align:center;line-height:1.5}</style>
-</head><body><p>${message}</p>
-<script>try{window.opener&&window.opener.postMessage({source:"kingschat-callback",ok:${status < 400}},"*");}catch(e){}setTimeout(function(){try{window.close()}catch(e){}},1200);</script>
-</body></html>`;
+</head><body><p>${message}</p></body></html>`;
   return new Response(html, {
     status,
-    headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/html; charset=utf-8",
+      "Referrer-Policy": "no-referrer",
+    },
+  });
+}
+
+/**
+ * Send the approving browser back to the app. 303 turns KingsChat's form POST
+ * into a GET. The nonce and code ride in the fragment, which is never sent to
+ * a server.
+ */
+function redirectTo(location: string) {
+  return new Response(null, {
+    status: 303,
+    headers: {
+      ...corsHeaders,
+      Location: location,
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
+    },
   });
 }
 
@@ -184,6 +218,9 @@ Deno.serve(async (req) => {
   // Held outside the try so a failure can be written against the right attempt,
   // which is what turns a spinning button into a message the user can act on.
   let nonce: string | null = null;
+  // Set only once the attempt's recorded origin has passed the allowlist.
+  let returnOrigin: string | null = null;
+  const extraOrigins = parseExtraOrigins(Deno.env.get("KINGSCHAT_RETURN_ORIGINS"));
 
   const fail = async (reason: string, status = 400) => {
     if (nonce) {
@@ -192,6 +229,12 @@ Deno.serve(async (req) => {
         .update({ status: "failed", failure_reason: reason })
         .eq("nonce", nonce)
         .eq("status", "pending");
+    }
+    // Back to the app, without a completion code: the page there reads the
+    // reason through the claim, which only the browser that began the login
+    // is told.
+    if (browser && returnOrigin && nonce) {
+      return redirectTo(completionUrl(returnOrigin, nonce));
     }
     return respond({ error: reason }, status);
   };
@@ -213,7 +256,7 @@ Deno.serve(async (req) => {
     // callback we did not start.
     const { data: attempt } = await admin
       .from("kingschat_login_attempts")
-      .select("id, status, expires_at")
+      .select("id, status, expires_at, browser_secret_hash, return_origin")
       .eq("nonce", nonce)
       .maybeSingle();
 
@@ -224,6 +267,18 @@ Deno.serve(async (req) => {
     if (attempt.status !== "pending") {
       return respond({ error: "This sign-in was already completed" }, 409);
     }
+    // Begun before sign-ins were bound to a browser: nothing could claim it.
+    if (!attempt.browser_secret_hash) {
+      return respond({ error: "This sign-in has expired. Please start again." }, 410);
+    }
+    // Checked before anything is exchanged or created. The origin was chosen by
+    // whoever began the login; sending the completion code anywhere but one of
+    // our own origins would hand it to them.
+    if (!isAllowedReturnOrigin(attempt.return_origin, extraOrigins)) {
+      console.error("KingsChat attempt with a return origin not on the allowlist", attempt.return_origin);
+      return await fail("This sign-in was started from an address OneCare does not recognise.", 400);
+    }
+    returnOrigin = attempt.return_origin as string;
     if (new Date(attempt.expires_at) < new Date()) {
       return await fail("This sign-in took too long. Please try again.", 410);
     }
@@ -288,23 +343,28 @@ Deno.serve(async (req) => {
       return await fail("Could not start your session", 500);
     }
 
-    const { error: saveError } = await admin
-      .from("kingschat_login_attempts")
-      .update({
-        status: "fulfilled",
-        token_hash: tokenHash,
-        kingschat_subject: identity.subject,
-        fulfilled_at: new Date().toISOString(),
-      })
-      .eq("nonce", nonce)
-      .eq("status", "pending");
+    // Records the token, once, against a live browser-bound attempt, and returns
+    // the completion code for the browser that approved. The code is minted and
+    // hashed in the database; only its hash is kept.
+    const { data: completionCode, error: saveError } = await admin.rpc(
+      "kingschat_fulfil_login",
+      { _nonce: nonce, _token_hash: tokenHash, _subject: identity.subject },
+    );
 
     if (saveError) {
       console.error("Could not record the fulfilled KingsChat login", saveError);
       return respond({ error: "Could not complete sign-in" }, 500);
     }
+    if (typeof completionCode !== "string" || !completionCode) {
+      // Lost a race with another callback, or expired in the meantime.
+      return respond({ error: "This sign-in is no longer valid. Please start again." }, 409);
+    }
 
-    return browser ? page("Signed in. You can close this window.") : json({ ok: true });
+    // Only a browser can carry the code back to the app. A server-to-server
+    // callback leaves the attempt fulfilled but unclaimable, which fails closed:
+    // the button times out rather than signing anyone in on the nonce alone.
+    if (!browser) return json({ ok: true });
+    return redirectTo(completionUrl(returnOrigin, nonce, completionCode));
   } catch (error) {
     console.error("KingsChat callback error", error);
     return await fail("Unexpected error completing sign-in", 500);

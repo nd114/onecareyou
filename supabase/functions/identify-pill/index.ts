@@ -123,7 +123,8 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     
-    if (claimsError || !claimsData?.claims) {
+    // The anon key verifies too; it just has no subject. Require a person.
+    if (claimsError || !claimsData?.claims?.sub) {
       console.error("Auth error:", claimsError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized - invalid token' }),

@@ -31,6 +31,8 @@ DECLARE
   _owner   uuid := '4c000000-0000-0000-0000-00000000000f';
   _practice uuid := '4c000000-0000-0000-0000-0000000000c1';
   _enc uuid; _count integer;
+  _med uuid; _who uuid; _label text; _blocked boolean;
+  _conditions jsonb; _allergies jsonb;
 BEGIN
   INSERT INTO auth.users (id,email) VALUES
     (_patient,'nc-p@test.local'), (_doctor,'nc-d@test.local'), (_desk,'nc-fd@test.local'),
@@ -75,6 +77,23 @@ BEGIN
 
   INSERT INTO public.fhir_invoices (patient_user_id,practice_id,status,created_by,issued_at)
   VALUES (_patient,_practice,'issued',_doctor,now());
+
+  -- The rest of the clinical record: what they take, whether they take it,
+  -- the letters and results they filed, and what they are known to have.
+  INSERT INTO public.medications (user_id,name,dosage,frequency)
+  VALUES (_patient,'Sertraline','50mg','daily')
+  RETURNING id INTO _med;
+
+  INSERT INTO public.schedule_entries (user_id,medication_id,scheduled_time,status)
+  VALUES (_patient,_med,now()-interval '1 day','taken');
+
+  INSERT INTO public.health_documents (user_id,file_path,file_name,category)
+  VALUES (_patient,_patient::text || '/discharge.pdf','discharge.pdf','other');
+
+  UPDATE public.profiles
+     SET health_conditions = '["Major depressive disorder"]'::jsonb,
+         allergies         = '["Penicillin"]'::jsonb
+   WHERE user_id = _patient;
 
   -- ==========================================================================
   -- 1. The receptionist does not read the clinical record
@@ -145,7 +164,123 @@ BEGIN
   PERFORM pg_temp.assert(_count = 1, 'including the readings they take');
 
   -- ==========================================================================
-  -- 4. The classifier itself
+  -- 4. Nor the rest of the record, and they cannot write to it
+  --
+  -- Vitals were fixed and medications, adherence, documents and the
+  -- diagnosis/allergy profile were not, so a receptionist could still read
+  -- "Sertraline 50mg, taken yesterday" and "Major depressive disorder". The
+  -- same gap let them record a reading or propose a prescription change.
+  -- ==========================================================================
+  FOREACH _who IN ARRAY ARRAY[_desk, _biller] LOOP
+    _label := CASE WHEN _who = _desk THEN 'front desk' ELSE 'billing' END;
+
+    PERFORM set_config('request.jwt.claim.sub', _who::text, true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    SELECT count(*) INTO _count FROM public.medications WHERE user_id = _patient;
+    EXECUTE 'SET LOCAL ROLE postgres';
+    PERFORM pg_temp.assert(_count = 0, _label || ' reads no medications');
+
+    PERFORM set_config('request.jwt.claim.sub', _who::text, true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    SELECT count(*) INTO _count FROM public.schedule_entries WHERE user_id = _patient;
+    EXECUTE 'SET LOCAL ROLE postgres';
+    PERFORM pg_temp.assert(_count = 0, _label || ' reads no adherence history');
+
+    PERFORM set_config('request.jwt.claim.sub', _who::text, true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    SELECT count(*) INTO _count FROM public.health_documents WHERE user_id = _patient;
+    EXECUTE 'SET LOCAL ROLE postgres';
+    PERFORM pg_temp.assert(_count = 0, _label || ' reads no documents');
+
+    _conditions := NULL; _allergies := NULL;
+    PERFORM set_config('request.jwt.claim.sub', _who::text, true);
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    SELECT cp.health_conditions, cp.allergies INTO _conditions, _allergies
+      FROM public.get_patient_clinical_profile(ARRAY[_patient]) cp;
+    EXECUTE 'SET LOCAL ROLE postgres';
+    PERFORM pg_temp.assert(_conditions IS NULL AND _allergies IS NULL,
+      _label || ' gets no diagnoses or allergies from the clinical profile');
+
+    _blocked := false;
+    BEGIN
+      PERFORM set_config('request.jwt.claim.sub', _who::text, true);
+      EXECUTE 'SET LOCAL ROLE authenticated';
+      INSERT INTO public.vitals (user_id,type,value,unit,recorded_at,source,recorded_by_user_id)
+      VALUES (_patient,'heart_rate',72,'bpm',now()-interval '2 hours','clinician',_who);
+      EXECUTE 'SET LOCAL ROLE postgres';
+    EXCEPTION WHEN insufficient_privilege THEN
+      _blocked := true;
+    END;
+    EXECUTE 'SET LOCAL ROLE postgres';
+    PERFORM pg_temp.assert(_blocked, _label || ' cannot record a vital');
+
+    _blocked := false;
+    BEGIN
+      PERFORM set_config('request.jwt.claim.sub', _who::text, true);
+      EXECUTE 'SET LOCAL ROLE authenticated';
+      INSERT INTO public.record_change_proposals
+        (patient_user_id,proposed_by_user_id,kind,payload)
+      VALUES (_patient,_who,'medication_start','{"name":"Lorazepam"}'::jsonb);
+      EXECUTE 'SET LOCAL ROLE postgres';
+    EXCEPTION WHEN insufficient_privilege THEN
+      _blocked := true;
+    END;
+    EXECUTE 'SET LOCAL ROLE postgres';
+    PERFORM pg_temp.assert(_blocked, _label || ' cannot propose a medication change');
+  END LOOP;
+
+  -- ==========================================================================
+  -- 5. While the clinical team keeps all of it
+  -- ==========================================================================
+  PERFORM set_config('request.jwt.claim.sub', _nurse::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  SELECT count(*) INTO _count FROM public.medications WHERE user_id = _patient;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_count = 1, 'the nurse reads the medication list');
+
+  PERFORM set_config('request.jwt.claim.sub', _nurse::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  SELECT count(*) INTO _count FROM public.schedule_entries WHERE user_id = _patient;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_count = 1, 'and whether the doses were taken');
+
+  PERFORM set_config('request.jwt.claim.sub', _doctor::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  SELECT count(*) INTO _count FROM public.health_documents WHERE user_id = _patient;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_count = 1, 'the doctor reads the shared document');
+
+  _conditions := NULL; _allergies := NULL;
+  PERFORM set_config('request.jwt.claim.sub', _doctor::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  SELECT cp.health_conditions, cp.allergies INTO _conditions, _allergies
+    FROM public.get_patient_clinical_profile(ARRAY[_patient]) cp;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_conditions = '["Major depressive disorder"]'::jsonb
+                         AND _allergies = '["Penicillin"]'::jsonb,
+    'and the diagnoses and allergies');
+
+  PERFORM set_config('request.jwt.claim.sub', _nurse::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  INSERT INTO public.vitals (user_id,type,value,unit,recorded_at,source,recorded_by_user_id)
+  VALUES (_patient,'heart_rate',72,'bpm',now()-interval '2 hours','clinician',_nurse);
+  EXECUTE 'SET LOCAL ROLE postgres';
+  SELECT count(*) INTO _count FROM public.vitals
+   WHERE user_id = _patient AND recorded_by_user_id = _nurse;
+  PERFORM pg_temp.assert(_count = 1, 'the nurse records a reading');
+
+  PERFORM set_config('request.jwt.claim.sub', _doctor::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  INSERT INTO public.record_change_proposals
+    (patient_user_id,proposed_by_user_id,kind,payload)
+  VALUES (_patient,_doctor,'medication_start','{"name":"Lorazepam"}'::jsonb);
+  EXECUTE 'SET LOCAL ROLE postgres';
+  SELECT count(*) INTO _count FROM public.record_change_proposals
+   WHERE patient_user_id = _patient AND proposed_by_user_id = _doctor;
+  PERFORM pg_temp.assert(_count = 1, 'the doctor proposes a medication change');
+
+  -- ==========================================================================
+  -- 6. The classifier itself
   --
   -- An allowlist: a role added later is not clinical until somebody says so.
   -- ==========================================================================
@@ -160,7 +295,7 @@ BEGIN
   PERFORM pg_temp.assert(NOT public.practice_role_is_clinical('staff'), 'the generic staff role is not');
 
   -- ==========================================================================
-  -- 5. Losing the clinical role loses the clinical reach
+  -- 7. Losing the clinical role loses the clinical reach
   -- ==========================================================================
   UPDATE public.practice_members SET role = 'front_desk'
    WHERE practice_id = _practice AND user_id = _nurse;

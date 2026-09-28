@@ -177,6 +177,16 @@ planted, and the assistant can propose changes to a medication list.
   with the demo credentials and expected results, so it is a checklist rather
   than an exploration.
 
+## Running the suites without psql
+
+`node scripts/db-test.mjs` is the same run as `scripts/db-test.sh` for a
+machine with Postgres 16 but no `psql` (Windows, typically). It reads the
+compatibility shim out of `db-test.sh`, replays statement by statement in
+autocommit as psql does, and takes `PGHOST`, `PGPORT`, `PGUSER` and `DBNAME`
+from the environment. Give each concurrent run its own `DBNAME`. On a loaded
+machine run vitest with `--testTimeout=120000`; the default five seconds times
+out on the page smoke and FHIR validation tests without anything being wrong.
+
 ## Driving the signed-in app in a browser
 
 `scripts/local-supabase/` replays the migration history into a local Postgres,

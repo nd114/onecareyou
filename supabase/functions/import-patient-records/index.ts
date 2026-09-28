@@ -106,6 +106,23 @@ Deno.serve(async (req) => {
       )
     }
 
+    // practice_id also comes from the body and was written with the service
+    // role unchecked, so a clinician could file records into any practice's
+    // patient list. Asked of the database as the caller, the same gate the
+    // "Practice staff create records for their practice" policy uses.
+    if (practice_id) {
+      const { data: mayManage, error: gateError } = await userClient.rpc(
+        'may_manage_practice_patient_records',
+        { _practice_id: practice_id },
+      )
+      if (gateError || mayManage !== true) {
+        return new Response(
+          JSON.stringify({ error: 'You cannot add patient records to that practice' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+    }
+
     // Fetch existing records for dedup
     const { data: existingRecords } = await adminClient
       .from('clinician_patient_records')

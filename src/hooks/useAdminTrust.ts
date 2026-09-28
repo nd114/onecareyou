@@ -143,15 +143,20 @@ export function useAdminTrust() {
   };
 }
 
-/** Pulls an audit range on demand, for the founder to keep or hand over. */
+/**
+ * Pulls one person's audit trail over a range, for the founder to keep or hand
+ * over. admin_audit_export returns nothing unless a clinician or patient is
+ * named, MIN_SEARCH_LENGTH characters or more (20261009050000).
+ */
 export function useAuditExport() {
   const exportRange = useMutation({
-    mutationFn: async (input: { from?: string; to?: string; action?: string }) => {
+    mutationFn: async (input: { from?: string; to?: string; action?: string; person: string }) => {
       const { data, error } = await supabase.rpc('admin_audit_export', {
         _from: input.from || undefined,
         _to: input.to || undefined,
         _action: input.action || undefined,
         _limit: 5000,
+        _search: input.person,
       });
       if (error) throw error;
       return (data || []) as AuditExportRow[];
@@ -159,5 +164,9 @@ export function useAuditExport() {
     onError: (e: Error) => toast.error(e.message || 'Could not export that range'),
   });
 
-  return { exportRange: exportRange.mutateAsync, isExporting: exportRange.isPending };
+  return {
+    exportRange: exportRange.mutateAsync,
+    isExporting: exportRange.isPending,
+    minSearchLength: MIN_SEARCH_LENGTH,
+  };
 }

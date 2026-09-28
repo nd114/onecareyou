@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Building2,
-  CalendarDays,
   Heart,
   Inbox,
+  MessageCircle,
   Mic,
   PanelLeftClose,
   PanelLeftOpen,
@@ -27,7 +27,9 @@ const COLLAPSE_KEY = 'onecare-clinician-rail-collapsed';
 const PILLAR_ICONS: Record<ClinicianPillarKey, typeof Inbox> = {
   today: Inbox,
   patients: Users,
-  communicate: CalendarDays,
+  // The same glyph MobileBottomNav uses for this pillar. It was a calendar,
+  // which is Schedule's meaning, on a section holding Messages and Guidance.
+  communicate: MessageCircle,
   practice: Building2,
 };
 
@@ -35,15 +37,16 @@ const PILLAR_ICONS: Record<ClinicianPillarKey, typeof Inbox> = {
  * The desktop alternative to the stacked pillar + sub-tab bars.
  *
  * Every destination a role can open is on screen at once, so switching section
- * is one click rather than two, and the page keeps the full height of the
- * monitor. Collapsing leaves the icons, never nothing — a rail that disappears
- * has no way back.
+ * is one click rather than two, and the sub-tab row goes (49px back on pages
+ * that have one). The header stays: it carries search, notifications and the
+ * account menu. Collapsing leaves the icons, never nothing — a rail that
+ * disappears has no way back.
  *
  * Only rendered from lg up; phones keep their bottom bar.
  */
 export function ClinicianRail() {
   const { pathname, hash } = useLocation();
-  const { can, loading: capsLoading } = useClinicianCapabilities();
+  const { can } = useClinicianCapabilities();
   const activePillar = getClinicianPillarForRoute(pathname);
 
   const [collapsed, setCollapsed] = useState(
@@ -58,9 +61,14 @@ export function ClinicianRail() {
     return () => document.documentElement.classList.remove('clinician-rail-collapsed');
   }, [collapsed]);
 
+  // While capabilities load, `can` answers no to everything, so only the
+  // ungated tabs show. The rail used to show *every* tab until the answer came
+  // back — a front desk account saw Visit notes, Invoices and Compliance for a
+  // moment and then watched them vanish. Tabs arriving is better than tabs
+  // being taken away, and navigation that hints at access should fail closed.
   const pillars = CLINICIAN_PILLARS.map((pillar) => ({
     ...pillar,
-    tabs: capsLoading ? pillar.tabs : visibleTabs(pillar.tabs, can),
+    tabs: visibleTabs(pillar.tabs, can),
   })).filter((pillar) => pillar.tabs.length > 0);
 
   return (
@@ -151,7 +159,7 @@ export function ClinicianRail() {
         <div className="border-t border-border/60 p-2">
           {/* One click to dictation from wherever they are — the reason the rail
               earns its width on a clinic monitor. */}
-          {(capsLoading || can('edit_clinical')) && (
+          {can('edit_clinical') && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link to="/clinician/scribe" className="block">

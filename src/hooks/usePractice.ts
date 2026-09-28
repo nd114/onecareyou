@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 import { useWorkspaceSelection } from './useWorkspaceSelection';
+import { activeMembership, liveMemberships } from '@/lib/staff-roles';
 
 export type PracticeRole =
   | 'owner'
@@ -153,9 +154,16 @@ export function usePractice() {
     ? practices.find((p) => p.id === selectedWorkspaceId) || null
     : null;
   const needsWorkspaceSelection = practices.length > 1 && !selectedPractice;
-  const currentPractice = selectedPractice || practices[0] || null;
-  const currentMembership = currentPractice
-    ? memberships.find((membership) => membership.practice_id === currentPractice.id) || null
+  // The same rule, over the same filtered and ordered rows, as
+  // useClinicianCapabilities. "First" used to be practices[0] in whatever order
+  // the practices query returned, so with nothing chosen the screens could show
+  // a different workspace from the one every can(...) answered for.
+  const currentMembership = activeMembership(
+    liveMemberships(memberships, practices.map((p) => p.id)),
+    selectedWorkspaceId,
+  );
+  const currentPractice = currentMembership
+    ? practices.find((p) => p.id === currentMembership.practice_id) || null
     : null;
 
   // Get members of a practice.
@@ -345,34 +353,13 @@ export function usePractice() {
   const acceptInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
       if (!user) throw new Error('Not authenticated');
-      
-      // Get invitation details
-      const { data: invitation, error: invError } = await supabase
-        .from('practice_invitations')
-        .select('*')
-        .eq('id', invitationId)
-        .single();
-      if (invError) throw invError;
-
-      // Add as practice member
-      const { error: memberError } = await supabase
-        .from('practice_members')
-        .insert({
-          practice_id: invitation.practice_id,
-          user_id: user.id,
-          role: invitation.role,
-          invited_by: invitation.invited_by,
-          status: 'active',
-          accepted_at: new Date().toISOString(),
-        });
-      if (memberError) throw memberError;
-
-      // Update invitation status
-      const { error: updateError } = await supabase
-        .from('practice_invitations')
-        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-        .eq('id', invitationId);
-      if (updateError) throw updateError;
+      // One server-side step, on the manager's terms. Inserting our own member
+      // row from here was refused by RLS for everyone but a manager, and the
+      // invitation it read its role from was one the invitee could rewrite.
+      const { error } = await supabase.rpc('accept_practice_invitation', {
+        _invitation_id: invitationId,
+      });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practices'] });
@@ -388,10 +375,9 @@ export function usePractice() {
   // Decline an invitation
   const declineInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
-      const { error } = await supabase
-        .from('practice_invitations')
-        .update({ status: 'declined', declined_at: new Date().toISOString() })
-        .eq('id', invitationId);
+      const { error } = await supabase.rpc('decline_practice_invitation', {
+        _invitation_id: invitationId,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

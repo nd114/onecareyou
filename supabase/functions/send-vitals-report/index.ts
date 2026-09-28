@@ -33,6 +33,12 @@ const SendReportRequestSchema = z.object({
 
 type VitalRecord = z.infer<typeof VitalRecordSchema>;
 
+// Everything interpolated into the email comes from the request body or the
+// sender's profile. Unescaped, a signed-in user could send arbitrary HTML —
+// links, forms, lookalike branding — to any address from OneCare's domain.
+const esc = (s: unknown) =>
+  String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const VITAL_LABELS: Record<string, string> = {
   blood_pressure: 'Blood Pressure',
   heart_rate: 'Heart Rate',
@@ -79,7 +85,7 @@ function generateEmailHTML(
   vitals: VitalRecord[],
   dateRange: { from?: string; to?: string }
 ): string {
-  const greeting = recipientName ? `Dear ${recipientName}` : 'Dear Healthcare Provider';
+  const greeting = recipientName ? `Dear ${esc(recipientName)}` : 'Dear Healthcare Provider';
   
   const dateRangeText = dateRange.from && dateRange.to
     ? `${formatDate(dateRange.from).split(',')[0]} to ${formatDate(dateRange.to).split(',')[0]}`
@@ -93,28 +99,28 @@ function generateEmailHTML(
   }
 
   const summaryRows = Object.entries(vitalsByType).map(([type, records]) => {
-    const label = VITAL_LABELS[type] || type;
+    const label = esc(VITAL_LABELS[type] || type);
     const values = records.map(r => r.value);
     const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
     const latest = records[0];
     return `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; font-weight: 500;">${label}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">${formatValue(latest)} ${latest.unit}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">${avg} ${latest.unit}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">${formatValue(latest)} ${esc(latest.unit)}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">${avg} ${esc(latest.unit)}</td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">${records.length}</td>
       </tr>
     `;
   }).join('');
 
   const detailRows = vitals.slice(0, 50).map(vital => {
-    const label = VITAL_LABELS[vital.type] || vital.type;
+    const label = esc(VITAL_LABELS[vital.type] || vital.type);
     return `
       <tr>
         <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0;">${label}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">${formatValue(vital)} ${vital.unit}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #666;">${formatDate(vital.recorded_at)}</td>
-        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #666; font-size: 12px;">${vital.notes || '-'}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-weight: 600;">${formatValue(vital)} ${esc(vital.unit)}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #666;">${esc(formatDate(vital.recorded_at))}</td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; color: #666; font-size: 12px;">${esc(vital.notes || '-')}</td>
       </tr>
     `;
   }).join('');
@@ -140,14 +146,14 @@ function generateEmailHTML(
             ${greeting},
           </p>
           <p style="margin: 0 0 20px; color: #333; line-height: 1.6;">
-            <strong>${patientName}</strong> (${patientEmail}) has shared their health vitals report with you.
+            <strong>${esc(patientName)}</strong> (${esc(patientEmail)}) has shared their health vitals report with you.
           </p>
           
           <!-- Report Info -->
           <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 25px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
               <span style="color: #666;">Date Range:</span>
-              <strong style="color: #333;">${dateRangeText}</strong>
+              <strong style="color: #333;">${esc(dateRangeText)}</strong>
             </div>
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #666;">Total Readings:</span>
@@ -271,7 +277,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     const { recipientEmail, recipientName, vitals, dateRange } = parseResult.data;
     
-    console.log(`Sending report to ${recipientEmail} with ${vitals.length} vitals`);
+    console.log(`Sending report with ${vitals.length} vitals`);
 
     // Generate email HTML
     const html = generateEmailHTML(patientName, patientEmail, recipientName, vitals, dateRange);
@@ -280,7 +286,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "OneCare <hello@onecare.you>",
       to: [recipientEmail],
-      subject: `Health Vitals Report from ${patientName}`,
+      subject: `Health Vitals Report from ${patientName.replace(/[\r\n]/g, " ").slice(0, 100)}`,
       html,
     });
 

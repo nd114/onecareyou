@@ -24,6 +24,39 @@ export function visibleTabs(tabs: NavTab[], can: (c: any) => boolean): NavTab[] 
   return tabs.filter((tab) => !tab.capability || can(tab.capability));
 }
 
+/** A page somebody can be sent to by name, for search. */
+export interface NavTarget {
+  to: string;
+  label: string;
+  /** The pillar it sits under, so a result reads "Invoices in Practice". */
+  group: string;
+}
+
+/**
+ * Every page this member may open, flattened for search.
+ *
+ * Deliberately built from the same pillars the navigation renders and filtered
+ * through the same `visibleTabs`, rather than a second list of routes. Search
+ * that offered a page the navigation hides would be a way around the role — a
+ * billing clerk typing "guidance" must not be handed a shortcut to it — and two
+ * catalogues would eventually disagree about which.
+ *
+ * This decides what is *offered*, not what is *permitted*: the route itself is
+ * still gated by RequireCapability, and the data behind it by RLS.
+ */
+export function navTargets(
+  pillars: readonly { label: string; tabs: NavTab[] }[],
+  can: (c: any) => boolean,
+): NavTarget[] {
+  return pillars.flatMap((pillar) =>
+    visibleTabs(pillar.tabs, can).map((tab) => ({
+      to: tab.to,
+      label: tab.label,
+      group: pillar.label,
+    })),
+  );
+}
+
 export interface PatientPillar {
   key: PatientPillarKey;
   label: string;

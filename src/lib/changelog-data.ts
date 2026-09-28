@@ -14,6 +14,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-28',
+    version: '0.9.11',
+    title: 'PHI audit: every confirmed leak closed, each with a regression test',
+    tags: ['security', 'clinician', 'patient', 'platform'],
+    bullets: [
+      'Security — A September audit confirmed nine ways patient data could reach the wrong person; follow-up audits of access checks, edge functions and the front end found more. All are fixed, and each fix ships with a test that failed before it and passes after. Details: docs/audit-2026-09.md, pass 8.',
+      'Security — A hospital share can only be written by the patient it belongs to, and nobody joins a hospital without accepting an invitation. A practice admin can end a share but never re-point or widen it.',
+      'Security — Patient name, email and phone are released only to someone with a live, consented relationship: expired shares and declined record invitations no longer count.',
+      'Security — Edge functions now check the patient\'s share, with a confirmed email, before reading or exporting anything; alert emails no longer contain names or readings; offline caches are cleared at sign-out.',
+      'Security — Patient search lists only your own documents; an alert rule cannot be pointed at another patient and stops firing when the share ends (it can still be switched off); a solo clinician\'s record cannot be filed into a practice.',
+      'Security — KingsChat sign-in is bound to the browser that started it: a link someone else began can no longer sign them in as you. The popup briefly shows "Finishing KingsChat sign-in…", and sign-in now also works when popups are blocked.',
+      'What staff will notice — Front desk and billing no longer see medications, adherence, documents, allergies or conditions, and cannot write encounters, notes, care plans or vitals. Booking, invoices, identity and document upload are unchanged. The safety strip tells them the lists are "Visible to clinical staff only".',
+      'What staff will notice — Removing a team member (or moving them to a non-clinical role) ends their patient assignments and their access to visit notes straight away. Restoring them does not reassign patients; a manager does that.',
+      'What staff will notice — Staff invitations are accepted and declined in one server step; only an owner can offer the owner role. The clinician bulk "Remove from care" action is gone: a clinician cannot end a patient\'s consent, and it never did anything.',
+      'What staff will notice — The author of a patient record stops seeing it once the patient links and later revokes; front desk edits only the records they filed; a colleague clinician\'s edits to a practice record now actually save.',
+      'What admins will notice — Just arrived, the access log and the audit export all need a name or email (2+ characters) before they show anyone; the export is one person\'s trail rather than a date range.',
+      'Clinician app — The header, the rail and every permission check now agree on the current workspace, including after a switch or when a practice is retired; a failed permission read now denies instead of granting everything.',
+      'Clinician app — Audit screen and vault fit a 390px phone; the audit heading says whose events it shows; the empty IP column is gone from the screen and exports; departments have descriptions; the typing indicator uses a private channel.',
+      'Infrastructure — scripts/db-test.mjs runs the SQL suites without psql, and the local replay now matches production for Realtime-authorisation migrations.',
+    ],
+  },
+  {
     date: '2026-09-13',
     version: '0.9.10',
     title: 'Founder command centre: a real admin console',

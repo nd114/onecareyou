@@ -31,6 +31,7 @@ DECLARE
   v_doc        uuid;
   v_msg        uuid;
   v_event      public.document_retraction_events;
+  v_objection  public.my_withdrawn_documents;
   v_count      int;
   v_ok         boolean;
   v_text       text;
@@ -53,6 +54,12 @@ BEGIN
     (v_practice, v_admin, 'admin', 'active')
   ON CONFLICT (practice_id, user_id) DO UPDATE
     SET role = EXCLUDED.role, status = 'active';
+
+  -- Jane shares with St Anne's. That share is how the clinician's documents
+  -- reach her, and so what makes St Anne's the sending practice on the record.
+  PERFORM set_config('request.jwt.claim.sub', v_patient::text, true);
+  INSERT INTO public.practice_shares (practice_id, user_id, is_active, share_all, permissions)
+  VALUES (v_practice, v_patient, true, true, '{}');
 
   -- -------------------------------------------------------------------------
   -- 1. Every reason code carries both sentences: one for the person who
@@ -305,9 +312,9 @@ BEGIN
 
   PERFORM set_config('request.jwt.claim.sub', v_patient::text, true);
   SET LOCAL ROLE authenticated;
-  v_event := public.object_to_withdrawal(v_event.id, 'I believe this document was about me');
+  v_objection := public.object_to_withdrawal(v_event.id, 'I believe this document was about me');
   RESET ROLE;
-  IF v_event.objected_at IS NULL THEN RAISE EXCEPTION 'FAIL: the objection was not recorded'; END IF;
+  IF v_objection.objected_at IS NULL THEN RAISE EXCEPTION 'FAIL: the objection was not recorded'; END IF;
 
   -- There is no outcome to set. If a resolution column ever appears here,
   -- somebody has decided this platform arbitrates, which it does not.

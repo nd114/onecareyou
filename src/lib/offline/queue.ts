@@ -59,10 +59,18 @@ export async function flushQueue(): Promise<{ flushed: number; failed: number }>
   let failed = 0;
 
   try {
+    // Only the signed-in person's own writes are replayed. The queue survives
+    // sign-out, so without this a reading one account logged offline would be
+    // sent under whichever account signs in next on the same browser.
+    const { data: { session } } = await supabase.auth.getSession();
+    const currentUserId = session?.user?.id ?? null;
+    if (!currentUserId) return { flushed, failed };
+
     const db = await getDB();
-    const all = await db.getAllFromIndex('pending_writes', 'by_created');
+    const all = (await db.getAllFromIndex('pending_writes', 'by_created')) as PendingWrite[];
 
     for (const write of all) {
+      if (write.user_id !== currentUserId) continue;
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const table = (supabase.from as any)(write.table);

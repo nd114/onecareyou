@@ -227,10 +227,21 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
     return ['typing', ...[user.id, otherPartyUserId].sort()].join('-');
   }, [user?.id, otherPartyUserId]);
 
-  // Typing indicator via Realtime broadcast
+  // Typing indicator via Realtime broadcast.
+  //
+  // Private, so Realtime checks realtime.messages RLS before letting anyone
+  // join or send. The policies from 20260522174925 admit a caller only to a
+  // topic that contains their own uid, and this topic is built from exactly
+  // the two participants. As a public channel it was open to anyone holding
+  // the anon key and both ids: they could watch who was writing to whom, and
+  // when, and send fake "is typing" events into the thread.
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   useEffect(() => {
     if (!channelKey || !user?.id) return;
-    const channel = supabase.channel(channelKey, { config: { broadcast: { self: false } } });
+    const channel = supabase.channel(channelKey, {
+      config: { private: true, broadcast: { self: false } },
+    });
+    typingChannelRef.current = channel;
     channel
       .on('broadcast', { event: 'typing' }, (payload) => {
         if (payload.payload?.userId && payload.payload.userId !== user.id) {
@@ -241,17 +252,21 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
       })
       .subscribe();
     return () => {
+      typingChannelRef.current = null;
       supabase.removeChannel(channel);
       if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
     };
   }, [channelKey, user?.id]);
 
   const broadcastTyping = () => {
-    if (!channelKey || !user?.id) return;
+    // Send on the subscribed private channel. supabase.channel(key) without the
+    // config would describe a public one.
+    const channel = typingChannelRef.current;
+    if (!channel || !user?.id) return;
     const now = Date.now();
     if (now - lastTypingSentRef.current < 1200) return;
     lastTypingSentRef.current = now;
-    supabase.channel(channelKey).send({
+    void channel.send({
       type: 'broadcast',
       event: 'typing',
       payload: { userId: user.id },

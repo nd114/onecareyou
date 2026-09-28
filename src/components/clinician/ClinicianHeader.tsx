@@ -52,6 +52,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CLINICIAN_PILLARS, getClinicianPillarForRoute, isNavTabActive, visibleTabs } from "@/lib/nav-ia";
+import { GlobalSearch } from "@/components/search/GlobalSearch";
+import { WorkspaceSelector } from "@/components/clinician/WorkspaceSelector";
 import { useClinicianCapabilities } from "@/hooks/useClinicianCapabilities";
 import { Header } from "@/components/layout/Header";
 import { useApplyClinicianAppearance } from "@/hooks/useClinicianAppearance";
@@ -184,6 +186,8 @@ export function ClinicianHeader() {
           <Link
             to="/clinician/dashboard"
             aria-label="OneCare home"
+            // Hidden in rail mode, which carries its own copy of the brand.
+            data-clinician-brand
             className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
@@ -195,6 +199,19 @@ export function ClinicianHeader() {
             </div>
             <span className="px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wide">Beta</span>
           </Link>
+          {/*
+            Which workspace is current, on every page — and the way to change it.
+            A clinician at a hospital and in their own practice could not tell
+            which one they were looking at: the header said only "OneCare for
+            Clinicians", and a hospital with assignment-first access shows them
+            a different patient list than their own practice does. Since the
+            chosen workspace also decides their permissions, it has to be in
+            view. Renders nothing for the usual single workspace. Phones get it
+            at the top of the menu instead, where the header has no room.
+          */}
+          <div className="hidden md:flex items-center ml-3">
+            <WorkspaceSelector />
+          </div>
         </div>
 
         {/* Desktop Navigation - 4 pillars, truly centered */}
@@ -219,6 +236,10 @@ export function ClinicianHeader() {
         {/* Right Side - Theme Toggle, Notifications Popover, Profile - fixed width for symmetry */}
         <div className="flex-1 flex items-center justify-end gap-1">
 
+          {/* One instance only: each mounts its own ⌘K listener, so a second
+              would open two stacked dialogs. The button collapses to its icon
+              on small screens by itself. */}
+          <GlobalSearch audience="clinician" />
 
           {/* Theme Toggle Icon */}
           <Button
@@ -361,8 +382,6 @@ export function ClinicianHeader() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
-                {/* Workspace switching (personal vs hospital) is deliberately not
-                    here: one account belongs to one hospital. Deferred — see roadmap. */}
                 <DropdownMenuItem asChild>
                   <Link to="/clinician/settings" className="flex items-center gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" />
@@ -410,6 +429,9 @@ export function ClinicianHeader() {
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-border bg-background">
           <nav className="container py-4 space-y-1">
+            <div className="md:hidden pb-3">
+              <WorkspaceSelector />
+            </div>
             {pillars.map((pillar) => {
               const isExpanded =
                 expandedPillar === pillar.key ||
