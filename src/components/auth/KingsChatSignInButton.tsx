@@ -6,35 +6,42 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import kingschatLogo from "@/assets/kingschat-logo.png.asset.json";
 import { safeInternalPath } from "@/lib/safe-path";
+import {
+  KINGSCHAT_RESULT_CHANNEL,
+  KINGSCHAT_RESULT_KEY,
+  buildKingsChatLoginUrl,
+  forgetPendingLogin,
+  isResultMessage,
+  savePendingLogin,
+} from "@/lib/kingschat-login";
 
 interface KingsChatSignInButtonProps {
   label?: string;
   redirectTo?: string;
 }
 
-// The client id is public — it travels in the login URL the browser is sent to,
-// so anyone using the app can read it. The API key and everything else stay on
-// the server.
-const KINGSCHAT_CLIENT_ID = "45b995ce-a27e-49b2-9047-8d43229b0d46";
-const KINGSCHAT_LOGIN_URL = "https://accounts.kingschat.online/log-in";
-
-const POLL_INTERVAL_MS = 1500;
+const WATCH_INTERVAL_MS = 1500;
 const GIVE_UP_AFTER_MS = 5 * 60 * 1000;
-
-type PollResult = {
-  status: "pending" | "ready" | "failed" | "expired" | "consumed" | "unknown";
-  token_hash?: string;
-  error?: string;
-};
+// A popup that finishes reports and then closes itself; give the report time
+// to arrive before reading a closed window as a cancellation.
+const CLOSED_GRACE_MS = 3000;
 
 /**
  * Sign in with KingsChat.
  *
- * KingsChat does not redirect the browser back with an authorization code — it
- * POSTs the code to the callback URL registered on the application, server to
- * server. So this window never sees the code, and the two halves are joined by
- * the nonce issued before the user leaves: KingsChat echoes it back as `origin`,
- * the callback stores the result against it, and this asks for it.
+ * KingsChat does not hand this window the authorization code. It delivers it
+ * to the callback URL registered on the application, and the two halves are
+ * joined by the nonce issued before the user leaves: KingsChat echoes it back
+ * as `origin`.
+ *
+ * The nonce is in the KingsChat link, so it cannot be what proves who gets the
+ * session (20261009110000). Beginning also returns a browser secret, kept in
+ * this browser's storage and never put in the link. The callback sends the
+ * browser where the user approved back to /auth/kingschat/complete with a
+ * completion code; that page claims the session with the code and the secret,
+ * signs in, and reports here over a same-origin channel. A link begun by
+ * someone else and approved here has no secret here, so it signs nobody in —
+ * and the browser that began it never sees the code.
  *
  * Issuing and claiming go through database functions rather than edge functions.
  * They only ever touched one table, and every extra edge function is another
@@ -61,105 +68,135 @@ export function KingsChatSignInButton({
   // the service.
   const [logoBroken, setLogoBroken] = useState(false);
   const navigate = useNavigate();
-  const cancelled = useRef(false);
   const popup = useRef<Window | null>(null);
+  // Tears down whatever is watching for the current login's result.
+  const stopWatching = useRef<(() => void) | null>(null);
 
-  // A login left in flight when the page changes should stop polling rather
+  // A login left in flight when the page changes should stop watching rather
   // than resolve into a component that is no longer mounted.
   useEffect(() => {
     return () => {
-      cancelled.current = true;
+      stopWatching.current?.();
       popup.current?.close();
     };
   }, []);
 
   const finish = (message: string) => {
+    stopWatching.current?.();
     toast.error(message);
     popup.current?.close();
     setLoading(false);
   };
 
+  /**
+   * Wait for the completion page, in the popup, to report on this nonce. It
+   * reports over a same-origin BroadcastChannel, and through a storage event
+   * where that is missing; either way only this origin can speak on it.
+   */
+  const watchForResult = (nonce: string, landOn: string) => {
+    let channel: BroadcastChannel | null = null;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    let closedSince: number | null = null;
+    const startedAt = Date.now();
+
+    const stop = () => {
+      channel?.close();
+      if (timer) clearInterval(timer);
+      window.removeEventListener("storage", onStorage);
+      stopWatching.current = null;
+      forgetPendingLogin(window.localStorage, nonce);
+    };
+
+    const onResult = async (value: unknown) => {
+      if (!isResultMessage(value) || value.nonce !== nonce) return;
+      stop();
+      popup.current?.close();
+      if (value.outcome !== "signed-in") {
+        finish(value.error ?? "KingsChat sign-in failed");
+        return;
+      }
+      // The popup signed in on this origin; make sure this tab has the session
+      // before moving on.
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        finish("KingsChat sign-in did not complete. Please try again.");
+        return;
+      }
+      toast.success("Signed in with KingsChat");
+      navigate(landOn, { replace: true });
+    };
+
+    function onStorage(e: StorageEvent) {
+      if (e.key !== KINGSCHAT_RESULT_KEY || !e.newValue) return;
+      try {
+        void onResult(JSON.parse(e.newValue));
+      } catch {
+        // Not ours.
+      }
+    }
+
+    if (typeof BroadcastChannel !== "undefined") {
+      channel = new BroadcastChannel(KINGSCHAT_RESULT_CHANNEL);
+      channel.onmessage = (e) => void onResult(e.data);
+    }
+    window.addEventListener("storage", onStorage);
+
+    timer = setInterval(() => {
+      if (Date.now() - startedAt > GIVE_UP_AFTER_MS) {
+        finish("KingsChat sign-in timed out. Please try again.");
+        return;
+      }
+      if (popup.current?.closed) {
+        closedSince ??= Date.now();
+        if (Date.now() - closedSince > CLOSED_GRACE_MS) {
+          finish("KingsChat sign-in was cancelled");
+        }
+      }
+    }, WATCH_INTERVAL_MS);
+
+    stopWatching.current = stop;
+  };
+
   const handleClick = async () => {
     setLoading(true);
-    cancelled.current = false;
+    stopWatching.current?.();
 
     // Opened before the await: a popup opened after one is blocked, because the
     // browser no longer counts it as a response to the click.
     popup.current = window.open("", "_blank", "width=520,height=680");
 
     try {
-      const { data: nonce, error } = await supabase.rpc("kingschat_begin_login");
-      if (error || typeof nonce !== "string" || !nonce) {
+      const { data: rows, error } = await supabase.rpc("kingschat_begin_login", {
+        _return_origin: window.location.origin,
+      });
+      const begun = rows?.[0];
+      if (error || !begun?.nonce || !begun?.browser_secret) {
         finish(error?.message || "Could not start KingsChat sign-in");
         return;
       }
 
-      const loginUrl = `${KINGSCHAT_LOGIN_URL}?clientId=${encodeURIComponent(
-        KINGSCHAT_CLIENT_ID,
-      )}&origin=${encodeURIComponent(nonce)}`;
+      // Safe by construction: every caller passes a literal today, and nothing
+      // here has to stay true for that to remain the case.
+      const landOn = safeInternalPath(redirectTo, "/dashboard");
+      const loginUrl = buildKingsChatLoginUrl(begun.nonce);
+      const inPopup = !!popup.current && !popup.current.closed;
 
-      if (popup.current && !popup.current.closed) {
-        popup.current.location.href = loginUrl;
+      // Kept before leaving: the completion page needs it to claim. It is the
+      // one thing the KingsChat link does not carry.
+      savePendingLogin(window.localStorage, {
+        nonce: begun.nonce,
+        secret: begun.browser_secret,
+        redirectTo: landOn,
+        mode: inPopup ? "popup" : "redirect",
+      });
+
+      if (inPopup) {
+        watchForResult(begun.nonce, landOn);
+        popup.current!.location.href = loginUrl;
       } else {
-        // Popups blocked: this tab goes instead. The login still completes —
-        // the code reaches the server either way — but this window is replaced,
-        // so the poll cannot finish here.
+        // Popups blocked: this tab goes instead, and the completion page
+        // finishes the sign-in in this tab when KingsChat sends it back.
         window.location.href = loginUrl;
-        return;
-      }
-
-      const startedAt = Date.now();
-      while (!cancelled.current) {
-        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-        if (cancelled.current) return;
-
-        if (Date.now() - startedAt > GIVE_UP_AFTER_MS) {
-          finish("KingsChat sign-in timed out. Please try again.");
-          return;
-        }
-
-        const { data: rows, error: pollError } = await supabase.rpc(
-          "kingschat_claim_login",
-          { _nonce: nonce },
-        );
-        if (pollError) continue; // A dropped poll is not a failed login.
-
-        const result = rows?.[0] as PollResult | undefined;
-        if (!result) continue;
-        if (result.status === "pending") {
-          // Give up early if they closed the window without finishing.
-          if (popup.current?.closed) {
-            finish("KingsChat sign-in was cancelled");
-            return;
-          }
-          continue;
-        }
-        if (result.status === "ready" && result.token_hash) {
-          popup.current?.close();
-          const { error: verifyError } = await supabase.auth.verifyOtp({
-            token_hash: result.token_hash,
-            type: "email",
-          });
-          if (verifyError) {
-            finish(verifyError.message);
-            return;
-          }
-          toast.success("Signed in with KingsChat");
-          // Safe by construction: every caller passes a literal today, and
-      // nothing here has to stay true for that to remain the case.
-      navigate(safeInternalPath(redirectTo, "/dashboard"), { replace: true });
-          return;
-        }
-        if (result.status === "failed") {
-          finish(result.error ?? "KingsChat sign-in failed");
-          return;
-        }
-        finish(
-          result.status === "expired"
-            ? "KingsChat sign-in took too long. Please try again."
-            : "That KingsChat sign-in is no longer valid. Please try again.",
-        );
-        return;
       }
     } catch (err) {
       finish(err instanceof Error ? err.message : "KingsChat sign-in failed");

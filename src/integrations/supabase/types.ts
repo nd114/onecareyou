@@ -2512,6 +2512,8 @@ export type Database = {
       }
       kingschat_login_attempts: {
         Row: {
+          browser_secret_hash: string | null
+          completion_hash: string | null
           consumed_at: string | null
           created_at: string
           expires_at: string
@@ -2520,10 +2522,13 @@ export type Database = {
           id: string
           kingschat_subject: string | null
           nonce: string
+          return_origin: string | null
           status: string
           token_hash: string | null
         }
         Insert: {
+          browser_secret_hash?: string | null
+          completion_hash?: string | null
           consumed_at?: string | null
           created_at?: string
           expires_at?: string
@@ -2532,10 +2537,13 @@ export type Database = {
           id?: string
           kingschat_subject?: string | null
           nonce: string
+          return_origin?: string | null
           status?: string
           token_hash?: string | null
         }
         Update: {
+          browser_secret_hash?: string | null
+          completion_hash?: string | null
           consumed_at?: string | null
           created_at?: string
           expires_at?: string
@@ -2544,6 +2552,7 @@ export type Database = {
           id?: string
           kingschat_subject?: string | null
           nonce?: string
+          return_origin?: string | null
           status?: string
           token_hash?: string | null
         }
@@ -5361,14 +5370,28 @@ export type Database = {
         Returns: boolean
       }
       is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
-      kingschat_begin_login: { Args: never; Returns: string }
+      kingschat_begin_login: {
+        Args: { _return_origin: string }
+        Returns: {
+          browser_secret: string
+          nonce: string
+        }[]
+      }
       kingschat_claim_login: {
-        Args: { _nonce: string }
+        Args: {
+          _browser_secret: string
+          _completion_code?: string
+          _nonce: string
+        }
         Returns: {
           error: string
           status: string
           token_hash: string
         }[]
+      }
+      kingschat_fulfil_login: {
+        Args: { _nonce: string; _subject: string; _token_hash: string }
+        Returns: string
       }
       led_department_ids: { Args: never; Returns: string[] }
       log_platform_admin_action: {
