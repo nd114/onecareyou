@@ -233,9 +233,11 @@ export default function ClinicianAudit() {
               <ul className="space-y-2 sm:hidden">
                 {pageRows.map((e) => (
                   <li key={e.id} className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline" className="text-xs">{e.action}</Badge>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 min-w-0">
+                      <Badge variant="outline" className="text-xs max-w-full min-w-0 truncate">
+                        <span className="truncate">{e.action}</span>
+                      </Badge>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
                         {formatDayTime(e.created_at)}
                       </span>
                     </div>
