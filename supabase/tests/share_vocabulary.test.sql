@@ -94,10 +94,12 @@ BEGIN
   END IF;
   RAISE NOTICE 'dose history needs its own grant, on both pathways: t';
 
+  -- The policy now asks institution_has_clinical_permission (20261009020000);
+  -- the category it names is what matters here, so match either function.
   SELECT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'schedule_entries'
-      AND qual LIKE '%institution_has_patient_permission%'
+      AND qual LIKE '%institution_has_%_permission%'
       AND qual LIKE '%adherence%'
   ) INTO v_ok;
   IF NOT v_ok THEN
@@ -107,7 +109,7 @@ BEGIN
   SELECT EXISTS (
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public' AND tablename = 'schedule_entries'
-      AND qual LIKE '%institution_has_patient_permission%'
+      AND qual LIKE '%institution_has_%_permission%'
       AND qual LIKE '%''medications''%'
   ) INTO v_ok;
   IF v_ok THEN
