@@ -89,11 +89,12 @@ but the movement card it sits on is a button: click it for `AdminMetricChart`, t
 `admin_metric_series` data as a real day-by-day line with a date axis and a switcher across all six
 metrics, for actually reading a trend rather than eyeballing a shape.
 
-**Just arrived** shows the eight newest accounts, with nothing to type into. It used to hold five
-hundred behind a search box and two filters, which made it a way to page through everyone who had
-ever signed up — the browsing §2 rules out. What is left is the part that was a founder signal: the
-handful of people who arrived, for a welcome or a call. Looking anyone else up is what Accounts is
-for, and it asks for a name first.
+**Just arrived** shows the eight newest accounts matching a name or email, and nothing until you
+type at least two characters. It used to hold five hundred behind a search box and two filters,
+which made it a way to page through everyone who had ever signed up — the browsing §2 rules out.
+It was then cut to the eight newest with nothing to type into, which still named the newest people
+on the platform unasked; since `20261009050000` `admin_recent_signups` carries the same
+two-character floor as Accounts.
 
 ### Accounts
 One directory across tenants, clinicians and patients, described in §2. **Tenants is the kind the
@@ -142,10 +143,13 @@ a "numbers as of" line — both already returned by `admin_sync_failures` and `a
 
 ### Trust
 Live-access and consent totals, agreement coverage, an **access review** (§2 — search-gated), an
-**audit export** (a date range of the access log as a CSV, actor/subject resolved to email, never the
-`details` column), the cross-tenant **access log search** (`admin_access_log_search` — an
-accountability trail of past events, which is why it stays browsable where the access review is not:
-a permission is current state; a log entry already happened and is being reviewed for who did what),
+**audit export** (one named clinician's or patient's access log over a date range as a CSV,
+actor/subject resolved to email, never the `details` column), the cross-tenant **access log search**
+(`admin_access_log_search`, by clinician or patient name or email). Both are search-gated like the
+access review since `20261009050000`: an entry is a pair of people, so listing them unasked is the
+same browsing of relationships §2 rules out. Neither returns anything for fewer than two characters,
+and the log search matches people, not action names, since an action search listed every pair behind
+it,
 and the **platform-admin action log** (every admin mutation, read-only, cannot be edited). An
 **audit activity** card counts a week of all three logs side by side (record changes, access-log
 entries, admin actions) — three different questions, deliberately not summed into one number — next

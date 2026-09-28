@@ -2,15 +2,23 @@ import { useState } from 'react';
 import { Loader2, Search } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useAdminAccessLog } from '@/hooks/useAdminInsights';
+import { MIN_PERSON_SEARCH_LENGTH, useAdminAccessLog } from '@/hooks/useAdminInsights';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
 import { formatDayTime } from '@/lib/format-date';
 
-/** Cross-tenant, read-only search of the platform access log. */
+/**
+ * Cross-tenant, read-only search of the platform access log.
+ *
+ * Search, don't browse: an entry is a pair of people, so it only surfaces once
+ * one of them is named. admin_access_log_search returns nothing for a blank
+ * or one-character search, and matches people rather than actions
+ * (20261009050000).
+ */
 export function AdminAuditSearchPanel() {
   const [search, setSearch] = useState('');
-  const { entries, isLoading, isFetching } = useAdminAccessLog(search);
+  const { entries, isLoading, isFetching, needsSearch } = useAdminAccessLog(search);
   const { page, setPage, pageCount, pageItems, total, pageSize } = usePagination(entries, 15);
+  const remaining = MIN_PERSON_SEARCH_LENGTH - search.trim().length;
 
   return (
     <Card>
@@ -18,8 +26,8 @@ export function AdminAuditSearchPanel() {
         <div>
           <CardTitle className="text-base">Access log search</CardTitle>
           <CardDescription>
-            Who opened which record, across every tenant. Read-only, newest first, capped at 200
-            results per search.
+            Who opened which record, across every tenant, for a clinician or patient you already
+            have a reason to look up. Read-only, newest first, capped at 200 results per search.
           </CardDescription>
         </div>
         <div className="relative">
@@ -27,21 +35,31 @@ export function AdminAuditSearchPanel() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by action, clinician email or patient email"
+            placeholder="Search by clinician or patient name or email"
             className="pl-9"
             aria-label="Search the access log"
           />
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading || (isFetching && entries.length === 0) ? (
+        {needsSearch ? (
+          <p className="text-sm text-muted-foreground py-2">
+            {search.trim().length === 0 ? (
+              <>Nothing is listed until you search ({MIN_PERSON_SEARCH_LENGTH}+ characters).</>
+            ) : remaining > 0 ? (
+              <>
+                Keep typing — {remaining} more character{remaining === 1 ? '' : 's'} to search.
+              </>
+            ) : (
+              <>Searching…</>
+            )}
+          </p>
+        ) : isLoading || (isFetching && entries.length === 0) ? (
           <div className="flex justify-center py-6">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-2">
-            {search.trim() ? 'No access entries match that search.' : 'No access entries recorded yet.'}
-          </p>
+          <p className="text-sm text-muted-foreground py-2">No access entries match that search.</p>
         ) : (
           <div className="space-y-2">
             {pageItems.map((e) => (

@@ -304,20 +304,24 @@ export function AdminTrustPanel() {
 
 /** Pull an audit range out as a file, for a regulator or a customer's own review. */
 function AuditExportCard() {
-  const { exportRange, isExporting } = useAuditExport();
+  const { exportRange, isExporting, minSearchLength } = useAuditExport();
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [action, setAction] = useState('');
+  const [person, setPerson] = useState('');
+  const needsPerson = person.trim().length < minSearchLength;
 
   const run = async () => {
+    if (needsPerson) return;
     const rows = await exportRange({
       from: from ? new Date(from).toISOString() : undefined,
       to: to ? new Date(`${to}T23:59:59`).toISOString() : undefined,
       action: action.trim() || undefined,
+      person: person.trim(),
     });
 
     if (!rows.length) {
-      toast.warning('Nothing in that range');
+      toast.warning('Nothing for that person in that range');
       return;
     }
 
@@ -349,12 +353,24 @@ function AuditExportCard() {
           Audit export
         </CardTitle>
         <CardDescription>
-          The access record over a date range, as a file. It carries what happened and who did it;
-          the detail of the record itself never leaves the database.
+          One clinician's or patient's access record over a date range, as a file. It carries
+          what happened and who did it; the detail of the record itself never leaves the
+          database.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-3 sm:grid-cols-4 items-end">
+        <div className="grid gap-3 sm:grid-cols-5 items-end">
+          <div className="space-y-1.5">
+            <Label htmlFor="audit-person" className="text-xs">
+              Clinician or patient email
+            </Label>
+            <Input
+              id="audit-person"
+              value={person}
+              onChange={(e) => setPerson(e.target.value)}
+              placeholder="name@example.com"
+            />
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="audit-from" className="text-xs">
               From
@@ -383,7 +399,7 @@ function AuditExportCard() {
               placeholder="view_record"
             />
           </div>
-          <Button onClick={run} disabled={isExporting} className="gap-2">
+          <Button onClick={run} disabled={isExporting || needsPerson} className="gap-2">
             {isExporting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -393,7 +409,9 @@ function AuditExportCard() {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-3">
-          Leave the dates empty for the last 30 days. Capped at 5,000 entries per export.
+          Name the person first ({minSearchLength}+ characters): the export is one person's trail,
+          never the whole platform's. Leave the dates empty for the last 30 days. Capped at 5,000
+          entries per export.
         </p>
       </CardContent>
     </Card>

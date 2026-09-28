@@ -4854,6 +4854,7 @@ export type Database = {
           _action?: string
           _from?: string
           _limit?: number
+          _search?: string
           _to?: string
         }
         Returns: {
@@ -4969,7 +4970,7 @@ export type Database = {
         }[]
       }
       admin_recent_signups: {
-        Args: { _limit?: number }
+        Args: { _limit?: number; _search?: string }
         Returns: {
           created_at: string
           email: string
@@ -5399,6 +5400,10 @@ export type Database = {
           }
       may_manage_practice_patient_records: {
         Args: { _practice_id: string }
+        Returns: boolean
+      }
+      may_read_practice_patient_record: {
+        Args: { _linked_user_id: string; _practice_id: string }
         Returns: boolean
       }
       my_institution_care_team: {
