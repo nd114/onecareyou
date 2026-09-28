@@ -126,6 +126,14 @@ CREATE TABLE IF NOT EXISTS realtime.messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   topic text, extension text, inserted_at timestamptz DEFAULT now()
 );
+-- The channel name of the subscription being authorised. Without it
+-- 20260522174925 stops at its first realtime policy, and everything after that
+-- statement in the file (the health_documents publication drop, the avatar
+-- policies, a dozen REVOKEs) never runs locally, so local grants are wider
+-- than hosted ones and a suite can pass against a state production never had.
+CREATE OR REPLACE FUNCTION realtime.topic() RETURNS text LANGUAGE sql STABLE AS $fn$
+  SELECT NULLIF(current_setting('realtime.topic', true), '')
+$fn$;
 DO $$ BEGIN
   CREATE PUBLICATION supabase_realtime; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
