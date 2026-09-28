@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
+import { clinicianShareGrants } from "../_shared/share-access.ts";
 import {
   MEDICATION_STATUSES,
   medicationRowFromFhir,
@@ -121,6 +122,21 @@ serve(async (req) => {
           });
 
           try {
+            // The mapping is the clinician's own data; the patient's share is
+            // what permits writing into their record. Asked per category, so
+            // a patient who shared vitals but not medications gets vitals.
+            const shareCaller = { id: connection.clinician_user_id, confirmedEmail: null };
+            const [mayWriteVitals, mayWriteMedications] = await Promise.all([
+              clinicianShareGrants(supabaseClient, shareCaller, mapping.onecareUserId, 'vitals'),
+              clinicianShareGrants(supabaseClient, shareCaller, mapping.onecareUserId, 'medications'),
+            ]);
+            if (!mayWriteVitals && !mayWriteMedications) {
+              logStep("Skipped patient: no live share with this connection's clinician", {
+                connectionId: connection.id,
+              });
+              continue;
+            }
+
             // Fetch observations from last 24 hours
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
@@ -164,7 +180,7 @@ serve(async (req) => {
             // and ehr-sync cannot disagree about what a code means — they had
             // separate copies of the LOINC table, and the copies had already
             // drifted in how they handled a code neither recognised.
-            for (const obs of observations) {
+            for (const obs of mayWriteVitals ? observations : []) {
               const rows = vitalRowsFrom(obs, {
                 userId: mapping.onecareUserId,
                 sourceLabel: connection.provider_name,
@@ -220,11 +236,13 @@ serve(async (req) => {
               `${connection.fhir_base_url}/MedicationRequest?patient=${mapping.fhirPatientId}` +
               `&status=${MEDICATION_STATUSES}&_count=100`;
 
-            const medResponse = await fetch(medUrl, {
-              headers: fhirHeaders,
-            });
+            const medResponse = mayWriteMedications
+              ? await fetch(medUrl, { headers: fhirHeaders })
+              : null;
 
-            if (medResponse.ok) {
+            if (!medResponse) {
+              // Not shared — nothing to fetch or write.
+            } else if (medResponse.ok) {
               const medBundle = await medResponse.json();
               const requests: FhirMedicationRequest[] =
                 medBundle.entry?.map((e: any) => e.resource) || [];

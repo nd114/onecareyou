@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 import { shareGrants } from "../_shared/share-permissions.ts";
+import { confirmedEmailOf } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -162,13 +163,40 @@ Deno.serve(async (req) => {
       );
     }
 
-    // SECURITY: Link clinician to this share if not already linked
-    // This ensures future accesses are tracked properly
+    // The invite code is a bearer secret only until someone claims it. Once a
+    // share belongs to a clinician, anyone else holding the link — a forwarded
+    // email, a shared screen, browser history on a shared machine — gets the
+    // same answer as for a code that does not exist. Without this the link
+    // opened the patient's record to every signed-in account forever.
+    if (share.clinician_user_id && share.clinician_user_id !== clinicianUserId) {
+      const callerEmail = confirmedEmailOf(authUser);
+      const addressedToCaller =
+        !!callerEmail && share.provider_email?.trim().toLowerCase() === callerEmail;
+      if (!addressedToCaller) {
+        recordFailedAttempt(inviteCode);
+        return new Response(
+          JSON.stringify({ error: 'Invalid or expired share link' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Link clinician to this share if not already linked
+    // Conditional on the row still being unclaimed, so two people opening the
+    // same link at once cannot both walk away with it.
     if (!share.clinician_user_id && clinicianUserId) {
-      await supabaseAdmin
+      const { data: claimed } = await supabaseAdmin
         .from('provider_shares')
         .update({ clinician_user_id: clinicianUserId })
-        .eq('id', share.id);
+        .eq('id', share.id)
+        .is('clinician_user_id', null)
+        .select('id');
+      if (!claimed || claimed.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid or expired share link' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       console.log('Linked clinician to share:', clinicianUserId);
     }
 

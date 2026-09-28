@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { clearChatStorage } from "./chat-storage";
+import { clearCachedReads } from "./offline/cache";
 
 // Shared query client instance - accessible throughout the app
 export const queryClient = new QueryClient({
@@ -43,6 +44,10 @@ export function clearAllUserData(): void {
   // AI chat transcripts are keyed per account and swept wholesale — they carry
   // health detail the person typed, and used to survive sign-out.
   clearChatStorage();
+
+  // The offline read cache (medications, vitals, schedule) lives in IndexedDB
+  // and used to survive sign-out untouched.
+  void clearCachedReads();
 
   // Clear any session storage
   sessionStorage.clear();

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { confirmedEmailOf, shareOpensTo } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -117,18 +118,20 @@ Deno.serve(async (req) => {
       auditShareId = share.id;
     }
 
-    const isClinicianOwner =
-      ps.clinician_user_id === user.id || ps.provider_email === user.email;
-
-    if (!isClinicianOwner || !ps.is_active) {
-      return new Response(JSON.stringify({ error: "Access denied" }), {
+    if (ps.expires_at && new Date(ps.expires_at) < new Date()) {
+      return new Response(JSON.stringify({ error: "Share link has expired" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (ps.expires_at && new Date(ps.expires_at) < new Date()) {
-      return new Response(JSON.stringify({ error: "Share link has expired" }), {
+    // Same rule as clinician_has_patient_permission(): the share is claimed by
+    // this caller, or addressed to an email they have CONFIRMED. Comparing
+    // against user.email as typed let an unconfirmed look-alike account
+    // download documents shared with the real clinician.
+    const caller = { id: user.id, confirmedEmail: confirmedEmailOf(user) };
+    if (!shareOpensTo(ps, caller)) {
+      return new Response(JSON.stringify({ error: "Access denied" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -137,11 +140,13 @@ Deno.serve(async (req) => {
     // Get the document file path
     const { data: doc, error: docError } = await supabaseAuth
       .from("health_documents")
-      .select("file_path, file_name, user_id")
+      .select("file_path, file_name, user_id, retracted_at")
       .eq("id", resolvedDocumentId)
       .single();
 
-    if (docError || !doc) {
+    // A retracted document is invisible under RLS; the service role has to
+    // honour that itself.
+    if (docError || !doc || doc.retracted_at) {
       return new Response(JSON.stringify({ error: "Document not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -192,7 +197,8 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("get-shared-document-url failed", error);
+    return new Response(JSON.stringify({ error: "Unexpected error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

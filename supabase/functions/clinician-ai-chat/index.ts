@@ -8,6 +8,7 @@
  * session (so RLS applies) and written to the patient action log.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { confirmedEmailOf, shareOpensTo } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -291,30 +292,50 @@ Deno.serve(async (req) => {
     // ---- Snapshot: only patients this clinician actually has access to ----
     let snapshot = "";
     try {
-      const { data: shares } = await supabase
+      // Service role bypasses RLS, so the panel is filtered here exactly as
+      // clinician_has_patient_permission() would: live, unexpired, claimed by
+      // this clinician or addressed to their CONFIRMED email. This used to
+      // match the typed email, include expired shares, and read vitals for
+      // patients who never granted vitals — all of it then sent to the model.
+      const caller = { id: user.id, confirmedEmail: confirmedEmailOf(user) };
+      const { data: claimed } = await supabase
         .from("provider_shares")
-        .select("id, user_id, permissions, is_active, expires_at")
-        .or(`clinician_user_id.eq.${user.id},provider_email.eq.${user.email ?? ""}`)
+        .select("id, user_id, clinician_user_id, provider_email, permissions, is_active, expires_at")
+        .eq("clinician_user_id", user.id)
         .eq("is_active", true)
         .limit(40);
+      const { data: addressed } = caller.confirmedEmail
+        ? await supabase
+            .from("provider_shares")
+            .select("id, user_id, clinician_user_id, provider_email, permissions, is_active, expires_at")
+            .ilike("provider_email", caller.confirmedEmail.replace(/[\\%_]/g, (c) => `\\${c}`))
+            .eq("is_active", true)
+            .limit(40)
+        : { data: [] as any[] };
+      const shares = [...(claimed ?? []), ...(addressed ?? [])].filter((s: any) =>
+        shareOpensTo(s, caller),
+      );
 
-      const patientIds = [...new Set((shares ?? []).map((s: any) => s.user_id))];
+      const patientIds = [...new Set(shares.map((s: any) => s.user_id))];
+      const vitalsPatientIds = [
+        ...new Set(shares.filter((s: any) => shareOpensTo(s, caller, "vitals")).map((s: any) => s.user_id)),
+      ];
 
       let names = new Map<string, string>();
       if (patientIds.length) {
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("user_id, name, email")
+          .select("user_id, name")
           .in("user_id", patientIds);
-        names = new Map((profiles ?? []).map((p: any) => [p.user_id, p.name || p.email || "Patient"]));
+        names = new Map((profiles ?? []).map((p: any) => [p.user_id, p.name || "Patient"]));
       }
 
       const [{ data: vitals }, { data: guidance }, { data: unread }] = await Promise.all([
-        patientIds.length
+        vitalsPatientIds.length
           ? supabase
               .from("vitals")
               .select("user_id, type, value, secondary_value, unit, recorded_at")
-              .in("user_id", patientIds)
+              .in("user_id", vitalsPatientIds)
               .order("recorded_at", { ascending: false })
               .limit(60)
           : Promise.resolve({ data: [] as any[] }),

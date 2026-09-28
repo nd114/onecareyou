@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireServiceRoleOrUser } from "../_shared/auth.ts";
+import { clinicianShareGrants } from "../_shared/share-access.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -143,7 +144,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: alertRules, error: rulesError } = await supabase
       .from("clinician_alert_rules")
       .select("*")
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .is("archived_at", null);
 
     if (rulesError) {
       console.error("Error fetching alert rules:", rulesError);
@@ -181,6 +183,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Process each alert rule
     for (const rule of alertRules as AlertRule[]) {
+      // The rule was checked against the patient's share when it was created,
+      // and never again. A share revoked or expired since — or a rule whose
+      // patient_user_id was edited afterwards, which the UPDATE policy does
+      // not prevent — would otherwise keep mailing this patient's readings to
+      // someone the patient no longer shares them with.
+      const stillShared = await clinicianShareGrants(
+        supabase,
+        { id: rule.clinician_user_id, confirmedEmail: null },
+        rule.patient_user_id,
+        "vitals",
+      );
+      if (!stillShared) continue;
+
       // Fetch recent vitals for this patient and vital type
       const { data: vitals, error: vitalsError } = await supabase
         .from("vitals")
@@ -226,15 +241,10 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
-      // Get patient name
-      const { data: patientProfile } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("user_id", rule.patient_user_id)
-        .single();
-
-      const patientName = patientProfile?.name || "Patient";
-
+      // The email says that something needs review and where, not who or what
+      // the reading was. The patient's name and value in a subject line and
+      // body sat in every mail provider and inbox preview on the way; the
+      // clinician sees both after signing in, where access is re-checked.
       // Check each vital against the rule
       for (const vital of vitals as Vital[]) {
         // Skip if already alerted
@@ -245,7 +255,7 @@ const handler = async (req: Request): Promise<Response> => {
         const { violated, message } = checkThresholdViolation(vital, rule);
 
         if (violated) {
-          console.log(`Alert triggered: ${message} for patient ${patientName}`);
+          console.log(`Alert triggered for rule ${rule.id}`);
 
           // Send email notification
           try {
@@ -270,20 +280,13 @@ const handler = async (req: Request): Promise<Response> => {
                     <p style="margin: 5px 0 0 0; opacity: 0.9;">Patient requires attention</p>
                   </div>
                   <div class="content">
-                    <h2 style="margin-top: 0;">Patient: ${patientName}</h2>
-                    
                     <div class="alert-box">
-                      <p style="margin: 0 0 10px 0;"><strong>${VITAL_LABELS[vital.type] || vital.type}</strong></p>
-                      <p class="vital-value" style="margin: 0;">
-                        ${vital.secondary_value ? `${vital.value}/${vital.secondary_value}` : vital.value} ${vital.unit}
-                      </p>
-                      <p style="margin: 10px 0 0 0; color: #dc2626;">${message}</p>
+                      <p style="margin: 0;">A reading from one of your patients is outside an alert threshold you set.</p>
                     </div>
 
-                    <p><strong>Recorded at:</strong> ${new Date(vital.recorded_at).toLocaleString()}</p>
-                    
-                    <p>Please review this patient's vitals at your earliest convenience.</p>
-                    
+                    <p>Sign in to OneCare to see who and what was recorded:
+                      <a href="https://onecare.you/clinician/alerts">onecare.you/clinician/alerts</a></p>
+
                     <div class="footer">
                       <p>This is an automated alert from OneCare based on alert rules you configured.</p>
                       <p>You can manage your alert settings in the Clinician Portal.</p>
@@ -303,7 +306,7 @@ const handler = async (req: Request): Promise<Response> => {
               body: JSON.stringify({
                 from: "OneCare Alerts <alerts@onecare.you>",
                 to: [clinicianEmail],
-                subject: `⚠️ Vital Alert: ${patientName}`,
+                subject: "⚠️ OneCare vital alert — a patient needs review",
                 html: htmlContent,
               }),
             });

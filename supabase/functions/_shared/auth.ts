@@ -16,6 +16,11 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 export interface CallerUser {
   id: string;
   email: string | null;
+  /**
+   * Lower-cased email, present only once the address is confirmed. Anything
+   * that grants access by matching an address must use this, never `email`.
+   */
+  confirmedEmail: string | null;
 }
 
 function json(body: unknown, status: number, headers: Record<string, string>) {
@@ -93,7 +98,10 @@ export async function getCallerUser(req: Request): Promise<CallerUser | null> {
   const client = createClient(SUPABASE_URL, ANON_KEY);
   const { data, error } = await client.auth.getUser(token);
   if (error || !data?.user) return null;
-  return { id: data.user.id, email: data.user.email ?? null };
+  const email = data.user.email ?? null;
+  const confirmedEmail =
+    email && data.user.email_confirmed_at ? email.trim().toLowerCase() : null;
+  return { id: data.user.id, email, confirmedEmail };
 }
 
 /** Internal-only endpoints (pg_cron / server-to-server). Returns a 401 Response when rejected. */

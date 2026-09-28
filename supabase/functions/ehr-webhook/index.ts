@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
+import { clinicianShareGrants } from "../_shared/share-access.ts";
 // Every import path goes through one mapper. This file used to carry its own
 // LOINC map and unit defaults and both had drifted — 39156-5 to bmi and
 // 9279-1 to respiratory_rate, neither of which VITAL_CONFIG holds, and 2339-0
@@ -183,6 +184,24 @@ serve(async (req) => {
             continue;
           }
 
+          // patient_id_mapping is written by the clinician who owns the
+          // connection, and so is its webhook secret. Without this check a
+          // clinician could map any OneCare user id and sign their own
+          // payloads into that person's chart. The patient's share decides,
+          // as it does for ehr-sync's import_patient.
+          const consented = await clinicianShareGrants(
+            supabaseClient,
+            { id: connection.clinician_user_id, confirmedEmail: null },
+            mapping.onecareUserId,
+            'vitals',
+          );
+          if (!consented) {
+            logStep("Rejected: patient has not shared vitals with this connection's clinician", {
+              connectionId: connection.id,
+            });
+            continue;
+          }
+
           // One mapper for every import path. This loop used to be its own,
           // and had drifted in four ways that all mattered: it ignored
           // observation.status, so a reading the sending system had retracted
@@ -268,7 +287,7 @@ serve(async (req) => {
 
   } catch (error: any) {
     logStep("FATAL ERROR", { message: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Webhook processing failed" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

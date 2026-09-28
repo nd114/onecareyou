@@ -17,6 +17,21 @@ export async function cacheRead(key: string, payload: unknown): Promise<void> {
   }
 }
 
+/**
+ * Drops every cached read. Called on sign-out: the store holds medications,
+ * vitals and schedules, and IndexedDB outlives the session — on a shared
+ * machine the next person at the keyboard could read the last one's record
+ * straight out of DevTools.
+ */
+export async function clearCachedReads(): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.clear('cached_reads');
+  } catch {
+    // best-effort: no IndexedDB means nothing was cached
+  }
+}
+
 export async function getCachedRead<T>(key: string): Promise<{ payload: T; fetched_at: number } | null> {
   try {
     const db = await getDB();

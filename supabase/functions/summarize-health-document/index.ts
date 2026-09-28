@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUser } from "../_shared/auth.ts";
+import { clinicianShareGrants } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,18 +51,11 @@ serve(async (req) => {
     // Authorization: only the document owner, or a clinician with an active
     // share that grants document access, may summarize this document.
     if (doc.user_id !== caller.id) {
-      const { data: shares } = await supabase
-        .from("provider_shares")
-        .select("permissions, expires_at, clinician_user_id, provider_email")
-        .eq("user_id", doc.user_id)
-        .eq("is_active", true);
-
-      const hasShare = (shares ?? []).some((s: any) =>
-        (s.clinician_user_id === caller.id ||
-          (caller.email && s.provider_email?.toLowerCase() === caller.email.toLowerCase())) &&
-        (!s.expires_at || new Date(s.expires_at) > new Date()) &&
-        s.permissions?.documents === true
-      );
+      // Confirmed email only, and a retracted document is off-limits to anyone
+      // but its owner — both are what RLS would have enforced.
+      const hasShare =
+        !doc.retracted_at &&
+        (await clinicianShareGrants(supabase, caller, doc.user_id, "documents"));
 
       if (!hasShare) {
         console.error("Forbidden document summary attempt", { caller: caller.id });

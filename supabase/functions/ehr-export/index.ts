@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { timingSafeEqual } from "../_shared/auth.ts";
+import { clinicianShareGrants, confirmedEmailOf } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -158,7 +160,7 @@ serve(async (req) => {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  const isServiceCall = authHeader === `Bearer ${serviceKey}`;
+  const isServiceCall = !!serviceKey && timingSafeEqual(authHeader, `Bearer ${serviceKey}`);
   let callerId: string | null = null;
   let callerEmail: string | null = null;
   if (!isServiceCall) {
@@ -171,7 +173,8 @@ serve(async (req) => {
       });
     }
     callerId = u.user.id;
-    callerEmail = u.user.email ?? null;
+    // Confirmed addresses only — see _shared/share-access.ts.
+    callerEmail = confirmedEmailOf(u.user);
   }
 
   try {
@@ -283,6 +286,31 @@ serve(async (req) => {
             continue;
           }
 
+          // Consent is checked again at the moment of export, not only when the
+          // item was queued: a patient who revokes a share after a reading was
+          // queued must not have it sent to that clinician's server anyway.
+          // Only a claimed share counts here — nobody is present to confirm an
+          // address.
+          const stillEntitled =
+            vital.user_id === connection.clinician_user_id ||
+            (await clinicianShareGrants(
+              supabaseClient,
+              { id: connection.clinician_user_id, confirmedEmail: null },
+              vital.user_id,
+              'vitals',
+            ));
+          if (!stillEntitled) {
+            await supabaseClient
+              .from('ehr_export_queue')
+              .update({
+                status: 'skipped',
+                error_message: 'Patient no longer shares vitals with this clinician',
+                last_attempt_at: new Date().toISOString()
+              })
+              .eq('id', item.id);
+            continue;
+          }
+
           // Build FHIR Observation
           const observation = buildFHIRObservation(vital, item.patient_fhir_id);
           
@@ -378,17 +406,11 @@ serve(async (req) => {
           }
 
           if (vitalRow.user_id !== callerId) {
-            const { data: shares } = await supabaseClient
-              .from('provider_shares')
-              .select('clinician_user_id, provider_email, expires_at, permissions')
-              .eq('user_id', vitalRow.user_id)
-              .eq('is_active', true);
-
-            const entitled = (shares ?? []).some((s: any) =>
-              (s.clinician_user_id === callerId ||
-                (callerEmail && s.provider_email?.toLowerCase() === callerEmail.toLowerCase())) &&
-              (!s.expires_at || new Date(s.expires_at) > new Date()) &&
-              s.permissions?.vitals === true
+            const entitled = await clinicianShareGrants(
+              supabaseClient,
+              { id: callerId!, confirmedEmail: callerEmail },
+              vitalRow.user_id,
+              'vitals',
             );
 
             if (!entitled) {
