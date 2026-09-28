@@ -102,6 +102,32 @@ export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = [
     producer: "clinician_notifications",
   },
   {
+    key: "sharing_ended",
+    audience: ["clinician"],
+    channels: ["in_app"],
+    defaultEnabled: true,
+    mandatory: true,
+    label: "A patient stopped sharing",
+    description:
+      "In the app, when a patient ends a share with you or your hospital, and which of your alert rules for them were archived.",
+    mandatoryReason:
+      "The patient is told, when they stop sharing, that you will be told. A setting that could silence it would make that untrue, and a patient who has gone quiet looks the same as one who is well.",
+    producer: "on_share_ended (database trigger)",
+  },
+  {
+    key: "department_routing_oversight",
+    audience: ["clinician"],
+    channels: ["in_app"],
+    defaultEnabled: true,
+    mandatory: true,
+    label: "Routings outside a department",
+    description:
+      "For hospital owners and admins: when a department lead routes or assigns a patient outside the departments they lead.",
+    mandatoryReason:
+      "This is how a hospital sees what its delegated leads do. Oversight that can be switched off is not oversight.",
+    producer: "flag_routing_outside_department (database trigger)",
+  },
+  {
     key: "account_security",
     audience: ["patient", "clinician"],
     channels: ["email"],

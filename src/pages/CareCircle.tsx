@@ -64,7 +64,11 @@ const CareCircle = () => {
   // The revoke confirmation is held here rather than nested inside each row's
   // menu: a dialog rendered inside a dropdown is dismissed along with the
   // dropdown, so the confirmation never gets a chance to be read.
-  const [confirmRevoke, setConfirmRevoke] = useState<{ id: string; name: string } | null>(null);
+  const [confirmRevoke, setConfirmRevoke] = useState<{
+    id: string;
+    name: string;
+    claimed: boolean;
+  } | null>(null);
   const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
   const { data: shareEvents = [] } = useShareEvents();
   const { generate: generateCareRecord } = useCareRecordSnapshot();
@@ -438,7 +442,14 @@ const CareCircle = () => {
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
                               onSelect={() =>
-                                setConfirmRevoke({ id: share.id, name: share.display_name })
+                                setConfirmRevoke({
+                                  id: share.id,
+                                  name: share.display_name,
+                                  // An unclaimed share reaches a clinician only
+                                  // if they have a confirmed account under that
+                                  // email; the copy must not promise more.
+                                  claimed: !!share.clinician_user_id,
+                                })
                               }
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -622,9 +633,13 @@ const CareCircle = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>End sharing with {confirmRevoke?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They stop seeing any new health data straight away. Everything already exchanged —
-              messages, guidance and shared documents — stays on your record in the Health Vault, so
-              you always have proof of what was advised and when. You can resume sharing later.
+              They stop seeing any new health data straight away.{' '}
+              {confirmRevoke?.claimed
+                ? 'We will tell them that you stopped sharing and that no further updates will reach them, and alert rules they set that can no longer see your readings are archived. '
+                : 'If they have a OneCare account under the email you shared with, we will tell them that you stopped sharing and that no further updates will reach them. '}
+              Everything already exchanged — messages,
+              guidance and shared documents — stays on your record in the Health Vault, so you always
+              have proof of what was advised and when. You can resume sharing later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

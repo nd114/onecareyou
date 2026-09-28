@@ -858,31 +858,46 @@ export type Database = {
       }
       clinician_guidance_notifications: {
         Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
           clinician_user_id: string
           created_at: string
-          guidance_id: string
+          guidance_id: string | null
           id: string
           is_read: boolean
+          message: string | null
           notification_type: string
           patient_user_id: string
+          practice_id: string | null
+          related_id: string | null
         }
         Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
           clinician_user_id: string
           created_at?: string
-          guidance_id: string
+          guidance_id?: string | null
           id?: string
           is_read?: boolean
+          message?: string | null
           notification_type: string
           patient_user_id: string
+          practice_id?: string | null
+          related_id?: string | null
         }
         Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
           clinician_user_id?: string
           created_at?: string
-          guidance_id?: string
+          guidance_id?: string | null
           id?: string
           is_read?: boolean
+          message?: string | null
           notification_type?: string
           patient_user_id?: string
+          practice_id?: string | null
+          related_id?: string | null
         }
         Relationships: [
           {
@@ -890,6 +905,13 @@ export type Database = {
             columns: ["guidance_id"]
             isOneToOne: false
             referencedRelation: "clinician_guidance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinician_guidance_notifications_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -4789,6 +4811,10 @@ export type Database = {
       }
       accept_tenant_owner_invitation: {
         Args: { _invitation_id: string }
+        Returns: string
+      }
+      acknowledge_practice_notice: {
+        Args: { _notification_id: string }
         Returns: string
       }
       admin_access_log_search: {

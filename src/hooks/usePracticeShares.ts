@@ -117,7 +117,7 @@ export function useMyInstitutionShares() {
   const disconnect = useMutation({
     mutationFn: async ({ shareId, reason }: { shareId: string; reason?: string }) => {
       if (!user) throw new Error('Not signed in');
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('practice_shares')
         .update({
           is_active: false,
@@ -125,8 +125,13 @@ export function useMyInstitutionShares() {
           revoked_by: user.id,
           revoke_reason: reason ?? null,
         } as never)
-        .eq('id', shareId);
+        .eq('id', shareId)
+        .select('id');
       if (error) throw error;
+      // A zero-row update is a clean success from PostgREST. Saying
+      // "Disconnected" then would tell the patient their data had stopped
+      // flowing when it had not.
+      if (!data || data.length === 0) throw new Error('That share could not be ended. Please try again.');
     },
     onSuccess: () => {
       toast.success('Disconnected. Your history is preserved.');

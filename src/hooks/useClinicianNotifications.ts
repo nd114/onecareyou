@@ -3,15 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { toast } from 'sonner';
+import { SELF_DESCRIBING_TYPES, type NotificationType } from '@/lib/notification-display';
 
 export interface ClinicianGuidanceNotification {
   id: string;
-  guidance_id: string;
+  guidance_id: string | null;
   clinician_user_id: string;
   patient_user_id: string;
-  notification_type: 'acknowledged' | 'completed' | 'expired' | 'dismissed';
+  notification_type: NotificationType;
   is_read: boolean;
   created_at: string;
+  /** Written by the server for share-ended and routing notices. */
+  message: string | null;
+  practice_id: string | null;
+  acknowledged_at: string | null;
+  acknowledged_by: string | null;
   // Joined data
   guidance?: {
     title: string;
@@ -50,7 +56,11 @@ export const useClinicianNotifications = () => {
           patient_user_id,
           notification_type,
           is_read,
-          created_at
+          created_at,
+          message,
+          practice_id,
+          acknowledged_at,
+          acknowledged_by
         `)
         .eq('clinician_user_id', user.id)
         .order('created_at', { ascending: false })
@@ -61,6 +71,12 @@ export const useClinicianNotifications = () => {
       // Fetch related guidance and patient info
       const notificationsWithDetails = await Promise.all(
         (data || []).map(async (notification) => {
+          // These carry their own words, and the patient's profile may already
+          // be closed to the reader — that is what a share-ended notice means.
+          if (SELF_DESCRIBING_TYPES.includes(notification.notification_type) || !notification.guidance_id) {
+            return notification as ClinicianGuidanceNotification;
+          }
+
           // Get guidance details
           const { data: guidance } = await supabase
             .from('clinician_guidance')
@@ -143,6 +159,8 @@ export const useClinicianNotifications = () => {
     },
   });
 
+  const acknowledge = useAcknowledgePracticeNotice();
+
   // Update notification preferences
   const updatePreferences = useMutation({
     mutationFn: async (newPreferences: Partial<ClinicianNotificationPreferences>) => {
@@ -174,6 +192,62 @@ export const useClinicianNotifications = () => {
     preferences,
     markAsRead,
     markAllAsRead,
+    acknowledge,
     updatePreferences,
   };
+};
+
+/**
+ * A manager records that they have seen a lead's routing. Goes through the
+ * server function: the column is not client-writable, and the function stamps
+ * every manager's copy and checks the caller still runs the practice.
+ */
+export const useAcknowledgePracticeNotice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase.rpc('acknowledge_practice_notice', {
+        _notification_id: notificationId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clinician-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['practice-routing-notices'] });
+      toast.success('Acknowledged');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Could not acknowledge that notice');
+    },
+  });
+};
+
+/**
+ * Routings by department leads outside their departments that this manager has
+ * not yet seen acknowledged, for the practice admin page. Reads the caller's own
+ * copies only (RLS), so a manager who joined after a notice was sent does not
+ * see it — the audit log still does.
+ */
+export const usePracticeRoutingNotices = (practiceId: string | null) => {
+  const { user } = useAuth();
+  const query = useQuery({
+    queryKey: ['practice-routing-notices', practiceId, user?.id],
+    enabled: !!user && !!practiceId,
+    queryFn: async (): Promise<ClinicianGuidanceNotification[]> => {
+      const { data, error } = await supabase
+        .from('clinician_guidance_notifications')
+        .select(
+          'id, guidance_id, clinician_user_id, patient_user_id, notification_type, is_read, created_at, message, practice_id, acknowledged_at, acknowledged_by',
+        )
+        .eq('clinician_user_id', user!.id)
+        .eq('practice_id', practiceId!)
+        .eq('notification_type', 'routed_outside_department')
+        .is('acknowledged_at', null)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return (data ?? []) as ClinicianGuidanceNotification[];
+    },
+  });
+  return { notices: query.data ?? [], isLoading: query.isLoading };
 };

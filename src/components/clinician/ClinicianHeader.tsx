@@ -47,6 +47,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
+import { describeNotification } from "@/lib/notification-display";
 import { usePractice } from "@/hooks/usePractice";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -64,7 +65,7 @@ export function ClinicianHeader() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { clinicianProfile } = useClinicianProfile();
   const { isAdmin } = useAdminRole();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useClinicianNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, acknowledge } = useClinicianNotifications();
   const { myInvitations, acceptInvitation, declineInvitation, practices, currentPractice } = usePractice();
   const pendingInviteCount = myInvitations?.length || 0;
   const totalBadgeCount = unreadCount + pendingInviteCount;
@@ -110,25 +111,12 @@ export function ClinicianHeader() {
         return <Clock className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />;
       case "dismissed":
         return <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />;
+      case "share_ended":
+        return <XCircle className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />;
+      case "routed_outside_department":
+        return <Building2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />;
       default:
         return <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />;
-    }
-  };
-
-  // Helper to get notification message
-  const getNotificationMessage = (type: string, patientName: string | null | undefined) => {
-    const name = patientName || "Patient";
-    switch (type) {
-      case "completed":
-        return `${name} completed your guidance`;
-      case "acknowledged":
-        return `${name} acknowledged your guidance`;
-      case "expired":
-        return `Guidance for ${name} has expired`;
-      case "dismissed":
-        return `${name} dismissed your guidance`;
-      default:
-        return `Update from ${name}`;
     }
   };
 
@@ -313,15 +301,19 @@ export function ClinicianHeader() {
               {notifications && notifications.length > 0 ? (
                 <ScrollArea className="max-h-80">
                   <div className="divide-y">
-                    {notifications.slice(0, 10).map((notification) => (
+                    {notifications.slice(0, 10).map((notification) => {
+                      const shown = describeNotification(notification);
+                      return (
                       <div
                         key={notification.id}
                         onClick={() => {
                           if (!notification.is_read) {
                             markAsRead.mutate(notification.id);
                           }
-                          setNotificationsOpen(false);
-                          navigate("/clinician/patients");
+                          if (shown.href) {
+                            setNotificationsOpen(false);
+                            navigate(shown.href);
+                          }
                         }}
                         className={`block p-3 hover:bg-muted/50 transition-colors cursor-pointer ${
                           !notification.is_read ? "bg-muted/30" : ""
@@ -330,27 +322,43 @@ export function ClinicianHeader() {
                         <div className="flex items-start gap-2">
                           {getNotificationIcon(notification.notification_type)}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">
-                              {notification.guidance?.title || "Guidance Update"}
-                            </p>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {getNotificationMessage(
-                                notification.notification_type,
-                                notification.patient_profile?.name,
-                              )}
+                            <p className="font-medium text-sm truncate">{shown.title}</p>
+                            {/* Server-written notices are read in full: they are
+                                the whole account of what happened. */}
+                            <p
+                              className={`text-xs text-muted-foreground ${
+                                notification.message ? "" : "line-clamp-2"
+                              }`}
+                            >
+                              {shown.body}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                {notification.notification_type}
+                                {notification.notification_type.replace(/_/g, " ")}
                               </Badge>
                               <span className="text-[10px] text-muted-foreground">
                                 {format(new Date(notification.created_at), "MMM d, h:mm a")}
                               </span>
+                              {shown.acknowledgeable && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 px-2 text-[11px] ml-auto"
+                                  disabled={acknowledge.isPending}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    acknowledge.mutate(notification.id);
+                                  }}
+                                >
+                                  Acknowledge
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               ) : (

@@ -14,6 +14,16 @@ import {
   type PracticeShare,
 } from '@/hooks/usePracticeShares';
 import { HospitalProfileSheet } from '@/components/patient/HospitalProfileSheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatDay } from '@/lib/format-date';
 
 const SHARE_CATEGORIES = [
@@ -58,6 +68,7 @@ export const HospitalShareCard = () => {
   const [permissions, setPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [profileFor, setProfileFor] = useState<{ id: string; name: string } | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string; name: string } | null>(null);
   const [editPermissions, setEditPermissions] = useState<Record<string, boolean>>({ ...ALL_ON });
 
   const handleLookup = async () => {
@@ -185,7 +196,12 @@ export const HospitalShareCard = () => {
                           variant="outline"
                           size="sm"
                           disabled={isDisconnecting}
-                          onClick={() => disconnect({ shareId: share.id })}
+                          onClick={() =>
+                            setConfirmDisconnect({
+                              id: share.id,
+                              name: share.institution?.name ?? 'this hospital',
+                            })
+                          }
                         >
                           Disconnect
                         </Button>
@@ -335,6 +351,38 @@ export const HospitalShareCard = () => {
         open={!!profileFor}
         onOpenChange={(o) => !o && setProfileFor(null)}
       />
+      <AlertDialog
+        open={confirmDisconnect !== null}
+        onOpenChange={(open) => !open && setConfirmDisconnect(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stop sharing with {confirmDisconnect?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {/* The server tells them whichever way the share ends; this is
+                  the patient hearing it before they decide, not after. */}
+              Their staff stop seeing your record straight away. We will tell {confirmDisconnect?.name}{' '}
+              — its administrators and the clinicians looking after you — that you stopped sharing
+              and that no further updates will reach them, and alert rules that can no longer see
+              your readings are archived. Everything already in your record stays yours, and you can
+              share again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDisconnecting}
+              onClick={() => {
+                if (confirmDisconnect) void disconnect({ shareId: confirmDisconnect.id });
+                setConfirmDisconnect(null);
+              }}
+            >
+              Stop sharing
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

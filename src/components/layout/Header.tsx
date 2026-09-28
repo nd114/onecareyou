@@ -45,6 +45,7 @@ import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { usePatientGuidance } from "@/hooks/usePatientGuidance";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
+import { describeNotification } from "@/lib/notification-display";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { HeaderFamilySwitcher } from "@/components/family/HeaderFamilySwitcher";
@@ -108,23 +109,6 @@ export function Header() {
         return <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />;
       default:
         return <Inbox className="h-4 w-4 text-primary mt-0.5 shrink-0" />;
-    }
-  };
-
-  // Helper to get notification message
-  const getNotificationMessage = (type: string, patientName: string | null | undefined) => {
-    const name = patientName || "Patient";
-    switch (type) {
-      case "completed":
-        return `${name} completed your guidance`;
-      case "acknowledged":
-        return `${name} acknowledged your guidance`;
-      case "expired":
-        return `Guidance for ${name} has expired`;
-      case "dismissed":
-        return `${name} dismissed your guidance`;
-      default:
-        return `Update from ${name}`;
     }
   };
 
@@ -263,8 +247,12 @@ export function Header() {
                               key={notification.id}
                               onClick={() => {
                                 markAsRead.mutate(notification.id);
-                                setNotificationsOpen(false);
-                                navigate("/clinician/dashboard");
+                                // A share-ended notice has nowhere to go: that
+                                // patient's record is no longer open to them.
+                                if (describeNotification(notification).href) {
+                                  setNotificationsOpen(false);
+                                  navigate("/clinician/dashboard");
+                                }
                               }}
                               className="block p-3 hover:bg-muted/50 transition-colors cursor-pointer"
                             >
@@ -272,13 +260,10 @@ export function Header() {
                                 {getNotificationIcon(notification.notification_type)}
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm truncate">
-                                    {notification.guidance?.title || "Guidance Update"}
+                                    {describeNotification(notification).title}
                                   </p>
-                                  <p className="text-xs text-muted-foreground line-clamp-2">
-                                    {getNotificationMessage(
-                                      notification.notification_type,
-                                      notification.patient_profile?.name,
-                                    )}
+                                  <p className="text-xs text-muted-foreground">
+                                    {describeNotification(notification).body}
                                   </p>
                                   <div className="flex items-center gap-2 mt-1">
                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0">

@@ -45,6 +45,10 @@ import {
   usePracticeAdminActions,
 } from '@/hooks/usePracticeAdmin';
 import { usePracticeAuditLog } from '@/hooks/useAuditLog';
+import {
+  useAcknowledgePracticeNotice,
+  usePracticeRoutingNotices,
+} from '@/hooks/useClinicianNotifications';
 import { format } from 'date-fns';
 
 const PAGE_SIZE = 20;
@@ -85,6 +89,10 @@ const PracticeAdmin = () => {
     practiceId,
     { search: auditSearch, limit: 500 },
   );
+
+  const { notices: routingNotices, isLoading: loadingRoutings } =
+    usePracticeRoutingNotices(isChiefAdmin ? practiceId : null);
+  const acknowledgeNotice = useAcknowledgePracticeNotice();
 
   const clinicians = useMemo(
     () => staff.filter((s) => !['owner', 'admin', 'sub_admin'].includes(s.role)),
@@ -504,7 +512,52 @@ const PracticeAdmin = () => {
           </TabsContent>
 
           {/* ---------------- Activity log ---------------- */}
-          <TabsContent value="activity">
+          <TabsContent value="activity" className="space-y-4">
+            {isChiefAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Routings to review</CardTitle>
+                  <CardDescription>
+                    Department leads may route and assign any patient shared with this hospital.
+                    When they do so outside the departments they lead, it appears here and in the
+                    activity log. Acknowledge it, or act on it under your hospital's policy.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {loadingRoutings ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : routingNotices.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      Nothing waiting for review.
+                    </p>
+                  ) : (
+                    routingNotices.map((n) => (
+                      <div
+                        key={n.id}
+                        className="rounded-lg border p-3 flex flex-wrap items-start justify-between gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm">{n.message}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(n.created_at), 'd MMM yyyy, HH:mm')}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={acknowledgeNotice.isPending}
+                          onClick={() => acknowledgeNotice.mutate(n.id)}
+                        >
+                          Acknowledge
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Activity log</CardTitle>
