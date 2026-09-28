@@ -345,34 +345,13 @@ export function usePractice() {
   const acceptInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
       if (!user) throw new Error('Not authenticated');
-      
-      // Get invitation details
-      const { data: invitation, error: invError } = await supabase
-        .from('practice_invitations')
-        .select('*')
-        .eq('id', invitationId)
-        .single();
-      if (invError) throw invError;
-
-      // Add as practice member
-      const { error: memberError } = await supabase
-        .from('practice_members')
-        .insert({
-          practice_id: invitation.practice_id,
-          user_id: user.id,
-          role: invitation.role,
-          invited_by: invitation.invited_by,
-          status: 'active',
-          accepted_at: new Date().toISOString(),
-        });
-      if (memberError) throw memberError;
-
-      // Update invitation status
-      const { error: updateError } = await supabase
-        .from('practice_invitations')
-        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-        .eq('id', invitationId);
-      if (updateError) throw updateError;
+      // One server-side step, on the manager's terms. Inserting our own member
+      // row from here was refused by RLS for everyone but a manager, and the
+      // invitation it read its role from was one the invitee could rewrite.
+      const { error } = await supabase.rpc('accept_practice_invitation', {
+        _invitation_id: invitationId,
+      });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['practices'] });
@@ -388,10 +367,9 @@ export function usePractice() {
   // Decline an invitation
   const declineInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
-      const { error } = await supabase
-        .from('practice_invitations')
-        .update({ status: 'declined', declined_at: new Date().toISOString() })
-        .eq('id', invitationId);
+      const { error } = await supabase.rpc('decline_practice_invitation', {
+        _invitation_id: invitationId,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
