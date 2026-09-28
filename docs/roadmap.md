@@ -17,7 +17,7 @@
 - [`language-support-plan.md`](./language-support-plan.md) — eleven languages, staged (plan only, not implemented)
 - [`low-literacy-support-plan.md`](./low-literacy-support-plan.md) — Simple Mode: preference shipped, depth deferred
 - [`telehealth-plan.md`](./telehealth-plan.md) — async consults first, video last (logged, not started)
-- [`hospital-profiles-plan.md`](./hospital-profiles-plan.md) — public hospital directory, published opt-in
+- [`hospital-profiles-plan.md`](./plans/hospital-profiles-plan.md) — public hospital directory, published opt-in
 - [`ehr-integration-plan.md`](./ehr-integration-plan.md) — external EHR import, then narrow write-back
 - [`wearables-plan.md`](./wearables-plan.md) — patient device connections and provenance
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — consent + access matrix
@@ -281,7 +281,7 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 0. **Hospital profiles.** A public, opt-in directory so patients can find a hospital by name
    instead of only by typing its code — currently the hardest step in patient onboarding. The
    earliest of the current forward plans to pick up; fully specified in
-   [`hospital-profiles-plan.md`](./hospital-profiles-plan.md). Open question is editorial
+   [`hospital-profiles-plan.md`](./plans/hospital-profiles-plan.md). Open question is editorial
    ownership, not engineering.
 
    **Hospital groups** (assessed, not started) — a parent tenant over several hospitals, with
