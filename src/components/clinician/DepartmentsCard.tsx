@@ -58,12 +58,28 @@ export const DepartmentsCard = () => {
   } = usePracticeDepartments(currentPractice?.id);
 
   const [newName, setNewName] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [pendingMember, setPendingMember] = useState<Record<string, string>>({});
   // Departments could be created and staffed but never corrected: a typo made
   // at creation was permanent, and the only way round it was a second
   // department, which loses the record of who was in the first.
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
+  const [descriptionDraft, setDescriptionDraft] = useState('');
+
+  // Failures are already toasted by the mutations; the catch only keeps a
+  // rejected promise from surfacing as unhandled.
+  const create = () =>
+    createDepartment({ name: newName, description: newDescription })
+      .then(() => {
+        setNewName('');
+        setNewDescription('');
+      })
+      .catch(() => {});
+  const saveEdit = (id: string) =>
+    void renameDepartment({ id, name: renameDraft, description: descriptionDraft })
+      .then(() => setRenamingId(null))
+      .catch(() => {});
 
   const isChiefAdmin =
     currentMembership?.role === 'owner' || currentMembership?.role === 'admin';
@@ -104,19 +120,29 @@ export const DepartmentsCard = () => {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            placeholder="New department, e.g. Paediatrics"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newName.trim()) {
-                createDepartment({ name: newName }).then(() => setNewName(''));
-              }
-            }}
-          />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+          <div className="flex flex-1 flex-col gap-2 min-w-0">
+            <Input
+              placeholder="New department, e.g. Paediatrics"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newName.trim()) void create();
+              }}
+            />
+            <Input
+              placeholder="What it covers (optional)"
+              aria-label="Department description"
+              value={newDescription}
+              maxLength={300}
+              onChange={(e) => setNewDescription(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newName.trim()) void create();
+              }}
+            />
+          </div>
           <Button
-            onClick={() => createDepartment({ name: newName }).then(() => setNewName(''))}
+            onClick={() => void create()}
             disabled={!newName.trim() || isCreating}
           >
             {isCreating ? (
@@ -155,45 +181,54 @@ export const DepartmentsCard = () => {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {renamingId === dept.id ? (
-                      <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                         <Input
                           value={renameDraft}
+                          aria-label="Department name"
                           onChange={(e) => setRenameDraft(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              void renameDepartment({ id: dept.id, name: renameDraft }).then(() =>
-                                setRenamingId(null),
-                              );
-                            }
+                            if (e.key === 'Enter') saveEdit(dept.id);
                             if (e.key === 'Escape') setRenamingId(null);
                           }}
                           className="h-8 w-48 text-sm"
                           autoFocus
                         />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            void renameDepartment({ id: dept.id, name: renameDraft }).then(() =>
-                              setRenamingId(null),
-                            )
-                          }
-                        >
+                        <Input
+                          value={descriptionDraft}
+                          aria-label="Department description"
+                          placeholder="What it covers (optional)"
+                          maxLength={300}
+                          onChange={(e) => setDescriptionDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEdit(dept.id);
+                            if (e.key === 'Escape') setRenamingId(null);
+                          }}
+                          className="h-8 w-full sm:w-64 text-sm"
+                        />
+                        <Button size="sm" variant="ghost" onClick={() => saveEdit(dept.id)}>
                           Save
                         </Button>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        className="flex items-center gap-1.5 text-left text-sm font-medium hover:underline"
-                        onClick={() => {
-                          setRenameDraft(dept.name);
-                          setRenamingId(dept.id);
-                        }}
-                      >
-                        {dept.name}
-                        <Pencil className="h-3 w-3 text-muted-foreground" />
-                      </button>
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          className="flex items-center gap-1.5 text-left text-sm font-medium hover:underline"
+                          onClick={() => {
+                            setRenameDraft(dept.name);
+                            setDescriptionDraft(dept.description ?? '');
+                            setRenamingId(dept.id);
+                          }}
+                        >
+                          {dept.name}
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                        {dept.description && (
+                          <p className="mt-0.5 text-xs text-muted-foreground break-words">
+                            {dept.description}
+                          </p>
+                        )}
+                      </div>
                     )}
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">

@@ -93,18 +93,32 @@ export function usePracticeDepartments(practiceId?: string | null) {
    * second department and move everybody, which loses the history of who was in
    * the first one.
    */
+  //
+  // The description travels with it: the column has existed since departments
+  // did, but nothing could write it. Omit `description` to leave it untouched;
+  // an empty string clears it.
   const renameDepartment = useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+    mutationFn: async ({
+      id,
+      name,
+      description,
+    }: {
+      id: string;
+      name: string;
+      description?: string;
+    }) => {
       const trimmed = name.trim();
       if (trimmed.length < 2) throw new Error('Give the department a name of at least 2 characters');
+      const patch: { name: string; description?: string | null } = { name: trimmed };
+      if (description !== undefined) patch.description = description.trim() || null;
       const { error } = await supabase
         .from('practice_departments')
-        .update({ name: trimmed } as never)
+        .update(patch as never)
         .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Department renamed');
+      toast.success('Department saved');
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message || 'Could not rename the department'),
