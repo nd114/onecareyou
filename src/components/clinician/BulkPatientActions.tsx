@@ -1,13 +1,9 @@
-import { useState } from 'react';
-import { 
-  Users, 
-  Send, 
-  Bell, 
-  Trash2, 
-  CheckSquare, 
+import {
+  Send,
+  Bell,
+  CheckSquare,
   Square,
   X,
-  Loader2,
   ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,23 +11,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useQueryClient } from '@tanstack/react-query';
+
+// There is deliberately no "Remove from care" action here. A provider share
+// is the patient's consent: guard_provider_share_consent keeps is_active for
+// the patient (or a platform admin) to change, so a clinician's bulk "end
+// share" was silently ignored while the UI reported success.
 
 interface Patient {
   id: string;
@@ -55,11 +41,6 @@ export const BulkPatientActions = ({
   onCreateGuidance,
   onCreateAlert,
 }: BulkPatientActionsProps) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
-
   const selectedCount = selectedIds.size;
   const allSelected = selectedCount === patients.length && patients.length > 0;
   const someSelected = selectedCount > 0 && selectedCount < patients.length;
@@ -74,38 +55,6 @@ export const BulkPatientActions = ({
 
   const clearSelection = () => {
     onSelectionChange(new Set());
-  };
-
-  const handleBulkRemove = async () => {
-    if (!user || selectedCount === 0) return;
-    
-    setIsRemoving(true);
-    try {
-      const { error } = await supabase
-        .from('provider_shares')
-        .update({ is_active: false })
-        .in('id', Array.from(selectedIds));
-
-      if (error) throw error;
-
-      toast({
-        title: 'Patients removed',
-        description: `${selectedCount} patient${selectedCount > 1 ? 's' : ''} removed from your care.`,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['clinician-patients'] });
-      clearSelection();
-    } catch (error) {
-      console.error('Error removing patients:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove patients. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRemoving(false);
-      setShowRemoveDialog(false);
-    }
   };
 
   const getSelectedPatientUserIds = () => {
@@ -175,14 +124,6 @@ export const BulkPatientActions = ({
                   <Bell className="h-4 w-4 mr-2" />
                   Create Alert Rule
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setShowRemoveDialog(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Remove from Care
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -192,30 +133,6 @@ export const BulkPatientActions = ({
           </span>
         )}
       </div>
-
-      {/* Remove Confirmation Dialog */}
-      <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove {selectedCount} patient{selectedCount > 1 ? 's' : ''}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove the selected patients from your care. They can re-share 
-              their data with you at any time. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkRemove}
-              disabled={isRemoving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isRemoving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };
