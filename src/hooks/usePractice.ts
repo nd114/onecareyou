@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 import { useWorkspaceSelection } from './useWorkspaceSelection';
-import { activeMembership, liveMemberships } from '@/lib/staff-roles';
+import { activeMembership, workspaceMemberships } from '@/lib/staff-roles';
 
 export type PracticeRole =
   | 'owner'
@@ -130,13 +130,14 @@ export function usePractice() {
       // for non-service-role clients. We explicitly list the safe columns here.
       const SAFE_PRACTICE_COLUMNS =
         'id,name,phone,email,address,city,state,zip_code,country,logo_url,primary_color,patient_limit,member_limit,created_by,created_at,updated_at,is_active';
+      // Inactive practices are read too. The database still counts their staff
+      // as members, and leaving them out made the workspace unreachable from
+      // the switcher while its records could still be theirs to open. The switcher
+      // marks them Inactive; the default workspace is still an active one.
       const { data, error } = await supabase
         .from('practices')
         .select(SAFE_PRACTICE_COLUMNS)
-        .in('id', practiceIds)
-        // A retired workspace is not a workspace to choose between. Membership
-        // rows stay for the record; the practice simply stops being offered.
-        .eq('is_active', true);
+        .in('id', practiceIds);
       if (error) throw error;
       return (data || []) as Practice[];
     },
@@ -158,13 +159,17 @@ export function usePractice() {
   // useClinicianCapabilities. "First" used to be practices[0] in whatever order
   // the practices query returned, so with nothing chosen the screens could show
   // a different workspace from the one every can(...) answered for.
-  const currentMembership = activeMembership(
-    liveMemberships(memberships, practices.map((p) => p.id)),
-    selectedWorkspaceId,
-  );
+  const orderedMemberships = workspaceMemberships(memberships, practices);
+  const currentMembership = activeMembership(orderedMemberships, selectedWorkspaceId);
   const currentPractice = currentMembership
     ? practices.find((p) => p.id === currentMembership.practice_id) || null
     : null;
+  // The switcher lists workspaces in the same order the default is taken
+  // from: active practices first, so an inactive one never sits at the top
+  // looking like the obvious choice.
+  const orderedPractices = orderedMemberships
+    .map((m) => practices.find((p) => p.id === m.practice_id))
+    .filter((p): p is Practice => !!p);
 
   // Get members of a practice.
   //
@@ -431,7 +436,7 @@ export function usePractice() {
 
   return {
     // Data
-    practices,
+    practices: orderedPractices,
     memberships,
     currentPractice,
     currentMembership,

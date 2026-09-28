@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useWorkspaceSelection } from './useWorkspaceSelection';
-import { activeMembership, liveMemberships } from '@/lib/staff-roles';
+import { activeMembership, workspaceMemberships } from '@/lib/staff-roles';
 
 export interface ClinicianProfile {
   id: string;
@@ -82,23 +82,22 @@ export const useClinicianProfile = () => {
       }[];
       const pendingInvites = (inviteRes?.data ?? []) as { practice_id: string }[];
 
-      // Which of those practices are still offered as workspaces, so the
-      // current membership resolves as it does in usePractice and
-      // useClinicianCapabilities. A retired practice keeps its member rows.
-      let activePracticeIds: string[] = [];
+      // Whether each practice is active, so the current membership resolves as
+      // it does in usePractice and useClinicianCapabilities: an explicit choice
+      // of an inactive practice holds, and the default is an active one.
+      let practices: { id: string; is_active: boolean | null }[] = [];
       if (memberships.length > 0) {
-        const { data: live } = await supabase
+        const { data: practiceRows } = await supabase
           .from('practices')
-          .select('id')
-          .in('id', memberships.map((m) => m.practice_id))
-          .eq('is_active', true);
-        activePracticeIds = ((live ?? []) as { id: string }[]).map((p) => p.id);
+          .select('id, is_active')
+          .in('id', memberships.map((m) => m.practice_id));
+        practices = (practiceRows ?? []) as { id: string; is_active: boolean | null }[];
       }
 
       return {
         profile: profileRes.data as ClinicianProfile | null,
         memberships,
-        activePracticeIds,
+        practices,
         pendingTenantInvites: pendingInvites,
       };
     },
@@ -116,7 +115,7 @@ export const useClinicianProfile = () => {
   // exists — it only stops being the *only* option.
   const { selectedWorkspaceId } = useWorkspaceSelection(user?.id);
   const primaryMembership = activeMembership(
-    liveMemberships(memberships, staff?.activePracticeIds ?? []),
+    workspaceMemberships(memberships, staff?.practices ?? []),
     selectedWorkspaceId,
   );
 

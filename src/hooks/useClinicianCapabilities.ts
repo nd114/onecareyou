@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useWorkspaceSelection } from "@/hooks/useWorkspaceSelection";
-import { activeMembership, liveMemberships } from "@/lib/staff-roles";
+import { activeMembership, workspaceMemberships } from "@/lib/staff-roles";
 
 export type PracticeCapability =
   | "view_phi"
@@ -107,28 +107,36 @@ async function fetchCapabilities(
   // the cache expired. Throwing leaves `can` answering no.
   if (memberError) throw memberError;
 
-  // Only practices still offered as workspaces, as usePractice does: a retired
-  // practice's membership row stays for the record and must not answer here.
+  // Ordered as usePractice orders them, active practices first, so with
+  // nothing chosen both name the same workspace.
   const allRows = (memberRows ?? []) as MembershipRow[];
   let rows: MembershipRow[] = [];
   if (allRows.length > 0) {
-    const { data: livePractices, error: practiceError } = await supabase
+    const { data: practiceRows, error: practiceError } = await supabase
       .from("practices")
-      .select("id")
-      .in("id", allRows.map((row) => row.practice_id))
-      .eq("is_active", true);
+      .select("id, is_active")
+      .in("id", allRows.map((row) => row.practice_id));
     if (practiceError) throw practiceError;
-    rows = liveMemberships(allRows, ((livePractices ?? []) as { id: string }[]).map((p) => p.id));
+    rows = workspaceMemberships(
+      allRows,
+      (practiceRows ?? []) as { id: string; is_active: boolean | null }[],
+    );
   }
 
   // Shared with useClinicianProfile and usePractice so capabilities and the
   // screens they gate cannot disagree about which workspace is current. See
   // activeMembership for what went wrong when this hook resolved it alone.
+  //
+  // An inactive practice, once chosen, answers with whatever the database
+  // grants there. has_practice_capability does not look at is_active, so its
+  // staff keep their role's rights; answering no here would hide actions the
+  // database still allows, and answering more would promise what it refuses.
   const memberRow = activeMembership(rows, selectedWorkspaceId) ?? undefined;
 
   if (!memberRow && allRows.length > 0) {
-    // Every membership is in a retired practice. That is not a solo clinician
-    // owning their own workspace, so it does not get the solo grant below.
+    // Memberships exist but none of their practices could be read. That is not
+    // a solo clinician owning their own workspace, so it does not get the solo
+    // grant below.
     return EMPTY;
   }
 
@@ -208,7 +216,10 @@ export function useClinicianCapabilities() {
       loading: enabled ? isLoading || (!data && isFetching) : !!user,
       role: answer.membership?.role ?? null,
       practiceId: answer.membership?.practice_id ?? null,
-      /** Every active affiliation — a clinician may work across hospitals. */
+      /**
+       * Every affiliation whose practice could be read, inactive ones included
+       * (the database still honours them) — a clinician may work across hospitals.
+       */
       memberships: answer.memberships,
       isInPractice: answer.membership !== null,
       can,

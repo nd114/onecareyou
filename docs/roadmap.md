@@ -41,7 +41,7 @@
    - **A clinician leaving a practice** is assessed in [`plans/clinician-offboarding.md`](./plans/clinician-offboarding.md): a leaver can still write to the hospital's record and patients can message a departed clinician into a void; Phase 1 (row-level, 2–3 days) closes the first, Phase 3 the second.
    - **Realtime is dead in production.** The websocket answers 500 at handshake on every page, so anything live is silently stale. Check the hosted project's Realtime settings in the Supabase dashboard first; it is probably configuration. The typing indicator now uses a private channel and is unverified live until this is fixed.
    - **Decisions needed:**
-     - Should an inactive practice (`practices.is_active = false`, set only by the platform admin's Active switch) lose staff access? Today view-all staff keep reading; only assigned staff lose it.
+     - Should an inactive practice (`practices.is_active = false`, set only by the platform admin's Active switch) lose staff access? Today view-all staff keep reading; only assigned staff lose it. The workspace switcher follows the database as it stands: an inactive practice is offered, marked Inactive, and its capabilities are whatever `has_practice_capability` grants. If this decision goes the other way, the switcher and the capability hook have to change with it.
      - Should department leads be limited to their own department's patients when routing and assigning? Today they can route any shared patient.
      - Should hospital patients in the clinician list follow the selected workspace? Today every hospital's assigned patients are listed, labelled by hospital.
      - Should the first account to open a share invite link claim it, or only the addressed confirmed email?

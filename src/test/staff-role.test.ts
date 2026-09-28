@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { activeMembership, liveMemberships } from '@/lib/staff-roles';
+import { activeMembership, workspaceMemberships } from '@/lib/staff-roles';
 
 /**
  * The rule that decides which side of the product someone lands on.
@@ -142,16 +142,42 @@ describe('activeMembership', () => {
   });
 });
 
-describe('liveMemberships', () => {
-  it('drops retired practices and orders earliest first, whatever order rows came in', () => {
-    const rows = [
-      { practice_id: 'hospital', role: 'clinician', created_at: '2026-03-01' },
-      { practice_id: 'retired', role: 'owner', created_at: '2026-01-01' },
-      { practice_id: 'own-practice', role: 'owner', created_at: '2026-02-01' },
-    ];
-    const live = liveMemberships(rows, ['hospital', 'own-practice']);
-    expect(live.map((m) => m.practice_id)).toEqual(['own-practice', 'hospital']);
-    // A stored choice of a practice since retired falls back to a live one.
-    expect(activeMembership(live, 'retired')?.practice_id).toBe('own-practice');
+describe('workspaceMemberships', () => {
+  const rows = [
+    { practice_id: 'hospital', role: 'clinician', created_at: '2026-03-01' },
+    { practice_id: 'retired', role: 'owner', created_at: '2026-01-01' },
+    { practice_id: 'own-practice', role: 'owner', created_at: '2026-02-01' },
+    { practice_id: 'unreadable', role: 'owner', created_at: '2025-01-01' },
+  ];
+  const practices = [
+    { id: 'hospital', is_active: true },
+    { id: 'retired', is_active: false },
+    { id: 'own-practice', is_active: true },
+  ];
+
+  it('puts active practices first, earliest first, then inactive ones, whatever order rows came in', () => {
+    const ordered = workspaceMemberships(rows, practices);
+    expect(ordered.map((m) => m.practice_id)).toEqual(['own-practice', 'hospital', 'retired']);
+  });
+
+  it('defaults to an active practice even when the inactive membership is older', () => {
+    expect(activeMembership(workspaceMemberships(rows, practices), null)?.practice_id).toBe(
+      'own-practice',
+    );
+  });
+
+  it('honours an explicit choice of an inactive practice', () => {
+    expect(activeMembership(workspaceMemberships(rows, practices), 'retired')?.role).toBe('owner');
+  });
+
+  it('falls back to the inactive practice when it is the only workspace', () => {
+    const only = workspaceMemberships([rows[1]], [practices[1]]);
+    expect(activeMembership(only, null)?.practice_id).toBe('retired');
+  });
+
+  it('leaves out a membership whose practice could not be read', () => {
+    expect(workspaceMemberships(rows, practices).some((m) => m.practice_id === 'unreadable')).toBe(
+      false,
+    );
   });
 });

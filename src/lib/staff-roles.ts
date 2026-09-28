@@ -125,13 +125,14 @@ export function showsClinicalRecord(
  * route gate answered for another. A clinician whose own practice predated
  * their hospital post kept owner capabilities while looking at the hospital.
  *
- * An explicit choice wins. Absent one, the first membership, so a clinician
- * with a single workspace sees no change. A choice naming a workspace they are
- * no longer a member of falls back the same way rather than resolving to
- * nothing.
+ * An explicit choice wins, an inactive practice included. Absent one, the
+ * first membership, so a clinician with a single workspace sees no change. A
+ * choice naming a workspace they are no longer a member of falls back the same
+ * way rather than resolving to nothing.
  *
- * Pass it `liveMemberships(...)`, not raw rows: "first" has to mean the same
- * membership to every caller, and a retired practice is not a workspace.
+ * Pass it `workspaceMemberships(...)`, not raw rows: "first" has to mean the
+ * same membership to every caller, and has to be an active practice when the
+ * clinician has one.
  */
 export function activeMembership<T extends { practice_id?: string | null }>(
   memberships: readonly T[],
@@ -144,24 +145,44 @@ export function activeMembership<T extends { practice_id?: string | null }>(
 }
 
 /**
- * The memberships that can be the current workspace: those whose practice is
- * still active, earliest first.
+ * The memberships that can be the current workspace, in the order "first"
+ * is taken from: active practices before inactive ones, earliest membership
+ * first within each.
  *
- * usePractice offers only active practices and used to take the first row its
- * practices query returned, in no particular order; useClinicianCapabilities
- * took every active membership, earliest first. So with a retired practice, or
- * with two workspaces and nothing chosen, the Practice screens showed one
- * workspace while every `can(...)` answered for another — including owner
- * rights at a practice nobody could see any more. Every reader filters and
- * orders the same way here before calling activeMembership.
+ * usePractice used to take the first row its practices query returned, in no
+ * particular order, while useClinicianCapabilities took every membership
+ * earliest first. So with two workspaces and nothing chosen, the Practice
+ * screens showed one workspace while every `can(...)` answered for another.
+ * Every reader filters and orders the same way here before calling
+ * activeMembership.
+ *
+ * An inactive practice is still a workspace. The database keeps its members
+ * (is_practice_member and has_practice_capability do not look at is_active,
+ * and view-all staff keep reading its patients), so hiding it left its staff
+ * unable to reach records the database would show them. Whether an inactive
+ * practice should lose staff access is an open decision in docs/roadmap.md;
+ * this follows the database as it stands. It is offered, marked Inactive, and chosen only on purpose:
+ * the default is an active practice whenever there is one.
+ *
+ * A membership whose practice row could not be read is left out: there is
+ * nothing to show for it, and it must not become the workspace the gates
+ * answer for while the screens show another.
  */
-export function liveMemberships<
+export function workspaceMemberships<
   T extends { practice_id?: string | null; created_at?: string | null },
->(memberships: readonly T[], activePracticeIds: Iterable<string>): T[] {
-  const active = new Set(activePracticeIds);
+>(
+  memberships: readonly T[],
+  practices: readonly { id: string; is_active?: boolean | null }[],
+): T[] {
+  const activeById = new Map(practices.map((p) => [p.id, p.is_active !== false]));
   return memberships
-    .filter((membership) => !!membership.practice_id && active.has(membership.practice_id))
-    .sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')));
+    .filter((membership) => !!membership.practice_id && activeById.has(membership.practice_id))
+    .sort((a, b) => {
+      const aActive = activeById.get(a.practice_id as string) ? 0 : 1;
+      const bActive = activeById.get(b.practice_id as string) ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return String(a.created_at ?? '').localeCompare(String(b.created_at ?? ''));
+    });
 }
 
 /** The roles a practice can assign, grouped so the difference is visible. */
