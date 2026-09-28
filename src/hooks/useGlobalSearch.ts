@@ -21,8 +21,10 @@ import type { NavTarget } from '@/lib/nav-ia';
  *   - **Patients** arrive as the list `useClinicianPatients` already loaded:
  *     private `provider_shares` plus consent-checked hospital assignments, the
  *     list the Patients screen renders. Search can only narrow it.
- *   - **Documents** go to `search_documents`, which is SECURITY INVOKER: the
- *     caller's own RLS decides which rows exist to be matched.
+ *   - **Documents** go to `search_documents`, which is SECURITY INVOKER and
+ *     matches only the caller's own documents (`user_id = auth.uid()`). RLS
+ *     alone would also admit documents other people shared with the caller,
+ *     and every hit here opens the caller's own Vault.
  *
  * ## Why the sources are inputs
  *
