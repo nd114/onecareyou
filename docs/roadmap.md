@@ -284,6 +284,9 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    [`hospital-profiles-plan.md`](./hospital-profiles-plan.md). Open question is editorial
    ownership, not engineering.
 
+   **Hospital groups** (assessed, not started) — a parent tenant over several hospitals, with
+   group roles that see figures but not charts; see [`plans/hospital-groups-plan.md`](./plans/hospital-groups-plan.md).
+
 1. **Mobile device pass on real hardware.** The structural fixes are in (tab-bar
    clearance, dvh, iOS input zoom, notch insets, PWA colours, Capacitor build
    config); tap targets, keyboard overlap and tablet landscape need real devices.
