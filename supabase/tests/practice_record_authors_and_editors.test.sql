@@ -4,8 +4,12 @@
 -- The author of a clinician_patient_records row read it on authorship alone.
 -- Once the patient had claimed it and then revoked the author (or the
 -- practice), the author, front desk included, went on reading the patient's
--- conditions, medications and notes. The author now reads an unclaimed record
--- freely and a claimed one only on a live relationship with the patient.
+-- conditions, medications and notes. 20261009080000 made the author read a
+-- claimed record only on a live relationship with the patient;
+-- 20261010000000 reversed that for the author alone, by product decision: the
+-- person who filed a record keeps reading it, read-only, after revocation.
+-- Section 3 asserts the current rule. authors_keep_what_they_filed.test.sql
+-- covers it in full.
 --
 -- Practice staff updated any unclaimed record the practice had filed on
 -- may_manage_practice_patient_records(), which admits every member holding
@@ -137,7 +141,7 @@ BEGIN
   PERFORM pg_temp.assert(_n = 1, 'a practice author reads the claimed record on the practice share');
 
   -- ==========================================================================
-  -- 3. The patient revokes; the authors stop reading
+  -- 3. The patient revokes; the authors keep what they filed, colleagues do not
   -- ==========================================================================
   PERFORM set_config('request.jwt.claim.sub', _patient::text, true);
   UPDATE public.provider_shares SET is_active = false, revoked_at = now()
@@ -146,12 +150,12 @@ BEGIN
   PERFORM pg_temp.as_user(_solo);
   SELECT count(*) INTO _n FROM public.clinician_patient_records WHERE id = _r_solo;
   PERFORM pg_temp.as_user(NULL);
-  PERFORM pg_temp.assert(_n = 0, 'after revocation the solo author no longer reads the claimed record');
+  PERFORM pg_temp.assert(_n = 1, 'after revocation the solo author still reads the record they filed');
 
   PERFORM pg_temp.as_user(_front);
   SELECT count(*) INTO _n FROM public.clinician_patient_records WHERE id = _r_front;
   PERFORM pg_temp.as_user(NULL);
-  PERFORM pg_temp.assert(_n = 0, 'nor does the front desk author');
+  PERFORM pg_temp.assert(_n = 1, 'so does the front desk author');
 
   PERFORM set_config('request.jwt.claim.sub', _patient::text, true);
   UPDATE public.practice_shares SET is_active = false, revoked_at = now()
@@ -160,7 +164,12 @@ BEGIN
   PERFORM pg_temp.as_user(_dr);
   SELECT count(*) INTO _n FROM public.clinician_patient_records WHERE id = _r_dr;
   PERFORM pg_temp.as_user(NULL);
-  PERFORM pg_temp.assert(_n = 0, 'once the practice is revoked its author no longer reads the claimed record');
+  PERFORM pg_temp.assert(_n = 1, 'once the practice is revoked its author still reads the record they filed');
+
+  PERFORM pg_temp.as_user(_nurse);
+  SELECT count(*) INTO _n FROM public.clinician_patient_records WHERE id IN (_r_dr, _r_front);
+  PERFORM pg_temp.as_user(NULL);
+  PERFORM pg_temp.assert(_n = 0, 'a colleague who did not file it stops reading the claimed record');
 
   PERFORM pg_temp.as_user(_patient);
   SELECT count(*) INTO _n FROM public.clinician_patient_records WHERE id IN (_r_solo, _r_front, _r_dr);

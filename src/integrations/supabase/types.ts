@@ -920,6 +920,7 @@ export type Database = {
           provider_share_id: string | null
           tags: Json | null
           updated_at: string
+          updated_by: string | null
           visits: Json
           vitals_history: Json | null
         }
@@ -948,6 +949,7 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
+          updated_by?: string | null
           visits?: Json
           vitals_history?: Json | null
         }
@@ -976,6 +978,7 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
+          updated_by?: string | null
           visits?: Json
           vitals_history?: Json | null
         }
