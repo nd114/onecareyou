@@ -485,7 +485,7 @@ const ClinicianPatientDetail = () => {
 
         {/* Allergies and conditions, above the tabs — these should never be
             something a clinician has to go looking for. */}
-        <PatientSafetyStrip patientUserId={patient.user_id} />
+        <PatientSafetyStrip patientUserId={patient.user_id} isClinicalStaff={!!clinicalStaff} />
 
         {/* Main Content Tabs */}
         <motion.div

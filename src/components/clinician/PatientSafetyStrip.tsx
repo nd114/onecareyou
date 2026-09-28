@@ -19,7 +19,13 @@ interface ClinicalProfile {
  * category, so "not shared" and "none recorded" are different states and are
  * shown differently.
  */
-export function PatientSafetyStrip({ patientUserId }: { patientUserId: string }) {
+export function PatientSafetyStrip({
+  patientUserId,
+  isClinicalStaff = true,
+}: {
+  patientUserId: string;
+  isClinicalStaff?: boolean;
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ['patient-clinical-profile', patientUserId],
     enabled: !!patientUserId,
@@ -39,6 +45,9 @@ export function PatientSafetyStrip({ patientUserId }: { patientUserId: string })
   const conditionsShared = wasShared(data.health_conditions);
   const allergies = toClinicalList(data.allergies);
   const conditions = toClinicalList(data.health_conditions);
+  // The database withholds both lists from non-clinical staff whatever the
+  // patient shared, so "not shared by the patient" would be untrue for them.
+  const withheldLabel = isClinicalStaff ? 'Not shared by the patient' : 'Visible to clinical staff only';
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 mb-6">
@@ -49,7 +58,7 @@ export function PatientSafetyStrip({ patientUserId }: { patientUserId: string })
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {!allergiesShared ? (
-            <span className="text-sm text-muted-foreground">Not shared by the patient</span>
+            <span className="text-sm text-muted-foreground">{withheldLabel}</span>
           ) : allergies.length === 0 ? (
             <span className="text-sm text-muted-foreground">None recorded</span>
           ) : (
@@ -69,7 +78,7 @@ export function PatientSafetyStrip({ patientUserId }: { patientUserId: string })
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {!conditionsShared ? (
-            <span className="text-sm text-muted-foreground">Not shared by the patient</span>
+            <span className="text-sm text-muted-foreground">{withheldLabel}</span>
           ) : conditions.length === 0 ? (
             <span className="text-sm text-muted-foreground">None recorded</span>
           ) : (
