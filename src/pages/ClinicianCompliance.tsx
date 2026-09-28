@@ -134,7 +134,6 @@ Version: ${baa.agreement_version ?? "1.0"}`
         "resource_type",
         "resource_id",
         "patient_user_id",
-        "ip_address",
       ]);
 
       const cover = `OneCare Compliance Pack
@@ -162,7 +161,6 @@ This bundle is a snapshot. Re-generate after material changes to your practice o
             <td>${escapeHtml(e.resource_type)}</td>
             <td>${escapeHtml(e.resource_id)}</td>
             <td>${escapeHtml(e.patient_user_id)}</td>
-            <td>${escapeHtml(e.ip_address)}</td>
           </tr>`,
         )
         .join("\n");
@@ -205,7 +203,7 @@ ${
   filteredAudit.length === 0
     ? '<p class="empty">No audit entries in the selected range.</p>'
     : `<table>
-  <thead><tr><th>Time</th><th>Action</th><th>Resource</th><th>Resource ID</th><th>Patient</th><th>IP</th></tr></thead>
+  <thead><tr><th>Time</th><th>Action</th><th>Resource</th><th>Resource ID</th><th>Patient</th></tr></thead>
   <tbody>
 ${auditRows}
   </tbody>

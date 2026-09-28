@@ -65,7 +65,6 @@ export default function ClinicianAudit() {
             resource_id: e.resource_id,
             patient_user_id: e.patient_user_id,
             patient_label: e.patient_name || (e.patient_user_id ? `${e.patient_user_id.slice(0, 8)}…` : null),
-            ip_address: e.ip_address,
           }))
         : ownEntries.map((e) => ({
             id: e.id,
@@ -77,7 +76,6 @@ export default function ClinicianAudit() {
             resource_id: e.resource_id,
             patient_user_id: e.patient_user_id,
             patient_label: e.patient_user_id ? `${e.patient_user_id.slice(0, 8)}…` : null,
-            ip_address: e.ip_address,
           })),
     [isTenantView, tenantEntries, ownEntries],
   );
@@ -131,7 +129,6 @@ export default function ClinicianAudit() {
       "resource_type",
       "resource_id",
       "patient_user_id",
-      "ip_address",
     ]);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -270,7 +267,6 @@ export default function ClinicianAudit() {
                       <th className="text-left py-2 pr-3">Action</th>
                       <th className="text-left py-2 pr-3">Resource</th>
                       <th className="text-left py-2 pr-3">Patient</th>
-                      <th className="text-left py-2 pr-3">IP</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -289,9 +285,7 @@ export default function ClinicianAudit() {
                         </td>
                         <td className="py-2 pr-3 text-xs text-muted-foreground truncate max-w-[12rem]">
                           {e.patient_label ?? "—"}
-                        </td>
-                        <td className="py-2 pr-3 font-mono text-xs text-muted-foreground">{e.ip_address ?? "—"}</td>
-                      </tr>
+                        </td>                      </tr>
                     ))}
                   </tbody>
                 </table>
