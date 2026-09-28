@@ -15,9 +15,11 @@ import { Navigate } from "react-router-dom";
 import { toCsv } from "@/lib/csv";
 import { formatDayTime } from "@/lib/format-date";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 
 export default function ClinicianAudit() {
+  const { user } = useAuth();
   const { can, practiceId, loading: capsLoading } = useClinicianCapabilities();
   const [query, setQuery] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -103,6 +105,19 @@ export default function ClinicianAudit() {
     });
   }, [isTenantView, entries, query, dateFrom, dateTo]);
 
+  // "Across your team" is only true when someone else's activity is actually in
+  // the log. A solo clinician's practice has one member, and the tenant log
+  // then holds nothing but their own rows. A server-side search can hide other
+  // actors, so while one is active the heading stays neutral.
+  const scopeLabel = useMemo(() => {
+    if (!isTenantView) return "Last 500 of your own events";
+    if (search.trim()) return "Last 500 matching events in this workspace";
+    const othersActive = tenantEntries.some((e) => e.actor_user_id !== user?.id);
+    return othersActive
+      ? "Last 500 events across your team"
+      : "Last 500 of your own events — no one else in this workspace has activity yet";
+  }, [isTenantView, search, tenantEntries, user?.id]);
+
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const pageSafe = Math.min(page, pageCount - 1);
   const pageRows = filtered.slice(pageSafe * PER_PAGE, pageSafe * PER_PAGE + PER_PAGE);
@@ -162,11 +177,7 @@ export default function ClinicianAudit() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-base">Recent activity</CardTitle>
-                <CardDescription>
-                  {isTenantView
-                    ? "Last 500 events across your team"
-                    : "Last 500 of your own events"}
-                </CardDescription>
+                <CardDescription>{scopeLabel}</CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:flex-none">
