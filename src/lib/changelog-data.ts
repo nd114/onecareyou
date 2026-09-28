@@ -15,6 +15,20 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-28',
+    version: '0.9.12',
+    title: 'Records stay with the person who filed them; inactive practices shown, not hidden',
+    tags: ['clinician', 'platform', 'security'],
+    bullets: [
+      'What staff will notice — Whoever filed a patient record (front desk included) can always read it, even after the patient links it and later stops sharing. It becomes read-only then, and opens nothing else about the patient.',
+      'Records now carry who last edited them, stamped by the database so nobody can name someone else; the audit log already recorded every editor.',
+      'What clinicians will notice — Inactive practices appear in the workspace switcher, after active ones, marked "Inactive", and can still be selected. A fresh session still opens on an active practice.',
+      'What admins will notice — The tenant edit dialog opens showing a practice\'s real Active state and no longer switches a suspended practice back on when any other detail is saved; suspended practices are badged Inactive in the tenant list.',
+      'Fix — The hospital-code error now says 3-7 characters, matching the rule it enforces.',
+      'Plans (docs/plans/) — what happens when a clinician leaves a practice (clinician-offboarding.md), and how a group of hospitals would sit on the tenancy model (hospital-groups-plan.md). Neither is built yet.',
+    ],
+  },
+  {
+    date: '2026-09-28',
     version: '0.9.11',
     title: 'PHI audit: every confirmed leak closed, each with a regression test',
     tags: ['security', 'clinician', 'patient', 'platform'],
