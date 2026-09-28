@@ -37,6 +37,23 @@
    remains open is listed under "Next up" and "Deferred".
 1. **Mobile-first sweep (patient + clinician).** Scripted 390x844 / 768x1024 passes over every pillar and sub-tab; fix P0 broken flows first, then overlap between bottom nav, FAB stack and sticky sub-tabs, then polish.
 2. **Surface budget discipline.** Every new feature must replace a surface or justify itself against the four pillars per side.
+3. **Open after the September PHI audit** (what was fixed is in [`audit-2026-09.md`](./audit-2026-09.md), pass 8).
+   - **Realtime is dead in production.** The websocket answers 500 at handshake on every page, so anything live is silently stale. Check the hosted project's Realtime settings in the Supabase dashboard first; it is probably configuration. The typing indicator now uses a private channel and is unverified live until this is fixed.
+   - **Decisions needed:**
+     - Should an inactive practice (`practices.is_active = false`, set only by the platform admin's Active switch) lose staff access? Today view-all staff keep reading; only assigned staff lose it.
+     - Should department leads be limited to their own department's patients when routing and assigning? Today they can route any shared patient.
+     - Should hospital patients in the clinician list follow the selected workspace? Today every hospital's assigned patients are listed, labelled by hospital.
+     - Should the first account to open a share invite link claim it, or only the addressed confirmed email?
+     - Clinician AI chat, dictation and the encounter scribe send patient data to the AI gateway without checking the patient's `ai_processing_consent`.
+     - Background EHR jobs now skip institution-only patients (they honour claimed provider shares only); supporting them needs a service-role SQL helper.
+   - **Defects:**
+     - `PrivacyPolicy.tsx` (~line 225) says consent changes are logged with IP addresses; nothing records an IP. Legal copy, needs review.
+     - The admin tenant edit dialog always opens as Active (`admin_tenant_overview` does not return `is_active`), so saving any edit reactivates a suspended tenant.
+     - `previewAuthStorage.ts` was hand-edited by a bot commit (`0245f1a`); let Lovable regenerate it.
+     - Clinician document results in search wait on `search_documents` returning an owning patient.
+     - Department leads see every actor in the tenant audit log (deferred as a product call).
+     - Low: EHR `fhirBaseUrl` accepts any URL; the in-memory invite-code rate limit is ineffective; offline writes not yet synced stay in IndexedDB after sign-out so they can sync later.
+   - **Product direction still to build** (from [`strategy/product-direction-sep-2026.md`](./strategy/product-direction-sep-2026.md)): A5.3 at-a-glance patient summary; A5.4 scribe keeps recording when the screen locks, plus a clinician voice memo; A4 a medication summary copy in the Vault labelled "Clinical record copy — not a pharmacy prescription"; A1 pick the default look and layout (the side panel frees 49px, not 130–140px); A5.5–8 WhatsApp, voice logging, telehealth and escalation are blocked on providers.
 
 ### Mobile sweep findings (13 August 2026, 390x844 + 768x1024)
 
