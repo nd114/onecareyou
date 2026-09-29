@@ -111,6 +111,10 @@ BEGIN
   INSERT INTO public.practice_patient_assignments (practice_id, patient_user_id, clinician_user_id, assigned_by)
   VALUES (_prac, _pat, _leaver, _owner);
 
+  -- The leaver is a clinician in their own right: that is what keeps their
+  -- private share working once the practice membership is gone.
+  INSERT INTO public.clinician_profiles (user_id, first_name, last_name) VALUES (_leaver, 'Dr', 'Leaver');
+
   INSERT INTO public.provider_shares (user_id, clinician_user_id, provider_name, provider_email,
                                       invite_code, permissions, is_active)
   VALUES (_private, _leaver, 'Dr Leaver', 'offb-leaver@test.local', 'OFFB0001', '{"profile": true}', true);
