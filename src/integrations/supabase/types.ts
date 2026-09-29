@@ -707,6 +707,12 @@ export type Database = {
       }
       clinician_dictations: {
         Row: {
+          author_departed_at: string | null
+          disposition: string | null
+          disposition_at: string | null
+          disposition_by: string | null
+          disposition_note: string | null
+          practice_id: string | null
           archived_at: string | null
           archived_by: string | null
           audio_path: string
@@ -731,6 +737,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          author_departed_at?: string | null
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
+          practice_id?: string | null
           archived_at?: string | null
           archived_by?: string | null
           audio_path: string
@@ -755,6 +767,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          author_departed_at?: string | null
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
+          practice_id?: string | null
           archived_at?: string | null
           archived_by?: string | null
           audio_path?: string
@@ -1717,6 +1735,11 @@ export type Database = {
       }
       encounters: {
         Row: {
+          author_departed_at: string | null
+          disposition: string | null
+          disposition_at: string | null
+          disposition_by: string | null
+          disposition_note: string | null
           assessment: string | null
           chief_complaint: string | null
           clinician_user_id: string
@@ -1744,6 +1767,11 @@ export type Database = {
           visit_type: string
         }
         Insert: {
+          author_departed_at?: string | null
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
           assessment?: string | null
           chief_complaint?: string | null
           clinician_user_id: string
@@ -1771,6 +1799,11 @@ export type Database = {
           visit_type?: string
         }
         Update: {
+          author_departed_at?: string | null
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
           assessment?: string | null
           chief_complaint?: string | null
           clinician_user_id?: string
@@ -2345,6 +2378,7 @@ export type Database = {
       }
       internal_notes: {
         Row: {
+          practice_id: string | null
           author_user_id: string
           body: string
           created_at: string
@@ -2355,6 +2389,7 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          practice_id?: string | null
           author_user_id: string
           body: string
           created_at?: string
@@ -2365,6 +2400,7 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          practice_id?: string | null
           author_user_id?: string
           body?: string
           created_at?: string
@@ -2807,6 +2843,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          practice_id: string | null
           attachment_name: string | null
           attachment_path: string | null
           attachment_retracted_at: string | null
@@ -2822,6 +2859,7 @@ export type Database = {
           transport: string
         }
         Insert: {
+          practice_id?: string | null
           attachment_name?: string | null
           attachment_path?: string | null
           attachment_retracted_at?: string | null
@@ -2837,6 +2875,7 @@ export type Database = {
           transport?: string
         }
         Update: {
+          practice_id?: string | null
           attachment_name?: string | null
           attachment_path?: string | null
           attachment_retracted_at?: string | null
@@ -2973,6 +3012,47 @@ export type Database = {
             columns: ["provider_share_id"]
             isOneToOne: false
             referencedRelation: "provider_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_notices: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          notice_type: string
+          patient_user_id: string
+          practice_id: string | null
+          related_id: string | null
+          seen_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          notice_type: string
+          patient_user_id: string
+          practice_id?: string | null
+          related_id?: string | null
+          seen_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          notice_type?: string
+          patient_user_id?: string
+          practice_id?: string | null
+          related_id?: string | null
+          seen_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_notices_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -4142,6 +4222,7 @@ export type Database = {
       }
       record_change_proposals: {
         Row: {
+          practice_id: string | null
           applied_medication_id: string | null
           created_at: string
           id: string
@@ -4157,6 +4238,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          practice_id?: string | null
           applied_medication_id?: string | null
           created_at?: string
           id?: string
@@ -4172,6 +4254,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          practice_id?: string | null
           applied_medication_id?: string | null
           created_at?: string
           id?: string
@@ -5353,6 +5436,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      author_may_file_under: {
+        Args: { _author: string; _practice_id: string }
+        Returns: boolean
+      }
       bulk_allowlist_clinicians: {
         Args: { _entries: Json; _practice_id: string }
         Returns: {
@@ -5561,6 +5648,10 @@ export type Database = {
         Returns: boolean
       }
       is_department_lead: { Args: { _practice_id: string }; Returns: boolean }
+      is_clinical_practice_member: {
+        Args: { _practice_id: string }
+        Returns: boolean
+      }
       is_institution_slug_available: {
         Args: { _practice_id?: string; _slug: string }
         Returns: boolean
@@ -5637,6 +5728,14 @@ export type Database = {
             }
             Returns: undefined
           }
+      mark_patient_notice_seen: {
+        Args: { _notice_id: string }
+        Returns: undefined
+      }
+      mark_practice_thread_read: {
+        Args: { _patient_user_id: string }
+        Returns: number
+      }
       may_manage_practice_patient_records: {
         Args: { _practice_id: string }
         Returns: boolean
@@ -5644,6 +5743,18 @@ export type Database = {
       may_read_practice_patient_record: {
         Args: { _linked_user_id: string; _practice_id: string }
         Returns: boolean
+      }
+      may_resolve_departed_work: {
+        Args: { _patient_user_id: string; _practice_id: string }
+        Returns: boolean
+      }
+      member_is_active_clinician: {
+        Args: { _practice_id: string; _user_id: string }
+        Returns: boolean
+      }
+      message_thread_practice: {
+        Args: { _clinician: string; _patient: string }
+        Returns: string
       }
       my_institution_care_team: {
         Args: never
@@ -5751,6 +5862,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      offboarding_impact: {
+        Args: { _practice_id: string; _user_id: string }
+        Returns: Json
+      }
       open_snapshot_link: {
         Args: {
           _document_id?: string
@@ -5795,6 +5910,10 @@ export type Database = {
           resource_type: string
         }[]
       }
+      practice_clinical_access: {
+        Args: { _patient_user_id: string; _practice_id: string }
+        Returns: boolean
+      }
       practice_contact_details: {
         Args: { _practice_id: string }
         Returns: {
@@ -5813,6 +5932,19 @@ export type Database = {
       practice_delete_department: {
         Args: { _department_id: string; _reason?: string }
         Returns: undefined
+      }
+      practice_handover_queue: {
+        Args: { _practice_id: string }
+        Returns: {
+            departed_name: string
+            departed_user_id: string
+            detail: string
+            item_id: string
+            kind: string
+            patient_name: string
+            patient_user_id: string
+            since: string
+          }[]
       }
       practice_has_clinical_access: {
         Args: { patient_uuid: string }
@@ -5929,6 +6061,10 @@ export type Database = {
         }[]
       }
       purge_expired_kingschat_attempts: { Args: never; Returns: number }
+      record_context_practice: {
+        Args: { _author: string; _patient: string }
+        Returns: string
+      }
       rename_document_folder: {
         Args: { _folder_id: string; _new_name: string }
         Returns: undefined
@@ -5937,6 +6073,10 @@ export type Database = {
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       required_withdrawal_authority: {
         Args: { _sent_at: string }
+        Returns: string
+      }
+      resolve_departed_draft: {
+        Args: { _action: string; _id: string; _kind: string; _note?: string; _share_with_patient?: boolean }
         Returns: string
       }
       revoke_snapshot_link: { Args: { _link_id: string }; Returns: string }

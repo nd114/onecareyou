@@ -1,5 +1,23 @@
 # Clinician Offboarding — when someone leaves a practice or hospital
 
+> **Decisions taken and Phases 2–3 done — September 2026** (migration
+> `20261010070000_offboarding_handover`, suite `offboarding_handover.test.sql`).
+> The founder decided the §7 questions; see §7 for each answer. In short: a
+> leaver loses all access to the hospital's patients and records, including
+> what they wrote there (this reverses §1.5 and §5.3 below for hospital
+> records; solo records are unchanged). Records now carry the practice they
+> were written for, stamped by the server. Unsigned drafts and unfiled
+> dictations freeze on departure and are routed to owners, admins and the
+> patient's department lead, who sign off (addendum, authorship kept), mark
+> entered in error, or archive — nothing is deleted. Admins see an impact
+> preview (`offboarding_impact`) before ending a membership; open work lands on
+> a needs-cover list in the Coverage tab (`practice_handover_queue`). Hospital
+> threads belong to the hospital and are read and continued by the patient's
+> current care team once the clinician has left. The patient is told once, on
+> handover. The only owner is told to appoint a co-owner. Still open: Phase 4
+> (EHR tenant ownership, account closure and the foreign keys), and the items
+> listed at the end of §7.
+>
 > **Phase 1 done — September 2026** (migration `20261010030000`, suite
 > `offboarding_closes_the_door.test.sql`). A leaver no longer writes to the
 > hospital's record; membership ends only through `end_practice_membership` /
@@ -317,31 +335,57 @@ hospital.
 | Phase | What | Size | Closes |
 | --- | --- | --- | --- |
 | **1. Close the holes at the row** (done) | `end_practice_membership` and `leave_practice`; trigger blocking direct status, role and view-all changes and enforcing the owner invariant; drop the DELETE policy; `ended_at`/`ended_by`/`end_reason`, status CHECK, membership ledger and audit row; author write policies need current access for hospital-context rows; clear view-all on role change and gate clinical acts on `institution_has_clinical_access`; switch `removeMember` and `archiveMember` to the RPC. New suite `leaving_a_practice.test.sql`, converted from this assessment's probe, each assertion watched failing first | **S–M**, 2–3 days | G1, G3, G4, G8, G11 |
-| **2. Handover** | Offboarding dialog with required dispositions; reassignment in the same transaction; "needs cover" queue in the Coverage tab; draft and dictation freeze; `practice_id` on dictations; lead role vacancy | **M**, about a week | G5 |
-| **3. The patient side** | `practice_id` on messages and the institutional thread read; departure line and forward routing; patient notice; snapshot on handover | **M**, about a week; needs the §7 decision on thread visibility | G2, G10 |
+| **2. Handover** (done, simplified) | Impact preview in the confirmation instead of required dispositions; assignments end as before and the patient goes on the "needs cover" list in the Coverage tab, with tasks, future appointments and pending proposals (reassign or withdraw from there); draft and dictation freeze with routing to leads and `resolve_departed_draft`; `practice_id` on dictations, internal notes, proposals and messages. Lead vacancy shows through the existing "departments without a lead" finding | **M** | G5, G6 |
+| **3. The patient side** (done, partly) | `practice_id` on messages and the institutional thread read; patient notice on handover (`patient_notices`). Not done: a departure line in the thread and composer forward routing; the Vault snapshot on handover | **M** | G2, G10 |
 | **4. The long tail** | Leaver's read-only "former workplaces" view with the message history helper; correction on behalf of the practice; EHR tenant ownership (with the EHR plan); account closure and the foreign keys | **M** across items; each independent | G6, G7, G9, G12 |
 
 Phase 1 does not depend on any decision below and closes the only gaps where
 a person who has left can still change the record.
 
-## 7. Decisions needed
+## 7. Decisions (taken September 2026)
 
-1. **Hospital message threads.** Should the institution's clinical team read the
-   messages a patient exchanged with one of its clinicians? The design says yes,
-   because consent was to the institution; it changes what a patient may have
-   assumed was a private conversation, so the patient-facing copy on the connect
-   screen would need to say so, and existing threads would need a decision
-   about whether it applies backwards.
-2. **Unsigned drafts at departure.** Freeze and show to the hospital (proposed),
-   or require the leaver to sign or abandon before the membership can end?
-3. **Unfiled dictations.** A dictation is not yet a record. Freeze and hand to the
-   hospital (proposed), or let the leaver discard it as they can today?
-4. **Patient names in the leaver's read-only view.** Show the name as it was
-   when they wrote the note, or an initial and date of birth only?
-5. **Notice timing.** On handover (proposed), or only if the patient had
-   messaged or been seen by the leaver in some recent window?
-6. **Owner leaving.** Must an owner transfer ownership before leaving (proposed),
-   or may the platform admin appoint one after?
+1. **Hospital message threads — yes, after the clinician leaves.** Threads that
+   arose from the hospital relationship carry `practice_id` (set by the server;
+   back-filled only where the author never had a private share with the patient
+   and exactly one practice fits). Once the thread's clinician has left or
+   stopped being clinical, the patient's currently assigned or view-all
+   clinical staff at that practice read it and continue the conversation.
+   While the clinician is there, the thread stays theirs. Private-share threads
+   are unchanged. *Still open:* the patient-facing copy on the connect screen
+   that says hospital conversations belong to the hospital.
+2. **Unsigned drafts — freeze, route, decide.** Not deleted (P2/P3), not
+   editable by anyone, marked "unsigned — author departed", routed to owners,
+   admins and the patient's department lead. They sign off (an addendum under
+   their own name; the note stays the author's), mark entered in error, or
+   archive. Deletion only if a later retention policy allows it; none is built.
+3. **Unfiled dictations — the same.** Signing off a dictation starts a draft
+   note under the lead's own name from it, which they review and sign.
+4. **The leaver's read-only view — there is none for hospital records.** The
+   founder decided a leaver loses all access to the hospital's patients and
+   records, including what they wrote (legal needs go through the hospital).
+   This supersedes §1.5 and §5.3 for practice records; solo records
+   (pathway A) keep the author's read.
+5. **Notice timing — on handover.** Once, when a new clinician is assigned after
+   a departure, naming who has taken over and the department. Not at departure.
+6. **Owner leaving — appoint a successor first.** The only owner cannot leave or
+   be ended; the functions and the UI say to make a co-owner first, and owners
+   now have a "Make co-owner" action.
+
+Left open by this round, for a later decision:
+
+- A leaver who *also* holds a private share with a hospital patient still reads
+  that patient's encounters through the private share, as any privately shared
+  clinician does. That is the patient's own consent and was left alone.
+- Records written before this change whose context was ambiguous (the author
+  also had a private share, or belonged to several practices the patient shared
+  with) stay unstamped and keep the old reading.
+- A dictation recorded with no patient chosen has no practice, so it stays its
+  author's.
+- Frozen drafts of a patient who has since disconnected cannot be resolved by
+  anyone (no break-glass), so they stay frozen.
+- Moving to a non-clinical role does not freeze drafts; only departure does.
+- A department lead who is not on the patient's care can mark a draft entered
+  in error or archive it, but must be assigned before signing it off.
 
 ## 8. What was checked, and how
 

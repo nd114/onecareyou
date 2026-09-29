@@ -128,6 +128,19 @@ export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = [
     producer: "flag_routing_outside_department (database trigger)",
   },
   {
+    key: "departed_work_handover",
+    audience: ["clinician"],
+    channels: ["in_app"],
+    defaultEnabled: true,
+    mandatory: true,
+    label: "Unfinished work left by someone who has left",
+    description:
+      "For hospital owners, admins and department leads: when a colleague leaves with an unsigned note or unfiled dictation about one of your patients.",
+    mandatoryReason:
+      "An unsigned note is kept exactly as its author left it until someone decides about it. If nobody is told, nobody decides.",
+    producer: "hand_over_departed_work (database trigger)",
+  },
+  {
     key: "account_security",
     audience: ["patient", "clinician"],
     channels: ["email"],

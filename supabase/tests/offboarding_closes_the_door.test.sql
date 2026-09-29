@@ -308,12 +308,14 @@ BEGIN
     (SELECT patient_name = 'Offb Walk-in' FROM public.clinician_patient_records WHERE id = _record),
     'the hospital record is intact');
 
-  -- What they wrote stays readable to them.
+  -- What they wrote for the hospital is the hospital's, and is no longer
+  -- theirs to read (founder decision, 20261010070000; this suite first
+  -- asserted the opposite).
   PERFORM pg_temp.as_user(_leaver);
   SELECT count(*) INTO _n FROM public.encounters WHERE id IN (_draft, _signed);
-  PERFORM pg_temp.assert(_n = 2, 'the leaver still reads their own encounters');
+  PERFORM pg_temp.assert(_n = 0, 'the leaver no longer reads the encounters they wrote for the hospital');
   SELECT count(*) INTO _n FROM public.internal_notes WHERE id IN (_team_note, _priv_note);
-  PERFORM pg_temp.assert(_n = 2, 'and their own notes');
+  PERFORM pg_temp.assert(_n = 0, 'nor their notes about the hospital''s patient');
 
   -- Their private practice is untouched.
   PERFORM pg_temp.assert(
@@ -322,9 +324,11 @@ BEGIN
   PERFORM pg_temp.assert(
     pg_temp.changed(format('UPDATE public.clinician_patient_records SET patient_name = %L WHERE id = %L', 'Solo Renamed', _solo_rec)),
     'and their own solo managed record');
+  -- A private jotting about the hospital's patient was written in the
+  -- hospital's context; it is kept, and is no longer the leaver's to change.
   PERFORM pg_temp.assert(
-    pg_temp.changed(format('UPDATE public.internal_notes SET body = %L WHERE id = %L', 'still mine', _priv_note)),
-    'and their own private note');
+    NOT pg_temp.changed(format('UPDATE public.internal_notes SET body = %L WHERE id = %L', 'still mine', _priv_note)),
+    'a private jotting about the hospital''s patient is no longer theirs to change');
 
   -- The hospital keeps the record.
   PERFORM pg_temp.as_user(_colleague);
