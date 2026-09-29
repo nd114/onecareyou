@@ -37,6 +37,7 @@ import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
 import { InstitutionCareTeamCard } from '@/components/patient/InstitutionCareTeamCard';
 import { useInstitutionCareTeam } from '@/hooks/useInstitutionCareTeam';
 import { HospitalShareCard } from '@/components/patient/HospitalShareCard';
+import { SnapshotLinksCard } from '@/components/patient/SnapshotLinksCard';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -497,6 +498,17 @@ const CareCircle = () => {
               </PanelRows>
             )}
           </Panel>
+        </motion.div>
+
+        {/* For people with no account. Deliberately its own panel: it is not a
+            relationship, and nothing in it can be resumed or messaged. */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+          className="mt-8"
+        >
+          <SnapshotLinksCard />
         </motion.div>
 
         {pastShares.length > 0 && (

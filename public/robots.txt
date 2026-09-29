@@ -28,5 +28,8 @@ Disallow: /clinician/patients
 Disallow: /clinician/settings
 Disallow: /clinician/alerts
 Disallow: /clinician/guidance
+# Read-only snapshot links. $ anchors the match: a bare /s would also block
+# /sign-up and /sitemap. The token is in the fragment and never reaches a crawler.
+Disallow: /s$
 
 Sitemap: https://onecare.you/sitemap.xml

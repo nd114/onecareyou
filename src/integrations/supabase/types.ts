@@ -4370,6 +4370,86 @@ export type Database = {
           },
         ]
       }
+      snapshot_link_views: {
+        Row: {
+          document_id: string | null
+          id: number
+          kind: string
+          link_id: string
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          document_id?: string | null
+          id?: never
+          kind: string
+          link_id: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          document_id?: string | null
+          id?: never
+          kind?: string
+          link_id?: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snapshot_link_views_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "snapshot_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      snapshot_links: {
+        Row: {
+          categories: string[]
+          created_at: string
+          document_ids: string[]
+          expires_at: string
+          id: string
+          label: string | null
+          passcode_hash: string | null
+          revoked_at: string | null
+          sharer_first_name: string
+          snapshot: Json
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          categories: string[]
+          created_at?: string
+          document_ids?: string[]
+          expires_at: string
+          id?: string
+          label?: string | null
+          passcode_hash?: string | null
+          revoked_at?: string | null
+          sharer_first_name: string
+          snapshot: Json
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          categories?: string[]
+          created_at?: string
+          document_ids?: string[]
+          expires_at?: string
+          id?: string
+          label?: string | null
+          passcode_hash?: string | null
+          revoked_at?: string | null
+          sharer_first_name?: string
+          snapshot?: Json
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       storage_ledger: {
         Row: {
           bytes: number
@@ -5254,6 +5334,21 @@ export type Database = {
         Returns: boolean
       }
       confirmed_email: { Args: never; Returns: string }
+      create_snapshot_link: {
+        Args: {
+          _categories: string[]
+          _document_ids: string[]
+          _expires_in_hours: number
+          _label?: string
+          _with_passcode?: boolean
+        }
+        Returns: {
+          expires_at: string
+          link_id: string
+          passcode: string | null
+          token: string
+        }[]
+      }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
       decline_practice_invitation: {
         Args: { _invitation_id: string }
@@ -5424,6 +5519,22 @@ export type Database = {
         Returns: string
       }
       led_department_ids: { Args: never; Returns: string[] }
+      list_my_snapshot_links: {
+        Args: never
+        Returns: {
+          categories: string[]
+          created_at: string
+          document_count: number
+          expires_at: string
+          has_passcode: boolean
+          id: string
+          label: string | null
+          last_viewed_at: string | null
+          locked: boolean
+          revoked_at: string | null
+          view_count: number
+        }[]
+      }
       log_platform_admin_action: {
         Args: {
           _action: string
@@ -5564,6 +5675,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      open_snapshot_link: {
+        Args: {
+          _document_id?: string
+          _passcode?: string
+          _token_hash: string
+          _user_agent?: string
+        }
+        Returns: Json
       }
       owner_may_remove_document: {
         Args: { _file_path: string }
@@ -5744,6 +5864,7 @@ export type Database = {
         Args: { _sent_at: string }
         Returns: string
       }
+      revoke_snapshot_link: { Args: { _link_id: string }; Returns: string }
       respond_to_change_proposal: {
         Args: { p_accept: boolean; p_note?: string; p_proposal_id: string }
         Returns: {

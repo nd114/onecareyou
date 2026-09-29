@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 const routerFutureFlags = {
   v7_startTransition: true,
@@ -121,6 +121,18 @@ import TenantHome from "@/components/tenant/TenantHome";
 import LegacyInstitutionRedirect from "@/components/tenant/LegacyInstitutionRedirect";
 import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 import Billing from "./pages/Billing";
+import SnapshotViewer from "./pages/SnapshotViewer";
+
+/**
+ * The read-only snapshot viewer is for somebody with no account, so none of
+ * the app's floating chrome belongs on it — no assistant, no bug button, no
+ * navigation into a OneCare they have no part in. That holds even when the
+ * browser happens to be signed in to OneCare.
+ */
+const AppChrome = ({ children }: { children: React.ReactNode }) => {
+  const { pathname } = useLocation();
+  return pathname === "/s" ? null : <>{children}</>;
+};
 
 
 
@@ -179,6 +191,9 @@ const App = () => (
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/careers/:jobId" element={<JobDetail />} />
+            {/* Read-only snapshot link. The token is in the fragment (/s#token),
+                never the path, so it does not reach any server log. */}
+            <Route path="/s" element={<SnapshotViewer />} />
             {/* Patient detail view - requires auth */}
             <Route path="/clinician/patient/:inviteCode" element={
               <ClinicianRoute>
@@ -538,12 +553,14 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CookieConsentBanner />
-          <FabStack>
-            <PatientAIChatMount />
-            <ClinicianAIChatMount />
-            <BugReportButton />
-          </FabStack>
-          <MobileBottomNav />
+          <AppChrome>
+            <FabStack>
+              <PatientAIChatMount />
+              <ClinicianAIChatMount />
+              <BugReportButton />
+            </FabStack>
+            <MobileBottomNav />
+          </AppChrome>
         </BrowserRouter>
         </FamilyProvider>
       </AuthProvider>
