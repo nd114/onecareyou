@@ -4771,6 +4771,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_practice_invitation: {
+        Args: { _invitation_id: string }
+        Returns: string
+      }
       accept_tenant_owner_invitation: {
         Args: { _invitation_id: string }
         Returns: string
@@ -5211,6 +5215,10 @@ export type Database = {
       }
       confirmed_email: { Args: never; Returns: string }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
+      decline_practice_invitation: {
+        Args: { _invitation_id: string }
+        Returns: undefined
+      }
       delete_document_folder: {
         Args: { _folder_id: string }
         Returns: undefined
@@ -5480,42 +5488,21 @@ export type Database = {
       object_to_withdrawal: {
         Args: { _event_id: string; _note: string }
         Returns: {
-          access_count: number
-          actual_recipient_id: string | null
-          actual_recipient_ref: string | null
-          authority_used: string
-          cosigned_by: string | null
-          created_at: string
-          days_visible: number | null
           document_id: string | null
-          downloaded_at: string | null
-          emergency_justification: string | null
           file_name: string | null
-          first_accessed_at: string | null
-          id: string
-          incident_ref: string | null
-          initiated_by: string | null
-          initiated_by_role: string | null
-          intended_patient_id: string | null
-          intended_patient_ref: string | null
-          internal_note: string | null
-          last_accessed_at: string | null
+          id: string | null
+          may_object: boolean | null
           message_id: string | null
           objected_at: string | null
           objection_note: string | null
-          reason_code: string
-          retracted_at: string
-          sending_clinician_id: string | null
-          sending_practice_id: string | null
+          patient_message: string | null
+          reason_code: string | null
+          retracted_at: string | null
           sent_at: string | null
-          storage_path: string | null
-          subsequent_actions: Json
-          was_downloaded: boolean
-          was_opened: boolean
         }
         SetofOptions: {
           from: "*"
-          to: "document_retraction_events"
+          to: "my_withdrawn_documents"
           isOneToOne: true
           isSetofReturn: false
         }
