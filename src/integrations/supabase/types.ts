@@ -4771,6 +4771,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_practice_invitation: {
+        Args: { _invitation_id: string }
+        Returns: string
+      }
       accept_tenant_owner_invitation: {
         Args: { _invitation_id: string }
         Returns: string
@@ -5211,6 +5215,10 @@ export type Database = {
       }
       confirmed_email: { Args: never; Returns: string }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
+      decline_practice_invitation: {
+        Args: { _invitation_id: string }
+        Returns: undefined
+      }
       delete_document_folder: {
         Args: { _folder_id: string }
         Returns: undefined
