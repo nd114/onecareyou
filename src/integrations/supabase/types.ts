@@ -2512,8 +2512,6 @@ export type Database = {
       }
       kingschat_login_attempts: {
         Row: {
-          browser_secret_hash: string | null
-          completion_hash: string | null
           consumed_at: string | null
           created_at: string
           expires_at: string
@@ -2522,13 +2520,10 @@ export type Database = {
           id: string
           kingschat_subject: string | null
           nonce: string
-          return_origin: string | null
           status: string
           token_hash: string | null
         }
         Insert: {
-          browser_secret_hash?: string | null
-          completion_hash?: string | null
           consumed_at?: string | null
           created_at?: string
           expires_at?: string
@@ -2537,13 +2532,10 @@ export type Database = {
           id?: string
           kingschat_subject?: string | null
           nonce: string
-          return_origin?: string | null
           status?: string
           token_hash?: string | null
         }
         Update: {
-          browser_secret_hash?: string | null
-          completion_hash?: string | null
           consumed_at?: string | null
           created_at?: string
           expires_at?: string
@@ -2552,7 +2544,6 @@ export type Database = {
           id?: string
           kingschat_subject?: string | null
           nonce?: string
-          return_origin?: string | null
           status?: string
           token_hash?: string | null
         }
@@ -4780,10 +4771,6 @@ export type Database = {
       }
     }
     Functions: {
-      accept_practice_invitation: {
-        Args: { _invitation_id: string }
-        Returns: string
-      }
       accept_tenant_owner_invitation: {
         Args: { _invitation_id: string }
         Returns: string
@@ -4863,7 +4850,6 @@ export type Database = {
           _action?: string
           _from?: string
           _limit?: number
-          _search?: string
           _to?: string
         }
         Returns: {
@@ -4979,7 +4965,7 @@ export type Database = {
         }[]
       }
       admin_recent_signups: {
-        Args: { _limit?: number; _search?: string }
+        Args: { _limit?: number }
         Returns: {
           created_at: string
           email: string
@@ -5225,10 +5211,6 @@ export type Database = {
       }
       confirmed_email: { Args: never; Returns: string }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
-      decline_practice_invitation: {
-        Args: { _invitation_id: string }
-        Returns: undefined
-      }
       delete_document_folder: {
         Args: { _folder_id: string }
         Returns: undefined
@@ -5370,28 +5352,14 @@ export type Database = {
         Returns: boolean
       }
       is_practice_member: { Args: { practice_uuid: string }; Returns: boolean }
-      kingschat_begin_login: {
-        Args: { _return_origin: string }
-        Returns: {
-          browser_secret: string
-          nonce: string
-        }[]
-      }
+      kingschat_begin_login: { Args: never; Returns: string }
       kingschat_claim_login: {
-        Args: {
-          _browser_secret: string
-          _completion_code?: string
-          _nonce: string
-        }
+        Args: { _nonce: string }
         Returns: {
           error: string
           status: string
           token_hash: string
         }[]
-      }
-      kingschat_fulfil_login: {
-        Args: { _nonce: string; _subject: string; _token_hash: string }
-        Returns: string
       }
       led_department_ids: { Args: never; Returns: string[] }
       log_platform_admin_action: {
@@ -5423,10 +5391,6 @@ export type Database = {
           }
       may_manage_practice_patient_records: {
         Args: { _practice_id: string }
-        Returns: boolean
-      }
-      may_read_practice_patient_record: {
-        Args: { _linked_user_id: string; _practice_id: string }
         Returns: boolean
       }
       my_institution_care_team: {
@@ -5516,21 +5480,42 @@ export type Database = {
       object_to_withdrawal: {
         Args: { _event_id: string; _note: string }
         Returns: {
+          access_count: number
+          actual_recipient_id: string | null
+          actual_recipient_ref: string | null
+          authority_used: string
+          cosigned_by: string | null
+          created_at: string
+          days_visible: number | null
           document_id: string | null
+          downloaded_at: string | null
+          emergency_justification: string | null
           file_name: string | null
-          id: string | null
-          may_object: boolean | null
+          first_accessed_at: string | null
+          id: string
+          incident_ref: string | null
+          initiated_by: string | null
+          initiated_by_role: string | null
+          intended_patient_id: string | null
+          intended_patient_ref: string | null
+          internal_note: string | null
+          last_accessed_at: string | null
           message_id: string | null
           objected_at: string | null
           objection_note: string | null
-          patient_message: string | null
-          reason_code: string | null
-          retracted_at: string | null
+          reason_code: string
+          retracted_at: string
+          sending_clinician_id: string | null
+          sending_practice_id: string | null
           sent_at: string | null
+          storage_path: string | null
+          subsequent_actions: Json
+          was_downloaded: boolean
+          was_opened: boolean
         }
         SetofOptions: {
           from: "*"
-          to: "my_withdrawn_documents"
+          to: "document_retraction_events"
           isOneToOne: true
           isSetofReturn: false
         }
