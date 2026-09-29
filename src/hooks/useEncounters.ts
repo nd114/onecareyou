@@ -25,6 +25,13 @@ export interface Encounter {
   follow_up_in_days: number | null;
   follow_up_task_id: string | null;
   signed_at: string | null;
+  /**
+   * Set when the author left the practice with this note unsigned. From then it
+   * is kept as written; only a lead resolves it (resolve_departed_draft).
+   */
+  author_departed_at?: string | null;
+  /** cosigned | entered_in_error | archived — how a departed author's draft was resolved. */
+  disposition?: string | null;
   /** Whether the patient may read this summary once it is signed. */
   shared_with_patient: boolean;
   metadata: Record<string, Json>;

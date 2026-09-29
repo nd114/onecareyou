@@ -12,6 +12,7 @@ import { EHRConnectionsSection } from '@/components/clinician/EHRConnectionsSect
 import { SubscriptionManagementCard } from '@/components/clinician/SubscriptionManagementCard';
 import { HospitalPatientsCard } from '@/components/clinician/HospitalPatientsCard';
 import { DepartmentsCard } from '@/components/clinician/DepartmentsCard';
+import { HandoverCard } from '@/components/clinician/HandoverCard';
 import { ClinicianAllowlistCard } from '@/components/clinician/ClinicianAllowlistCard';
 import { PracticeAccessOverviewCard } from '@/components/clinician/PracticeAccessOverviewCard';
 import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
@@ -126,7 +127,14 @@ const ClinicianPracticeSection = () => {
 
             {section.id === 'departments' && <DepartmentsCard />}
 
-            {section.id === 'routing' && <HospitalPatientsCard />}
+            {section.id === 'routing' && (
+              <>
+                {/* Leads decide about what departed colleagues left in their
+                    departments; the server scopes the list to them. */}
+                <HandoverCard practiceId={currentPractice?.id} isManager={context.isAdmin} />
+                <HospitalPatientsCard />
+              </>
+            )}
 
             {section.id === 'access' && (
               <>

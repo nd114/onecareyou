@@ -15,7 +15,8 @@ export type NotificationType =
   | 'expired'
   | 'dismissed'
   | 'share_ended'
-  | 'routed_outside_department';
+  | 'routed_outside_department'
+  | 'departed_author_drafts';
 
 export interface NotificationForDisplay {
   notification_type: string;
@@ -35,7 +36,11 @@ export interface NotificationDisplay {
 }
 
 /** Types whose words come from the database rather than from this file. */
-export const SELF_DESCRIBING_TYPES: readonly string[] = ['share_ended', 'routed_outside_department'];
+export const SELF_DESCRIBING_TYPES: readonly string[] = [
+  'share_ended',
+  'routed_outside_department',
+  'departed_author_drafts',
+];
 
 export function describeNotification(n: NotificationForDisplay): NotificationDisplay {
   const name = n.patient_profile?.name || 'Patient';
@@ -54,6 +59,15 @@ export function describeNotification(n: NotificationForDisplay): NotificationDis
         body: n.message || 'A department lead routed a patient outside their department.',
         acknowledgeable: !n.acknowledged_at,
         href: '/practice',
+      };
+    case 'departed_author_drafts':
+      // Closed by deciding about the draft, not by an Acknowledge button: the
+      // notice is the handover, and it stays open until someone takes it.
+      return {
+        title: n.acknowledged_at ? 'Draft resolved' : 'Unsigned — author departed',
+        body: n.message || 'A colleague left the practice with unfinished work for one of your patients.',
+        acknowledgeable: false,
+        href: '/clinician/practice/routing',
       };
     case 'completed':
       return { title: n.guidance?.title || 'Guidance Update', body: `${name} completed your guidance`, acknowledgeable: false, href: '/clinician/patients' };

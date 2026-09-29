@@ -1,4 +1,6 @@
-import { Building2, Stethoscope, Info } from 'lucide-react';
+import { Building2, Stethoscope, Info, ArrowRightLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { usePatientNotices } from '@/hooks/useOffboarding';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useInstitutionCareTeam } from '@/hooks/useInstitutionCareTeam';
@@ -26,10 +28,13 @@ const ROLE_LABELS: Record<string, string> = {
  */
 export function InstitutionCareTeamCard() {
   const { byPractice, isLoading } = useInstitutionCareTeam();
+  const { notices, markSeen } = usePatientNotices();
+  // Told once: a handover shows until the patient says they have seen it.
+  const unseen = notices.filter((n) => !n.seenAt);
 
   // Nothing to say when no hospital has assigned anyone — the connection itself
   // is already shown by HospitalShareCard above.
-  if (isLoading || byPractice.length === 0) return null;
+  if (isLoading || (byPractice.length === 0 && unseen.length === 0)) return null;
 
   return (
     <Card>
@@ -43,6 +48,26 @@ export function InstitutionCareTeamCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {unseen.map((notice) => (
+          <div
+            key={notice.id}
+            role="status"
+            className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3"
+          >
+            <div className="flex gap-2 min-w-0">
+              <ArrowRightLeft className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <p className="text-sm">{notice.message}</p>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={markSeen.isPending}
+              onClick={() => markSeen.mutate(notice.id)}
+            >
+              Got it
+            </Button>
+          </div>
+        ))}
         {byPractice.map((group) => (
           <div key={group.practiceId}>
             <div className="flex items-baseline justify-between gap-3 mb-3">

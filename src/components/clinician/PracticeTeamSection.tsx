@@ -7,9 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { usePractice, PracticeMember, PracticeRole } from '@/hooks/usePractice';
+import { useLeavePractice, useOffboardingImpact } from '@/hooks/useOffboarding';
 import { CreatePracticeDialog } from './CreatePracticeDialog';
 import { InviteTeamMemberDialog } from './InviteTeamMemberDialog';
-import { Building2, UserPlus, Users, MoreVertical, Crown, Shield, Stethoscope, User, Loader2, Mail, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { OffboardingImpactList } from './OffboardingImpactList';
+import { Building2, UserPlus, Users, MoreVertical, Crown, Shield, Stethoscope, User, Loader2, Mail, Search, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -65,13 +67,23 @@ export function PracticeTeamSection() {
     removeMember,
     updateMember,
     canManagePractice,
+    isOwner,
     hasPractice,
     isLoading,
   } = usePractice();
+  const leavePractice = useLeavePractice();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<PracticeMember | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  // The same query the lists below render; read here to hold the button while
+  // the account is loading, and to keep it held when ending would be refused.
+  const removeImpact = useOffboardingImpact(currentPractice?.id, memberToRemove?.user_id);
+  const leaveImpact = useOffboardingImpact(
+    leaving ? currentPractice?.id : null,
+    leaving ? currentMembership?.user_id : null,
+  );
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
@@ -252,8 +264,25 @@ export function PracticeTeamSection() {
                               )}
                             </DropdownMenuItem>
                           ))}
+                          {/* Ownership is its own step, and only an owner can
+                              give it. It is also how an owner who wants to
+                              leave appoints the successor the practice needs. */}
+                          {isOwner && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                disabled={updateMember.isPending}
+                                onClick={() => updateMember.mutate({ member, updates: { role: 'owner' } })}
+                              >
+                                <span className="flex items-center gap-2">
+                                  {ROLE_ICONS.owner}
+                                  Make co-owner
+                                </span>
+                              </DropdownMenuItem>
+                            </>
+                          )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => setMemberToRemove(member)}
                           >
@@ -283,6 +312,19 @@ export function PracticeTeamSection() {
               )}
             </div>
           )}
+
+          {currentMembership && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+              <p className="text-xs text-muted-foreground max-w-md">
+                Leaving ends your access to this practice's patients and records. Your own private
+                patients are not affected.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => setLeaving(true)}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Leave this practice
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -296,23 +338,61 @@ export function PracticeTeamSection() {
       <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+            <AlertDialogTitle>End this person's access?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove this person's access to the practice and all shared patients.
-              They can be re-invited later.
+              Their membership ends now and is kept in the practice's history. They can be invited
+              again later. Before you confirm, this is what it leaves behind:
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <OffboardingImpactList practiceId={currentPractice?.id} userId={memberToRemove?.user_id} />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleRemoveMember}
+              disabled={removeImpact.isLoading || !!removeImpact.data?.blockedReason || removeMember.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {removeMember.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                'Remove'
+                'End access'
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leaving of one's own accord */}
+      <AlertDialog open={leaving} onOpenChange={setLeaving}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {currentPractice?.name ?? 'this practice'}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You cannot undo this yourself; to come back, you would need to be invited again. This
+              is what leaving means:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <OffboardingImpactList
+            practiceId={leaving ? currentPractice?.id : null}
+            userId={leaving ? currentMembership?.user_id : null}
+            self
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={leaveImpact.isLoading || !!leaveImpact.data?.blockedReason || leavePractice.isPending}
+              onClick={async () => {
+                if (!currentPractice) return;
+                try {
+                  await leavePractice.mutateAsync({ practiceId: currentPractice.id });
+                  setLeaving(false);
+                } catch {
+                  /* the hook shows the server's words */
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {leavePractice.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Leave'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

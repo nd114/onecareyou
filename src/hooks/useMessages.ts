@@ -13,6 +13,8 @@ export interface Message {
   attachment_path: string | null;
   read_at: string | null;
   created_at: string;
+  /** The practice whose thread this is; null for a private-share thread. */
+  practice_id?: string | null;
 }
 
 /**
@@ -33,12 +35,16 @@ export function useMessages(otherPartyUserId: string | null, role: 'patient' | '
     queryKey,
     queryFn: async () => {
       if (!patientId || !clinicianId) return [];
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('patient_user_id', patientId)
-        .eq('clinician_user_id', clinicianId)
-        .order('created_at', { ascending: true });
+      // A clinician also sees the hospital threads of colleagues who have left
+      // and whose patient they now look after: the conversation belongs to the
+      // hospital, not to whoever held the case. Row policies decide which
+      // practice rows those are; a private-share thread is never among them.
+      const base = supabase.from('messages').select('*').eq('patient_user_id', patientId);
+      const scoped =
+        role === 'clinician'
+          ? base.or(`clinician_user_id.eq.${clinicianId},practice_id.not.is.null`)
+          : base.eq('clinician_user_id', clinicianId);
+      const { data, error } = await scoped.order('created_at', { ascending: true });
       if (error) throw error;
       return (data || []) as Message[];
     },
@@ -60,7 +66,7 @@ export function useMessages(otherPartyUserId: string | null, role: 'patient' | '
         },
         (payload) => {
           const row = (payload.new || payload.old) as Message | undefined;
-          if (row && row.clinician_user_id === clinicianId) {
+          if (row && (row.clinician_user_id === clinicianId || (role === 'clinician' && row.practice_id))) {
             queryClient.invalidateQueries({ queryKey });
           }
         },
@@ -122,11 +128,26 @@ export function useMessages(otherPartyUserId: string | null, role: 'patient' | '
         .neq('sender_user_id', user.id)
         .is('read_at', null);
       if (error) throw error;
+      // Messages the patient sent into a departed colleague's hospital thread
+      // are marked read through the server, which changes only that column.
+      if (role === 'clinician') {
+        const { error: inherited } = await supabase.rpc('mark_practice_thread_read', {
+          _patient_user_id: patientId,
+        });
+        if (inherited) throw inherited;
+      }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
-  const unreadCount = messages.filter((m) => m.sender_user_id !== user?.id && !m.read_at).length;
+  // For a clinician only the patient's words are waiting to be read; a
+  // departed colleague's messages in an inherited thread are not.
+  const unreadCount = messages.filter(
+    (m) =>
+      m.sender_user_id !== user?.id &&
+      (role === 'patient' || m.sender_user_id === patientId) &&
+      !m.read_at,
+  ).length;
 
   return { messages, isLoading, send, markRead, unreadCount };
 }

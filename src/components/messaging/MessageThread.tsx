@@ -400,9 +400,19 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
                 </span>
               </div>
               {day.groups.map((group, gi) => {
-                const mine = group.senderId === user?.id;
+                // On the clinician's side, the care team's side of the
+                // conversation includes a colleague who has since left and
+                // whose hospital thread this clinician inherited.
+                const colleague =
+                  role === 'clinician' && group.senderId !== user?.id && group.senderId !== otherPartyUserId;
+                const mine = group.senderId === user?.id || colleague;
                 return (
                   <div key={gi} className={cn('flex flex-col gap-1', mine ? 'items-end' : 'items-start')}>
+                    {colleague && (
+                      <span className="text-[10px] text-muted-foreground">
+                        From a colleague who has since left
+                      </span>
+                    )}
                     {group.items.map((m, mi) => {
                       const isLast = mi === group.items.length - 1;
                       return (

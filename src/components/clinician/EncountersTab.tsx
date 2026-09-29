@@ -95,7 +95,8 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
   useEffect(() => {
     if (!autoStartScribe || isLoading || startedRef.current) return;
     startedRef.current = true;
-    const openDraft = encounters.find((e) => !e.signed_at);
+    // Never a draft frozen when its author left: nobody can write to it.
+    const openDraft = encounters.find((e) => !e.signed_at && !e.author_departed_at);
     if (openDraft) {
       setScribeFor(openDraft);
       return;
@@ -363,6 +364,17 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
                     <Badge variant={enc.status === "signed" ? "default" : "outline"} className="text-[10px]">
                       {enc.status}
                     </Badge>
+                    {enc.author_departed_at && (
+                      <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-700 dark:text-amber-400">
+                        {enc.disposition === 'cosigned'
+                          ? 'Signed off after its author left'
+                          : enc.disposition === 'entered_in_error'
+                            ? 'Entered in error — author departed'
+                            : enc.disposition === 'archived'
+                              ? 'Archived — author departed'
+                              : 'Unsigned — author departed'}
+                      </Badge>
+                    )}
                     {fromDictation?.has(enc.id) && (
                       <Badge variant="outline" className="text-[10px] gap-1">
                         <FileAudio className="h-2.5 w-2.5" />
@@ -383,7 +395,7 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {enc.status === "in_progress" && (
+                  {enc.status === "in_progress" && !enc.author_departed_at && (
                     <>
                       <Button variant="outline" size="sm" className="gap-1" onClick={() => setScribeFor(enc)}>
                         <Mic className="h-3.5 w-3.5" /> Scribe
@@ -397,8 +409,9 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
                   {enc.status === "signed" && (
                     <>
                       {/* Whether the patient can read this is part of the
-                          record's state, so it is shown, not buried. */}
-                      <Button
+                          record's state, so it is shown, not buried. Not for a
+                          note whose author has left: nobody can change it. */}
+                      {!enc.author_departed_at && (<Button
                         variant="ghost"
                         size="sm"
                         className="gap-1 text-xs"
@@ -414,7 +427,7 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
                         ) : (
                           <><EyeOff className="h-3.5 w-3.5" /> Not shared</>
                         )}
-                      </Button>
+                      </Button>)}
                       <Button variant="ghost" size="sm" onClick={() => openEditor(enc)}>
                         View <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>

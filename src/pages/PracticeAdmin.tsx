@@ -29,6 +29,19 @@ import { PracticeInvitationsCard } from '@/components/clinician/PracticeInvitati
 import { TenantOwnerInvitationCard } from '@/components/clinician/TenantOwnerInvitationCard';
 import { DepartmentsCard } from '@/components/clinician/DepartmentsCard';
 import { CoverageCard } from '@/components/clinician/CoverageCard';
+import { HandoverCard } from '@/components/clinician/HandoverCard';
+import { OffboardingImpactList } from '@/components/clinician/OffboardingImpactList';
+import { useOffboardingImpact } from '@/hooks/useOffboarding';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { PracticeContactCard } from '@/components/clinician/PracticeContactCard';
 import { PracticeBrandingCard } from '@/components/clinician/PracticeBrandingCard';
 import { HospitalCodeCard } from '@/components/clinician/HospitalCodeCard';
@@ -85,6 +98,9 @@ const PracticeAdmin = () => {
   const [pendingAssign, setPendingAssign] = useState<Record<string, string>>({});
   const [auditSearch, setAuditSearch] = useState('');
   const [auditPage, setAuditPage] = useState(0);
+  // Archiving ends a membership; the admin sees what it leaves behind first.
+  const [archiveTarget, setArchiveTarget] = useState<{ user_id: string; name: string | null; email: string | null } | null>(null);
+  const archiveImpact = useOffboardingImpact(practiceId, archiveTarget?.user_id);
   const { data: auditEntries = [], isLoading: loadingAudit } = usePracticeAuditLog(
     practiceId,
     { search: auditSearch, limit: 500 },
@@ -194,7 +210,8 @@ const PracticeAdmin = () => {
           </TabsList>
 
           {/* ---------------- Coverage ---------------- */}
-          <TabsContent value="coverage">
+          <TabsContent value="coverage" className="space-y-4">
+            <HandoverCard practiceId={practiceId} isManager={isChiefAdmin} staff={staff} />
             <CoverageCard
               staff={staff}
               patients={patients}
@@ -271,7 +288,7 @@ const PracticeAdmin = () => {
                             variant="outline"
                             size="sm"
                             disabled={isUpdatingMember}
-                            onClick={() => archiveMember(s.user_id)}
+                            onClick={() => setArchiveTarget(s)}
                           >
                             <Archive className="h-3.5 w-3.5 mr-1.5" />
                             Archive
@@ -498,7 +515,7 @@ const PracticeAdmin = () => {
                           variant="outline"
                           size="sm"
                           disabled={isUpdatingMember}
-                          onClick={() => archiveMember(s.user_id)}
+                          onClick={() => setArchiveTarget(s)}
                         >
                           <Archive className="h-3.5 w-3.5 mr-1.5" />
                           Archive
@@ -651,6 +668,38 @@ const PracticeAdmin = () => {
           practiceId={practiceId}
         />
       )}
+
+      <AlertDialog open={!!archiveTarget} onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Archive {archiveTarget?.name || archiveTarget?.email || 'this team member'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Their membership ends now and is kept for audit. Before you confirm, this is what it
+              leaves behind:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <OffboardingImpactList practiceId={practiceId} userId={archiveTarget?.user_id} />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={archiveImpact.isLoading || !!archiveImpact.data?.blockedReason || isUpdatingMember}
+              onClick={async () => {
+                if (!archiveTarget) return;
+                try {
+                  await archiveMember(archiveTarget.user_id);
+                } catch {
+                  /* the hook shows the server's words */
+                }
+                setArchiveTarget(null);
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
