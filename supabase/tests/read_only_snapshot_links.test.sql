@@ -327,12 +327,19 @@ BEGIN
   _r := pg_temp.open(_ptoken, _pin);
   PERFORM pg_temp.assert(_r->>'status' = 'ok', 'the right passcode opens it');
 
-  FOR _i IN 1..10 LOOP
+  -- One wrong passcode was already spent above; one more makes two.
+  FOR _i IN 1..1 LOOP
+    _r := pg_temp.open(_ptoken, CASE WHEN _pin = '000000' THEN '000001' ELSE '000000' END);
+  END LOOP;
+  _r := pg_temp.open(_ptoken, _pin);
+  PERFORM pg_temp.assert(_r->>'status' = 'ok', 'two wrong passcodes still leave the right one working');
+
+  FOR _i IN 1..1 LOOP
     _r := pg_temp.open(_ptoken, CASE WHEN _pin = '000000' THEN '000001' ELSE '000000' END);
   END LOOP;
   _r := pg_temp.open(_ptoken, _pin);
   PERFORM pg_temp.assert(_r->>'status' = 'locked' AND NOT (_r ? 'snapshot'),
-    'after ten wrong passcodes the link is locked, even to the right one');
+    'after a third wrong passcode the link is locked, even to the right one');
   PERFORM pg_temp.as_user(_ada);
   SELECT locked INTO _raised FROM public.list_my_snapshot_links() l WHERE l.id = _plink;
   PERFORM pg_temp.assert(_raised, 'and the owner is shown that it locked');

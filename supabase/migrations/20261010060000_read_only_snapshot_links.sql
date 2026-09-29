@@ -331,7 +331,7 @@ AS $$
          l.created_at, l.expires_at, l.revoked_at,
          l.passcode_hash IS NOT NULL,
          (SELECT count(*) FROM public.snapshot_link_views f
-           WHERE f.link_id = l.id AND f.kind = 'passcode_failed') >= 10,
+           WHERE f.link_id = l.id AND f.kind = 'passcode_failed') >= 3,
          (SELECT count(*)::integer FROM public.snapshot_link_views v
            WHERE v.link_id = l.id AND v.kind = 'snapshot'),
          (SELECT max(v.viewed_at) FROM public.snapshot_link_views v
@@ -396,10 +396,10 @@ BEGIN
   IF _row.passcode_hash IS NOT NULL THEN
     SELECT count(*) INTO _failed FROM public.snapshot_link_views v
      WHERE v.link_id = _row.id AND v.kind = 'passcode_failed';
-    -- Ten wrong guesses in a million, over the link's whole life, then it
-    -- stays shut even to the right passcode. The patient sees it locked and
+    -- Three wrong guesses over the link's whole life, then it stays shut
+    -- even to the right passcode. The patient sees it locked and
     -- can make another.
-    IF _failed >= 10 THEN
+    IF _failed >= 3 THEN
       RETURN jsonb_build_object('status', 'locked');
     END IF;
     IF _passcode IS NULL OR btrim(_passcode) = '' THEN

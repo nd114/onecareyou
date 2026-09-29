@@ -257,7 +257,7 @@ export function SnapshotLinksCard() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Send the passcode a different way from the link — for example, read it out on a call.
-                      After ten wrong tries the link locks.
+                      After three wrong tries the link locks.
                     </p>
                   </div>
                 )}
