@@ -11,8 +11,13 @@ and it is this file.
 
 1. **The patient holds the power.** Every sharing relationship is created, narrowed and ended by
    the patient (or their authorised caregiver).
-2. **Nothing is deleted.** Ending a relationship changes access going forward. Messages, guidance,
-   alerts, prescriptions and documents are preserved permanently for both parties' legal protection.
+2. **Nothing is deleted — by default.** Ending a relationship changes access going forward. Messages,
+   guidance, alerts, prescriptions and documents are preserved for both parties' legal protection.
+   Hiding, archiving, retraction and marking entered-in-error are the normal ways a record changes.
+   *Amended 28 September 2026 — pending legal review:* there are two narrow exceptions, set out in §7
+   — a statutory retention period that has run out, and a data-subject erasure request the law does
+   not override. Each is made by the controller of that record, never by OneCare staff on their own
+   initiative, and each is logged.
 3. **Hidden is not deleted.** A patient can hide an item from their day-to-day view; it remains in
    the record archive.
 4. **No break-glass.** Nobody reads a record without an active share. Emergency access comes only
@@ -75,7 +80,40 @@ An institution share never overrides, replaces or weakens a private share, and v
 | Relationship ledger (`share_events`) | Append-only; shows connected / changed / paused / revoked / reconnected |
 
 Conversation snapshots are generated quarterly per relationship, plus one immediately on
-disconnection, so an ended relationship always closes with a complete record.
+disconnection, so an ended relationship always closes with a complete record. *(As of September
+2026 only the second half is built, and only partly: the snapshot is produced in the browser when a
+patient ends a claimed private share from Care Circle, best-effort. Hospital disconnections, expiry
+and quarterly snapshots have no producer. See `plans/sharing-infrastructure-v2.md` §3.)*
+
+### After sharing stops: the record of care already given
+
+*Amended 28 September 2026 — pending legal review (the basis on which an institution keeps
+processing its own record after the patient withdraws consent to share is a question for counsel).*
+
+Stopping sharing ends the **data grant**: the institution or clinician stops reading the patient's
+live data on the next read. It does not end the **care that was already given**, and the record of
+that care belongs to whoever gave it (§1.2, and the corrections plan's first class: the clinic's
+contemporaneous account).
+
+- **The institution or clinician may still add to its own record of the care it provided** — a
+  discharge summary written after the patient left, a lab result that arrives late, correspondence
+  with another provider, an addendum to an encounter. These are its record, attributed to their
+  author, and marked as added after sharing ended.
+- **Nothing new reads the patient's live data.** An addition is written from what the institution
+  already holds or receives through its own channels (its lab, its correspondence). It never
+  reopens vitals, medications, documents or the profile.
+- **Nothing flows into the patient's Vault automatically.** An addition made while the patient is
+  not sharing is held in the institution's record, not filed to the patient's Vault.
+- **If the patient resumes sharing, the additions made in the interim can be delivered** — listed to
+  the patient as "added while you were not sharing", so they arrive as what they are rather than as
+  a silent change to the history.
+
+**Stopping sharing is not the end of the care relationship.** A patient may stop sharing live data
+and still want to talk to their clinician, and a clinician may still need to get a result or a
+letter to them. Separating the care relationship from the data grant is the subject of
+`plans/sharing-infrastructure-v2.md`; until it is built, every clinician-to-patient write (messages,
+guidance, documents into the Vault) still requires a live share, so the additions above can be held
+but not yet delivered, and the rule is a design commitment rather than current behaviour.
 
 ## 4. Vault record classes
 
@@ -86,17 +124,37 @@ The Health Vault is the patient's system of record and holds three classes:
   clinician marks content patient-facing. Internal clinician notes stay private and are never filed.
 - **c. Conversation records** — immutable, watermarked transcript snapshots per relationship.
 
-Care records (class b and c) cannot be deleted by either party.
+Care records (class b and c) cannot be deleted by either party. Neither can remove the other's
+record; the only deletion route is §7, taken by the controller of that record.
 
 ## 5. Lifecycle edge cases
 
 - **Clinician dies, loses licence or closes practice.** The patient keeps every record from that
   clinician. If the clinician stops responding in-app, the patient is advised to contact them by
-  other means. Managed-record data is exported to the clinician on departure; patients can request
-  their own full export.
+  other means. Patients can request their own full export.
+- **A clinician or staff member leaves an institution** (decided 28 September 2026). The
+  relationship is the institution's (pathway B), so the leaver loses **all** access to that
+  institution's patients and records — including what they themselves wrote there — at the moment
+  the membership ends. The records stay with the institution, attributed to their author and never
+  reattributed. Where the leaver later needs those records for a legal purpose (a claim, a
+  regulator's inquiry), access goes through the institution under its own process, not through
+  OneCare.
+  - **Unsigned drafts and unfiled dictations are frozen, never deleted**, and routed to the clinical
+    lead (the department lead where the patient sits in a department, otherwise the institution's
+    owners and admins). They cannot be signed later, by the author or on the author's behalf; the
+    lead decides what happens next, for example writing their own note that refers to the draft.
+  - **Solo work is unaffected.** The leaver's own patients (pathway A, `provider_shares`) and their
+    own solo managed records (`clinician_patient_records` with no `practice_id`) stay with them, and
+    they may export those. A departing clinician takes nothing of the institution's.
+  - This supersedes the "keeps a read-only view of what they wrote" position in
+    `plans/clinician-offboarding.md` (§1 item 5, §5.3). Note that the author read path added by
+    `20261010000000_authors_keep_what_they_filed` asks only whether the caller wrote the row; for
+    rows filed in an institution's name it must also require a current membership of that
+    institution.
 - **Patient dies.** Next-of-kin details (name, date of birth, email, relationship) are collected in
   the profile. A verified next of kin can request the full record by email, after which we offer
-  permanent deletion of the profile unless retention is legally required.
+  permanent deletion of the profile unless retention is legally required (§7 — the institution's
+  records are not the profile's to take with it).
 - **Minor ages into their own account.** The family-member record is converted to an owned account
   and history carries over.
 - **Account closure.** Full structured export (PDFs, images, chats, transcripts) delivered as a
@@ -111,6 +169,80 @@ clinician-recorded vitals, medications, visit log, documents and a printable sum
 managed record can later be invited to claim its own account, at which point data carries over and
 the relationship becomes a normal two-way share. Manual adds, CSV imports and EHR imports run
 duplicate detection on phone, email and name+date-of-birth before creating a second profile.
+
+## 7. Deletion: the narrow exceptions to §1.2
+
+*Amended 28 September 2026 — pending legal review. Nothing in this section is legal advice, and no
+retention period is stated here on purpose: periods differ by jurisdiction, record type and the
+patient's age, and are for counsel to supply per market.*
+
+The default is unchanged: nothing with a legal record behind it is deleted. Hiding (§1.3), archiving,
+retraction (`record-corrections-plan.md`, class 3) and marking entered-in-error remain the normal
+paths, and a request to "delete" something is first checked against them — most such requests are
+met by one of them. Deletion proper happens only in the two cases below.
+
+### 7.1 A statutory retention period has run out
+
+Medical-records law sets a minimum period an institution must keep a record. Once that period has
+ended, the institution **may** delete the record under its own documented retention policy. It is
+not obliged to, and OneCare never deletes a record because a period has ended.
+
+| Record type | Minimum retention | Source |
+| --- | --- | --- |
+| Adult clinical records | *[counsel to confirm, per jurisdiction]* | *[counsel]* |
+| Records of minors | *[counsel to confirm — usually runs from majority, not from the last entry]* | *[counsel]* |
+| Mental health, maternity, other special classes | *[counsel to confirm]* | *[counsel]* |
+| Audit and access logs (`hipaa_audit_logs`, `share_events`) | *[counsel to confirm]* | *[counsel]* |
+| Backups and the independent weekly export (§1.5) | *[counsel to confirm the rotation window within which a deleted record still exists in a backup]* | *[counsel]* |
+
+### 7.2 A data-subject erasure request
+
+A patient may ask for their data to be erased (GDPR Article 17; the equivalent rights elsewhere,
+such as *[counsel to list per market — e.g. Nigeria's NDPA, state privacy laws in the US]*). HIPAA
+itself provides a right to amend (45 CFR 164.526) rather than a right to erase.
+
+The right is not absolute. GDPR Article 17(3) lists exceptions, among them **(b)** processing needed
+to comply with a legal obligation, **(c)** reasons of public interest in the area of public health
+(read with Article 9(2)(h) and (i)), and **(e)** the establishment, exercise or defence of legal
+claims. Where a medical-records retention law requires an institution to keep a record, that
+obligation usually prevails over an erasure request for that record. This is stated neutrally: it
+means an erasure request will commonly remove the patient's own material and leave an institution's
+clinical record in place, and the patient should be told which is which. How the exceptions apply in
+each market is for counsel.
+
+### 7.3 Who may delete
+
+Only the **controller of that record**, in the product's sense of whose record it is:
+
+- **The patient**, for what is theirs: their own Vault uploads, their self-entered readings and
+  medications, their messages as sender. An erasure request from the patient reaches these.
+- **The institution**, for its records: encounters, notes, clinician output filed in its name,
+  managed records it created. Deletion happens on its instruction, under its retention policy or its
+  answer to an erasure request. OneCare executes that instruction as processor (see
+  `withdrawal-and-derived-data.md` §5), which requires the instruction to be documented in the
+  processing agreement — a clause that does not yet exist.
+- **A solo clinician**, for the records of their own practice, on the same terms as an institution.
+- **Never OneCare staff unilaterally.** OneCare deletes only on the documented instruction of the
+  controller, on a verified request for data OneCare itself controls (the patient's account as a
+  personal service), or where compelled by law — and a compelled deletion is recorded as such.
+  *[Counsel to confirm the compelled-by-law case.]*
+
+Neither party deletes the other's record. A patient's erasure request does not remove an
+institution's note about them; an institution's retention expiry does not remove the patient's own
+uploads.
+
+### 7.4 What a deletion leaves behind
+
+- **The act is logged.** An append-only deletion record states what class of record was deleted,
+  on whose instruction, on what basis (retention expired, erasure request, compelled by law), who
+  executed it and when. It survives the deletion; the content does not.
+- **Absence stays visible** where the other party relied on the record: a remnant in its place that
+  says a record was deleted, when, and on what basis, carrying no content and no title that would
+  itself disclose it. *[Counsel to confirm that a content-free remnant is compatible with erasure.]*
+- **Deletion is never done by a foreign-key cascade.** Today `provider_shares.user_id` and
+  `practice_shares.practice_id` are declared `ON DELETE CASCADE`, so deleting an account or a tenant
+  would erase the consent history with it. Any deletion path must be an explicit, logged operation,
+  and those cascades must be changed before one is built.
 
 
 ---

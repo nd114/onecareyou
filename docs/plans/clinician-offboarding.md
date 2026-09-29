@@ -7,6 +7,14 @@
 > small and closes holes that exist now; it should not wait for the rest.
 >
 > This document describes an intention, not current work.
+>
+> **Superseded in part, 28 September 2026.** The founder decided that a leaver
+> loses *all* access to the institution's patients and records, including what
+> they wrote there; legal access goes through the institution. Unsigned drafts
+> and dictations are frozen and routed to the clinical lead, never deleted. So
+> §1 item 5, §5.3 ("What the leaver keeps"), the G7 direction and decision 4 in
+> §7 no longer stand, and decisions 2 and 3 are answered (freeze). See
+> `docs/sharing-access-consent-model.md` §5.
 
 Companion to `docs/sharing-access-consent-model.md`,
 `docs/independent-clinicians-and-hospitals.md`,
