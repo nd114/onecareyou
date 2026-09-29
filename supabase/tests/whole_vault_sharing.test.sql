@@ -48,6 +48,9 @@ BEGIN
   RETURNING id INTO _doc_b;
 
   -- One clinician granted the whole vault, one granted nothing of the sort.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_vaultdoc), (_limited) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_patient, _vaultdoc, 'Dr Vault', 'wv-vault@test.local', 'wvvault',

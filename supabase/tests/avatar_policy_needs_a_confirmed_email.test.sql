@@ -47,6 +47,9 @@ BEGIN
         avatar_shared_with_clinicians = EXCLUDED.avatar_shared_with_clinicians;
 
   -- A pending share: invited by email, not yet claimed.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_invitee) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_patient, NULL, 'Dr Invitee', 'apc-dr@test.local', 'apcinv01',

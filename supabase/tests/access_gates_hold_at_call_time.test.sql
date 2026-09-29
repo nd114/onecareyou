@@ -189,6 +189,9 @@ BEGIN
   -- 2. The patient names who a provider share is with
   -- ==========================================================================
   PERFORM pg_temp.as_user(NULL);
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_dr_x), (_dr_z) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (id, user_id, provider_name, provider_email, clinician_user_id, invite_code, permissions, is_active)
   VALUES

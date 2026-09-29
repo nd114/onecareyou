@@ -47,6 +47,9 @@ BEGIN
   -- A private share too, so both pathways are exercised side by side. Dated
   -- before the messages below: clinician_had_patient_access_at() is
   -- point-in-time, so a share created after a message does not unlock it.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_privdoc) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active, created_at)
   VALUES (_patient,_privdoc,'Dr Private','mr-priv@test.local','mrpriv',

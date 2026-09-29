@@ -62,6 +62,11 @@ BEGIN
 
   -- _other shares a document with whoever holds _pat's address. _pat can read
   -- it through the document share policy; it is still not _pat's document.
+  -- Provider shares open only to clinician accounts (20261010050000), so _pat
+  -- holds a clinician profile here: the point is a document the caller can
+  -- read but does not own, and only a clinician can be in that position.
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_dr), (_pat) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (id, user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_pshare, _other, NULL, 'Someone', 'afu-pat@test.local', 'afu-doc-share', '{"documents":true}'::jsonb, true);

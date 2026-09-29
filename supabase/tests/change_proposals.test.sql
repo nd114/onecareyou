@@ -35,6 +35,9 @@ BEGIN
     (v_stranger,'stranger@example.com',now());
 
   -- A live share that grants medications.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (v_clinician) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (id, user_id, clinician_user_id, provider_name, invite_code, permissions, is_active)
   VALUES

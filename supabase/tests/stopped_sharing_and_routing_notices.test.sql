@@ -91,6 +91,9 @@ BEGIN
   -- ==========================================================================
   -- 1. A patient ends a direct share
   -- ==========================================================================
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_dr_solo), (_dr_two) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares (user_id, provider_name, invite_code, clinician_user_id, is_active)
   VALUES (_ada, 'Dr Solo', 'ssr-solo-1', _dr_solo, true) RETURNING id INTO _share;
   INSERT INTO public.clinician_alert_rules (clinician_user_id, patient_user_id, share_id, vital_type, condition, threshold_value, is_active)

@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 import { shareGrants } from "../_shared/share-permissions.ts";
-import { confirmedEmailOf } from "../_shared/share-access.ts";
+import { confirmedEmailOf, isClinicianAccount } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -127,6 +127,20 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // A provider share is for a provider. This used to check only that the
+    // caller was signed in, so a patient account holding the link — or whose
+    // confirmed address the share was sent to — read the record and claimed
+    // the share, after which the clinician it was meant for could not. The
+    // /clinician route already sent patient accounts away; this is the gate
+    // that route stood in front of. Asked before the lookup, so a patient
+    // account learns nothing about whether the code exists.
+    if (!(await isClinicianAccount(supabaseAdmin, clinicianUserId))) {
+      return new Response(
+        JSON.stringify({ error: 'Shared records open only to clinician accounts' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Find the share by invite code
     const { data: share, error: shareError } = await supabaseAdmin

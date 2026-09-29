@@ -117,6 +117,9 @@ BEGIN
   SELECT _prac, _pat, u, _owner
     FROM unnest(ARRAY[_revoked, _archived, _front, _assigned, _leaver, _retiree, _moved, _nurse]) AS u;
 
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_direct) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares (user_id, clinician_user_id, provider_name, provider_email,
                                       invite_code, permissions, is_active)
   VALUES (_pat, _direct, 'Dr Direct', 'rsl-direct@test.local', 'RSLDIR01', '{"profile": true}', true);

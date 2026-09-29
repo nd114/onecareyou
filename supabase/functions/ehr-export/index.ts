@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
-import { clinicianShareGrants, confirmedEmailOf } from "../_shared/share-access.ts";
+import { clinicianShareGrants } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -162,7 +162,6 @@ serve(async (req) => {
   }
   const isServiceCall = !!serviceKey && timingSafeEqual(authHeader, `Bearer ${serviceKey}`);
   let callerId: string | null = null;
-  let callerEmail: string | null = null;
   if (!isServiceCall) {
     const token = authHeader.replace("Bearer ", "");
     const auth = createClient(supabaseUrl, anonKey);
@@ -173,8 +172,6 @@ serve(async (req) => {
       });
     }
     callerId = u.user.id;
-    // Confirmed addresses only — see _shared/share-access.ts.
-    callerEmail = confirmedEmailOf(u.user);
   }
 
   try {
@@ -289,13 +286,13 @@ serve(async (req) => {
           // Consent is checked again at the moment of export, not only when the
           // item was queued: a patient who revokes a share after a reading was
           // queued must not have it sent to that clinician's server anyway.
-          // Only a claimed share counts here — nobody is present to confirm an
-          // address.
+          // The database resolves the clinician's confirmed email and account
+          // type itself, so this is the answer the app would give them.
           const stillEntitled =
             vital.user_id === connection.clinician_user_id ||
             (await clinicianShareGrants(
               supabaseClient,
-              { id: connection.clinician_user_id, confirmedEmail: null },
+              { id: connection.clinician_user_id },
               vital.user_id,
               'vitals',
             ));
@@ -408,7 +405,7 @@ serve(async (req) => {
           if (vitalRow.user_id !== callerId) {
             const entitled = await clinicianShareGrants(
               supabaseClient,
-              { id: callerId!, confirmedEmail: callerEmail },
+              { id: callerId! },
               vitalRow.user_id,
               'vitals',
             );

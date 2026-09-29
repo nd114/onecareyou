@@ -297,7 +297,9 @@ Deno.serve(async (req) => {
       // this clinician or addressed to their CONFIRMED email. This used to
       // match the typed email, include expired shares, and read vitals for
       // patients who never granted vitals — all of it then sent to the model.
-      const caller = { id: user.id, confirmedEmail: confirmedEmailOf(user) };
+      // isClinician: a clinician_profiles row was required above, and a profile
+      // is one of the things is_clinician_account() counts.
+      const caller = { id: user.id, confirmedEmail: confirmedEmailOf(user), isClinician: true };
       const { data: claimed } = await supabase
         .from("provider_shares")
         .select("id, user_id, clinician_user_id, provider_email, permissions, is_active, expires_at")

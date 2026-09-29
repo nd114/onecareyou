@@ -111,6 +111,9 @@ BEGIN
   -- 2. A clinician share resolves while it is live, and not after
   -- ==========================================================================
   PERFORM pg_temp.as_user(NULL);
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_clin) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares (user_id, clinician_user_id, provider_name, provider_email,
                                       invite_code, permissions, is_active, expires_at)
   VALUES (_ella, _clin, 'Dr Clin', 'pin-clin@test.local', 'PINEXP01', '{"profile": true}', true,

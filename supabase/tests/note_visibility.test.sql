@@ -34,6 +34,9 @@ BEGIN
     (_colleague,'nv-colleague@test.local'), (_outsider,'nv-outsider@test.local');
 
   -- Both clinicians hold a share with this patient.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_author), (_colleague) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES

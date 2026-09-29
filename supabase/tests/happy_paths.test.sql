@@ -21,6 +21,9 @@ DECLARE
 BEGIN
   INSERT INTO auth.users(id,email,email_confirmed_at) VALUES
     (v_pat,'patient@example.com',now()), (v_clin,'clinician@example.com',now());
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (v_clin) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares (id,user_id,clinician_user_id,provider_name,invite_code,permissions,is_active)
   VALUES (v_share,v_pat,v_clin,'Dr Adeyemi','happy-1',
           '{"medications":true,"vitals":true,"documents":true,"adherence":true}'::jsonb,true);

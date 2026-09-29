@@ -32,6 +32,9 @@ BEGIN
     (v_shared_doc, v_patient, 'p/handed.pdf',  'Handed over',    'other');
 
   -- The clinician has whole-vault access.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (v_clinician) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (id, user_id, provider_name, provider_email, clinician_user_id, invite_code, is_active, permissions)
   VALUES

@@ -33,6 +33,9 @@ BEGIN
     (_patient,'aud-patient@test.local'), (_stranger,'aud-stranger@test.local'),
     (_doc,'aud-doc@test.local'), (_outsider,'aud-outsider@test.local');
 
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_doc) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_patient, _doc, 'Dr Aud', 'aud-doc@test.local', 'audtst',

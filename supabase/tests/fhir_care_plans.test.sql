@@ -23,6 +23,9 @@ BEGIN
   INSERT INTO auth.users (id,email) VALUES
     (_patient,'cp-p@test.local'), (_doctor,'cp-d@test.local'), (_stranger,'cp-s@test.local');
 
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_doctor) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_patient,_doctor,'Dr Plan','cp-d@test.local','cptest','{"profile":true}'::jsonb,true);

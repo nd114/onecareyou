@@ -125,7 +125,7 @@ serve(async (req) => {
             // The mapping is the clinician's own data; the patient's share is
             // what permits writing into their record. Asked per category, so
             // a patient who shared vitals but not medications gets vitals.
-            const shareCaller = { id: connection.clinician_user_id, confirmedEmail: null };
+            const shareCaller = { id: connection.clinician_user_id };
             const [mayWriteVitals, mayWriteMedications] = await Promise.all([
               clinicianShareGrants(supabaseClient, shareCaller, mapping.onecareUserId, 'vitals'),
               clinicianShareGrants(supabaseClient, shareCaller, mapping.onecareUserId, 'medications'),

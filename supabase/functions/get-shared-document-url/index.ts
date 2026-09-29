@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { confirmedEmailOf, shareOpensTo } from "../_shared/share-access.ts";
+import { confirmedEmailOf, isClinicianAccount, shareOpensTo } from "../_shared/share-access.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,7 +129,13 @@ Deno.serve(async (req) => {
     // this caller, or addressed to an email they have CONFIRMED. Comparing
     // against user.email as typed let an unconfirmed look-alike account
     // download documents shared with the real clinician.
-    const caller = { id: user.id, confirmedEmail: confirmedEmailOf(user) };
+    // And the caller must be a clinician: a patient account whose confirmed
+    // address matched a share used to get the file too.
+    const caller = {
+      id: user.id,
+      confirmedEmail: confirmedEmailOf(user),
+      isClinician: await isClinicianAccount(supabaseAuth, user.id),
+    };
     if (!shareOpensTo(ps, caller)) {
       return new Response(JSON.stringify({ error: "Access denied" }), {
         status: 403,

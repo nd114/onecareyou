@@ -36,6 +36,9 @@ BEGIN
     (_other_pt,'fa-other@test.local'), (_owner,'fa-owner@test.local');
 
   -- Direct clinician share: the patient invited this doctor.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_doctor) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_patient, _doctor, 'Dr Appt', 'fa-doctor@test.local', 'fatest',

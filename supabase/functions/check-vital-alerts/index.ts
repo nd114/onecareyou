@@ -140,6 +140,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Starting vital alert check...");
 
+    // A rule whose clinician can no longer see the patient — the share
+    // expired, or the account is no longer a clinician — used to be skipped
+    // below on every run, silently. The clinician kept a rule that looked
+    // live and would never fire. This archives such rules and puts a notice
+    // in the clinician's bell, as on_share_ended does when a share is switched
+    // off. A failure here is logged, not fatal: alerts for everyone else
+    // still go out, and the per-rule check below still refuses to send.
+    const { data: archived, error: archiveError } = await supabase.rpc(
+      "archive_alert_rules_without_access",
+    );
+    if (archiveError) {
+      console.error("Error archiving rules without access:", archiveError);
+    } else if (archived) {
+      console.log(`Archived ${archived} alert rules whose clinician lost access`);
+    }
+
     // Fetch all active alert rules
     const { data: alertRules, error: rulesError } = await supabase
       .from("clinician_alert_rules")
@@ -188,9 +204,17 @@ const handler = async (req: Request): Promise<Response> => {
       // patient_user_id was edited afterwards, which the UPDATE policy does
       // not prevent — would otherwise keep mailing this patient's readings to
       // someone the patient no longer shares them with.
+      //
+      // Asked exactly as the app asks it (clinician_can_see_patient_as), so
+      // an unclaimed share addressed to the clinician's confirmed email counts
+      // here as it did when the rule was created. Counting claimed shares only
+      // stopped the alerts of every clinician who had not yet opened the
+      // invite link. A rule with no access at all was archived above; one
+      // that reaches the patient but whose share does not grant vitals is
+      // skipped, because the readings are not the clinician's to be sent.
       const stillShared = await clinicianShareGrants(
         supabase,
-        { id: rule.clinician_user_id, confirmedEmail: null },
+        { id: rule.clinician_user_id },
         rule.patient_user_id,
         "vitals",
       );

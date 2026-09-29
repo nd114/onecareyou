@@ -50,6 +50,9 @@ BEGIN
 
   -- Not even naming a real clinician they genuinely share with.
   EXECUTE 'SET LOCAL ROLE postgres';
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_clin) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares (user_id, provider_name, invite_code, clinician_user_id, is_active)
   VALUES (_patient, 'Dr Real', 'FORGECODE1', _clin, true) RETURNING id INTO _share;
   EXECUTE 'SET LOCAL ROLE authenticated';

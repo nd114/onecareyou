@@ -30,6 +30,9 @@ BEGIN
 
   -- The patient shares with "dr.smith@clinic.com" before that clinician has
   -- an account: the documented, intended shape for an unclaimed share.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (v_clinician), (v_impostor) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares (id, user_id, provider_name, provider_email, invite_code, clinician_user_id, is_active, permissions)
   VALUES (gen_random_uuid(), v_patient, 'Dr Smith', 'dr.smith@clinic.com', 'test-invite-code-1', NULL, true, '{"documents": true}'::jsonb)
   RETURNING id INTO v_share;

@@ -32,6 +32,9 @@ BEGIN
     (_novitals,'df-novitals@test.local'), (_stranger,'df-stranger@test.local');
 
   -- One clinician the patient shares vitals with, one they do not.
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_doctor), (_novitals) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES

@@ -191,7 +191,7 @@ serve(async (req) => {
           // as it does for ehr-sync's import_patient.
           const consented = await clinicianShareGrants(
             supabaseClient,
-            { id: connection.clinician_user_id, confirmedEmail: null },
+            { id: connection.clinician_user_id },
             mapping.onecareUserId,
             'vitals',
           );

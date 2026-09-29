@@ -30,6 +30,9 @@ BEGIN
     (_patient,'sn-patient@test.local'), (_doctor,'sn-doctor@test.local'),
     (_colleague,'sn-colleague@test.local'), (_stranger,'sn-stranger@test.local');
 
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_doctor), (_colleague) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_patient, _doctor, 'Dr Note', 'sn-doctor@test.local', 'sntest',

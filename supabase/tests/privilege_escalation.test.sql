@@ -36,6 +36,9 @@ BEGIN
   INSERT INTO public.practices (id, name, tenant_type, created_by, revenue_share_pct, storage_limit_gb)
   VALUES (_hosp, 'Escalation Test Hospital', 'hospital', _owner, 10, 1000);
 
+  -- Provider shares open only to clinician accounts (20261010050000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_doctor) ON CONFLICT (user_id) DO NOTHING;
+
   INSERT INTO public.provider_shares
     (user_id, clinician_user_id, provider_name, provider_email, invite_code, permissions, is_active)
   VALUES (_patient, _doctor, 'Dr Test', 'esc-doctor@test.local', 'esctest',
