@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { toMessageCounterparty, type MessageCounterparty } from '@/lib/message-thread-status';
 
 export interface Message {
   id: string;
@@ -108,7 +109,19 @@ export function useMessages(otherPartyUserId: string | null, role: 'patient' | '
         })
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        // The thread closed while the page was open (a share ended, a
+        // clinician left): say so plainly rather than show a policy error.
+        if (error.code === '42501') {
+          queryClient.invalidateQueries({ queryKey: ['message-counterparties'] });
+          throw new Error(
+            role === 'patient'
+              ? "This conversation has closed, so your message wasn't sent."
+              : "You can no longer message this patient, so your message wasn't sent.",
+          );
+        }
+        throw error;
+      }
       return data as Message;
     },
     onSuccess: () => {
@@ -150,6 +163,26 @@ export function useMessages(otherPartyUserId: string | null, role: 'patient' | '
   ).length;
 
   return { messages, isLoading, send, markRead, unreadCount };
+}
+
+/**
+ * The patient's conversations: every clinician they have a thread with, have
+ * shared with directly, or are assigned to at a hospital, each with whether a
+ * message can be sent and, if not, why. The answer is the database's own
+ * (`my_message_counterparties()` uses the helper the INSERT policy uses), so a
+ * composer is never offered for a thread nobody would read.
+ */
+export function useMessageCounterparties() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['message-counterparties', user?.id],
+    queryFn: async (): Promise<MessageCounterparty[]> => {
+      const { data, error } = await supabase.rpc('my_message_counterparties');
+      if (error) throw error;
+      return ((data ?? []) as Record<string, unknown>[]).map(toMessageCounterparty);
+    },
+    enabled: !!user?.id,
+  });
 }
 
 export interface MessageThreadSummary {

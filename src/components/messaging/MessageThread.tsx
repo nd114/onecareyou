@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Download, Search, ChevronUp, ChevronDown, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,9 @@ interface Props {
   className?: string;
   /** Past connection: history stays visible, but no new messages can be sent. */
   readOnly?: boolean;
-  readOnlyNotice?: string;
+  readOnlyNotice?: ReactNode;
+  /** Said above an open composer, e.g. who now reads a departed clinician's thread. */
+  composerNotice?: ReactNode;
 }
 
 
@@ -178,7 +180,7 @@ function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
   );
 }
 
-export function MessageThread({ otherPartyUserId, otherPartyName, role, className, readOnly = false, readOnlyNotice }: Props) {
+export function MessageThread({ otherPartyUserId, otherPartyName, role, className, readOnly = false, readOnlyNotice, composerNotice }: Props) {
   const { user } = useAuth();
   const { messages, isLoading, send, markRead } = useMessages(otherPartyUserId, role);
   const [draft, setDraft] = useState('');
@@ -478,6 +480,11 @@ export function MessageThread({ otherPartyUserId, otherPartyName, role, classNam
         </div>
       ) : (
       <div className="shrink-0 border-t px-3 pt-3 pb-2">
+        {composerNotice && (
+          <div className="mb-2 rounded-md bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground">
+            {composerNotice}
+          </div>
+        )}
 
         {file && (
           <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/50 px-2 py-1.5 text-xs">

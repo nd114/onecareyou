@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PendingClinicianRecord } from '@/hooks/usePendingClinicianRecords';
+import { CLINICIAN_VERIFICATION_NOTICE } from '@/lib/clinician-disclosure';
 
 interface Props {
   record: PendingClinicianRecord;
@@ -237,6 +238,7 @@ export function ClinicianDataConsentDialog({ record, open, onOpenChange }: Props
           <p className="text-xs text-muted-foreground">
             You are not required to connect. Declining has no effect on your OneCare account or features.
           </p>
+          <p className="text-xs text-muted-foreground">{CLINICIAN_VERIFICATION_NOTICE}</p>
 
           {/* Model selection */}
           <div>

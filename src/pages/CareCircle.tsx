@@ -59,6 +59,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { formatDay } from '@/lib/format-date';
+import { CAREGIVER_CONTACTS_PATH, CLINICIAN_VERIFICATION_NOTICE } from '@/lib/clinician-disclosure';
 
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -167,19 +168,28 @@ const CareCircle = () => {
             <DialogTrigger asChild>
               <Button className="gradient-primary border-0 w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
-                Invite Provider
+                Invite a clinician
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Invite a Healthcare Provider</DialogTitle>
+                <DialogTitle>Invite a clinician</DialogTitle>
+                {/* This link makes whoever opens it your clinician: they can
+                    send guidance, file documents "From your clinician" and
+                    suggest medication changes. It used to be offered for a
+                    caregiver too, which handed a relative all of that. A
+                    caregiver belongs in alert contacts, and says so below. */}
                 <DialogDescription>
-                  Create a secure share link for your doctor, pharmacist, or caregiver
+                  A secure share link for a doctor, nurse, pharmacist or other clinician who treats
+                  you. They'll need a OneCare clinician account to open it.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-6 pt-4">
+              <p className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                {CLINICIAN_VERIFICATION_NOTICE}
+              </p>
+              <div className="space-y-6 pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="providerName">Provider Name *</Label>
+                  <Label htmlFor="providerName">Clinician's name *</Label>
                   <Input
                     id="providerName"
                     placeholder="e.g., Dr. Sarah Chen"
@@ -188,7 +198,7 @@ const CareCircle = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="providerEmail">Provider Email (optional)</Label>
+                  <Label htmlFor="providerEmail">Clinician's email (optional)</Label>
                   <Input
                     id="providerEmail"
                     type="email"
@@ -241,6 +251,18 @@ const CareCircle = () => {
                   </div>
                 </div>
 
+                <p className="text-xs text-muted-foreground">
+                  Inviting family or a caregiver?{' '}
+                  <Link
+                    to={CAREGIVER_CONTACTS_PATH}
+                    className="font-medium text-primary underline-offset-2 hover:underline"
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    Add someone who cares for you
+                  </Link>{' '}
+                  instead — they'll hear if you miss doses, without acting as your clinician.
+                </p>
+
                 <div className="flex gap-3 pt-2">
                   <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
                     Cancel
@@ -285,6 +307,36 @@ const CareCircle = () => {
                   is encrypted and transmitted securely.
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Two different things to add, said apart: a clinician gets the
+            invite link above; family and caregivers get alert contacts, never
+            the clinician link. */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="mb-8"
+        >
+          <Card>
+            <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Add someone who cares for you</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Family and caregivers can be told when you miss doses. They don't get a
+                    clinician's link or act as your clinician.
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link to={CAREGIVER_CONTACTS_PATH}>Add a caregiver</Link>
+              </Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -338,11 +390,11 @@ const CareCircle = () => {
                 </span>
                 <p className="font-display text-lg leading-snug text-foreground">Nobody sees this yet</p>
                 <p className="mx-auto mt-2 max-w-sm">
-                  Invite a doctor and choose exactly what they can see. You can end it whenever you want.
+                  Invite a clinician and choose exactly what they can see. You can end it whenever you want.
                 </p>
                 <Button className="mt-6 border-0 gradient-primary" onClick={() => setIsDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Invite a doctor
+                  Invite a clinician
                 </Button>
               </PanelEmpty>
             ) : (

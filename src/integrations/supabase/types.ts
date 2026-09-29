@@ -5769,6 +5769,20 @@ export type Database = {
           specialty: string
         }[]
       }
+      my_message_counterparties: {
+        Args: never
+        Returns: {
+          can_send: boolean
+          clinician_name: string
+          clinician_user_id: string
+          continues_with: Json
+          ended_at: string | null
+          ended_by_patient: boolean
+          practice_id: string | null
+          practice_name: string | null
+          reason: string
+        }[]
+      }
       my_message_threads: {
         Args: { _role: string }
         Returns: {

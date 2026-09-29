@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ArrowLeft, MessageSquare, Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -9,104 +8,97 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageThread } from '@/components/messaging/MessageThread';
 import { ConversationList, type Conversation } from '@/components/messaging/ConversationList';
-import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMessageThreads } from '@/hooks/useMessages';
+import { useMessageCounterparties, useMessageThreads } from '@/hooks/useMessages';
+import { threadNotice, type MessageCounterparty, type ThreadNotice } from '@/lib/message-thread-status';
 import { Link } from 'react-router-dom';
 
-interface Counterparty {
-  clinicianUserId: string;
-  name: string;
-  isPast: boolean;
+/** Why a conversation is closed, in a word, for the list. */
+function caption(c: MessageCounterparty): string | undefined {
+  if (c.reason === 'covered') return c.practiceName ? `${c.practiceName} team` : 'Hospital team';
+  if (c.canSend) return c.practiceName ?? undefined;
+  switch (c.reason) {
+    case 'sharing_stopped':
+      return 'Not sharing';
+    case 'share_expired':
+      return 'Share expired';
+    case 'clinician_left':
+      return 'Left the hospital';
+    case 'not_on_care_team':
+      return 'No longer on your care';
+    case 'practice_paused':
+      return 'Paused';
+    default:
+      return 'Closed';
+  }
 }
 
+function NoticeBody({ notice, onSelect }: { notice: ThreadNotice; onSelect: (id: string) => void }) {
+  const action = notice.action;
+  return (
+    <div className="space-y-2">
+      <p>{notice.text}</p>
+      {action?.to && (
+        <Button asChild size="sm" variant="outline" className="h-7 text-xs">
+          <Link to={action.to}>{action.label}</Link>
+        </Button>
+      )}
+      {action?.clinicianUserId && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs"
+          onClick={() => onSelect(action.clinicianUserId!)}
+        >
+          {action.label}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 const Messages = () => {
   const { user } = useAuth();
-  const [selected, setSelected] = useState<Counterparty | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Patient's clinicians — active shares plus past connections, whose history is preserved.
-  const { data: clinicians = [], isLoading } = useQuery({
-    queryKey: ['patient-clinicians-v2', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [] as Counterparty[];
-      const { data, error } = await supabase
-        .from('provider_shares')
-        .select('clinician_user_id, provider_name, is_active, created_at')
-        .eq('user_id', user.id)
-        .not('clinician_user_id', 'is', null)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-
-      const rows = data || [];
-      const ids = Array.from(new Set(rows.map((r) => r.clinician_user_id).filter(Boolean))) as string[];
-
-      const nameById = new Map<string, string>();
-      if (ids.length > 0) {
-        const { data: infos } = await supabase.rpc('get_clinician_basic_info', { clinician_ids: ids });
-        for (const i of (infos || []) as {
-          user_id: string;
-          first_name: string | null;
-          last_name: string | null;
-          title: string | null;
-        }[]) {
-          const full = [i.first_name, i.last_name].filter(Boolean).join(' ').trim();
-          if (!full) continue;
-          const title = i.title?.trim();
-          nameById.set(
-            i.user_id,
-            title && !full.toLowerCase().startsWith(title.toLowerCase()) ? `${title} ${full}` : full,
-          );
-        }
-      }
-
-      const seen = new Map<string, Counterparty>();
-      for (const row of rows) {
-        const id = row.clinician_user_id;
-        if (!id) continue;
-        const existing = seen.get(id);
-        if (existing) {
-          // An active share anywhere wins over a past one.
-          if (row.is_active) existing.isPast = false;
-          continue;
-        }
-        seen.set(id, {
-          clinicianUserId: id,
-          name: nameById.get(id) || row.provider_name || 'Clinician',
-          isPast: !row.is_active,
-        });
-      }
-      return Array.from(seen.values()).sort((a, b) => Number(a.isPast) - Number(b.isPast));
-    },
-    enabled: !!user?.id,
-  });
-
-
+  // Everyone the patient has a conversation or a relationship with — private
+  // shares, hospital threads (including a departed clinician's, which the
+  // hospital's team now reads), and the clinicians a hospital has assigned —
+  // each with the database's answer to "would anyone read a message here".
+  const { data: counterparties = [], isLoading } = useMessageCounterparties();
   const { data: threadSummaries = [] } = useMessageThreads('patient');
+
+  // Open conversations first, then the rest; newest activity first within each.
+  const ordered = useMemo(() => {
+    const lastAt = new Map(threadSummaries.map((t) => [t.counterpartyId, t.lastAt]));
+    return [...counterparties].sort((a, b) => {
+      if (a.canSend !== b.canSend) return a.canSend ? -1 : 1;
+      return (lastAt.get(b.clinicianUserId) ?? '').localeCompare(lastAt.get(a.clinicianUserId) ?? '');
+    });
+  }, [counterparties, threadSummaries]);
+
+  const selected = ordered.find((c) => c.clinicianUserId === selectedId) ?? null;
 
   const conversations: Conversation[] = useMemo(
     () =>
-      clinicians.map((c) => ({
+      ordered.map((c) => ({
         id: c.clinicianUserId,
-        name: c.name,
-        caption: c.isPast ? 'Past connection' : undefined,
+        name: c.clinicianName,
+        caption: caption(c),
       })),
-    [clinicians],
+    [ordered],
   );
 
-  // Land on whichever conversation moved most recently, not the first
-  // clinician in the share list.
+  // Land on whichever conversation moved most recently.
   useEffect(() => {
-    if (selected || clinicians.length === 0) return;
-    const newest = threadSummaries.find((t) =>
-      clinicians.some((c) => c.clinicianUserId === t.counterpartyId),
-    );
-    setSelected(
-      (newest && clinicians.find((c) => c.clinicianUserId === newest.counterpartyId)) ||
-        clinicians[0],
-    );
-  }, [clinicians, threadSummaries, selected]);
+    if (selectedId || ordered.length === 0) return;
+    const newest = threadSummaries.find((t) => ordered.some((c) => c.clinicianUserId === t.counterpartyId));
+    setSelectedId(newest?.counterpartyId ?? ordered[0].clinicianUserId);
+  }, [ordered, threadSummaries, selectedId]);
+
+  const notice = selected ? threadNotice(selected) : null;
+  const noticeNode = notice ? <NoticeBody notice={notice} onSelect={setSelectedId} /> : undefined;
 
   return (
     /* A column the height of the viewport: header, tabs and title take what
@@ -138,12 +130,12 @@ const Messages = () => {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : clinicians.length === 0 ? (
+        ) : ordered.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center space-y-3">
               <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground opacity-40" />
               <p className="text-sm text-muted-foreground">
-                You're not yet connected to a clinician. Share access from your Care Circle to start messaging.
+                You're not yet connected to a clinician. Invite one from your Care Circle to start messaging.
               </p>
               <Button asChild>
                 <Link to="/care-circle">Open Care Circle</Link>
@@ -170,9 +162,7 @@ const Messages = () => {
                 conversations={conversations}
                 threads={threadSummaries}
                 selectedId={selected?.clinicianUserId ?? null}
-                onSelect={(c) =>
-                  setSelected(clinicians.find((x) => x.clinicianUserId === c.id) ?? null)
-                }
+                onSelect={(c) => setSelectedId(c.id)}
                 selfUserId={user?.id}
                 searchPlaceholder="Search clinicians and messages…"
                 emptyLabel="No conversations yet."
@@ -191,23 +181,27 @@ const Messages = () => {
                   variant="ghost"
                   size="icon"
                   className="-ml-2 h-8 w-8 md:hidden"
-                  onClick={() => setSelected(null)}
+                  onClick={() => setSelectedId(null)}
                   aria-label="Back to conversations"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <CardTitle className="text-sm font-medium">
-                  {selected ? selected.name : 'Select a conversation'}
+                  {selected ? selected.clinicianName : 'Select a conversation'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col p-0 overflow-hidden">
+                {/* Closed means the database would refuse the message, not a
+                    guess from the share list: a composer is never offered
+                    into a thread nobody reads. */}
                 <MessageThread
                   otherPartyUserId={selected?.clinicianUserId || null}
-                  otherPartyName={selected?.name || ''}
+                  otherPartyName={selected?.clinicianName || ''}
                   role="patient"
                   className="h-full min-h-0"
-                  readOnly={!!selected?.isPast}
-                  readOnlyNotice={`You no longer share data with ${selected?.name ?? 'this clinician'}. The conversation is kept for your records. Resume sharing from Care Circle to message again.`}
+                  readOnly={!!selected && !selected.canSend}
+                  readOnlyNotice={noticeNode}
+                  composerNotice={selected?.canSend ? noticeNode : undefined}
                 />
               </CardContent>
             </Card>

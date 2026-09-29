@@ -68,6 +68,11 @@ BEGIN
   -- ==========================================================================
   -- 1. A record cannot be pointed at somebody by the person filing it
   -- ==========================================================================
+  -- Only a clinician may file a record (20261010090000), and a clinician
+  -- profile is self-made, so the stranger makes one: the link guards below
+  -- must hold against them regardless.
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_nobody) ON CONFLICT (user_id) DO NOTHING;
+
   PERFORM pg_temp.as_user(_nobody);
   PERFORM pg_temp.assert(NOT pg_temp.resolves(_vera), 'a stranger resolves nobody');
 

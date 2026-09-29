@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePatientInvitations } from '@/hooks/usePatientInvitations';
 import { formatDistanceToNow } from 'date-fns';
+import { CLINICIAN_VERIFICATION_NOTICE } from '@/lib/clinician-disclosure';
 
 export function PendingInvitationsCard() {
   const { receivedInvitations, isLoading, acceptInvitation, declineInvitation } = usePatientInvitations();
@@ -92,6 +93,7 @@ export function PendingInvitationsCard() {
             </p>
           </div>
         ))}
+        <p className="text-xs text-muted-foreground">{CLINICIAN_VERIFICATION_NOTICE}</p>
       </CardContent>
     </Card>
   );

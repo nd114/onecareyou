@@ -80,12 +80,23 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: enc, error: encErr } = await admin
       .from("encounters")
-      .select("id, clinician_user_id, patient_user_id, status")
+      .select("id, clinician_user_id, patient_user_id, status, practice_id, author_departed_at")
       .eq("id", encounterId)
       .single();
     if (encErr || !enc) return json({ error: "Encounter not found" }, 404);
     if (enc.clinician_user_id !== userId) return json({ error: "Forbidden" }, 403);
     if (enc.status === "signed") return json({ error: "Encounter is already signed" }, 409);
+    // This function writes with the service role, so the row policies that
+    // stop an author who has lost the patient (a share ended, a departure, or
+    // an account that was never a clinician) do not apply to it. Ask the same
+    // question "Authors update own encounters" asks, as the caller.
+    if (enc.author_departed_at) return json({ error: "This note is held for the practice to resolve" }, 409);
+    const { data: canWrite, error: accessErr } = await userClient.rpc("has_current_clinical_access", {
+      _patient_user_id: enc.patient_user_id,
+      _practice_id: enc.practice_id ?? null,
+    });
+    if (accessErr) throw accessErr;
+    if (!canWrite) return json({ error: "You no longer have access to this patient's record" }, 403);
     // Audio must live under the caller's own folder in the dictations bucket.
     if (!audioPath.startsWith(`${userId}/`)) return json({ error: "Forbidden" }, 403);
 

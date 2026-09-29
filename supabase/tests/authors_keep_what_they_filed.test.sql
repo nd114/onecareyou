@@ -70,6 +70,8 @@ BEGIN
     (_hosp, _front2, 'front_desk', 'active')
   ON CONFLICT (practice_id, user_id) DO UPDATE SET role = EXCLUDED.role, status = EXCLUDED.status;
 
+  -- A solo clinician is a clinician account (20261010090000).
+  INSERT INTO public.clinician_profiles (user_id) VALUES (_solo) ON CONFLICT (user_id) DO NOTHING;
   PERFORM pg_temp.as_user(_solo);
   INSERT INTO public.clinician_patient_records (id, clinician_user_id, patient_name, patient_email, notes)
   VALUES (_r_solo, _solo, 'Pat Keep', 'akf-patient@test.local', 'Solo note');

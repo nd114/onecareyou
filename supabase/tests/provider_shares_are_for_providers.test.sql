@@ -282,6 +282,103 @@ BEGIN
    WHERE clinician_user_id = _dr_exp AND notification_type = 'share_ended';
   PERFORM pg_temp.assert(_n = 1, 'and tells nobody twice');
 
+  -- ==========================================================================
+  -- 6. A non-clinician holding a claimed share acts as no clinician
+  -- ==========================================================================
+  -- _look_cl stands for the caregiver who was given the Care Circle link and
+  -- claimed it before claims needed a clinician account. The share row is
+  -- still live and still names them. Every clinical write must refuse them,
+  -- including edits to what they wrote while the door was open.
+  PERFORM pg_temp.as_user(NULL);
+  UPDATE public.provider_shares
+     SET permissions = '{"vitals":true,"documents":true,"profile":true,"medications":true}'
+   WHERE id IN (_s_look_cl, _s_claim);
+  INSERT INTO public.clinician_guidance (id, clinician_user_id, patient_user_id, share_id, title, instruction)
+  VALUES ('7e000000-0000-4000-8000-000000000001', _look_cl, _pat, _s_look_cl, 'psp: legacy', 'Walk daily');
+  INSERT INTO public.clinician_alert_rules (id, clinician_user_id, patient_user_id, share_id, vital_type, condition, threshold_value, is_active)
+  VALUES ('7e000000-0000-4000-8000-000000000002', _look_cl, _pat, _s_look_cl, 'heart_rate', 'above', 120, false);
+
+  -- The same writes by a clinician on a claimed share, so a refusal below is
+  -- the clinician test and not a broken statement.
+  FOREACH _who IN ARRAY ARRAY[_dr_claim, _look_cl] LOOP
+    PERFORM pg_temp.as_user(_who);
+    _as_caller := (_who = _dr_claim);
+
+    _raised := false;
+    BEGIN
+      INSERT INTO public.clinician_guidance (clinician_user_id, patient_user_id, share_id, title, instruction)
+      VALUES (_who, _pat, CASE WHEN _as_caller THEN _s_claim ELSE _s_look_cl END, 'psp: guidance', 'Rest');
+    EXCEPTION WHEN OTHERS THEN _raised := true;
+    END;
+    PERFORM pg_temp.assert(_raised <> _as_caller, format('%s: guidance only from a clinician', _who));
+
+    _raised := false;
+    BEGIN
+      INSERT INTO public.health_documents (user_id, uploaded_by_user_id, file_path, file_name, title, category, source_context)
+      VALUES (_pat, _who, _pat || '/psp-letter.pdf', 'letter.pdf', 'psp: From your clinician', 'other', 'clinician_upload');
+    EXCEPTION WHEN OTHERS THEN _raised := true;
+    END;
+    PERFORM pg_temp.assert(_raised <> _as_caller, format('%s: a "From your clinician" document only from a clinician', _who));
+
+    _raised := false;
+    BEGIN
+      INSERT INTO public.record_change_proposals (patient_user_id, proposed_by_user_id, kind, payload)
+      VALUES (_pat, _who, 'medication_start', '{"name": "Psp-azole"}');
+    EXCEPTION WHEN OTHERS THEN _raised := true;
+    END;
+    PERFORM pg_temp.assert(_raised <> _as_caller, format('%s: a medication proposal only from a clinician', _who));
+
+    _raised := false;
+    BEGIN
+      INSERT INTO public.clinician_alert_rules (clinician_user_id, patient_user_id, share_id, vital_type, condition, threshold_value)
+      VALUES (_who, _pat, CASE WHEN _as_caller THEN _s_claim ELSE _s_look_cl END, 'heart_rate', 'above', 130);
+    EXCEPTION WHEN OTHERS THEN _raised := true;
+    END;
+    PERFORM pg_temp.assert(_raised <> _as_caller, format('%s: an alert rule only from a clinician', _who));
+
+    _raised := false;
+    BEGIN
+      INSERT INTO public.encounters (patient_user_id, clinician_user_id, assessment)
+      VALUES (_pat, _who, 'psp: seen today');
+    EXCEPTION WHEN OTHERS THEN _raised := true;
+    END;
+    PERFORM pg_temp.assert(_raised <> _as_caller, format('%s: an encounter only from a clinician', _who));
+
+    -- Counted rather than caught: skip_duplicate_vital drops a repeat reading
+    -- without an error, so a refusal and a skip would look alike.
+    BEGIN
+      INSERT INTO public.vitals (user_id, recorded_by_user_id, type, value, unit, source)
+      VALUES (_pat, _who, 'weight', CASE WHEN _as_caller THEN 81 ELSE 82 END, 'kg', 'clinician');
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+    PERFORM pg_temp.as_user(NULL);
+    SELECT count(*) INTO _n FROM public.vitals WHERE user_id = _pat AND recorded_by_user_id = _who;
+    PERFORM pg_temp.assert((_n = 1) = _as_caller, format('%s: a clinician-recorded reading only from a clinician', _who));
+    PERFORM pg_temp.as_user(_who);
+
+    -- A managed record the patient is later asked to accept as their
+    -- clinician's was open to any signed-in account.
+    _raised := false;
+    BEGIN
+      INSERT INTO public.clinician_patient_records (clinician_user_id, patient_name, patient_email)
+      VALUES (_who, 'Pia Shared', 'psp-pat@test.local');
+    EXCEPTION WHEN OTHERS THEN _raised := true;
+    END;
+    PERFORM pg_temp.assert(_raised <> _as_caller, format('%s: a clinician-created record only from a clinician', _who));
+  END LOOP;
+
+  -- What the caregiver wrote before cannot be rewritten by them now.
+  PERFORM pg_temp.as_user(_look_cl);
+  UPDATE public.clinician_guidance SET instruction = 'psp: rewritten' WHERE id = '7e000000-0000-4000-8000-000000000001';
+  UPDATE public.clinician_alert_rules SET threshold_value = 200 WHERE id = '7e000000-0000-4000-8000-000000000002';
+  PERFORM pg_temp.as_user(NULL);
+  PERFORM pg_temp.assert(
+    (SELECT instruction FROM public.clinician_guidance WHERE id = '7e000000-0000-4000-8000-000000000001') = 'Walk daily',
+    'a non-clinician cannot edit guidance they issued under a claimed share');
+  PERFORM pg_temp.assert(
+    (SELECT threshold_value FROM public.clinician_alert_rules WHERE id = '7e000000-0000-4000-8000-000000000002') = 120,
+    'nor an alert rule they set');
+
   RAISE NOTICE 'provider_shares_are_for_providers: all assertions passed';
 END $$;
 
