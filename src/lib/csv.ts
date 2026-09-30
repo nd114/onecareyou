@@ -13,10 +13,20 @@
  * compliance pack is the one that goes to a reviewer.
  */
 
-/** One cell, quoted and escaped the way RFC 4180 asks. */
+/**
+ * One cell, quoted and escaped the way RFC 4180 asks.
+ *
+ * Text starting with = + - @ (or a tab / carriage return) is read by
+ * spreadsheet software as a formula, so a name like `=HYPERLINK(...)` typed at
+ * sign-up would run when a practice opened the export. Such text is prefixed
+ * with an apostrophe so it stays text. Real numbers are left alone.
+ */
 export function csvCell(value: unknown): string {
   if (value === null || value === undefined) return '""';
-  const text = typeof value === 'string' ? value : String(value);
+  let text = typeof value === 'string' ? value : String(value);
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) {
+    text = `'${text}`;
+  }
   return `"${text.replace(/"/g, '""')}"`;
 }
 
