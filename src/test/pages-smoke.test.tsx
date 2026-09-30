@@ -102,6 +102,9 @@ describe('every page component mounts', () => {
       // A page that throws on mount fails here; one that renders an error
       // boundary's fallback does not, which is the correct distinction.
       expect(() => render(Wrapper)).not.toThrow();
-    });
+      // Some pages (AIHub, Vitals) import heavy dependency trees; under a
+      // full-suite parallel run the transform alone can outlast the default
+      // 5s budget even though nothing is wrong.
+    }, 20000);
   }
 });
