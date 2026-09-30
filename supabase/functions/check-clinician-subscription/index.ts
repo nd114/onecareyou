@@ -83,22 +83,24 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided");
-    }
+    const notSignedIn = () =>
+      new Response(
+        JSON.stringify({ subscribed: false, authenticated: false }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
 
-    const token = authHeader.replace("Bearer ", "");
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return notSignedIn();
+
+    const token = authHeader.replace("Bearer ", "").trim();
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`);
+
+    // Signed-out callers (e.g. anon key on the sign-in page) are not an error.
+    if (userError || !userData?.user?.email) {
+      logStep("No signed-in user", { reason: userError?.message });
+      return notSignedIn();
     }
-    
     const user = userData.user;
-    if (!user?.email) {
-      throw new Error("User not authenticated or email not available");
-    }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Get clinician profile
