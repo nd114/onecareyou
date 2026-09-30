@@ -44,7 +44,8 @@ Navigation is four pillars with sub-tabs beneath the header.
   - *History*: every grant, change and revocation, with timestamps.
 - **Family** — profiles for dependants with a global active-member switcher in the header. Documents,
   medications and vitals are per-member; messages and adherence stay on the primary account.
-- **Caregivers** — delegated access with a scoped ability to add records on the patient's behalf.
+- **Caregivers** — paused and hidden in the product until later in the roadmap (confirmed 29
+  September 2026); see `docs/plans/caregiver-access-system.md`.
 
 ### The assistant
 - Answers about the patient's own record — medications, recent readings, today's doses.

@@ -1,8 +1,16 @@
 # Independent Clinicians, Hospitals, and People Who Are Both
 
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md) — pillar 6 (the two pathways, and one account per place of work).
+
 **Status:** In force and asserted. Read before changing anything about access.
 **Owner:** Engineering
 **Relates to:** `docs/sharing-access-consent-model.md`, `docs/enterprise-hospital-tenancy-plan.md`
+
+**Account model (decided 29 September 2026).** A clinician's hospital work is done in a separate
+account on the hospital's email domain, and their private practice in another (sharing model §8.1),
+so the two pathways usually live in different accounts. The guarantees below still hold for every
+account, and matter most where one account does hold both — a patient inviting a clinician's
+hospital account personally, or a clinician with several memberships.
 
 ---
 

@@ -1,5 +1,7 @@
 # Test strategy — flows, devices, and attack
 
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md) — pillar 11 (prove it, then prove it again).
+
 Status: **written September 2026. Phase 1 partly built, Phase 3's runner built.**
 
 ## What exists now

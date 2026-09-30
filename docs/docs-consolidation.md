@@ -65,11 +65,31 @@ The handbook guides and the public `docs/guide/` still overlap. The public guide
 is the source of truth and has a test; the handbook versions should be cut down
 to what is genuinely internal. Not done here — it is editing, not filing.
 
+## The sharing set (29 September 2026)
+
+Three documents, one job each, each with a header naming the other two, all
+rooted in `onecare-foundations.md`:
+
+- `sharing-access-consent-model.md` — the canonical rules.
+- `plans/sharing-infrastructure-v2.md` — the build plan.
+- `guide/sharing.md` — the patient-facing guide (published at `/guide`; it
+  carries no internal header because the page renders raw markdown, so the
+  canonical doc links to it instead).
+
+The suspected duplicate differing by hyphen and underscore,
+`OneCare_Sharing_Access_Consent_Model.md`, does not exist in the repository
+under any spelling — not in `docs/`, `docs/archive/`, the other worktrees, or git
+history. It was a pre-repository reference document the canonical file
+mentioned; the mention now says so. Nothing was superseded, so nothing moved to
+`archive/`. The guide was corrected where it contradicted the rules: it said a
+category you never mention is not shared (the hospital default is everything,
+disclosed) and described an emergency access route that does not exist.
+
 ## Still stale, and worth doing next
 
-- **`sharing-access-consent-model.md`** — predates the proposal mechanism,
-  document withdrawal and the share-vocabulary convergence. An out-of-date
-  consent document is worse than none. Do this first.
+- ~~**`sharing-access-consent-model.md`**~~ — brought up to date September
+  2026 (vocabulary, leavers, additions after sharing stops, deletion draft,
+  accounts and conversations).
 - `agents-and-assistant-actions.md` — predates the provenance guard and the
   stop-versus-edit distinction.
 - `handbook/data-model.md` — predates several tables.

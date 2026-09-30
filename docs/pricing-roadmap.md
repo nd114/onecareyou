@@ -1,13 +1,27 @@
 # Pricing & Monetization Roadmap
 
-> **Read this first (August 2026).** This file grew in layers and the older tables below no longer
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md) — this file covers pricing and plans; every clinician is billed for their own account.
+
+> **Current clinician plans (verified in code, 29 September 2026).** **Individual** $99/month,
+> **Practice** $299/month (up to 1,000 patients; the owner plus five staff seats, non-clinical roles
+> included) and **Enterprise** from $2,500/month, quoted. Community ($0) remains for community
+> health workers. Source: `CLINICIAN_TIER_INFO` in `src/hooks/useClinicianSubscription.ts`; the
+> stored tier keys are still `solo`, `pro` and `enterprise`, so existing subscriptions keep
+> resolving. Hospital tiers start at $2,500/month (`ENTERPRISE_TIERS` in
+> `src/lib/pricing-constants.ts`). Every clinician is billed for their own account, and a practice
+> that outgrows the Practice limits upgrades to Enterprise. **Everything below — including the
+> August note's "From $399/month" and every Solo/Pro figure — is historical** and kept for the
+> reasoning only. Some screens still say "Solo" and "Pro" (`PatientLimitBanner.tsx`), which is a code
+> fix, not a pricing question.
+>
+> **Read this first (August 2026 — superseded by the note above where they differ).** This file grew in layers and the older tables below no longer
 > match what is live or what is planned. The current position:
 >
 > - **Live and unchanged.** `/pricing` shows Enterprise as **"From $399/month"** with Contact Sales
 >   beyond it. That is a deliberate public self-serve floor, not a stale number — large-hospital
 >   deals are negotiated, and their rates are not published. No code change is pending here;
 >   `src/lib/pricing-constants.ts` stays the source of truth for patient pricing.
-> - **Do not conflate clinician pricing with enterprise pricing.** Solo/Pro are per-clinician
+> - **Do not conflate clinician pricing with enterprise pricing.** Individual/Practice (stored as `solo`/`pro`) are per-clinician
 >   products. The hospital fee is an institutional contract. They move independently.
 > - **Enterprise hospital pricing follows the v4 model** in §"Enterprise pricing model (v4)" below.
 > - **Regional pricing is planned, not live.** Every patient market is on the global $9.99/$99.90

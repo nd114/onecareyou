@@ -1,5 +1,7 @@
 # Enterprise / Hospital Tenancy Plan
 
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md) — pillar 6 (the institution as custodian).
+
 Status: Phases A, B, C (core) and D shipped (Aug 2026). Phase E outstanding.
 Owner: platform team. Canonical companion doc: `docs/sharing-access-consent-model.md`.
 

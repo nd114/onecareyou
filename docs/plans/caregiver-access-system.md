@@ -1,5 +1,7 @@
 # Delegated Caregiver Access System
 
+> Rooted in [OneCare's foundational pillars](../onecare-foundations.md) — pillar 1 (the patient holds the power); paused.
+
 > **Paused — September 2026.** Family-member targeting is paused by decision. The entry points are hidden rather than removed. Restart when: the single-patient experience is settled enough that a second person in the account does not multiply every open question.
 >
 > This document describes an intention, not current work. Nothing below is

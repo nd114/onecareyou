@@ -1,5 +1,7 @@
 # Withdrawal, derived data, and whose responsibility is whose
 
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md) — pillars 5, 8 and 9 (withdrawal, not policing, and what OneCare is).
+
 The reasoning behind how OneCare handles a document that should not have been
 sent, and what happens to data that was extracted from it. Written to be
 revisited: every rule below says what it is, why, and what it rests on.

@@ -1,171 +1,145 @@
 # Clinician Offboarding — when someone leaves a practice or hospital
 
-> **Decisions taken and Phases 2–3 done — September 2026** (migration
-> `20261010070000_offboarding_handover`, suite `offboarding_handover.test.sql`).
-> The founder decided the §7 questions; see §7 for each answer. In short: a
-> leaver loses all access to the hospital's patients and records, including
-> what they wrote there (this reverses §1.5 and §5.3 below for hospital
-> records; solo records are unchanged). Records now carry the practice they
-> were written for, stamped by the server. Unsigned drafts and unfiled
-> dictations freeze on departure and are routed to owners, admins and the
-> patient's department lead, who sign off (addendum, authorship kept), mark
-> entered in error, or archive — nothing is deleted. Admins see an impact
-> preview (`offboarding_impact`) before ending a membership; open work lands on
-> a needs-cover list in the Coverage tab (`practice_handover_queue`). Hospital
-> threads belong to the hospital and are read and continued by the patient's
-> current care team once the clinician has left. The patient is told once, on
-> handover. The only owner is told to appoint a co-owner. Still open: Phase 4
-> (EHR tenant ownership, account closure and the foreign keys), and the items
-> listed at the end of §7.
+> Rooted in [OneCare's foundational pillars](../onecare-foundations.md) — pillar 6 (the institution is
+> the custodian of what its staff create) and pillar 10 (closable accounts).
 >
-> **Phase 1 done — September 2026** (migration `20261010030000`, suite
-> `offboarding_closes_the_door.test.sql`). A leaver no longer writes to the
-> hospital's record; membership ends only through `end_practice_membership` /
-> `leave_practice` (role and view-all through `change_practice_member_access`),
-> with owner rules in the row, `ended_at`/`ended_by`/`end_reason`, the
-> `practice_membership_events` ledger and an audit row on every change;
-> department rows end on every path; memberships cannot be deleted; moving to a
-> non-clinical role clears view-all and clinician messaging is role-gated.
-> Not done from the Phase 1 row: the status CHECK constraint (a fixture and
-> possibly live rows use other values) and `ended_at` on department rows (they
-> are removed, and the ledger entry keeps what was held). Phases 2–4 and the §7
-> decisions are open.
+> **Status — 29 September 2026.** Phases 1–3 are built (`20261010030000_offboarding_closes_the_door`,
+> `20261010070000_offboarding_handover`; suites `offboarding_closes_the_door.test.sql` and
+> `offboarding_handover.test.sql`). §3 below describes what happens **now**. The founder's decisions
+> are in §7. **What remains is lower priority** than the sharing and deletion work, and is listed at
+> the end of §7.
 >
-> **Assessed September 2026.** What happens today when a
-> clinician or staff member leaves a tenant, checked against the replayed
-> database, and a design that follows from the founding documents rather than
-> adding a new concept. Restart when: the decisions in §7 are taken. Phase 1 is
-> small and closes holes that exist now; it should not wait for the rest.
+> In one paragraph: the hospital ends a membership without needing anything from the leaver; the
+> leaver loses everything at that hospital, including what they wrote there; unsigned drafts and
+> unfiled dictations freeze and are routed to the people responsible; assignments end and the
+> patient goes on a needs-cover list; hospital threads are read and continued by the patient's
+> current care team; the patient is told once, when someone takes over; and nothing is deleted. A
+> clinician's own patients, in their private-practice account, are never touched.
 >
-> This document describes an intention, not current work.
->
-> **Superseded in part, 28 September 2026.** The founder decided that a leaver
-> loses *all* access to the institution's patients and records, including what
-> they wrote there; legal access goes through the institution. Unsigned drafts
-> and dictations are frozen and routed to the clinical lead, never deleted. So
-> §1 item 5, §5.3 ("What the leaver keeps"), the G7 direction and decision 4 in
-> §7 no longer stand, and decisions 2 and 3 are answered (freeze). See
-> `docs/sharing-access-consent-model.md` §5.
+> Earlier banners (Phase 1 done, Phases 2–3 done, "superseded in part") are folded into this one.
+> §4–§6 are the September assessment and design, kept for their reasoning; where they differ from
+> §3 and §7, §3 and §7 stand.
 
-Companion to `docs/sharing-access-consent-model.md`,
-`docs/independent-clinicians-and-hospitals.md`,
-`docs/enterprise-hospital-tenancy-plan.md` and `docs/record-corrections-plan.md`
-(edge case 3, "a clinician leaves the practice").
+Companion to `docs/sharing-access-consent-model.md` (§5, canonical),
+`docs/independent-clinicians-and-hospitals.md`, `docs/enterprise-hospital-tenancy-plan.md`,
+`docs/record-corrections-plan.md` (edge case 3) and `docs/plans/sharing-infrastructure-v2.md`.
 
 ---
 
 ## 1. The answer is already in the founding structures
 
-Nobody wrote an offboarding design, but the documents that set up the platform
-already decide almost all of it. Stated together:
+Nobody wrote an offboarding design, but the documents that set up the platform already decide
+almost all of it. Stated together:
 
-1. **Two pathways that never merge.** `provider_shares` is the patient inviting
-   a person; `practice_shares` plus an active `practice_members` row is the
-   patient trusting an institution that assigns a person. Leaving a job ends the
-   second and cannot touch the first. (`independent-clinicians-and-hospitals.md` §2)
-2. **Consent is to the institution; the clinician's access is delegated.** "The
-   patient's relationship remains with the hospital, not with whichever clinician
-   currently holds the case." A departure is therefore a reassignment inside a
-   relationship that continues, not the end of a relationship. (Sharing model §2B;
-   tenancy plan §1: "reassignment must not require re-consent".)
-3. **Nothing is deleted; ending a relationship changes access going forward.**
-   (Sharing model §1.2, conventions rule 1.)
-4. **The clinician's account of care is theirs and is never reattributed.**
-   Entries stay attributed to the author, "with the practice as the responsible
-   party". (Record corrections plan, edge case 3; conventions rule 2.)
-5. **Decided alongside this work:** what a person filed stays readable by them,
-   read-only; the hospital retains records created while the patient was theirs;
-   authorship is never reattributed; like email, what was sent cannot be unsent,
-   only removed from view by its owner.
-6. **Absence is visible.** A patient whose doctor has gone should see that, in
-   place, not find a thread that silently stops answering. (Rule 3.)
+1. **Two pathways that never merge.** `provider_shares` is the patient inviting a person;
+   `practice_shares` plus an active `practice_members` row is the patient trusting an institution
+   that assigns a person. Leaving a job ends the second and cannot touch the first.
+   (`independent-clinicians-and-hospitals.md` §2)
+2. **Consent is to the institution; the clinician's access is delegated.** "The patient's
+   relationship remains with the hospital, not with whichever clinician currently holds the case."
+   A departure is therefore a reassignment inside a relationship that continues, not the end of a
+   relationship. (Sharing model §2B; tenancy plan §1: "reassignment must not require re-consent".)
+3. **Nothing is deleted; ending a relationship changes access going forward.** (Sharing model §1.2,
+   conventions rule 1.)
+4. **The clinician's account of care is theirs and is never reattributed.** Entries stay attributed
+   to the author, "with the practice as the responsible party". (Record corrections plan, edge case
+   3; conventions rule 2.)
+5. **The institution is the custodian of the records its staff create** (decided 28 September 2026,
+   replacing the earlier "keep a read-only view of what you filed"). A leaver loses all access to
+   the institution's records, including their own; legal needs go through the institution.
+6. **Absence is visible.** A patient whose doctor has gone should see that, in place, not find a
+   thread that silently stops answering. (Rule 3.)
+7. **One account per place of work** (decided 29 September 2026, sharing model §8.1). Hospital work
+   is done in an account on the hospital's email domain and private practice in a separate account,
+   so leaving a hospital ends everything in that account's hospital context and nothing else.
 
-Put those together and the shape of offboarding is fixed: **the leaver loses
-every write and every forward read at once, keeps a read-only view of what they
-wrote, the hospital keeps everything created on its behalf and hands the open
-work to someone else, the patient is told, and none of it touches the leaver's
-private patients.** What follows is how far the code is from that.
+## 2. How someone leaves, now
 
-## 2. How someone leaves today
+**Three removal paths, all intentional** (the founder agrees). Each suits a different screen and
+manager, and all three reach the same enforced act: a trigger on `practice_members`
+(`guard_practice_member_standing`) refuses any direct client change to status, role or view-all,
+holds the owner rules, stamps `ended_at`, `ended_by` and `end_reason`, and a second trigger
+(`record_practice_membership_change`) writes the `practice_membership_events` ledger and an audit
+row and removes department rows, recording what was held. Memberships cannot be deleted by any
+client.
 
-There are three ways a membership ends in the product, and they do not agree.
+| Path | Who | Where | Function |
+| --- | --- | --- | --- |
+| **Remove** | Owner or admin | Team list (`PracticeTeamSection` → `usePractice`) | `end_practice_membership` |
+| **Archive** | Owner or admin | Hospital admin (`PracticeAdmin` → `usePracticeAdmin`); restoring starts a new period through `set_practice_affiliation_status` | `end_practice_membership` |
+| **Revoke affiliation** | Owner or admin | Staff allowlist (`ClinicianAllowlistCard` → `useClinicianAllowlist`) | `set_practice_affiliation_status` |
+| **Leave this practice** | The member themselves | Team list, "Leave this practice" (`useOffboarding`) | `leave_practice` |
 
-| Path | Where | What it writes | Last-owner rule | Department roles | Assignments |
-| --- | --- | --- | --- | --- | --- |
-| **Remove** (team list) | `usePractice.removeMember` → `PracticeTeamSection` | Direct `UPDATE status = 'revoked'` | Not checked | Row left in place, dormant | Closed by trigger |
-| **Archive** (hospital admin) | `usePracticeAdmin.archiveMember` → `PracticeAdmin` | Direct `UPDATE status = 'archived'` | Not checked | Row left in place, dormant | Closed by trigger |
-| **Offboard** (affiliation) | `set_practice_affiliation_status` via `useClinicianAllowlist` | RPC, `status = 'revoked'` | Enforced | Rows **hard-deleted** | Closed by RPC and trigger |
+**"Leaving voluntarily" means the member removing themselves** with "Leave this practice" — for
+example a clinician who joined a practice and resigns. It is recorded as `end_reason = 'left'`, as
+distinct from `ended_by_practice` when the hospital removes someone. A manager cannot reinstate a
+person who left of their own accord; they invite them again and the person accepts.
 
-The `ClinicianAllowlistCard` tells managers to "use the team list to offboard",
-which sends them to the path that checks the least.
+**The hospital never needs the leaver's input.** Removal takes effect at once, whatever the leaver
+had open, and nothing waits for a cooperative handover: open work is frozen or flagged and routed to
+the people responsible (§3). Before confirming, the manager sees what the removal will leave behind
+(`offboarding_impact`).
 
-Paths that do not exist:
+**Owners.** Only an active owner can end or demote an owner, and a practice always keeps one: the
+only owner is told to make a co-owner first ("Make co-owner").
 
-- **Leaving voluntarily.** No screen. The only mechanism is the `practice_members`
-  DELETE policy, `can_manage_practice(practice_id) OR user_id = auth.uid()`,
-  which hard-deletes the row.
-- **Moving to a non-clinical role** is a direct `UPDATE role` from the team list.
-- **Closing a clinician account.** No feature, although the Terms of Service
-  (`TermsOfService.tsx` ~line 245) mention "the account deletion feature in
-  settings".
+**Changing role** goes through `change_practice_member_access`. Moving from a clinical to a
+non-clinical role clears view-all and ends assignments; clinician messaging and addenda are gated on
+a clinical role. Freezing the person's unfinished clinical work on a role change, as departure does,
+is **being built**.
 
-What is right today, and should be kept:
+**Closing an account** does not exist yet, for clinicians or patients; it is on the roadmap (§5.7
+states the principle, which stands).
 
-- **Forward access ends immediately.** Every access helper requires
-  `status = 'active'`; `institution_has_patient_access` answered false for the
-  leaver the moment their row changed.
-- **Assignments close on every path.** `trg_end_assignments_of_departed_member`
-  (migration `20261009030000`) end-dates them when status leaves `active` or the
-  role stops being clinical. Closed, not deleted.
-- **Private patients are untouched.** `clinician_has_patient_access` still
-  answered true for the leaver's own `provider_shares` patient after they were
-  removed, as `independent_vs_institution.test.sql` asserts.
-- **The hospital keeps the leaver's encounters.** A colleague with view-all still
-  read both of the leaver's encounters afterwards, attributed to the leaver.
+## 3. What happens to each thing, now
 
-## 3. What happens to each thing, today
+Current behaviour after `20261010030000` and `20261010070000`, with the founder's decisions of 28–29
+September. "Suite" means an assertion in `offboarding_closes_the_door.test.sql` or
+`offboarding_handover.test.sql`; "from definitions" means read from the migration, not exercised.
+The suites were not re-run for this documentation pass.
 
-Checked on the replayed database (`onecare_test_offb`, 69 suites passing) with a
-rolled-back probe: an owner, an admin, a departing provider who was assigned to a
-hospital patient and led a department, a colleague with view-all, the hospital
-patient, and one private patient of the leaver. The admin removed the leaver the
-way the team list does. "Confirmed" means the probe observed it; "from policy"
-means read from `pg_policies` but not exercised.
-
-| Item | Leaver, after leaving | Hospital, after | Patient sees | Basis |
+| Item | Leaver, after leaving | The hospital | The patient | Basis |
 | --- | --- | --- | --- | --- |
-| Hospital patients' vitals, meds, documents | Lost | Kept | Nothing changes | Confirmed |
-| Open assignments | Closed | Patient left unassigned; no handover target | Nothing | Confirmed |
-| Department lead | Dormant row kept (direct path) or row deleted (RPC path); restoring the member **revives the lead role** but not assignments | No prompt to appoint a new lead | — | Confirmed (row count); revival from `is_department_lead` |
-| Their encounters | Still readable (author arm). **Unsigned draft still editable, and could be signed after leaving** | Readable, attributed | Shared notes stay visible | Confirmed |
-| Addenda to their signed notes | **Can still add them after leaving** | Readable | — | Confirmed |
-| Their internal notes (team) | **Can still rewrite and hard-delete them after leaving** | Readable until the leaver deletes them | Not visible to patients | Confirmed |
-| Hospital managed records they filed (`clinician_patient_records`, unclaimed, `practice_id` set) | **Still readable, editable and hard-deletable** | Readable until the leaver deletes them | — | Confirmed |
-| Messages they exchanged with a hospital patient | **Lost** — the policy asks for current institution access, not access at the time | **Never readable by colleagues, before or after** — threads have no `practice_id` | Thread stays open; patient **can still send**, nobody reads it, no marker | Confirmed |
-| Sending new messages | Blocked | — | — | Confirmed |
-| Tasks assigned to them (`practice_tasks`) | Still visible to them, with patient id and title | Managers see them; nothing reassigns | — | Confirmed |
-| Future appointments (`fhir_appointments.clinician_user_id`) | Still readable (own-appointment arm) | Remain booked with the leaver | Appointment with a departed clinician | From policy |
-| Unfiled dictations of hospital patients | Still readable and editable; filing now fails | **Never visible to the hospital** | — | Confirmed |
-| Pending medication proposals | Still readable | — | Can still accept a proposal from someone who has left | From policy |
-| Guidance they issued | Editable indefinitely (author UPDATE, no lock) | — | Visible | From policy; guidance can only be issued on a private share today |
-| Alert rules | Private-share only; keep working for private patients | — | — | From policy |
-| EHR connections | Belong to the clinician; leave with them | Lose the link | — | Schema (`ehr_connections` has no `practice_id`) |
-| Audit of the departure | **None** — no `hipaa_audit_logs` row; `practice_members` has no ended-at, ended-by or reason; `updated_at` is overwritten on restore | Cannot answer "who removed them, when, why" | — | Confirmed |
-| Correcting the leaver's notes | Leaver can still mark them entered-in-error | **Nobody at the hospital can** — encounter UPDATE is author-only | — | From policy |
-| Their private (`provider_shares`) patients | Unchanged | Never had them | Unchanged | Confirmed |
+| Hospital patients' vitals, medicines, documents | Lost at once | Kept | Nothing changes | Suite |
+| Open assignments | Closed | Patient goes on the **needs-cover** list in the Coverage tab (`practice_handover_queue`) until someone is assigned | Told once, when a new clinician is assigned, who has taken over (`patient_notices`) | Suite |
+| Department roles, including lead | Removed on every path; the ledger records what was held; a restore does not revive them | Vacancy shows as "departments without a lead" | — | Suite |
+| Encounters written for the hospital | **No read, no write** | Kept, attributed to the leaver | Shared notes stay visible | Suite |
+| Unsigned drafts | Frozen (`author_departed_at`); never signable by anyone later, the author included | Routed to owners, admins and the patient's department lead, who sign off (an addendum under their own name; authorship unchanged), mark entered in error, or archive (`resolve_departed_draft`) | — | Suite |
+| Addenda to their notes | Cannot add | Can add, under their own name | — | Suite |
+| Team internal notes | No read, no rewrite, no delete | Kept | Not visible to patients | Suite |
+| Unfiled dictations | Frozen | Routed as drafts are; signing off starts a draft note under the lead's own name | — | Suite |
+| Managed records filed for the hospital | No read, no edit, no delete | Kept | — | Suite |
+| Hospital message threads (`messages.practice_id`) | Lost | The patient's current assigned or view-all clinical staff read and continue them | Can write whenever someone is covering; otherwise the composer says the thread is waiting, and reopens when the hospital assigns someone (`20261010090000`) | Suite |
+| Tasks | Lost | Flagged on the needs-cover list; managers reassign or close | — | Suite |
+| Future appointments | Lost | Flagged on the needs-cover list | Not yet told at departure (see remaining items) | Suite |
+| Pending medication proposals | Lost | Flagged; a manager may withdraw them (`withdraw_change_proposal`) | Stays pending until answered or withdrawn | Suite |
+| Guidance and alert rules | Private-share only today, so unaffected | — | — | From definitions |
+| EHR connections | **Still leave with the clinician** | Lose the link | — | Schema — remaining item |
+| The departure itself | — | Ledger, audit row, `ended_at` / `ended_by` / `end_reason`, answerable as "who removed them, when, why" | — | Suite |
+| Their own private patients (`provider_shares`, solo managed records) | **Unchanged** | Never had them | Unchanged | Suite, and `independent_vs_institution.test.sql` |
 
-Two further paths, probed separately:
+Two further cases:
 
-- **Moved to billing.** Encounter reads stopped (confirmed) and assignments
-  close through the same trigger (from its definition), but
-  `can_view_all_patients` was left true, and because `institution_has_patient_access`
-  is not role-gated the billing member **could still message the patient as a
-  clinician** (confirmed) and can read and amend appointments (from policy).
-- **The last owner.** An admin archived the only owner by direct `UPDATE`
-  (confirmed), and an admin hard-deleted both a colleague's membership and their
-  own (confirmed). The last-owner check exists only inside the RPC.
+- **Moved to billing (or any non-clinical role).** View-all is cleared, assignments close, and the
+  member **cannot message the patient as a clinician** — confirmed in the Phase 1 suite, including
+  when a manager later grants billing the wide view again (`offboarding_closes_the_door.test.sql`,
+  the "billing cannot message the patient as a clinician" assertions). Their unsigned drafts are
+  not yet frozen (being built). **One gap found in this pass, from definitions:** the clinician
+  policy for filing a document into a patient's Vault (`20260820100000`, row and storage) still
+  uses the role-blind `institution_has_patient_access`, so a non-clinical member holding view-all or
+  an assignment could file a "From your clinician" document. Recorded as G11 in
+  `sharing-infrastructure-v2.md`, to be closed in its phase 1.
+- **The last owner** cannot leave or be ended; the functions and the interface say to appoint a
+  co-owner first.
 
-## 4. Gaps
+## 4. Gaps (September assessment)
+
+**Status, 29 September 2026.** Closed: G1, G3, G4, G8 and G11 (phase 1); G5, and G6 for unsigned
+drafts and dictations (phase 2); G2 and G10 (phase 3, with `20261010090000` closing the patient's
+composer when nobody is covering). Superseded: G7 — a leaver now keeps no read of hospital records
+at all. Still open, lower priority: G6 for signed notes (correction on behalf of the practice), G9
+(EHR connections) and G12 (account closure and the foreign keys). The table below is the assessment
+as it was written.
 
 Severity is about harm to a patient or to the legal record, not effort.
 
@@ -184,7 +158,13 @@ Severity is about harm to a patient or to the legal record, not effort.
 | G11 | **Restoring a member revives lead roles** silently (direct path), while the RPC path deletes the lead history | **Low** | One vocabulary; nothing deleted |
 | G12 | **Account closure** is promised in the Terms and does not exist; `provider_shares.clinician_user_id` references `auth.users` without `ON DELETE`, so an ops-side deletion fails for any clinician who ever had a share, and `practice_members.user_id` has no foreign key and would orphan. Sharing model §5 also promises "managed-record data is exported to the clinician on departure", which has no code and, for hospital records, contradicts the retention decision | **Low** now, a legal-copy question | A promise in the UI must be a capability |
 
-## 5. Recommended design
+## 5. Recommended design (September; built with the simplifications in §6 and §7)
+
+What was built differs from this design in three places, and the built version stands: there are
+still three removal paths, deliberately, all converging on the same row rules (§2); handover is an
+impact preview plus a needs-cover list rather than a disposition required for every item (the
+leaver's cooperation is never assumed); and §5.3 is superseded — a leaver keeps nothing of the
+hospital's.
 
 ### 5.1 One act, enforced at the row
 
@@ -243,7 +223,11 @@ open item falls into a "needs cover" queue. The **Coverage tab** already
 exists to show who is falling through the gaps; the queue belongs there rather
 than on a new screen.
 
-### 5.3 What the leaver keeps
+### 5.3 What the leaver keeps — superseded
+
+> **Superseded (28 September 2026).** A leaver keeps nothing of the hospital's, including what they
+> wrote there; legal needs go through the hospital (sharing model §5). Only the "no writes" bullet
+> below survives, and it is built. The rest is kept as the reasoning that was replaced.
 
 Read-only access to what they authored in the hospital's name, for as long as
 the record exists, and nothing else:
@@ -321,6 +305,9 @@ Everything created on its behalf, attributed to the person who created it:
 
 ### 5.7 Account closure
 
+*This principle stands (29 September 2026), for clinicians and patients alike; "Close my account" is
+on the roadmap.*
+
 A clinician who authored records cannot be deleted without breaking
 non-repudiation. Closure should disable sign-in and keep the name used for
 attribution. That is a separate piece of work; what belongs here is fixing the
@@ -334,10 +321,10 @@ hospital.
 
 | Phase | What | Size | Closes |
 | --- | --- | --- | --- |
-| **1. Close the holes at the row** (done) | `end_practice_membership` and `leave_practice`; trigger blocking direct status, role and view-all changes and enforcing the owner invariant; drop the DELETE policy; `ended_at`/`ended_by`/`end_reason`, status CHECK, membership ledger and audit row; author write policies need current access for hospital-context rows; clear view-all on role change and gate clinical acts on `institution_has_clinical_access`; switch `removeMember` and `archiveMember` to the RPC. New suite `leaving_a_practice.test.sql`, converted from this assessment's probe, each assertion watched failing first | **S–M**, 2–3 days | G1, G3, G4, G8, G11 |
+| **1. Close the holes at the row** (done) | `end_practice_membership` and `leave_practice`; trigger blocking direct status, role and view-all changes and enforcing the owner invariant; drop the DELETE policy; `ended_at`/`ended_by`/`end_reason`, membership ledger and audit row; author write policies need current access for hospital-context rows; clear view-all on role change and gate clinical acts on `institution_has_clinical_access`; switch `removeMember` and `archiveMember` to the RPC. Suite `offboarding_closes_the_door.test.sql`, converted from this assessment's probe. Not done: the status CHECK constraint, and `ended_at` on department rows (they are removed; the ledger keeps what was held) | **S–M**, 2–3 days | G1, G3, G4, G8, G11 |
 | **2. Handover** (done, simplified) | Impact preview in the confirmation instead of required dispositions; assignments end as before and the patient goes on the "needs cover" list in the Coverage tab, with tasks, future appointments and pending proposals (reassign or withdraw from there); draft and dictation freeze with routing to leads and `resolve_departed_draft`; `practice_id` on dictations, internal notes, proposals and messages. Lead vacancy shows through the existing "departments without a lead" finding | **M** | G5, G6 |
 | **3. The patient side** (done, partly) | `practice_id` on messages and the institutional thread read; patient notice on handover (`patient_notices`). Not done: a departure line in the thread and composer forward routing; the Vault snapshot on handover | **M** | G2, G10 |
-| **4. The long tail** | Leaver's read-only "former workplaces" view with the message history helper; correction on behalf of the practice; EHR tenant ownership (with the EHR plan); account closure and the foreign keys | **M** across items; each independent | G6, G7, G9, G12 |
+| **4. The long tail** (lower priority) | Freeze clinical work on a move to a non-clinical role (being built); correction on behalf of the practice for signed notes; EHR tenant ownership (with the EHR plan); account closure and the foreign keys. The leaver's "former workplaces" view is dropped (§7, decision 4) | **M** across items; each independent | G6, G9, G12 |
 
 Phase 1 does not depend on any decision below and closes the only gaps where
 a person who has left can still change the record.
@@ -371,11 +358,43 @@ a person who has left can still change the record.
    be ended; the functions and the UI say to make a co-owner first, and owners
    now have a "Make co-owner" action.
 
-Left open by this round, for a later decision:
+Decided 29 September 2026:
+
+7. **A leaver loses access to everything at that hospital, period.** Hospital work is done in a
+   separate account on the hospital's email domain (sharing model §8.1), so there is nothing of the
+   hospital's for the leaver to keep and nothing of their private practice for the hospital to take.
+8. **The hospital shuts access off with no need for the leaver's input**, and everything the leaver
+   had is frozen or flagged and routed to their department lead, owners and admins by default. A
+   cooperative handover is never assumed.
+9. **Moving to a non-clinical role freezes clinical work too**, as departure does. Being built.
+10. **The three removal paths are intentional** (§2). "Leaving voluntarily" is the member's own
+    "Leave this practice", distinct from the hospital removing them.
+11. **Offboarding beyond what is built is lower priority** than sharing v2 and the deletion revisit.
+
+Remaining, lower priority:
+
+- Freeze unsigned drafts and unfiled dictations on a move to a non-clinical role (decision 9;
+  being built).
+- A departure line in the thread, and forward routing of the composer to the new assignee (today
+  the thread waits, and says so, until someone covers).
+- A care-record snapshot to the patient's Vault on handover.
+- Correction of a departed author's **signed** note on behalf of the practice (frozen drafts are
+  already resolvable).
+- EHR connections owned by the tenant rather than the clinician (with `ehr-integration-plan.md`).
+- Account closure and the foreign keys (§5.7; roadmap "Close my account").
+- The status CHECK constraint on `practice_members`, and `ended_at` on department rows.
+- Tasks and future appointments are flagged on the needs-cover list, not assigned to anyone
+  automatically; a named default owner for them (the department lead) is not built.
+- G11 in `sharing-infrastructure-v2.md`: a non-clinical member with view-all or an assignment can
+  still file a "From your clinician" document into a patient's Vault (from definitions).
+
+Left open by the September round, for a later decision:
 
 - A leaver who *also* holds a private share with a hospital patient still reads
   that patient's encounters through the private share, as any privately shared
-  clinician does. That is the patient's own consent and was left alone.
+  clinician does. That is the patient's own consent and was left alone. Under the
+  one-account-per-place-of-work model this arises only when a patient invited the
+  clinician's hospital account personally.
 - Records written before this change whose context was ambiguous (the author
   also had a private share, or belonged to several practices the patient shared
   with) stay unstamped and keep the old reading.
@@ -384,6 +403,7 @@ Left open by this round, for a later decision:
 - Frozen drafts of a patient who has since disconnected cannot be resolved by
   anyone (no break-glass), so they stay frozen.
 - Moving to a non-clinical role does not freeze drafts; only departure does.
+  *(Decided 29 September: it will — decision 9.)*
 - A department lead who is not on the patient's care can mark a draft entered
   in error or archive it, but must be assigned before signing it off.
 

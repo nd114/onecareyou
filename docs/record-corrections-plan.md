@@ -1,5 +1,7 @@
 # Correcting a record after the patient owns it
 
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md) — pillar 5 (each party owns its own account) and pillar 2 (absence is visible).
+
 Status: **two of the three classes built.** September 2026.
 
 ## The question

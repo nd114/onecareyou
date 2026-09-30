@@ -1,11 +1,16 @@
 # OneCare Roadmap
 
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md). Every item here serves one of
+> them; the Guardrails at the end are the working rules that follow from them.
+
 **What this is.** The single living tracker for OneCare product work: what has shipped and when, what is in flight, what is next, and what is deliberately deferred. Update this file as work lands — do not start new roadmap or tracking documents.
 
-**Last updated:** 8 September 2026
+**Last updated:** 29 September 2026
 
 **Companion docs** (deep dives kept separate on purpose):
 
+- [`onecare-foundations.md`](./onecare-foundations.md) — the founding pillars everything else is rooted in
+- [`plans/sharing-infrastructure-v2.md`](./plans/sharing-infrastructure-v2.md) — the sharing build plan
 - [`enterprise-hospital-tenancy-plan.md`](./enterprise-hospital-tenancy-plan.md) — hospital tenancy phases
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — who may see what, and how consent is checked
 - [`record-corrections-plan.md`](./record-corrections-plan.md) — the three classes of correction
@@ -38,8 +43,30 @@
 1. **Mobile-first sweep (patient + clinician).** Scripted 390x844 / 768x1024 passes over every pillar and sub-tab; fix P0 broken flows first, then overlap between bottom nav, FAB stack and sticky sub-tabs, then polish.
 2. **Surface budget discipline.** Every new feature must replace a surface or justify itself against the four pillars per side.
 3. **Open after the September PHI audit** (what was fixed is in [`audit-2026-09.md`](./audit-2026-09.md), pass 8).
-   - **A clinician leaving a practice** is assessed in [`plans/clinician-offboarding.md`](./plans/clinician-offboarding.md): a leaver can still write to the hospital's record and patients can message a departed clinician into a void; Phase 1 (row-level, 2–3 days) closes the first, Phase 3 the second. Leavers now lose all access to the institution's records, including what they wrote (decided 28 September; sharing model §5).
-   - **Sharing infrastructure v2** is proposed in [`plans/sharing-infrastructure-v2.md`](./plans/sharing-infrastructure-v2.md): separate the care relationship (messaging, clinician output) from the data grant, make every clinical audience a workspace on one account (a private practice is a workspace of one), hospital alert rules, and one model for Care Circle and the snapshot link. Phase 0 (2–3 days) stops patients messaging into threads nobody can read; the rest waits on the open questions in §10. The sharing model was amended the same day for deletion exceptions, additions after sharing stops, and leavers — all pending legal review where they touch law.
+   - **Sharing infrastructure v2 — build, then re-vet at least three times before release.** Plan:
+     [`plans/sharing-infrastructure-v2.md`](./plans/sharing-infrastructure-v2.md). Phase 0 (no
+     messages into the void) is done. The founder decided the open questions on 29 September (§10
+     there). To build: the **relationship apart from the data grant** (stop sharing and end care as
+     two acts; a clinician-side pause; messaging and delivery without live data); clinician
+     documents still filed straight to the Vault, now with a **notification on receipt** and a
+     **named origin tag** ("From Dr X · St Elsewhere"); the **snapshot link opening with no account
+     and never refused over another OneCare session**; **hospital and
+     practice alert rules**; hospital thread reads by governance roles, logged and disclosed; and
+     in-app viewing for every document format (Word, HEIC, message attachments and clinicians'
+     shared documents are the gaps).
+   - **Private tag for sensitive conversations — urgent, review before building.** Mental health,
+     sexual health, HIV and addiction threads restricted to the treating professionals the patient
+     adds (compare US 42 CFR Part 2). Review with clinicians, governance and legal first. See
+     sharing model §8.3.
+   - **Revisit deletion end to end — urgent.** The 15-day recoverable delete, batched notices to an
+     institution's responsible officials, no cascade into the other party's copy, and erasure
+     requests routed to the controller are decided in draft (sharing model §7, pending review) and
+     not built. Removing the `ON DELETE CASCADE` on the share tables comes first.
+   - **A non-clinical member can file a "From your clinician" document** (from definitions, not
+     exercised): the clinician document INSERT policy and its storage twin still use the role-blind
+     `institution_has_patient_access`. Close with sharing v2 phase 1 (G11 there).
+   - **Message history:** the 90-day wind-down for a private clinician is being removed (separate
+     work); history is kept until account closure or author deletion.
    - **Realtime is dead in production.** The websocket answers 500 at handshake on every page, so anything live is silently stale. Check the hosted project's Realtime settings in the Supabase dashboard first; it is probably configuration. The typing indicator now uses a private channel and is unverified live until this is fixed.
    - **Decisions needed:**
      - Should an inactive practice (`practices.is_active = false`, set only by the platform admin's Active switch) lose staff access? Today view-all staff keep reading; only assigned staff lose it. The workspace switcher follows the database as it stands: an inactive practice is offered, marked Inactive, and its capabilities are whatever `has_practice_capability` grants. If this decision goes the other way, the switcher and the capability hook have to change with it.
@@ -387,9 +414,26 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    the pure matcher, or generating a larger static table at build time from
    [`data/international-drug-names.csv`](../data/international-drug-names.csv).
 16. **WhatsApp transport** behind the existing provider interface.
+17. **Close my account (clinician or patient).** Promised in the Terms and not built. Closing
+   disables sign-in, keeps the name for attribution on what the person wrote, and offers the full
+   export first; the foreign keys are fixed so the database never decides it by accident
+   (`plans/clinician-offboarding.md` §5.7, sharing model §5).
+18. **Offboarding, the remainder — lower priority.** Phases 1–3 are built (leavers lose everything
+   at that hospital; open work frozen or flagged and routed; hospital threads continue with the care
+   team). Left: freeze clinical work on a move to a non-clinical role (being built), a departure
+   line and forward routing in the thread, a Vault snapshot on handover, correcting a departed
+   author's signed note on behalf of the practice, EHR connections owned by the tenant. Full list in
+   [`plans/clinician-offboarding.md`](./plans/clinician-offboarding.md) §7.
+19. **Account switcher — a future iteration.** Hospital work is done in a separate account on the
+   hospital's email domain and private practice in another (decided 29 September; sharing model
+   §8.1). For now a clinician signs out and in; a switcher between their accounts comes later.
 
 ## Deferred (with reasons)
 
+- **Caregiver features — paused, and hidden in the product,** until later in the roadmap (confirmed
+  29 September 2026). A caregiver acting for a patient multiplies every open sharing question; it
+  returns as a read-only person grant with no clinical capability. See
+  [`plans/caregiver-access-system.md`](./plans/caregiver-access-system.md).
 - **QHIN** — suspended at the owner's direction (September 2026), both the live connection and the
   Network Records tab that has nothing to show without one. The reasoning is worth recording because
   it is a position rather than a postponement: QHIN exists to move records between institutions that
@@ -423,13 +467,21 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
 
 ## Guardrails
 
+The working rules that follow from [the foundational pillars](./onecare-foundations.md).
+
 - Mobile-first for patients; one primary action per screen, secondary actions behind sheets.
 - Not another EHR: plain language, calm editorial layout, no dense clinical grids.
-- Progressive disclosure: enterprise-only cards hidden for solo clinicians.
+- Progressive disclosure: enterprise-only cards hidden for independent clinicians.
+- Consent, deletion and who-can-see-what: build, then re-vet at least three times before release.
+- Don't police what isn't ours: where law or an institution's own policy governs, provide the
+  capability and the clarity, not the arbitration.
 - Roles live in `user_roles`; admin checks are server-verified only.
 - Every public table gets RLS plus explicit grants; sensitive reads go through security-definer functions.
-- Nothing is hard-deleted where there is a legal record.
-- `src/lib/pricing-constants.ts` is the single source of truth for pricing, tiers and limits.
+- Nothing is hard-deleted where there is a legal record, except by that record's controller through
+  a recoverable, announced delete (sharing model §7 — draft, pending review, not built).
+- `src/lib/pricing-constants.ts` is the single source of truth for patient pricing and hospital
+  tiers; clinician plans (Individual $99, Practice $299, Enterprise from $2,500) live in
+  `src/hooks/useClinicianSubscription.ts`.
 
 ---
 

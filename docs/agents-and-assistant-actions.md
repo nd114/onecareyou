@@ -1,5 +1,7 @@
 # Agents, and letting the assistant do things
 
+> Rooted in [OneCare's foundational pillars](./onecare-foundations.md) — pillar 9 (no medical advice) and pillar 5 (nothing written without approval).
+
 Two related pieces of work: agents that help someone get *onto* the platform,
 and an assistant that can act *inside* it. They share one piece of machinery —
 a proposal the person approves before anything happens — so they are designed

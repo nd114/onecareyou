@@ -1,5 +1,7 @@
 # IT Service Continuity & Disaster Recovery — OneCare
 
+> Rooted in [OneCare's foundational pillars](../onecare-foundations.md) — pillar 10 (protected, portable and closable).
+
 Status: **structure complete; the parts that were writeable without production
 access are now written.** The sections are the ones an auditor or an
 enterprise customer's risk team will ask for. What is left marked **TBD** is
