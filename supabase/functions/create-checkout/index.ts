@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { safeOrigin } from "../_shared/safe-origin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,6 +73,17 @@ serve(async (req) => {
     }
 
     const { priceId, isAnnual } = parseResult.data;
+    // Only the server-approved patient prices may be charged.
+    const ALLOWED_PRICES = new Set([
+      "price_1SqXUWDycAbKvlfcCanJKM3L", // premium monthly
+      "price_1SqXUlDycAbKvlfcO63bve7U", // premium annual
+    ]);
+    if (!ALLOWED_PRICES.has(priceId)) {
+      return new Response(JSON.stringify({ error: "Unknown plan" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     logStep("Request params validated", { priceId, isAnnual });
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -94,7 +106,7 @@ serve(async (req) => {
       logStep("No existing customer found, will create new");
     }
 
-    const origin = req.headers.get("origin") || "https://onecare.you";
+    const origin = safeOrigin(req);
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
