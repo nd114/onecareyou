@@ -55,7 +55,10 @@ Deno.serve(async (req) => {
     }
 
     if (body.mode === "image") {
-      const result = await extractFromImage(body.data, body.mimeType, body.intent ?? "auto");
+      const intent = ["medication", "vital", "note", "auto"].includes(body.intent as string)
+        ? (body.intent as string)
+        : "auto";
+      const result = await extractFromImage(body.data, body.mimeType, intent);
       return json(result);
     }
 
