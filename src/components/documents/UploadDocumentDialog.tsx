@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useHealthDocuments, DOCUMENT_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
+import { useHealthDocuments, FILEABLE_CATEGORIES, DocumentCategory } from '@/hooks/useHealthDocuments';
 import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
@@ -178,7 +178,7 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_CATEGORIES.map((cat) => (
+                  {FILEABLE_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
                     </SelectItem>

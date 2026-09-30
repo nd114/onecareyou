@@ -6094,6 +6094,10 @@ export type Database = {
         Args: { _folder_id: string; _new_name: string }
         Returns: undefined
       }
+      request_care_record_snapshot: {
+        Args: { _share_id: string }
+        Returns: string
+      }
       request_client_ip: { Args: never; Returns: string }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       required_withdrawal_authority: {

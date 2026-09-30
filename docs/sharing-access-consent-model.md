@@ -102,10 +102,11 @@ An institution share never overrides, replaces or weakens a private share, and v
 | Relationship ledger (`share_events`) | Append-only; shows connected / changed / paused / revoked / reconnected |
 
 Conversation snapshots are generated quarterly per relationship, plus one immediately on
-disconnection, so an ended relationship always closes with a complete record. *(As of September
-2026 only the second half is built, and only partly: the snapshot is produced in the browser when a
-patient ends a claimed private share from Care Circle, best-effort. Hospital disconnections, expiry
-and quarterly snapshots have no producer. See `plans/sharing-infrastructure-v2.md` §3.)*
+disconnection, so an ended relationship always closes with a complete record. *(Built server-side in
+`20261010110000_care_record_snapshots_server_side.sql` and the `care-record-snapshots` edge
+function: a snapshot is queued whenever a private or hospital share ends, whoever ends it, when a
+share expires, and in the first week of each quarter for live relationships with new activity. It is
+compiled in the database, filed by the worker, and cannot be deleted or edited by either party.)*
 
 ### After sharing stops: the record of care already given
 

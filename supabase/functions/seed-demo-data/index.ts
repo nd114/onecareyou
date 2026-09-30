@@ -490,7 +490,14 @@ serve(async (req) => {
       await supabaseAdmin.from("schedule_entries").delete().eq("user_id", userId);
       await supabaseAdmin.from("medications").delete().eq("user_id", userId);
       await supabaseAdmin.from("vitals").delete().eq("user_id", userId);
-      await supabaseAdmin.from("health_documents").delete().eq("user_id", userId);
+      // Care records are permanent — the database refuses to delete one, and a
+      // refused row would fail this whole statement and leave every other
+      // demo document behind to be duplicated.
+      await supabaseAdmin
+        .from("health_documents")
+        .delete()
+        .eq("user_id", userId)
+        .neq("source_context", "care_record_snapshot");
 
 
       // 3. Create medications for this patient

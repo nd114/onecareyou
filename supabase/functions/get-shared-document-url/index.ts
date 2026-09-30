@@ -146,13 +146,20 @@ Deno.serve(async (req) => {
     // Get the document file path
     const { data: doc, error: docError } = await supabaseAuth
       .from("health_documents")
-      .select("file_path, file_name, user_id, retracted_at")
+      .select("file_path, file_name, user_id, retracted_at, source_context")
       .eq("id", resolvedDocumentId)
       .single();
 
     // A retracted document is invisible under RLS; the service role has to
-    // honour that itself.
-    if (docError || !doc || doc.retracted_at) {
+    // honour that itself. So are the two kinds whole-vault access does not
+    // reach (the RLS policy "Clinicians can view whole vault when granted"):
+    // the patient's own recordings, and care records of their conversations
+    // with somebody else. Shared one at a time, the patient has chosen them.
+    const notInWholeVault = ["patient_recording", "care_record_snapshot"];
+    if (
+      docError || !doc || doc.retracted_at ||
+      (!documentShareId && notInWholeVault.includes(doc.source_context ?? ""))
+    ) {
       return new Response(JSON.stringify({ error: "Document not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

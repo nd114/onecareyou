@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Info, Loader2, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { Building2, FolderDown, Info, Loader2, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCareRecordSnapshot } from '@/hooks/useCareRecordSnapshot';
 import {
   useMyInstitutionShares,
   type InstitutionInfo,
@@ -57,6 +58,7 @@ export const HospitalShareCard = () => {
     disconnect,
     isDisconnecting,
   } = useMyInstitutionShares();
+  const { generate: careRecord } = useCareRecordSnapshot();
 
   const [code, setCode] = useState('');
   const [found, setFound] = useState<InstitutionInfo | null>(null);
@@ -337,7 +339,19 @@ export const HospitalShareCard = () => {
                         · records preserved
                       </p>
                     </div>
-                    <Badge variant="secondary">Ended</Badge>
+                    <span className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-xs sm:px-3"
+                        disabled={careRecord.isPending && careRecord.variables?.shareId === share.id}
+                        onClick={() => careRecord.mutate({ shareId: share.id })}
+                      >
+                        <FolderDown className="h-3.5 w-3.5 sm:mr-1.5" />
+                        <span className="hidden sm:inline">Save record</span>
+                      </Button>
+                      <Badge variant="secondary">Ended</Badge>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -366,8 +380,9 @@ export const HospitalShareCard = () => {
               and that no further updates will reach them, and alert rules that can no longer see
               your readings are archived. Your messages with them are part of your medical record, so
               the clinicians who were looking after you there, and the hospital&apos;s administrators, can
-              still read them; nobody can send new ones. Everything already in your record stays
-              yours, and you can share again later.
+              still read them; nobody can send new ones. A permanent care record of your messages,
+              guidance and documents with them is filed in your Health Vault. Everything already in your
+              record stays yours, and you can share again later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

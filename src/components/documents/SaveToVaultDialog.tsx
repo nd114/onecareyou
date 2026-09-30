@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  DOCUMENT_CATEGORIES,
+  FILEABLE_CATEGORIES,
   useHealthDocuments,
   type DocumentCategory,
 } from "@/hooks/useHealthDocuments";
@@ -111,7 +111,7 @@ export function SaveToVaultDialog({
             <Select value={category} onValueChange={(v) => setCategory(v as DocumentCategory)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {DOCUMENT_CATEGORIES.map((c) => (
+                {FILEABLE_CATEGORIES.map((c) => (
                   <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                 ))}
               </SelectContent>

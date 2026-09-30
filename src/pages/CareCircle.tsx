@@ -74,7 +74,7 @@ const CareCircle = () => {
   } | null>(null);
   const { shares, isLoading, createShare, revokeShare, reshare } = useProviderShares();
   const { data: shareEvents = [] } = useShareEvents();
-  const { generate: generateCareRecord } = useCareRecordSnapshot();
+  const { generate: generateCareRecord, fileQueued: fileQueuedCareRecords } = useCareRecordSnapshot();
   // The hospital care-team card renders nothing until a hospital has
   // actually put someone on the record, so the sentence below must not
   // promise a list that is not there.
@@ -122,22 +122,11 @@ const CareCircle = () => {
     });
   };
 
-  const handleRevokeAccess = async (id: string) => {
-    const share = shares.find((s) => s.id === id);
-    // Close the relationship with a complete, immutable record before access ends.
-    if (share?.clinician_user_id) {
-      try {
-        await generateCareRecord.mutateAsync({
-          clinicianUserId: share.clinician_user_id,
-          clinicianLabel: share.display_name,
-          reason: 'connection_ended',
-          silent: true,
-        });
-      } catch {
-        /* snapshotting must never block ending access */
-      }
-    }
-    revokeShare.mutate(id);
+  const handleRevokeAccess = (id: string) => {
+    // Ending the share is what queues its care record, in the database, so the
+    // record does not depend on this tab staying open. Once it has ended, ask
+    // the worker to file it now rather than on the next hourly run.
+    revokeShare.mutate(id, { onSuccess: () => fileQueuedCareRecords() });
   };
 
   const copyShareLink = (inviteCode: string) => {
@@ -485,13 +474,7 @@ const CareCircle = () => {
                                   generateCareRecord.variables?.shareId === share.id) ||
                                 !share.clinician_user_id
                               }
-                              onSelect={() =>
-                                generateCareRecord.mutate({
-                                  shareId: share.id,
-                                  clinicianUserId: share.clinician_user_id,
-                                  clinicianLabel: share.display_name,
-                                })
-                              }
+                              onSelect={() => generateCareRecord.mutate({ shareId: share.id })}
                             >
                               <FolderDown className="mr-2 h-4 w-4" />
                               Save record to Vault
@@ -613,13 +596,7 @@ const CareCircle = () => {
                               generateCareRecord.variables?.shareId === share.id) ||
                             !share.clinician_user_id
                           }
-                          onClick={() =>
-                            generateCareRecord.mutate({
-                              shareId: share.id,
-                              clinicianUserId: share.clinician_user_id,
-                              clinicianLabel: share.display_name,
-                            })
-                          }
+                          onClick={() => generateCareRecord.mutate({ shareId: share.id })}
                         >
                           <FolderDown className="h-3.5 w-3.5 sm:mr-1.5" />
                           <span className="hidden sm:inline">Save record</span>

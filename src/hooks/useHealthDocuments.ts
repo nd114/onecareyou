@@ -36,6 +36,13 @@ export const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string; colo
   { value: 'other', label: 'Other', color: 'bg-muted text-muted-foreground' },
 ];
 
+/**
+ * The categories somebody can choose when filing or editing a document.
+ * Care records are filed only by OneCare and the database refuses a client
+ * that puts anything else under that label, so it is not offered.
+ */
+export const FILEABLE_CATEGORIES = DOCUMENT_CATEGORIES.filter((c) => c.value !== 'care_record');
+
 export interface HealthDocument {
   id: string;
   user_id: string;

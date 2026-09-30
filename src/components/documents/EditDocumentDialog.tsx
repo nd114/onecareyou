@@ -97,7 +97,11 @@ export function EditDocumentDialog({
             <Select value={category} onValueChange={(v) => setCategory(v as DocumentCategory)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {DOCUMENT_CATEGORIES.map((c) => (
+                {/* An older upload may already carry the care-record label and
+                    keeps it; nothing new can be given it. */}
+                {DOCUMENT_CATEGORIES.filter(
+                  (c) => c.value !== 'care_record' || doc.category === 'care_record',
+                ).map((c) => (
                   <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                 ))}
               </SelectContent>

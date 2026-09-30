@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { fileQueuedCareRecords } from '@/hooks/useCareRecordSnapshot';
 
 export interface InstitutionInfo {
   id: string;
@@ -135,6 +136,11 @@ export function useMyInstitutionShares() {
     },
     onSuccess: () => {
       toast.success('Disconnected. Your history is preserved.');
+      // Ending the share queued its care record in the database; file it now
+      // rather than on the next hourly run.
+      void fileQueuedCareRecords().then(() =>
+        queryClient.invalidateQueries({ queryKey: ['health-documents'] }),
+      );
       queryClient.invalidateQueries({ queryKey: ['my-institution-shares'] });
       queryClient.invalidateQueries({ queryKey: ['institution-assigned-patients'] });
       queryClient.invalidateQueries({ queryKey: ['clinician-patients-v3'] });

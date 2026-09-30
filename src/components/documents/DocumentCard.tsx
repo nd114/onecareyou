@@ -58,8 +58,11 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   // The page decides whether archived documents are shown at all; the card
   // only has to offer the right action.
   const isArchived = Boolean(doc.archived_at);
-  // Care records are legal artefacts: preserved, never deletable by either party.
-  const isCareRecord = doc.source_context === CARE_RECORD_SOURCE || doc.category === 'care_record';
+  // Care records are legal artefacts: preserved, never deletable or editable by
+  // either party. source_context is the mark the database enforces
+  // (guard_health_document_record); the category alone is only a label an
+  // older upload may carry.
+  const isCareRecord = doc.source_context === CARE_RECORD_SOURCE;
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
   const { allShareCounts } = useDocumentShares();
   const [downloading, setDownloading] = useState(false);
@@ -202,15 +205,17 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowViewer(true)} title="View">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setShowEdit(true)}
-                    title="Edit details"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  {!isCareRecord && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setShowEdit(true)}
+                      title="Edit details"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
 
 
                   <DropdownMenu>
