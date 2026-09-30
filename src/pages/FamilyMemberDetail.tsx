@@ -8,7 +8,8 @@ import {
   Calendar, 
   Heart,
   Edit,
-  Trash2,
+  Archive,
+  ArchiveRestore,
   User,
   Droplets,
   Ruler,
@@ -22,9 +23,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useFamilyMembers } from '@/hooks/useFamilyMembers';
-import { useMedications } from '@/hooks/useMedications';
-import { useVitals } from '@/hooks/useVitals';
+import type { Medication } from '@/hooks/useMedications';
+import type { Tables } from '@/integrations/supabase/types';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -45,19 +49,56 @@ import { formatDay } from '@/lib/format-date';
 const FamilyMemberDetail = () => {
   const { memberId } = useParams();
   const navigate = useNavigate();
-  const { familyMembers, isLoading, deleteMember } = useFamilyMembers();
-  const { medications } = useMedications();
-  const { vitals } = useVitals();
+  const { user } = useAuth();
+  const { familyMembers, isLoading, archiveMember, restoreMember } = useFamilyMembers();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const member = familyMembers.find(m => m.id === memberId);
 
-  const handleDelete = () => {
+  // This person's own rows, read by their id. useMedications and useVitals
+  // follow whoever is selected in the header, so this page showed nothing
+  // unless the member happened to be selected, and an archived member (who
+  // can never be selected) would have had no history to view at all.
+  const { data: medications = [] } = useQuery({
+    queryKey: ['family-member-medications', user?.id, memberId],
+    enabled: !!user && !!memberId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('medications')
+        .select('*')
+        .eq('user_id', user!.id)
+        .eq('family_member_id', memberId!)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as Medication[];
+    },
+  });
+  const { data: vitals = [] } = useQuery({
+    queryKey: ['family-member-vitals', user?.id, memberId],
+    enabled: !!user && !!memberId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vitals')
+        .select('*')
+        .eq('user_id', user!.id)
+        .eq('family_member_id', memberId!)
+        .order('recorded_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as Tables<'vitals'>[];
+    },
+  });
+
+  const handleArchive = () => {
     if (memberId) {
-      deleteMember.mutate(memberId, {
+      archiveMember.mutate(memberId, {
         onSuccess: () => navigate('/family'),
       });
     }
+  };
+
+  const handleRestore = () => {
+    if (memberId) restoreMember.mutate(memberId);
   };
 
   if (isLoading) {
@@ -140,39 +181,52 @@ const FamilyMemberDetail = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
+                  {member.archived_at ? (
+                    <Button variant="outline" onClick={handleRestore} disabled={restoreMember.isPending}>
+                      <ArchiveRestore className="h-4 w-4 mr-2" />
+                      Restore
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Family Member</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently remove {member.name} and all their associated health data 
-                          including medications, vitals, and schedules. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          onClick={handleDelete}
-                        >
-                          Remove
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" aria-label={`Archive ${member.name}`}>
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Archive {member.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {member.name} will no longer be offered when you record something. Nothing
+                              is deleted: their medications, readings, dose history and documents are kept
+                              here, and you can restore them at any time.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleArchive}>
+                              Archive
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
+          {member.archived_at && (
+            <p className="mt-3 text-sm text-muted-foreground" role="status">
+              Archived on {formatDay(member.archived_at)}. {member.name} is not offered when you record
+              something; everything recorded for them is kept below. Restore them to record for them again.
+            </p>
+          )}
         </motion.div>
 
         {/* Health Profile Summary */}

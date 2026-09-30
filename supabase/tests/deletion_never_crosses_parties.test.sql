@@ -401,8 +401,8 @@ BEGIN
      -- Children of a patient's own rows.
      'schedule_entries.medication_id', 'medication_photos.medication_id', 'ehr_export_queue.vital_id',
      'document_shares.document_id', 'document_shares.provider_share_id',
-     'medications.family_member_id', 'vitals.family_member_id', 'schedule_entries.family_member_id',
-     'caregiver_access.family_member_id', 'care_alert_settings.family_member_id',
+     -- (Keys to family_members are RESTRICT since 20261010150000: removing a
+     -- family member archives, and never takes their history with it.)
      'care_alert_logs.setting_id', 'ai_messages.conversation_id',
      -- Children of a clinician's own rows.
      'clinician_guidance_notifications.guidance_id', 'ehr_sync_logs.connection_id',

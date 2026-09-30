@@ -17,7 +17,9 @@ export function FamilyMemberSelector({
   label = 'For whom?',
   includeMyself = true,
 }: FamilyMemberSelectorProps) {
-  const { familyMembers, isLoading } = useFamilyMembers();
+  // Archived members are never someone to record for; their history is
+  // reached from the family dashboard instead.
+  const { activeMembers: familyMembers, isLoading } = useFamilyMembers();
 
   // Gated here rather than at each call site so no future caller can reintroduce
   // the picker by accident. With it hidden, familyMemberId stays null and every
@@ -44,7 +46,7 @@ export function FamilyMemberSelector({
           {includeMyself && (
             <SelectItem value="myself">Myself</SelectItem>
           )}
-          {familyMembers.filter(m => m.is_active).map((member) => (
+          {familyMembers.map((member) => (
             <SelectItem key={member.id} value={member.id}>
               <span className="flex items-center gap-2">
                 <span

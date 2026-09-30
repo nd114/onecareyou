@@ -1,6 +1,7 @@
 # Family, caregivers and next of kin
 
-> **Proposed, not started — 29 September 2026.** Written at the founder's request
+> **Phase 0 built (F1–F4), 30 September 2026; phases 1–5 proposed, not started.**
+> See §8 for what phase 0 did and what it left. Written at the founder's request
 > to design three things that had been run together: managing the record of a
 > dependent (a child, or a parent who does not use OneCare), helping care for
 > someone who holds their own record, and naming a next of kin. Family-member
@@ -11,7 +12,7 @@
 > in §9 are answered. Phase 0 depends on none of them and closes defects that
 > exist in the database today.
 >
-> This document describes an intention, not current work.
+> Apart from phase 0, this document describes an intention, not current work.
 
 Companion to `docs/sharing-access-consent-model.md` (canonical),
 `docs/plans/sharing-infrastructure-v2.md` (care relationships, data grants,
@@ -93,6 +94,11 @@ why the defects below exist now and not only when the flag is turned back on.
 
 F1–F4 are dormant only as far as no family rows exist. Rows created before
 August 2026 may; phase 0 counts them first.
+
+**Status, 30 September 2026:** F1–F4 are closed by
+`20261010150000_family_rows_stay_the_family_members.sql` and the edge-function
+changes beside it (§8, phase 0). F5 is being closed separately in the pricing
+copy. The table above is kept as the record of what was found.
 
 ### 2.3 Caregivers
 
@@ -542,6 +548,46 @@ decline, withdrawal or removal as in §7.3.
 | **3. Dependents as their own records** | Credential-less dependent accounts (after the Auth check in question 1); guardian role; "People I manage"; sharing on behalf; subscription coverage by guardian with a DB cap; migration of existing family rows onto dependent ids (counted in phase 0, owners told); `FAMILY_HEALTH_ENABLED` back on; assistant targeting falls out of the subject id | **L**, 2–3 weeks | §4.1–4.3, 4.7–4.9 |
 | **4. Claiming and transitions** | Claim invite and screen; majority lapse by market table; adult claim ends guardianship; multiple guardians; frozen dependents | **M**, about 1.5 weeks | §4.4–4.6 |
 | **5. Emergency and death** | Emergency designation; snapshot issued by a designated person; death report with patient alert and support review; post-death export. Gated on counsel for question 10 | **M**, about 1.5 weeks | P4 path, §5 death path |
+
+**Phase 0 status (30 September 2026).** Built, for F1–F4, in
+`20261010150000_family_rows_stay_the_family_members.sql` with the suite
+`supabase/tests/family_rows_stay_the_family_members.test.sql`, each assertion
+watched failing against the unfixed schema:
+
+- *Removing is archiving.* `family_members.archived_at` (not `is_active`, which
+  is now derived from it by trigger so the pickers' filter cannot disagree). No
+  DELETE policy; DELETE and TRUNCATE revoked from clients. The family dashboard
+  lists archived members, and the member page shows their medications and
+  readings (read by the member's id, so it no longer depends on who is selected
+  in the header) with Restore.
+- *Keys.* All eight keys to `family_members` are ON DELETE RESTRICT. On the
+  seven tables with `user_id` the key is composite, `(family_member_id,
+  user_id) → (id, owner_user_id)`, so a row can be tagged only with its own
+  account's family member. A dose's tag now follows its medication by trigger
+  (the client wrote it from the header selection).
+- *The parent's share covers the parent.* Clinician and institution read
+  policies on `vitals`, `medications`, `schedule_entries` and
+  `health_documents` (whole-vault and per-document), and the two storage
+  policies behind shared files, exclude family rows; the clinician write
+  policies (a reading, a document, a proposal on a medication) refuse them. The
+  same filter in `get-shared-patient-data`, `get-shared-document-url`,
+  `check-vital-alerts`, `clinician-ai-chat` and `ehr-export`, which read with
+  the service role. A patient cannot share a family member's document one at
+  a time. Found on the way and closed: the per-document read never checked that
+  the document belonged to the sharing patient, and `document_shares` let a
+  patient point a share at another patient's document id.
+- *Alerts.* `care_alert_missed_doses(setting)` counts that setting's person's
+  doses only; `check-care-alerts` calls it, names the family member rather than
+  the account holder, and skips archived members.
+
+Left for later phases or other work: F5 (pricing copy, separate change);
+correcting sharing model §5 and the roadmap's "caregiver delegated access"
+claim; the patient's own export (`RecordExportSection`) and
+`send-vitals-report` take whatever the header selection shows, which is always
+the account holder while `FAMILY_HEALTH_ENABLED` is off, and must read by
+subject before the flag is turned back on (phase 3). Rows found tagged with
+another account's family member leave that table's key NOT VALID with a
+notice; none exist in the replayed history.
 
 **Recommended first: phase 0, then phase 1.** Phase 0 because it closes
 defects in the live database whatever is decided about the rest. Phase 1

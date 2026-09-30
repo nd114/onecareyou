@@ -220,11 +220,15 @@ const handler = async (req: Request): Promise<Response> => {
       );
       if (!stillShared) continue;
 
-      // Fetch recent vitals for this patient and vital type
+      // Fetch recent vitals for this patient and vital type. The patient's
+      // own readings only: one a parent recorded for a child carries the
+      // parent's user_id and a family_member_id, and would otherwise raise
+      // the parent's clinician an alert about somebody they do not treat.
       const { data: vitals, error: vitalsError } = await supabase
         .from("vitals")
         .select("*")
         .eq("user_id", rule.patient_user_id)
+        .is("family_member_id", null)
         .eq("type", rule.vital_type)
         .gte("recorded_at", oneHourAgo)
         .order("recorded_at", { ascending: false });

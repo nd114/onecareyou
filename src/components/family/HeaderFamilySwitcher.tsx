@@ -17,8 +17,10 @@ interface Props {
 }
 
 export function HeaderFamilySwitcher({ compact = false }: Props) {
-  const { familyMembers, activeMemberId, activeMember, setActiveMemberId, isLoading } =
+  const { familyMembers: allMembers, activeMemberId, activeMember, setActiveMemberId, isLoading } =
     useActiveFamilyMember();
+  // Archived members are not offered; their history stays on the family dashboard.
+  const familyMembers = allMembers.filter((m) => !m.archived_at);
 
   // Hide entirely when no family members exist — keeps header clean for solo users
   if (isLoading || familyMembers.length === 0) return null;
@@ -64,7 +66,6 @@ export function HeaderFamilySwitcher({ compact = false }: Props) {
           {activeMemberId === null && <Check className="h-4 w-4 text-primary" />}
         </DropdownMenuItem>
         {familyMembers
-          .filter((m) => m.is_active)
           .map((m) => (
             <DropdownMenuItem
               key={m.id}

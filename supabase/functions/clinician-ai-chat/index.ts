@@ -338,6 +338,10 @@ Deno.serve(async (req) => {
               .from("vitals")
               .select("user_id, type, value, secondary_value, unit, recorded_at")
               .in("user_id", vitalsPatientIds)
+              // The patient's own readings: a child's, recorded by a parent
+              // under the parent's user_id, would reach the model labelled
+              // with the parent's name.
+              .is("family_member_id", null)
               .order("recorded_at", { ascending: false })
               .limit(60)
           : Promise.resolve({ data: [] as any[] }),

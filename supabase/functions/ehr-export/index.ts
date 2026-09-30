@@ -261,6 +261,22 @@ serve(async (req) => {
             continue;
           }
 
+          // A reading a parent recorded for a child is stored under the
+          // parent's user_id. Exported, it would be filed in the EHR against
+          // the parent's FHIR patient id: somebody else's reading in the
+          // parent's hospital chart. No share covers it, so it never goes.
+          if (vital.family_member_id) {
+            await supabaseClient
+              .from('ehr_export_queue')
+              .update({
+                status: 'skipped',
+                error_message: 'Reading belongs to a family member, not the patient who shared',
+                last_attempt_at: new Date().toISOString()
+              })
+              .eq('id', item.id);
+            continue;
+          }
+
           // Get the connection details
           const { data: connection, error: connError } = await supabaseClient
             .from('ehr_connections')
@@ -392,11 +408,13 @@ serve(async (req) => {
 
           const { data: vitalRow } = await supabaseClient
             .from('vitals')
-            .select('id, user_id')
+            .select('id, user_id, family_member_id')
             .eq('id', vitalId)
             .maybeSingle();
 
-          if (!vitalRow) {
+          // A family member's reading answers as missing, the same as one the
+          // caller cannot see: the patient's share does not cover it.
+          if (!vitalRow || vitalRow.family_member_id) {
             return new Response(JSON.stringify({ error: "Vital not found" }), {
               status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });

@@ -20,6 +20,7 @@ const esc = (s: string) =>
 interface CareAlertSetting {
   id: string;
   user_id: string;
+  family_member_id: string | null;
   alert_recipient_email: string;
   alert_recipient_name: string;
   missed_dose_threshold: number;
@@ -137,40 +138,70 @@ serve(async (req) => {
           }
         }
 
-        // Get missed doses for this user today
-        const { data: missedEntries, error: entriesError } = await supabase
-          .from('schedule_entries')
-          .select('id, scheduled_time, medication:medications(name)')
-          .eq('user_id', setting.user_id)
-          .eq('status', 'pending')
-          .lt('scheduled_time', new Date().toISOString())
-          .gte('scheduled_time', today.toISOString());
+        // A setting for a family member is about that person. Their doses are
+        // stored under the account holder's user_id, so this counted every
+        // pending dose on the account: the parent's contact was told the
+        // parent had missed the child's doses, and the reverse. An archived
+        // member is off the owner's screens, so an alert about them is one
+        // the owner could no longer see the cause of or switch off there.
+        let subjectName: string | null = null;
+        if (setting.family_member_id) {
+          const { data: member, error: memberError } = await supabase
+            .from('family_members')
+            .select('name, archived_at')
+            .eq('id', setting.family_member_id)
+            .maybeSingle();
+          if (memberError || !member) {
+            console.error(`Family member for setting ${setting.id} not found`, memberError);
+            continue;
+          }
+          if (member.archived_at) {
+            console.log(`Setting ${setting.id} is for an archived family member; skipped`);
+            continue;
+          }
+          subjectName = member.name;
+        }
+
+        // Missed today: pending and already due. care_alert_missed_doses is
+        // the one definition of whose doses a setting counts.
+        const { data: missedEntries, error: entriesError } = await supabase.rpc(
+          'care_alert_missed_doses',
+          {
+            _setting_id: setting.id,
+            _from: today.toISOString(),
+            _until: new Date().toISOString(),
+          },
+        );
 
         if (entriesError) {
-          console.error(`Error fetching entries for user ${setting.user_id}:`, entriesError);
+          console.error(`Error fetching entries for setting ${setting.id}:`, entriesError);
           continue;
         }
 
         const missedCount = missedEntries?.length || 0;
-        console.log(`User ${setting.user_id} has ${missedCount} missed doses today`);
+        console.log(`Setting ${setting.id} has ${missedCount} missed doses today`);
 
         // Check if threshold is met
         if (missedCount >= setting.missed_dose_threshold) {
-          // Get user profile for name
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('name, email')
-            .eq('user_id', setting.user_id)
-            .single();
+          // The person the doses are for: the family member, or the account
+          // holder for their own setting.
+          if (subjectName === null) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('name, email')
+              .eq('user_id', setting.user_id)
+              .single();
+            subjectName = profile?.name ?? null;
+          }
 
-          const userName = profile?.name || 'Your loved one';
+          const userName = subjectName || 'Your loved one';
           // First name only in the email, and no medication names at all: the
           // recipient address was typed by the patient and never verified, so
           // a typo sends this to a stranger — and a list of drug names says
           // what someone is being treated for. The care contact can call.
           const firstName = esc(userName.trim().split(/\s+/)[0] || 'Your loved one');
-          const missedMeds = missedEntries
-            ?.map(e => (e.medication as any)?.name)
+          const missedMeds = (missedEntries as { medication_name: string | null }[] | null)
+            ?.map(e => e.medication_name)
             .filter(Boolean)
             .slice(0, 5)
             .join(', ');

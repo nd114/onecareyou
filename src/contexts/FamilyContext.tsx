@@ -39,10 +39,11 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id]);
 
-  // Drop stale id if member no longer exists
+  // Drop stale id if member no longer exists or has been archived: new
+  // entries must not keep going to somebody the owner has removed.
   useEffect(() => {
     if (!activeMemberId || isLoading) return;
-    const exists = familyMembers.some((m) => m.id === activeMemberId && m.is_active);
+    const exists = familyMembers.some((m) => m.id === activeMemberId && !m.archived_at);
     if (!exists) {
       setActiveMemberIdState(null);
       if (typeof window !== 'undefined') window.localStorage.removeItem(STORAGE_KEY);

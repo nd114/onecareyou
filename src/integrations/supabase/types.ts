@@ -1896,6 +1896,7 @@ export type Database = {
       }
       family_members: {
         Row: {
+          archived_at: string | null
           allergies: Json | null
           avatar_color: string | null
           blood_type: string | null
@@ -1912,6 +1913,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           allergies?: Json | null
           avatar_color?: string | null
           blood_type?: string | null
@@ -1928,6 +1930,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           allergies?: Json | null
           avatar_color?: string | null
           blood_type?: string | null

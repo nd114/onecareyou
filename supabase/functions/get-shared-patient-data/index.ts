@@ -243,12 +243,20 @@ Deno.serve(async (req) => {
       result.patientName = profile?.name || 'Patient';
     }
 
+    // The share covers the patient who made it, and nobody else. Readings,
+    // medicines and doses a parent recorded for a child are stored under the
+    // parent's user_id with a family_member_id tag; selecting by user_id alone
+    // handed the child's record to the parent's clinician as if it were the
+    // parent's. The service role bypasses RLS, so this filter is the only rule
+    // on these three reads: .is('family_member_id', null) on each of them.
+
     // Fetch vitals if permitted
     if (shareGrants(permissions, 'vitals')) {
       const { data: vitals } = await supabaseAdmin
         .from('vitals')
         .select('*')
         .eq('user_id', userId)
+        .is('family_member_id', null)
         .order('recorded_at', { ascending: false })
         .limit(200);
       
@@ -261,6 +269,7 @@ Deno.serve(async (req) => {
         .from('medications')
         .select('*')
         .eq('user_id', userId)
+        .is('family_member_id', null)
         .eq('is_active', true)
         .order('name');
       
@@ -276,6 +285,7 @@ Deno.serve(async (req) => {
         .from('schedule_entries')
         .select('*, medications(name, dosage)')
         .eq('user_id', userId)
+        .is('family_member_id', null)
         .gte('scheduled_time', thirtyDaysAgo.toISOString())
         .order('scheduled_time', { ascending: false });
       

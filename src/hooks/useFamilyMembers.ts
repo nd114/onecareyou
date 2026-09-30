@@ -17,7 +17,10 @@ export interface FamilyMember {
   allergies: string[];
   health_conditions: string[];
   avatar_color: string;
+  /** Derived from archived_at by the database; true while the member is offered in pickers. */
   is_active: boolean;
+  /** Set when the owner removed this person. Their history is kept and they can be restored. */
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -77,12 +80,17 @@ export const useFamilyMembers = () => {
     enabled: !!user,
   });
 
+  // Archived members keep their history and stay reachable from the family
+  // dashboard to view or restore, but are never offered as someone to record for.
+  const activeMembers = familyMembers.filter((m) => !m.archived_at);
+  const archivedMembers = familyMembers.filter((m) => !!m.archived_at);
+
   const createMember = useMutation({
     mutationFn: async (data: CreateFamilyMemberData) => {
       if (!user) throw new Error('Not authenticated');
-      
+
       // Check limit
-      if (familyMembers.length >= MAX_FAMILY_MEMBERS) {
+      if (activeMembers.length >= MAX_FAMILY_MEMBERS) {
         throw new Error(`Maximum of ${MAX_FAMILY_MEMBERS} family members allowed`);
       }
 
@@ -133,7 +141,6 @@ export const useFamilyMembers = () => {
           allergies: data.allergies,
           health_conditions: data.health_conditions,
           avatar_color: data.avatar_color,
-          is_active: data.is_active,
         })
         .eq('id', id)
         .eq('owner_user_id', user.id)
@@ -152,39 +159,61 @@ export const useFamilyMembers = () => {
     },
   });
 
-  const deleteMember = useMutation({
-    mutationFn: async (id: string) => {
-      if (!user) throw new Error('Not authenticated');
+  // Removing a family member archives them. This used to delete the row, and
+  // the database then deleted their medications, readings and dose history
+  // with it and moved their documents, folders and notes into the owner's own
+  // record. The database now refuses the delete; archiving hides them from the
+  // pickers and keeps everything.
+  const setArchived = async (id: string, archived: boolean) => {
+    if (!user) throw new Error('Not authenticated');
+    const { data, error } = await supabase
+      .from('family_members')
+      .update({ archived_at: archived ? new Date().toISOString() : null })
+      .eq('id', id)
+      .eq('owner_user_id', user.id)
+      .select('id');
+    if (error) throw error;
+    // A zero-row update is a clean success from PostgREST; say it did nothing.
+    if (!data || data.length === 0) throw new Error('That family member could not be updated');
+  };
 
-      const { error } = await supabase
-        .from('family_members')
-        .delete()
-        .eq('id', id)
-        .eq('owner_user_id', user.id);
-
-      if (error) throw error;
-    },
+  const archiveMember = useMutation({
+    mutationFn: (id: string) => setArchived(id, true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['family-members'] });
       setActiveFamilyMember(null);
-      toast.success('Family member removed');
+      toast.success('Family member archived. Their history is kept.');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to remove family member');
+      toast.error(error.message || 'Failed to archive family member');
     },
   });
 
-  const canAddMore = familyMembers.length < MAX_FAMILY_MEMBERS;
+  const restoreMember = useMutation({
+    mutationFn: (id: string) => setArchived(id, false),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family-members'] });
+      toast.success('Family member restored');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to restore family member');
+    },
+  });
+
+  const canAddMore = activeMembers.length < MAX_FAMILY_MEMBERS;
 
   return {
     familyMembers,
+    activeMembers,
+    archivedMembers,
     isLoading,
     error,
     activeFamilyMember,
     setActiveFamilyMember,
     createMember,
     updateMember,
-    deleteMember,
+    archiveMember,
+    restoreMember,
     canAddMore,
     maxMembers: MAX_FAMILY_MEMBERS,
     avatarColors: AVATAR_COLORS,

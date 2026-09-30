@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     // Get the document file path
     const { data: doc, error: docError } = await supabaseAuth
       .from("health_documents")
-      .select("file_path, file_name, user_id, retracted_at, source_context")
+      .select("file_path, file_name, user_id, retracted_at, archived_at, source_context, family_member_id")
       .eq("id", resolvedDocumentId)
       .single();
 
@@ -155,10 +155,17 @@ Deno.serve(async (req) => {
     // reach (the RLS policy "Clinicians can view whole vault when granted"):
     // the patient's own recordings, and care records of their conversations
     // with somebody else. Shared one at a time, the patient has chosen them.
+    // Whole-vault access also stops at a document the patient archived, as the
+    // policy does.
+    //
+    // On both routes, a document filed for a family member (family_member_id
+    // set, user_id the account holder's) is not the patient's record and no
+    // share of theirs covers it: it would have reached the parent's clinician
+    // as the parent's own letter.
     const notInWholeVault = ["patient_recording", "care_record_snapshot"];
     if (
-      docError || !doc || doc.retracted_at ||
-      (!documentShareId && notInWholeVault.includes(doc.source_context ?? ""))
+      docError || !doc || doc.retracted_at || doc.family_member_id ||
+      (!documentShareId && (doc.archived_at || notInWholeVault.includes(doc.source_context ?? "")))
     ) {
       return new Response(JSON.stringify({ error: "Document not found" }), {
         status: 404,

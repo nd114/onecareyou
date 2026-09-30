@@ -28,7 +28,10 @@ import { ageFromDateOnly } from '@/lib/date-only';
 const FamilyDashboard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { familyMembers, isLoading, canAddMore, maxMembers } = useFamilyMembers();
+  // The grid is the people you record for; archived members are listed below
+  // it, with their history kept and a way back.
+  const { activeMembers: familyMembers, archivedMembers, isLoading, canAddMore, maxMembers } =
+    useFamilyMembers();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const subscriptionTier = (profile?.subscription_tier || 'free') as string;
@@ -237,6 +240,39 @@ const FamilyDashboard = () => {
               </motion.div>
             ))}
           </div>
+        )}
+
+        {archivedMembers.length > 0 && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="text-base">Archived</CardTitle>
+              <CardDescription>
+                Not offered when you record something. Everything recorded for them is kept; open one
+                to see their history or restore them.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {archivedMembers.map((member) => (
+                <Button
+                  key={member.id}
+                  variant="ghost"
+                  className="w-full justify-between"
+                  onClick={() => navigate(`/family/${member.id}`)}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-6 w-6 rounded-full flex items-center justify-center text-white text-xs font-semibold opacity-60"
+                      style={{ backgroundColor: member.avatar_color }}
+                    >
+                      {member.name.charAt(0).toUpperCase()}
+                    </span>
+                    {member.name}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
         {/* How It Works */}
