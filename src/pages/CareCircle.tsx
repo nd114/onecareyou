@@ -60,6 +60,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { formatDay } from '@/lib/format-date';
 import { CAREGIVER_CONTACTS_PATH, CLINICIAN_VERIFICATION_NOTICE } from '@/lib/clinician-disclosure';
+import { CAREGIVERS_ENABLED } from '@/lib/features';
 
 const CareCircle = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -251,17 +252,19 @@ const CareCircle = () => {
                   </div>
                 </div>
 
-                <p className="text-xs text-muted-foreground">
-                  Inviting family or a caregiver?{' '}
-                  <Link
-                    to={CAREGIVER_CONTACTS_PATH}
-                    className="font-medium text-primary underline-offset-2 hover:underline"
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Add someone who cares for you
-                  </Link>{' '}
-                  instead — they'll hear if you miss doses, without acting as your clinician.
-                </p>
+                {CAREGIVERS_ENABLED && (
+                  <p className="text-xs text-muted-foreground">
+                    Inviting family or a caregiver?{' '}
+                    <Link
+                      to={CAREGIVER_CONTACTS_PATH}
+                      className="font-medium text-primary underline-offset-2 hover:underline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Add someone who cares for you
+                    </Link>{' '}
+                    instead — they'll hear if you miss doses, without acting as your clinician.
+                  </p>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <Button variant="outline" className="flex-1" onClick={() => setIsDialogOpen(false)}>
@@ -313,7 +316,8 @@ const CareCircle = () => {
 
         {/* Two different things to add, said apart: a clinician gets the
             invite link above; family and caregivers get alert contacts, never
-            the clinician link. */}
+            the clinician link. Caregivers are paused (features.ts). */}
+        {CAREGIVERS_ENABLED && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -340,6 +344,7 @@ const CareCircle = () => {
             </CardContent>
           </Card>
         </motion.div>
+        )}
 
         {/* Hospital / institution sharing — who the patient shares with comes
             first; the access list below is the audit view, not the headline. */}
@@ -703,7 +708,9 @@ const CareCircle = () => {
                 : 'If they have a OneCare account under the email you shared with, we will tell them that you stopped sharing and that no further updates will reach them. '}
               Everything already exchanged — messages,
               guidance and shared documents — stays on your record in the Health Vault, so you always
-              have proof of what was advised and when. You can resume sharing later.
+              have proof of what was advised and when. Your messages with them are part of your medical
+              record, so both of you can still read them; neither of you can send new ones. You can
+              resume sharing later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

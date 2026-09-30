@@ -10,43 +10,74 @@ import { cn } from '@/lib/utils';
 import { MessageThread } from '@/components/messaging/MessageThread';
 import { ConversationList, type Conversation } from '@/components/messaging/ConversationList';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMessageThreads } from '@/hooks/useMessages';
+import { useMessageHistoryPatients, useMessageThreads } from '@/hooks/useMessages';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
+
+type ClinicianConversation = Conversation & {
+  readOnly?: boolean;
+  hospitalName?: string | null;
+  /** Listed only because the record keeps the conversation, not from the panel. */
+  historyOnly?: boolean;
+};
+
+/** Said in place of the composer when a conversation has ended. */
+function endedNotice(c: ClinicianConversation): string {
+  if (c.historyOnly) {
+    return `This conversation is kept as part of ${c.name}'s medical record, so you can still read it. New messages can't be sent from here.`;
+  }
+  const where = c.hospitalName ? ` with ${c.hospitalName}` : ' with you';
+  return `${c.name} is no longer sharing${where}. Your conversation is kept as part of their medical record, so you can still read it, but new messages can't be sent.`;
+}
 
 const ClinicianMessages = () => {
   const { user } = useAuth();
   const { patients } = useClinicianPatients();
-  const [selected, setSelected] = useState<Conversation | null>(null);
+  const { data: history = [] } = useMessageHistoryPatients();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const counterparties: (Conversation & { readOnly?: boolean })[] = useMemo(
-    () =>
-      (patients || [])
-        .filter((p) => !!p.user_id)
-        .map((p) => ({
-          id: p.user_id as string,
-          name: p.patient_name || p.patient_email || 'Patient',
-          // Which hospital a patient reaches you through, when it is one —
-          // every row used to read "Patient", which said nothing.
-          caption: p.source === 'hospital' ? p.hospital_name || 'Hospital patient' : undefined,
-          // An ended connection keeps its history readable, never writable.
-          readOnly: p.share_active === false,
-        })),
-    [patients],
-  );
+  const counterparties: ClinicianConversation[] = useMemo(() => {
+    const live: ClinicianConversation[] = (patients || [])
+      .filter((p) => !!p.user_id)
+      .map((p) => ({
+        id: p.user_id as string,
+        name: p.patient_name || p.patient_email || 'Patient',
+        // Which hospital a patient reaches you through, when it is one —
+        // every row used to read "Patient", which said nothing.
+        caption: p.source === 'hospital' ? p.hospital_name || 'Hospital patient' : undefined,
+        // An ended connection keeps its history readable, never writable.
+        readOnly: p.share_active === false,
+        hospitalName: p.source === 'hospital' ? p.hospital_name : null,
+      }));
+    // Conversations the database still lets you read after the relationship
+    // ended. Listed so the history the record keeps can actually be reached.
+    const known = new Set(live.map((c) => c.id));
+    const ended: ClinicianConversation[] = history
+      .filter((h) => !known.has(h.patientUserId))
+      .map((h) => ({
+        id: h.patientUserId,
+        name: h.patientName || 'Former patient',
+        caption: h.practiceName ? `${h.practiceName} · read-only` : 'Read-only',
+        readOnly: true,
+        hospitalName: h.practiceName,
+        historyOnly: true,
+      }));
+    return [...live, ...ended];
+  }, [patients, history]);
+
+  const selected = counterparties.find((c) => c.id === selectedId) ?? null;
+  const setSelected = (c: Conversation | null) => setSelectedId(c?.id ?? null);
 
   const { data: threadSummaries = [] } = useMessageThreads('clinician');
 
   // Open on the conversation that moved most recently rather than whoever the
   // panel happens to list first.
   useEffect(() => {
-    if (selected || counterparties.length === 0) return;
+    if (selectedId || counterparties.length === 0) return;
     const newest = threadSummaries.find((t) =>
       counterparties.some((c) => c.id === t.counterpartyId),
     );
-    setSelected(
-      (newest && counterparties.find((c) => c.id === newest.counterpartyId)) || counterparties[0],
-    );
-  }, [counterparties, threadSummaries, selected]);
+    setSelectedId(newest?.counterpartyId ?? counterparties[0].id);
+  }, [counterparties, threadSummaries, selectedId]);
 
   return (
     /* Same column as the patient side: chrome takes what it needs, the
@@ -118,11 +149,16 @@ const ClinicianMessages = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col p-0 overflow-hidden">
+                {/* readOnly was worked out above and never passed, so an ended
+                    hospital relationship offered a composer the database
+                    refused. */}
                 <MessageThread
                   otherPartyUserId={selected?.id || null}
                   otherPartyName={selected?.name || ''}
                   role="clinician"
                   className="h-full min-h-0"
+                  readOnly={!!selected?.readOnly}
+                  readOnlyNotice={selected?.readOnly ? <p>{endedNotice(selected)}</p> : undefined}
                 />
               </CardContent>
             </Card>

@@ -21,9 +21,11 @@
  * every sender calls. A preference each sender remembers to check independently
  * is exactly how the old one came to be honoured by none of them.
  *
- * Imports nothing, so it runs in Deno (the senders) and in the browser test
- * suite.
+ * Imports only features.ts, which imports nothing, so it runs in Deno (the
+ * senders) and in the browser test suite.
  */
+
+import { CAREGIVERS_ENABLED } from "./features.ts";
 
 export type NotificationChannel = "email" | "push" | "in_app";
 
@@ -48,6 +50,8 @@ export interface NotificationCategory {
   mandatoryReason?: string;
   /** The code that sends it. Keeps this file honest. */
   producer: string;
+  /** A paused feature this belongs to (features.ts); hidden while it is off. */
+  feature?: "caregivers";
 }
 
 export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = [
@@ -65,6 +69,7 @@ export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = [
     audience: ["patient"],
     channels: ["email"],
     defaultEnabled: true,
+    feature: "caregivers",
     label: "Missed dose alerts to your care circle",
     description:
       "An email to the people you have named, when doses are missed. Turning this off stops those emails.",
@@ -155,8 +160,14 @@ export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = [
   },
 ] as const;
 
+/**
+ * The categories to offer this audience. A paused feature's category is left
+ * out: while nothing sends it, a switch for it would govern nothing.
+ */
 export function categoriesFor(audience: NotificationAudience): NotificationCategory[] {
-  return NOTIFICATION_CATEGORIES.filter((c) => c.audience.includes(audience));
+  return NOTIFICATION_CATEGORIES.filter(
+    (c) => c.audience.includes(audience) && (c.feature !== "caregivers" || CAREGIVERS_ENABLED),
+  );
 }
 
 export function findCategory(key: string): NotificationCategory | undefined {

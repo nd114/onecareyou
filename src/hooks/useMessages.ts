@@ -185,6 +185,40 @@ export function useMessageCounterparties() {
   });
 }
 
+export interface MessageHistoryPatient {
+  patientUserId: string;
+  patientName: string | null;
+  practiceId: string | null;
+  practiceName: string | null;
+  lastAt: string;
+}
+
+/**
+ * For a clinician: the patients whose conversations they still read. A
+ * conversation is part of the medical record and outlives the relationship
+ * (20261010100000), but the Messages screen is built from live relationships,
+ * so without this an ended thread the database keeps for them could not be
+ * reached. Names only; the row policies decide which threads these are.
+ */
+export function useMessageHistoryPatients(enabled = true) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['message-history-patients', user?.id],
+    queryFn: async (): Promise<MessageHistoryPatient[]> => {
+      const { data, error } = await supabase.rpc('my_message_history_patients');
+      if (error) throw error;
+      return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+        patientUserId: String(r.patient_user_id),
+        patientName: (r.patient_name as string) ?? null,
+        practiceId: (r.practice_id as string) ?? null,
+        practiceName: (r.practice_name as string) ?? null,
+        lastAt: String(r.last_at ?? ''),
+      }));
+    },
+    enabled: enabled && !!user?.id,
+  });
+}
+
 export interface MessageThreadSummary {
   counterpartyId: string;
   lastBody: string;

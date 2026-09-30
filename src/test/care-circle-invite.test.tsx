@@ -7,12 +7,18 @@ import { CAREGIVER_CONTACTS_PATH, CLINICIAN_VERIFICATION_NOTICE } from '@/lib/cl
  * Care Circle offered the clinician share link "for your doctor, pharmacist,
  * or caregiver". Whoever claimed it became the patient's clinician to every
  * policy: guidance, "From your clinician" documents, medication proposals,
- * alert rules. The invite is now for clinicians only, says OneCare does not
- * verify them, and sends family and caregivers to alert contacts instead.
+ * alert rules. The invite is now for clinicians only and says OneCare does not
+ * verify them.
+ *
+ * Caregivers (missed-dose alert contacts) are paused by the founder's decision
+ * behind one switch, CAREGIVERS_ENABLED. Off, nothing on the page offers to add
+ * one; on, family and caregivers are sent to alert contacts, never the
+ * clinician link.
  */
 
-const { mock } = vi.hoisted(() => ({
+const { mock, flags } = vi.hoisted(() => ({
   mock: { current: null as null | { client: unknown } },
+  flags: { caregivers: false },
 }));
 
 vi.mock('@/integrations/supabase/client', () => ({
@@ -21,7 +27,14 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+vi.mock('@/lib/features', () => ({
+  get CAREGIVERS_ENABLED() {
+    return flags.caregivers;
+  },
+}));
+
 beforeEach(() => {
+  flags.caregivers = false;
   mock.current = createSupabaseMock({ user: { id: 'patient-1', email: 'p@example.com' } });
   vi.stubGlobal('IntersectionObserver', class {
     observe() {} unobserve() {} disconnect() {} takeRecords() { return []; }
@@ -66,6 +79,11 @@ async function renderCareCircle() {
   );
 }
 
+async function openInvite() {
+  fireEvent.click(screen.getAllByRole('button', { name: /invite a clinician/i })[0]);
+  return screen.findByRole('dialog');
+}
+
 describe('Care Circle keeps clinicians and caregivers apart', () => {
   it('the disclosure is one plain sentence', () => {
     expect(CLINICIAN_VERIFICATION_NOTICE.match(/[.!?](\s|$)/g)?.length).toBe(1);
@@ -74,20 +92,46 @@ describe('Care Circle keeps clinicians and caregivers apart', () => {
 
   it('invites a clinician, not a caregiver, and says clinicians are not verified', async () => {
     await renderCareCircle();
-    fireEvent.click(screen.getAllByRole('button', { name: /invite a clinician/i })[0]);
-    const dialog = await screen.findByRole('dialog');
-
+    const dialog = await openInvite();
     expect(within(dialog).getByText('Invite a clinician')).toBeTruthy();
     expect(within(dialog).getByText(CLINICIAN_VERIFICATION_NOTICE)).toBeTruthy();
     // The link is never offered as a caregiver's.
     expect(dialog.textContent).not.toMatch(/pharmacist, or caregiver/i);
-    const toCaregivers = within(dialog).getByRole('link', { name: 'Add someone who cares for you' });
-    expect(toCaregivers.getAttribute('href')).toBe(CAREGIVER_CONTACTS_PATH);
+  });
+});
+
+describe('Caregivers are paused', () => {
+  it('ships switched off', async () => {
+    const real = await vi.importActual<typeof import('@/lib/features')>('@/lib/features');
+    expect(real.CAREGIVERS_ENABLED).toBe(false);
   });
 
-  it('offers caregivers their own way in on the page', async () => {
+  it('offers no way to add a caregiver, on the page or in the invite', async () => {
     await renderCareCircle();
-    expect(await screen.findByText('Add someone who cares for you')).toBeTruthy();
+    const dialog = await openInvite();
+    expect(within(dialog).queryByRole('link', { name: 'Add someone who cares for you' })).toBeNull();
+    expect(dialog.textContent).not.toMatch(/caregiver/i);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByText('Add someone who cares for you')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Add a caregiver' })).toBeNull();
+    // The clinician invite stays.
+    expect(screen.getAllByRole('button', { name: /invite a clinician/i }).length).toBeGreaterThan(0);
+  });
+
+  it('switched on, sends family and caregivers to alert contacts', async () => {
+    flags.caregivers = true;
+    await renderCareCircle();
+    const dialog = await openInvite();
+    const toCaregivers = within(dialog).getByRole('link', { name: 'Add someone who cares for you' });
+    expect(toCaregivers.getAttribute('href')).toBe(CAREGIVER_CONTACTS_PATH);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
     expect(screen.getByRole('link', { name: 'Add a caregiver' }).getAttribute('href')).toBe(CAREGIVER_CONTACTS_PATH);
+  });
+
+  it('keeps the missed-dose alert switch out of notification settings while paused', async () => {
+    const { categoriesFor } = await import('../../supabase/functions/_shared/notification-catalogue');
+    // The catalogue reads the shipped switch itself, so this is the real answer.
+    expect(categoriesFor('patient').map((c) => c.key)).not.toContain('care_circle_missed_doses');
+    expect(categoriesFor('patient').map((c) => c.key)).toContain('medication_reminders');
   });
 });

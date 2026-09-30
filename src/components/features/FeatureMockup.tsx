@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Check,
 } from "lucide-react";
+import { CAREGIVERS_ENABLED } from "@/lib/features";
 
 /**
  * Lightweight CSS mockups shown next to each core feature on /features.
@@ -34,12 +35,13 @@ export function CareCircleMockup() {
   const people = [
     { name: "Dr. Adler", role: "Cardiologist", initials: "DA" },
     { name: "Nurse Bell", role: "Care team", initials: "NB" },
-    { name: "Family — Rowan", role: "Caregiver", initials: "R" },
+    // Caregivers are paused (features.ts); the picture does not show them.
+    ...(CAREGIVERS_ENABLED ? [{ name: "Family — Rowan", role: "Caregiver", initials: "R" }] : []),
   ];
   return (
     <BrowserFrame>
       <p className="eyebrow text-primary mb-3">Care Circle</p>
-      <p className="font-display text-lg font-bold mb-4">Shared with 3 people</p>
+      <p className="font-display text-lg font-bold mb-4">Shared with {people.length} people</p>
       <ul className="space-y-2">
         {people.map((p) => (
           <li

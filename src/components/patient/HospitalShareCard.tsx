@@ -364,8 +364,10 @@ export const HospitalShareCard = () => {
               Their staff stop seeing your record straight away. We will tell {confirmDisconnect?.name}{' '}
               — its administrators and the clinicians looking after you — that you stopped sharing
               and that no further updates will reach them, and alert rules that can no longer see
-              your readings are archived. Everything already in your record stays yours, and you can
-              share again later.
+              your readings are archived. Your messages with them are part of your medical record, so
+              the clinicians who were looking after you there, and the hospital&apos;s administrators, can
+              still read them; nobody can send new ones. Everything already in your record stays
+              yours, and you can share again later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

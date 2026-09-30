@@ -54,6 +54,51 @@ export function parseOffboardingImpact(raw: unknown): OffboardingImpact {
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
+ * What moving a member from a clinical role to a non-clinical one hands over.
+ * The founder's decision is that this is leaving clinical work: the same
+ * freeze and routing of unfinished notes, and the end of their assignments
+ * (hand_over_departed_work, 20261010100000). It used to be one click in the
+ * role menu with no account of any of it. Tasks stay with them: a member in a
+ * non-clinical role can still hold one.
+ */
+export function describeMoveToNonClinical(impact: OffboardingImpact): string[] {
+  const lines: string[] = [];
+  const it = (n: number) => (n === 1 ? 'it' : 'them');
+
+  if (impact.openAssignments > 0) {
+    const nobody =
+      impact.patientsLeftUnassigned > 0
+        ? ` ${plural(impact.patientsLeftUnassigned, 'patient', 'patients')} will then have nobody assigned and will appear under Coverage as needing cover.`
+        : ' Each of those patients has someone else assigned as well.';
+    lines.push(`${plural(impact.openAssignments, 'patient assignment', 'patient assignments')} will end.${nobody}`);
+  }
+  if (impact.unsignedDrafts > 0) {
+    lines.push(
+      `${plural(impact.unsignedDrafts, 'unsigned note', 'unsigned notes')} will be frozen and sent to the practice's leads, who can sign ${it(impact.unsignedDrafts)} off, mark ${it(impact.unsignedDrafts)} entered in error, or archive ${it(impact.unsignedDrafts)}. Nothing is deleted.`,
+    );
+  }
+  if (impact.unfiledDictations > 0) {
+    lines.push(
+      `${plural(impact.unfiledDictations, 'unfiled dictation', 'unfiled dictations')} will be frozen the same way and sent to the leads.`,
+    );
+  }
+  if (impact.pendingProposals > 0) {
+    lines.push(
+      `${plural(impact.pendingProposals, 'medication proposal', 'medication proposals')} still waiting for a patient will be listed under Coverage, where an administrator can withdraw ${it(impact.pendingProposals)}.`,
+    );
+  }
+  if (impact.futureAppointments > 0) {
+    lines.push(
+      `${plural(impact.futureAppointments, 'future appointment', 'future appointments')} booked with them will stay booked. Rebook ${it(impact.futureAppointments)} with a clinician if the patient should be seen.`,
+    );
+  }
+  lines.push(
+    "They stay a member of the practice in their new role, but lose access to its patients' clinical records at once, including what they wrote. The practice keeps all of it, attributed to them.",
+  );
+  return lines;
+}
+
+/**
  * One sentence per thing that will change, in the order an administrator
  * cares about: people first, then clinical work, then the diary.
  *

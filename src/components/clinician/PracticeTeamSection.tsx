@@ -11,6 +11,7 @@ import { useLeavePractice, useOffboardingImpact } from '@/hooks/useOffboarding';
 import { CreatePracticeDialog } from './CreatePracticeDialog';
 import { InviteTeamMemberDialog } from './InviteTeamMemberDialog';
 import { OffboardingImpactList } from './OffboardingImpactList';
+import { isClinicalRole } from '@/lib/staff-roles';
 import { Building2, UserPlus, Users, MoreVertical, Crown, Shield, Stethoscope, User, Loader2, Mail, Search, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 
 const PAGE_SIZE = 10;
@@ -77,6 +78,7 @@ export function PracticeTeamSection() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<PracticeMember | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [roleChange, setRoleChange] = useState<{ member: PracticeMember; role: PracticeRole } | null>(null);
   // The same query the lists below render; read here to hold the button while
   // the account is loading, and to keep it held when ending would be refused.
   const removeImpact = useOffboardingImpact(currentPractice?.id, memberToRemove?.user_id);
@@ -252,7 +254,11 @@ export function PracticeTeamSection() {
                               key={role}
                               disabled={role === member.role || updateMember.isPending}
                               onClick={() =>
-                                updateMember.mutate({ member, updates: { role } })
+                                // Off the clinical side hands their clinical work over, so
+                                // it is confirmed with what it leaves behind first.
+                                isClinicalRole(member.role) && !isClinicalRole(role)
+                                  ? setRoleChange({ member, role })
+                                  : updateMember.mutate({ member, updates: { role } })
                               }
                             >
                               <span className="flex items-center gap-2 capitalize">
@@ -357,6 +363,38 @@ export function PracticeTeamSection() {
               ) : (
                 'End access'
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Moving someone off the clinical side */}
+      <AlertDialog open={!!roleChange} onOpenChange={(open) => !open && setRoleChange(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Move this person to {roleChange?.role.replace(/_/g, ' ')}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This role does not see patients, so their clinical work here is handed over as it
+              would be if they left. Before you confirm, this is what it leaves behind:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <OffboardingImpactList
+            practiceId={roleChange ? currentPractice?.id : null}
+            userId={roleChange?.member.user_id}
+            change="non_clinical"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={updateMember.isPending}
+              onClick={() => {
+                if (roleChange) updateMember.mutate({ member: roleChange.member, updates: { role: roleChange.role } });
+                setRoleChange(null);
+              }}
+            >
+              Change role
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

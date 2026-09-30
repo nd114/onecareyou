@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { CAREGIVERS_ENABLED } from '@/lib/features';
 import { breadcrumbSchema } from '@/components/seo/structuredData';
 import { Link } from 'react-router-dom';
 import {
@@ -33,7 +34,9 @@ const coreFeatures = [
   {
     icon: Users,
     title: 'Care Circle',
-    description: 'Share your health data securely with healthcare providers and caregivers for continuous outpatient care.',
+    description: CAREGIVERS_ENABLED
+      ? 'Share your health data securely with healthcare providers and caregivers for continuous outpatient care.'
+      : 'Share your health data securely with healthcare providers for continuous outpatient care.',
     details: [
       'Invite providers with secure access codes',
       'Granular permission controls',

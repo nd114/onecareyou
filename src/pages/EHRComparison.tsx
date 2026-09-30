@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { SEOHead } from '@/components/seo/SEOHead';
+import { CAREGIVERS_ENABLED } from '@/lib/features';
 import { 
   Check, 
   X, 
@@ -221,7 +222,7 @@ const EHRComparison = () => {
 
               {/* Table Rows */}
               <div className="space-y-3">
-                {comparisonData.map((row, index) => (
+                {comparisonData.filter((r) => CAREGIVERS_ENABLED || r.feature !== "Caregiver Integration").map((row, index) => (
                   <motion.div
                     key={row.feature}
                     initial={{ opacity: 0, x: -20 }}
@@ -354,7 +355,7 @@ const EHRComparison = () => {
                         </div>
                         <div>
                           <div className="font-medium text-foreground">Bridges care gaps</div>
-                          <div className="text-sm text-muted-foreground">Family management, caregiver alerts, multi-provider</div>
+                          <div className="text-sm text-muted-foreground">{CAREGIVERS_ENABLED ? "Family management, caregiver alerts, multi-provider" : "Family management, multi-provider"}</div>
                         </div>
                       </div>
                     </div>

@@ -5774,6 +5774,7 @@ export type Database = {
         Returns: {
           can_send: boolean
           clinician_name: string
+          clinician_status: string | null
           clinician_user_id: string
           continues_with: Json
           ended_at: string | null
@@ -5781,6 +5782,16 @@ export type Database = {
           practice_id: string | null
           practice_name: string | null
           reason: string
+        }[]
+      }
+      my_message_history_patients: {
+        Args: never
+        Returns: {
+          last_at: string
+          patient_name: string | null
+          patient_user_id: string
+          practice_id: string | null
+          practice_name: string | null
         }[]
       }
       my_message_threads: {

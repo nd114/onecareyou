@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { requireServiceRole } from "../_shared/auth.ts";
+import { CAREGIVERS_ENABLED } from "../_shared/features.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,6 +36,15 @@ serve(async (req) => {
   // Internal scheduled job only — reject any public caller
   const unauthorized = await requireServiceRole(req, corsHeaders);
   if (unauthorized) return unauthorized;
+
+  // Caregiver alerts are paused. The screens that set them up are hidden by the
+  // same switch, so a patient could no longer see or stop mail sent here.
+  if (!CAREGIVERS_ENABLED) {
+    return new Response(
+      JSON.stringify({ message: "Caregiver alerts are paused", alertsSent: 0, paused: true }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeOffboardingImpact, parseOffboardingImpact } from '@/lib/offboarding';
+import { describeMoveToNonClinical, describeOffboardingImpact, parseOffboardingImpact } from '@/lib/offboarding';
 import { describeNotification } from '@/lib/notification-display';
 
 const raw = {
@@ -43,6 +43,19 @@ describe('offboarding impact', () => {
     expect(text).toContain('They lead Cardiology');
     // The one line that is always there: what the person loses.
     expect(lines[lines.length - 1]).toMatch(/lose access .* including what they wrote here/);
+  });
+
+  it('says what a move to a non-clinical role hands over, and that they stay a member', () => {
+    const lines = describeMoveToNonClinical(parseOffboardingImpact(raw));
+    const text = lines.join('\n');
+    expect(text).toContain('3 patient assignments will end.');
+    expect(text).toContain('1 unsigned note will be frozen and sent to the practice\'s leads');
+    expect(text).toContain('2 unfiled dictations');
+    expect(text).toContain('1 medication proposal');
+    // Tasks stay with someone in a non-clinical role; they did not leave.
+    expect(text).not.toContain('open task');
+    expect(text).not.toMatch(/\bleft\b|departed/);
+    expect(lines[lines.length - 1]).toMatch(/stay a member of the practice in their new role/);
   });
 
   it('leaves out what is not there, rather than listing zeros', () => {

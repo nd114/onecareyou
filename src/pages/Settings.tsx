@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/select';
 import { GlucoseUnit, WeightUnit, TemperatureUnit } from '@/types/health';
 import { CareAlertSettings } from '@/components/care/CareAlertSettings';
+import { CAREGIVERS_ENABLED } from '@/lib/features';
 import { PatientAvatarUpload } from '@/components/settings/PatientAvatarUpload';
 import { EditProfileDialog } from '@/components/patient/EditProfileDialog';
 
@@ -536,13 +537,17 @@ const Settings = () => {
           >
             <EmergencySettingsSection />
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.38 }}
-          >
-            <CareAlertSettings />
-          </motion.div>
+          {/* Caregiver alert contacts are paused (features.ts); what patients
+              set up is kept, not shown, and not sent. */}
+          {CAREGIVERS_ENABLED && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.38 }}
+            >
+              <CareAlertSettings />
+            </motion.div>
+          )}
             </TabsContent>
             <TabsContent value="privacy" className="space-y-6 mt-6">
           <motion.div

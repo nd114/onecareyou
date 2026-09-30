@@ -85,6 +85,9 @@ DECLARE
   _pat       uuid := '0ab00000-0000-4000-8000-000000000008';  -- the hospital's patient, in Cardiology
   _private   uuid := '0ab00000-0000-4000-8000-000000000009';  -- the leaver's own patient
   _owner2    uuid := '0ab00000-0000-4000-8000-00000000000a';
+  _mover     uuid := '0ab00000-0000-4000-8000-00000000000b';  -- a nurse later moved to reception
+  _mdraft    uuid;
+  _mdict     uuid;
   _prac      uuid := '0ab10000-0000-4000-8000-000000000001';
   _elsewhere uuid := '0ab10000-0000-4000-8000-000000000002';
   _cardio    uuid := '0ab20000-0000-4000-8000-000000000001';
@@ -575,6 +578,87 @@ BEGIN
   PERFORM pg_temp.assert(
     (SELECT status = 'revoked' AND end_reason = 'left' FROM public.practice_members WHERE practice_id = _prac AND user_id = _owner),
     'the owner has left, and the hospital still has an owner');
+
+  -- ==========================================================================
+  -- 11. Moving to a non-clinical role is leaving clinical work
+  -- ==========================================================================
+  -- Founder decision: a member moved from a clinical role to a non-clinical one
+  -- stays a member, but their clinical work is handed over exactly as a
+  -- leaver's is. Before 20261010100000 only a departure froze drafts, so a
+  -- nurse moved to reception left an unsigned note nobody could finish and
+  -- nobody at the hospital was told about.
+  PERFORM pg_temp.as_user(NULL);
+  INSERT INTO auth.users (id, email, email_confirmed_at) VALUES (_mover, 'hand-mover@test.local', now());
+  INSERT INTO public.clinician_profiles (user_id, first_name, last_name) VALUES (_mover, 'Max', 'Mover');
+  INSERT INTO public.practice_members (practice_id, user_id, role, status, can_view_all_patients)
+  VALUES (_prac, _mover, 'nurse', 'active', false);
+  INSERT INTO public.practice_patient_assignments (practice_id, patient_user_id, clinician_user_id, assigned_by)
+  VALUES (_prac, _pat, _mover, _admin);
+
+  PERFORM pg_temp.as_user(_mover);
+  INSERT INTO public.encounters (patient_user_id, clinician_user_id, assessment)
+  VALUES (_pat, _mover, 'hand: mover draft') RETURNING id INTO _mdraft;
+  INSERT INTO public.clinician_dictations (clinician_user_id, patient_user_id, audio_path, transcript, summary, status)
+  VALUES (_mover, _pat, _mover || '/move.webm', 'hand: mover transcript', 'hand: mover summary', 'transcribed')
+  RETURNING id INTO _mdict;
+  INSERT INTO public.messages (patient_user_id, clinician_user_id, sender_user_id, body)
+  VALUES (_pat, _mover, _mover, 'hand: nurse checking in');
+  PERFORM pg_temp.assert(pg_temp.n(format('SELECT 1 FROM public.encounters WHERE patient_user_id = %L', _pat)) >= 1,
+    'while clinical, the nurse reads the patient''s notes');
+
+  PERFORM pg_temp.as_user(_admin);
+  PERFORM public.change_practice_member_access(_prac, _mover, 'front_desk'::public.practice_role, NULL, 'moved to reception');
+
+  PERFORM pg_temp.as_user(NULL);
+  PERFORM pg_temp.assert(
+    (SELECT status = 'active' AND role = 'front_desk' FROM public.practice_members WHERE practice_id = _prac AND user_id = _mover),
+    'they remain a member, in their new role');
+  PERFORM pg_temp.assert(
+    (SELECT author_departed_at IS NOT NULL AND signed_at IS NULL AND assessment = 'hand: mover draft'
+       FROM public.encounters WHERE id = _mdraft),
+    'their unsigned draft is frozen as it was');
+  PERFORM pg_temp.assert(
+    (SELECT author_departed_at IS NOT NULL FROM public.clinician_dictations WHERE id = _mdict),
+    'and their unfiled dictation');
+  PERFORM pg_temp.assert(
+    NOT EXISTS (SELECT 1 FROM public.practice_patient_assignments
+                 WHERE practice_id = _prac AND clinician_user_id = _mover
+                   AND (effective_to IS NULL OR effective_to > now())),
+    'their patient assignments have ended');
+  SELECT count(*) INTO _n FROM public.clinician_guidance_notifications
+   WHERE notification_type = 'departed_author_drafts' AND related_id IN (_mdraft, _mdict);
+  PERFORM pg_temp.assert(_n = 6, 'each item is routed to the owner, the admin and the patient''s department lead (got ' || _n || ')');
+  SELECT message INTO _txt FROM public.clinician_guidance_notifications
+   WHERE clinician_user_id = _lead AND related_id = _mdraft;
+  PERFORM pg_temp.assert(_txt ILIKE '%Max Mover moved to a non-clinical role at Handover General%unsigned note%'
+                         AND _txt NOT ILIKE '%left Handover General%',
+    'the notice says they moved to a non-clinical role, not that they left: ' || COALESCE(_txt, '(none)'));
+
+  PERFORM pg_temp.as_user(_mover);
+  PERFORM pg_temp.assert(pg_temp.n(format('SELECT 1 FROM public.encounters WHERE patient_user_id = %L', _pat)) = 0,
+    'in their new role they read none of the patient''s notes, their own included');
+  PERFORM pg_temp.assert(pg_temp.n(format('SELECT 1 FROM public.clinician_dictations WHERE id = %L', _mdict)) = 0,
+    'nor their dictation');
+  PERFORM pg_temp.assert(pg_temp.n(format('SELECT 1 FROM public.messages WHERE patient_user_id = %L', _pat)) = 0,
+    'nor the hospital''s threads');
+  PERFORM pg_temp.assert(
+    NOT pg_temp.changed(format('INSERT INTO public.encounters (patient_user_id, clinician_user_id, assessment) VALUES (%L, %L, %L)',
+                               _pat, _mover, 'hand: reception note')),
+    'and cannot write a clinical note');
+  PERFORM pg_temp.assert(
+    NOT pg_temp.changed(format('INSERT INTO public.messages (patient_user_id, clinician_user_id, sender_user_id, body) VALUES (%L, %L, %L, %L)',
+                               _pat, _mover, _mover, 'hand: from reception')),
+    'nor message the patient as a clinician');
+
+  PERFORM pg_temp.as_user(_admin);
+  SELECT detail INTO _txt FROM public.practice_handover_queue(_prac) WHERE kind = 'draft' AND item_id = _mdraft;
+  PERFORM pg_temp.assert(_txt ILIKE '%non-clinical role%',
+    'the draft is on the handover list, saying why: ' || COALESCE(_txt, '(not listed)'));
+
+  PERFORM pg_temp.as_user(_pat);
+  PERFORM pg_temp.assert(
+    (SELECT clinician_status = 'non_clinical' FROM public.my_message_counterparties() WHERE clinician_user_id = _mover),
+    'the patient''s list does not say the nurse left');
 
   RAISE NOTICE 'offboarding_handover: all assertions passed';
 END $$;

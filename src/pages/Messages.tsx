@@ -11,12 +11,23 @@ import { ConversationList, type Conversation } from '@/components/messaging/Conv
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessageCounterparties, useMessageThreads } from '@/hooks/useMessages';
-import { threadNotice, type MessageCounterparty, type ThreadNotice } from '@/lib/message-thread-status';
+import {
+  conversationSubtitle,
+  conversationTitle,
+  threadNotice,
+  type MessageCounterparty,
+  type ThreadNotice,
+} from '@/lib/message-thread-status';
 import { Link } from 'react-router-dom';
 
 /** Why a conversation is closed, in a word, for the list. */
 function caption(c: MessageCounterparty): string | undefined {
-  if (c.reason === 'covered') return c.practiceName ? `${c.practiceName} team` : 'Hospital team';
+  // Titled with the hospital's name already (conversationTitle): say who reads it.
+  if (c.reason === 'covered') {
+    return c.practiceName && conversationTitle(c) === c.practiceName
+      ? 'Your care team there'
+      : `${c.practiceName ?? 'Hospital'} team`;
+  }
   if (c.canSend) return c.practiceName ?? undefined;
   switch (c.reason) {
     case 'sharing_stopped':
@@ -24,7 +35,7 @@ function caption(c: MessageCounterparty): string | undefined {
     case 'share_expired':
       return 'Share expired';
     case 'clinician_left':
-      return 'Left the hospital';
+      return 'No one assigned';
     case 'not_on_care_team':
       return 'No longer on your care';
     case 'practice_paused':
@@ -84,7 +95,7 @@ const Messages = () => {
     () =>
       ordered.map((c) => ({
         id: c.clinicianUserId,
-        name: c.clinicianName,
+        name: conversationTitle(c),
         caption: caption(c),
       })),
     [ordered],
@@ -186,9 +197,14 @@ const Messages = () => {
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <CardTitle className="text-sm font-medium">
-                  {selected ? selected.clinicianName : 'Select a conversation'}
-                </CardTitle>
+                <div className="min-w-0">
+                  <CardTitle className="text-sm font-medium">
+                    {selected ? conversationTitle(selected) : 'Select a conversation'}
+                  </CardTitle>
+                  {selected && conversationSubtitle(selected) && (
+                    <p className="truncate text-xs text-muted-foreground">{conversationSubtitle(selected)}</p>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col p-0 overflow-hidden">
                 {/* Closed means the database would refuse the message, not a
@@ -196,7 +212,7 @@ const Messages = () => {
                     into a thread nobody reads. */}
                 <MessageThread
                   otherPartyUserId={selected?.clinicianUserId || null}
-                  otherPartyName={selected?.clinicianName || ''}
+                  otherPartyName={selected ? conversationTitle(selected) : ''}
                   role="patient"
                   className="h-full min-h-0"
                   readOnly={!!selected && !selected.canSend}
