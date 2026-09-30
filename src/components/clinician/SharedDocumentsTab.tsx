@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Download, Sparkles, Calendar, Loader2, FolderOpen } from 'lucide-react';
+import { FileText, Eye, Sparkles, Calendar, Loader2, FolderOpen } from 'lucide-react';
+import { FileViewerDialog, type ViewerSource } from '@/components/documents/FileViewer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DOCUMENT_CATEGORIES } from '@/hooks/useHealthDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 
 interface SharedDocumentsTabProps {
@@ -26,7 +26,7 @@ export function SharedDocumentsTab({
   shareId,
   wholeVault = false,
 }: SharedDocumentsTabProps) {
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<{ rowId: string; documentId: string; doc: any } | null>(null);
 
   const { data: sharedDocs = [], isLoading } = useQuery({
     queryKey: ['clinician-shared-documents', patientUserId, shareId, wholeVault],
@@ -88,23 +88,22 @@ export function SharedDocumentsTab({
     enabled: !!patientUserId && !!shareId,
   });
 
-  const handleDownload = async (rowId: string, documentId: string) => {
-    setDownloadingId(rowId);
-    try {
-      const { data, error } = await supabase.functions.invoke('get-shared-document-url', {
-        body: wholeVault
-          ? { documentId, providerShareId: shareId }
-          : { documentShareId: rowId },
-      });
-      if (error) throw new Error((await edgeFunctionError(error)).message);
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, '_blank');
-      }
-    } catch (err: any) {
-      toast.error('Failed to download: ' + (err.message || 'Unknown error'));
-    } finally {
-      setDownloadingId(null);
+  /**
+   * Asked for when the viewer opens, through the edge function that checks the
+   * share is still live and records the access — so a revoked share fails
+   * here, at the moment of reading, not when the list was loaded.
+   */
+  const loadShared = async (rowId: string, documentId: string): Promise<ViewerSource | null> => {
+    const { data, error } = await supabase.functions.invoke('get-shared-document-url', {
+      body: wholeVault
+        ? { documentId, providerShareId: shareId }
+        : { documentShareId: rowId },
+    });
+    if (error) {
+      const message = (await edgeFunctionError(error)).message;
+      throw new Error(message || 'This document could not be opened.');
     }
+    return data?.signedUrl ? { url: data.signedUrl, fileName: data.fileName ?? null } : null;
   };
 
   return (
@@ -140,7 +139,6 @@ export function SharedDocumentsTab({
             {sharedDocs.map((share: any) => {
               const doc = share.health_documents;
               const categoryInfo = DOCUMENT_CATEGORIES.find(c => c.value === doc.category) || DOCUMENT_CATEGORIES[DOCUMENT_CATEGORIES.length - 1];
-              const isDownloading = downloadingId === share.id;
 
               return (
                 <div key={share.id} className="p-4 rounded-lg border hover:bg-muted/30 transition-colors">
@@ -171,17 +169,10 @@ export function SharedDocumentsTab({
                           variant="outline"
                           size="sm"
                           className="flex-shrink-0 h-8"
-                          onClick={() => handleDownload(share.id, share.document_id)}
-                          disabled={isDownloading}
+                          onClick={() => setViewing({ rowId: share.id, documentId: share.document_id, doc })}
                         >
-                          {isDownloading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Download className="h-4 w-4 mr-1" />
-                              View
-                            </>
-                          )}
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
                         </Button>
                       </div>
 
@@ -209,6 +200,16 @@ export function SharedDocumentsTab({
           </div>
         )}
       </CardContent>
+      {viewing && (
+        <FileViewerDialog
+          open
+          onOpenChange={(o) => !o && setViewing(null)}
+          title={viewing.doc.title || viewing.doc.file_name}
+          fileName={viewing.doc.file_name}
+          mimeType={viewing.doc.mime_type}
+          loadSource={() => loadShared(viewing.rowId, viewing.documentId)}
+        />
+      )}
     </Card>
   );
 }

@@ -9,6 +9,7 @@ import { formatDay, formatDayTime } from '@/lib/format-date';
 import { toClinicalList } from '@/lib/clinical-lists';
 import { resolveVitalConfig } from '@/types/health';
 import { VIEWER_MESSAGES, readSnapshotToken } from '@/lib/snapshot-links';
+import { FileViewerDialog, type ViewerSource } from '@/components/documents/FileViewer';
 
 /**
  * The page somebody without an account sees when a patient sends them a
@@ -76,7 +77,7 @@ export default function SnapshotViewer() {
   const [state, setState] = useState<ViewState>({ kind: 'loading' });
   const [passcode, setPasscode] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [docBusy, setDocBusy] = useState<string | null>(null);
+  const [viewingDoc, setViewingDoc] = useState<SharedDocument | null>(null);
   const [docError, setDocError] = useState<string | null>(null);
 
   const load = useCallback(
@@ -110,26 +111,33 @@ export default function SnapshotViewer() {
     setSubmitting(false);
   };
 
-  const openDocument = async (doc: SharedDocument) => {
+  const openDocument = (doc: SharedDocument) => {
     setDocError(null);
-    setDocBusy(doc.id);
-    // Opened before the request so a popup blocker treats it as the user's
-    // click; pointed at the signed URL once there is one.
-    const win = window.open('', '_blank');
-    if (win) win.opener = null;
+    setViewingDoc(doc);
+  };
+
+  /**
+   * Asked for as the viewer opens, so the link's revocation, expiry and
+   * passcode are checked at the moment of reading. The signed URL lives a
+   * minute and is read once into the viewer, never put in the address bar.
+   */
+  const loadViewedDocument = async (doc: SharedDocument): Promise<ViewerSource | null> => {
     const r = await callViewer({ token, passcode: passcode.trim() || undefined, documentId: doc.id });
-    setDocBusy(null);
     if (r.status === 'ok' && typeof r.signedUrl === 'string') {
-      if (win) win.location.href = r.signedUrl;
-      else window.location.href = r.signedUrl;
-      return;
+      return {
+        url: r.signedUrl,
+        fileName: typeof r.fileName === 'string' ? r.fileName : null,
+        mimeType: typeof r.mimeType === 'string' ? r.mimeType : null,
+      };
     }
-    win?.close();
     if (r.status === 'revoked' || r.status === 'expired' || r.status === 'locked') {
+      setViewingDoc(null);
       setState({ kind: 'unavailable', reason: String(r.status) });
-    } else {
-      setDocError('That document is no longer available through this link.');
+      return null;
     }
+    setViewingDoc(null);
+    setDocError('That document is no longer available through this link.');
+    return null;
   };
 
   return (
@@ -191,8 +199,15 @@ export default function SnapshotViewer() {
           <SnapshotBody
             data={state.data}
             onOpenDocument={openDocument}
-            docBusy={docBusy}
             docError={docError}
+          />
+        )}
+        {viewingDoc && state.kind === 'ok' && (
+          <FileViewerDialog
+            open
+            onOpenChange={(o) => !o && setViewingDoc(null)}
+            title={viewingDoc.title}
+            loadSource={() => loadViewedDocument(viewingDoc)}
           />
         )}
       </main>
@@ -203,12 +218,10 @@ export default function SnapshotViewer() {
 function SnapshotBody({
   data,
   onOpenDocument,
-  docBusy,
   docError,
 }: {
   data: Snapshot;
   onOpenDocument: (d: SharedDocument) => void;
-  docBusy: string | null;
   docError: string | null;
 }) {
   const has = (c: string) => data.categories.includes(c);
@@ -305,7 +318,7 @@ function SnapshotBody({
       )}
 
       {has('documents') && (
-        <Section title="Documents" note="Each opens for a minute at a time.">
+        <Section title="Documents" note="Each opens here, and is checked against the link again every time you open it.">
           {docError && <p className="mb-2 text-sm text-destructive">{docError}</p>}
           <ul className="divide-y">
             {data.documents.map((d) => (
@@ -324,10 +337,9 @@ function SnapshotBody({
                     variant="outline"
                     size="sm"
                     className="print:hidden"
-                    disabled={docBusy === d.id}
                     onClick={() => onOpenDocument(d)}
                   >
-                    {docBusy === d.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Open'}
+                    Open
                   </Button>
                 )}
               </li>

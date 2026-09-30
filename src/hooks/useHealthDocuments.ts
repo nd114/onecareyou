@@ -358,17 +358,19 @@ export function useHealthDocuments() {
    * sets Content-Disposition: attachment, so it saves, with the document's own
    * name rather than a storage path.
    */
-  const getFileUrl = async (filePath: string, fileName?: string) => {
+  const getFileUrl = async (filePath: string, fileName?: string, seconds = 3600) => {
     const { data } = await supabase.storage
       .from('health-documents')
-      .createSignedUrl(filePath, 3600, fileName ? { download: fileName } : undefined);
+      .createSignedUrl(filePath, seconds, fileName ? { download: fileName } : undefined);
     return data?.signedUrl;
   };
 
   const getDownloadUrl = (filePath: string, fileName?: string) =>
     getFileUrl(filePath, fileName || filePath.split('/').pop() || 'document');
 
-  const getPreviewUrl = (filePath: string) => getFileUrl(filePath);
+  // The viewer reads the file once, as it opens (audio and video stream for a
+  // few minutes), so a preview link has no reason to outlive the moment.
+  const getPreviewUrl = (filePath: string) => getFileUrl(filePath, undefined, 600);
 
   return {
     documents,

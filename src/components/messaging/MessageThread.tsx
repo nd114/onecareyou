@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
-import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Download, Search, ChevronUp, ChevronDown, FolderPlus } from 'lucide-react';
+import { Send, Loader2, MessageSquare, AlertTriangle, Paperclip, X, FileText, Eye, Search, ChevronUp, ChevronDown, FolderPlus } from 'lucide-react';
+import { FileViewerDialog } from '@/components/documents/FileViewer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -80,6 +81,8 @@ const IMAGE_RE = /\.(png|jpe?g|gif|webp|heic|avif)$/i;
 function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
   const [url, setUrl] = useState<string | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   const fileName = path.split('/').pop()?.replace(/^[0-9a-f-]{36}-/i, '') ?? 'Attachment';
   const isImage = IMAGE_RE.test(fileName);
   const longPress = useLongPress(() => setSaveOpen(true));
@@ -100,6 +103,8 @@ function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
   };
 
   useEffect(() => {
+    // Only a thumbnail needs a URL up front; the viewer asks for its own.
+    if (!isImage) return;
     let active = true;
     supabase.storage
       .from('message-attachments')
@@ -110,7 +115,7 @@ function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
     return () => {
       active = false;
     };
-  }, [path]);
+  }, [path, isImage]);
 
   const saveDialog = (
     <SaveToVaultDialog
@@ -137,46 +142,74 @@ function MessageAttachment({ path, mine }: { path: string; mine: boolean }) {
     </>
   );
 
-  if (isImage) {
-    return url
-      ? menu(
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className="block mt-1"
-            {...longPress}
-            onClick={(e) => {
-              // A long press already opened the save dialog; opening the image
-              // as well would bury it.
-              if (longPress.consumed()) e.preventDefault();
-            }}
-          >
-            <img src={url} alt={fileName} className="rounded-lg max-h-48 w-auto object-cover" loading="lazy" />
-          </a>,
-        )
-      : <div className="mt-1 h-24 w-40 rounded-lg bg-background/20 animate-pulse" />;
+  // Opens in the platform's viewer rather than a new tab on the storage URL,
+  // so a Word letter or a voice note is readable where it was sent.
+  const viewer = (
+    <FileViewerDialog
+      open={viewOpen}
+      onOpenChange={setViewOpen}
+      title={fileName}
+      fileName={fileName}
+      loadSource={async () => {
+        const { data, error } = await supabase.storage.from('message-attachments').createSignedUrl(path, 300);
+        if (error || !data?.signedUrl) throw new Error('That attachment could not be read');
+        return { url: data.signedUrl, fileName };
+      }}
+    />
+  );
+
+  const open = (e: React.MouseEvent) => {
+    // A long press already opened the save dialog; opening the viewer as well
+    // would bury it.
+    if (longPress.consumed()) {
+      e.preventDefault();
+      return;
+    }
+    setViewOpen(true);
+  };
+
+  if (isImage && !thumbFailed) {
+    return url ? (
+      <>
+        {menu(
+          <button type="button" className="block mt-1" title={`View ${fileName}`} {...longPress} onClick={open}>
+            <img
+              src={url}
+              alt={fileName}
+              className="rounded-lg max-h-48 w-auto object-cover"
+              loading="lazy"
+              // HEIC decodes only in Safari; elsewhere show the file chip.
+              onError={() => setThumbFailed(true)}
+            />
+          </button>,
+        )}
+        {viewer}
+      </>
+    ) : (
+      <div className="mt-1 h-24 w-40 rounded-lg bg-background/20 animate-pulse" />
+    );
   }
 
-  return menu(
-    <a
-      href={url ?? undefined}
-      target="_blank"
-      rel="noreferrer"
-      className={cn(
-        'mt-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs',
-        mine ? 'bg-primary-foreground/15' : 'bg-background/70',
-        !url && 'pointer-events-none opacity-70',
+  return (
+    <>
+      {menu(
+        <button
+          type="button"
+          title={`View ${fileName}`}
+          className={cn(
+            'mt-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-left',
+            mine ? 'bg-primary-foreground/15' : 'bg-background/70',
+          )}
+          {...longPress}
+          onClick={open}
+        >
+          <FileText className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate max-w-[160px]">{fileName}</span>
+          <Eye className="h-3.5 w-3.5 shrink-0 opacity-70" />
+        </button>,
       )}
-      {...longPress}
-      onClick={(e) => {
-        if (longPress.consumed()) e.preventDefault();
-      }}
-    >
-      <FileText className="h-3.5 w-3.5 shrink-0" />
-      <span className="truncate max-w-[160px]">{fileName}</span>
-      <Download className="h-3.5 w-3.5 shrink-0 opacity-70" />
-    </a>,
+      {viewer}
+    </>
   );
 }
 
