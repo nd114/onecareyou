@@ -255,7 +255,7 @@ export type Database = {
       baa_agreements: {
         Row: {
           agreement_version: string
-          clinician_user_id: string | null
+          clinician_user_id: string
           contact_email: string
           contact_name: string
           contact_phone: string | null
@@ -267,14 +267,12 @@ export type Database = {
           practice_npi: string | null
           signed_at: string
           status: string
-          subject_email_sha256: string | null
-          subject_id_sha256: string | null
           updated_at: string
           user_agent: string | null
         }
         Insert: {
           agreement_version?: string
-          clinician_user_id?: string | null
+          clinician_user_id: string
           contact_email: string
           contact_name: string
           contact_phone?: string | null
@@ -286,14 +284,12 @@ export type Database = {
           practice_npi?: string | null
           signed_at?: string
           status?: string
-          subject_email_sha256?: string | null
-          subject_id_sha256?: string | null
           updated_at?: string
           user_agent?: string | null
         }
         Update: {
           agreement_version?: string
-          clinician_user_id?: string | null
+          clinician_user_id?: string
           contact_email?: string
           contact_name?: string
           contact_phone?: string | null
@@ -305,8 +301,6 @@ export type Database = {
           practice_npi?: string | null
           signed_at?: string
           status?: string
-          subject_email_sha256?: string | null
-          subject_id_sha256?: string | null
           updated_at?: string
           user_agent?: string | null
         }
@@ -713,12 +707,6 @@ export type Database = {
       }
       clinician_dictations: {
         Row: {
-          author_departed_at: string | null
-          disposition: string | null
-          disposition_at: string | null
-          disposition_by: string | null
-          disposition_note: string | null
-          practice_id: string | null
           archived_at: string | null
           archived_by: string | null
           audio_path: string
@@ -743,12 +731,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          author_departed_at?: string | null
-          disposition?: string | null
-          disposition_at?: string | null
-          disposition_by?: string | null
-          disposition_note?: string | null
-          practice_id?: string | null
           archived_at?: string | null
           archived_by?: string | null
           audio_path: string
@@ -773,12 +755,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          author_departed_at?: string | null
-          disposition?: string | null
-          disposition_at?: string | null
-          disposition_by?: string | null
-          disposition_note?: string | null
-          practice_id?: string | null
           archived_at?: string | null
           archived_by?: string | null
           audio_path?: string
@@ -829,12 +805,8 @@ export type Database = {
           resend_interval_hours: number | null
           share_id: string | null
           status: string | null
-          supersedes_guidance_id: string | null
           title: string
           updated_at: string
-          withdrawal_reason: string | null
-          withdrawn_at: string | null
-          withdrawn_by: string | null
         }
         Insert: {
           acknowledged_at?: string | null
@@ -852,12 +824,8 @@ export type Database = {
           resend_interval_hours?: number | null
           share_id?: string | null
           status?: string | null
-          supersedes_guidance_id?: string | null
           title: string
           updated_at?: string
-          withdrawal_reason?: string | null
-          withdrawn_at?: string | null
-          withdrawn_by?: string | null
         }
         Update: {
           acknowledged_at?: string | null
@@ -875,21 +843,10 @@ export type Database = {
           resend_interval_hours?: number | null
           share_id?: string | null
           status?: string | null
-          supersedes_guidance_id?: string | null
           title?: string
           updated_at?: string
-          withdrawal_reason?: string | null
-          withdrawn_at?: string | null
-          withdrawn_by?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "clinician_guidance_supersedes_guidance_id_fkey"
-            columns: ["supersedes_guidance_id"]
-            isOneToOne: false
-            referencedRelation: "clinician_guidance"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "clinician_guidance_share_id_fkey"
             columns: ["share_id"]
@@ -901,46 +858,31 @@ export type Database = {
       }
       clinician_guidance_notifications: {
         Row: {
-          acknowledged_at: string | null
-          acknowledged_by: string | null
           clinician_user_id: string
           created_at: string
-          guidance_id: string | null
+          guidance_id: string
           id: string
           is_read: boolean
-          message: string | null
           notification_type: string
           patient_user_id: string
-          practice_id: string | null
-          related_id: string | null
         }
         Insert: {
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
           clinician_user_id: string
           created_at?: string
-          guidance_id?: string | null
+          guidance_id: string
           id?: string
           is_read?: boolean
-          message?: string | null
           notification_type: string
           patient_user_id: string
-          practice_id?: string | null
-          related_id?: string | null
         }
         Update: {
-          acknowledged_at?: string | null
-          acknowledged_by?: string | null
           clinician_user_id?: string
           created_at?: string
-          guidance_id?: string | null
+          guidance_id?: string
           id?: string
           is_read?: boolean
-          message?: string | null
           notification_type?: string
           patient_user_id?: string
-          practice_id?: string | null
-          related_id?: string | null
         }
         Relationships: [
           {
@@ -948,13 +890,6 @@ export type Database = {
             columns: ["guidance_id"]
             isOneToOne: false
             referencedRelation: "clinician_guidance"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "clinician_guidance_notifications_practice_id_fkey"
-            columns: ["practice_id"]
-            isOneToOne: false
-            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -985,7 +920,6 @@ export type Database = {
           provider_share_id: string | null
           tags: Json | null
           updated_at: string
-          updated_by: string | null
           visits: Json
           vitals_history: Json | null
         }
@@ -1014,7 +948,6 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
-          updated_by?: string | null
           visits?: Json
           vitals_history?: Json | null
         }
@@ -1043,7 +976,6 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
-          updated_by?: string | null
           visits?: Json
           vitals_history?: Json | null
         }
@@ -1173,10 +1105,8 @@ export type Database = {
           metadata: Json | null
           new_value: boolean | null
           previous_value: boolean | null
-          subject_email_sha256: string | null
-          subject_id_sha256: string | null
           user_agent: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           action: string
@@ -1187,10 +1117,8 @@ export type Database = {
           metadata?: Json | null
           new_value?: boolean | null
           previous_value?: boolean | null
-          subject_email_sha256?: string | null
-          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           action?: string
@@ -1201,10 +1129,8 @@ export type Database = {
           metadata?: Json | null
           new_value?: boolean | null
           previous_value?: boolean | null
-          subject_email_sha256?: string | null
-          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1766,11 +1692,6 @@ export type Database = {
       }
       encounters: {
         Row: {
-          author_departed_at: string | null
-          disposition: string | null
-          disposition_at: string | null
-          disposition_by: string | null
-          disposition_note: string | null
           assessment: string | null
           chief_complaint: string | null
           clinician_user_id: string
@@ -1798,11 +1719,6 @@ export type Database = {
           visit_type: string
         }
         Insert: {
-          author_departed_at?: string | null
-          disposition?: string | null
-          disposition_at?: string | null
-          disposition_by?: string | null
-          disposition_note?: string | null
           assessment?: string | null
           chief_complaint?: string | null
           clinician_user_id: string
@@ -1830,11 +1746,6 @@ export type Database = {
           visit_type?: string
         }
         Update: {
-          author_departed_at?: string | null
-          disposition?: string | null
-          disposition_at?: string | null
-          disposition_by?: string | null
-          disposition_note?: string | null
           assessment?: string | null
           chief_complaint?: string | null
           clinician_user_id?: string
@@ -1927,7 +1838,6 @@ export type Database = {
       }
       family_members: {
         Row: {
-          archived_at: string | null
           allergies: Json | null
           avatar_color: string | null
           blood_type: string | null
@@ -1944,7 +1854,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          archived_at?: string | null
           allergies?: Json | null
           avatar_color?: string | null
           blood_type?: string | null
@@ -1961,7 +1870,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          archived_at?: string | null
           allergies?: Json | null
           avatar_color?: string | null
           blood_type?: string | null
@@ -2294,10 +2202,6 @@ export type Database = {
           id: string
           mime_type: string | null
           notes: string | null
-          origin_label: string | null
-          origin_practice_id: string | null
-          origin_practice_name: string | null
-          origin_role: string | null
           patient_friendly_explanation: string | null
           retracted_at: string | null
           retracted_by: string | null
@@ -2326,10 +2230,6 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
-          origin_label?: string | null
-          origin_practice_id?: string | null
-          origin_practice_name?: string | null
-          origin_role?: string | null
           patient_friendly_explanation?: string | null
           retracted_at?: string | null
           retracted_by?: string | null
@@ -2358,10 +2258,6 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
-          origin_label?: string | null
-          origin_practice_id?: string | null
-          origin_practice_name?: string | null
-          origin_role?: string | null
           patient_friendly_explanation?: string | null
           retracted_at?: string | null
           retracted_by?: string | null
@@ -2379,13 +2275,6 @@ export type Database = {
             columns: ["family_member_id"]
             isOneToOne: false
             referencedRelation: "family_members"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "health_documents_origin_practice_id_fkey"
-            columns: ["origin_practice_id"]
-            isOneToOne: false
-            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -2431,7 +2320,6 @@ export type Database = {
       }
       internal_notes: {
         Row: {
-          practice_id: string | null
           author_user_id: string
           body: string
           created_at: string
@@ -2442,7 +2330,6 @@ export type Database = {
           visibility: string
         }
         Insert: {
-          practice_id?: string | null
           author_user_id: string
           body: string
           created_at?: string
@@ -2453,7 +2340,6 @@ export type Database = {
           visibility?: string
         }
         Update: {
-          practice_id?: string | null
           author_user_id?: string
           body?: string
           created_at?: string
@@ -2678,30 +2564,24 @@ export type Database = {
           document_id: string
           id: string
           ip_address: string | null
-          subject_email_sha256: string | null
-          subject_id_sha256: string | null
           user_agent: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           accepted_at?: string
           document_id: string
           id?: string
           ip_address?: string | null
-          subject_email_sha256?: string | null
-          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           accepted_at?: string
           document_id?: string
           id?: string
           ip_address?: string | null
-          subject_email_sha256?: string | null
-          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -2902,7 +2782,6 @@ export type Database = {
       }
       messages: {
         Row: {
-          practice_id: string | null
           attachment_name: string | null
           attachment_path: string | null
           attachment_retracted_at: string | null
@@ -2918,7 +2797,6 @@ export type Database = {
           transport: string
         }
         Insert: {
-          practice_id?: string | null
           attachment_name?: string | null
           attachment_path?: string | null
           attachment_retracted_at?: string | null
@@ -2934,7 +2812,6 @@ export type Database = {
           transport?: string
         }
         Update: {
-          practice_id?: string | null
           attachment_name?: string | null
           attachment_path?: string | null
           attachment_retracted_at?: string | null
@@ -3071,47 +2948,6 @@ export type Database = {
             columns: ["provider_share_id"]
             isOneToOne: false
             referencedRelation: "provider_shares"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      patient_notices: {
-        Row: {
-          created_at: string
-          id: string
-          message: string
-          notice_type: string
-          patient_user_id: string
-          practice_id: string | null
-          related_id: string | null
-          seen_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          message: string
-          notice_type: string
-          patient_user_id: string
-          practice_id?: string | null
-          related_id?: string | null
-          seen_at?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          message?: string
-          notice_type?: string
-          patient_user_id?: string
-          practice_id?: string | null
-          related_id?: string | null
-          seen_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patient_notices_practice_id_fkey"
-            columns: ["practice_id"]
-            isOneToOne: false
-            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -3464,9 +3300,6 @@ export type Database = {
           can_manage_settings: boolean | null
           can_view_all_patients: boolean | null
           created_at: string
-          end_reason: string | null
-          ended_at: string | null
-          ended_by: string | null
           id: string
           invited_at: string | null
           invited_by: string | null
@@ -3484,9 +3317,6 @@ export type Database = {
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
           created_at?: string
-          end_reason?: string | null
-          ended_at?: string | null
-          ended_by?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -3504,9 +3334,6 @@ export type Database = {
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
           created_at?: string
-          end_reason?: string | null
-          ended_at?: string | null
-          ended_by?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -3519,50 +3346,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "practice_members_practice_id_fkey"
-            columns: ["practice_id"]
-            isOneToOne: false
-            referencedRelation: "practices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      practice_membership_events: {
-        Row: {
-          actor_user_id: string | null
-          created_at: string
-          details: Json
-          event_type: string
-          id: string
-          member_id: string | null
-          practice_id: string
-          reason: string | null
-          user_id: string
-        }
-        Insert: {
-          actor_user_id?: string | null
-          created_at?: string
-          details?: Json
-          event_type: string
-          id?: string
-          member_id?: string | null
-          practice_id: string
-          reason?: string | null
-          user_id: string
-        }
-        Update: {
-          actor_user_id?: string | null
-          created_at?: string
-          details?: Json
-          event_type?: string
-          id?: string
-          member_id?: string | null
-          practice_id?: string
-          reason?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "practice_membership_events_practice_id_fkey"
             columns: ["practice_id"]
             isOneToOne: false
             referencedRelation: "practices"
@@ -4281,7 +4064,6 @@ export type Database = {
       }
       record_change_proposals: {
         Row: {
-          practice_id: string | null
           applied_medication_id: string | null
           created_at: string
           id: string
@@ -4297,7 +4079,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          practice_id?: string | null
           applied_medication_id?: string | null
           created_at?: string
           id?: string
@@ -4313,7 +4094,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          practice_id?: string | null
           applied_medication_id?: string | null
           created_at?: string
           id?: string
@@ -4564,86 +4344,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      snapshot_link_views: {
-        Row: {
-          document_id: string | null
-          id: number
-          kind: string
-          link_id: string
-          user_agent: string | null
-          viewed_at: string
-        }
-        Insert: {
-          document_id?: string | null
-          id?: never
-          kind: string
-          link_id: string
-          user_agent?: string | null
-          viewed_at?: string
-        }
-        Update: {
-          document_id?: string | null
-          id?: never
-          kind?: string
-          link_id?: string
-          user_agent?: string | null
-          viewed_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "snapshot_link_views_link_id_fkey"
-            columns: ["link_id"]
-            isOneToOne: false
-            referencedRelation: "snapshot_links"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      snapshot_links: {
-        Row: {
-          categories: string[]
-          created_at: string
-          document_ids: string[]
-          expires_at: string
-          id: string
-          label: string | null
-          passcode_hash: string | null
-          revoked_at: string | null
-          sharer_first_name: string
-          snapshot: Json
-          token_hash: string
-          user_id: string
-        }
-        Insert: {
-          categories: string[]
-          created_at?: string
-          document_ids?: string[]
-          expires_at: string
-          id?: string
-          label?: string | null
-          passcode_hash?: string | null
-          revoked_at?: string | null
-          sharer_first_name: string
-          snapshot: Json
-          token_hash: string
-          user_id: string
-        }
-        Update: {
-          categories?: string[]
-          created_at?: string
-          document_ids?: string[]
-          expires_at?: string
-          id?: string
-          label?: string | null
-          passcode_hash?: string | null
-          revoked_at?: string | null
-          sharer_first_name?: string
-          snapshot?: Json
-          token_hash?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       storage_ledger: {
         Row: {
@@ -5088,10 +4788,6 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: string
       }
-      acknowledge_practice_notice: {
-        Args: { _notification_id: string }
-        Returns: string
-      }
       admin_access_log_search: {
         Args: { _limit?: number; _search?: string }
         Returns: {
@@ -5422,7 +5118,6 @@ export type Database = {
           country: string
           created_at: string
           id: string
-          is_active: boolean
           member_count: number
           name: string
           revenue_share_pct: number
@@ -5460,15 +5155,6 @@ export type Database = {
           role: string
         }[]
       }
-      amend_guidance: {
-        Args: {
-          _guidance_id: string
-          _instruction: string
-          _reason: string
-          _title: string
-        }
-        Returns: string
-      }
       apply_medication_proposal: {
         Args: {
           p_proposal: Database["public"]["Tables"]["record_change_proposals"]["Row"]
@@ -5504,10 +5190,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      author_may_file_under: {
-        Args: { _author: string; _practice_id: string }
-        Returns: boolean
-      }
       bulk_allowlist_clinicians: {
         Args: { _entries: Json; _practice_id: string }
         Returns: {
@@ -5520,16 +5202,6 @@ export type Database = {
         Returns: boolean
       }
       can_manage_practice: { Args: { practice_uuid: string }; Returns: boolean }
-      change_practice_member_access: {
-        Args: {
-          _can_view_all_patients?: boolean | null
-          _practice_id: string
-          _reason?: string | null
-          _role?: Database["public"]["Enums"]["practice_role"] | null
-          _user_id: string
-        }
-        Returns: undefined
-      }
       can_read_resume_object: {
         Args: { object_name: string }
         Returns: boolean
@@ -5552,21 +5224,6 @@ export type Database = {
         Returns: boolean
       }
       confirmed_email: { Args: never; Returns: string }
-      create_snapshot_link: {
-        Args: {
-          _categories: string[]
-          _document_ids: string[]
-          _expires_in_hours: number
-          _label?: string
-          _with_passcode?: boolean
-        }
-        Returns: {
-          expires_at: string
-          link_id: string
-          passcode: string | null
-          token: string
-        }[]
-      }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
       decline_practice_invitation: {
         Args: { _invitation_id: string }
@@ -5577,10 +5234,6 @@ export type Database = {
         Returns: undefined
       }
       document_is_withdrawn: { Args: { _file_path: string }; Returns: boolean }
-      end_practice_membership: {
-        Args: { _practice_id: string; _reason?: string | null; _user_id: string }
-        Returns: undefined
-      }
       enforce_rate_limit: {
         Args: {
           _bucket: string
@@ -5676,10 +5329,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      has_current_clinical_access: {
-        Args: { _patient_user_id: string; _practice_id?: string | null }
-        Returns: boolean
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5716,10 +5365,6 @@ export type Database = {
         Returns: boolean
       }
       is_department_lead: { Args: { _practice_id: string }; Returns: boolean }
-      is_clinical_practice_member: {
-        Args: { _practice_id: string }
-        Returns: boolean
-      }
       is_institution_slug_available: {
         Args: { _practice_id?: string; _slug: string }
         Returns: boolean
@@ -5748,27 +5393,7 @@ export type Database = {
         Args: { _nonce: string; _subject: string; _token_hash: string }
         Returns: string
       }
-      leave_practice: {
-        Args: { _practice_id: string; _reason?: string | null }
-        Returns: undefined
-      }
       led_department_ids: { Args: never; Returns: string[] }
-      list_my_snapshot_links: {
-        Args: never
-        Returns: {
-          categories: string[]
-          created_at: string
-          document_count: number
-          expires_at: string
-          has_passcode: boolean
-          id: string
-          label: string | null
-          last_viewed_at: string | null
-          locked: boolean
-          revoked_at: string | null
-          view_count: number
-        }[]
-      }
       log_platform_admin_action: {
         Args: {
           _action: string
@@ -5796,14 +5421,6 @@ export type Database = {
             }
             Returns: undefined
           }
-      mark_patient_notice_seen: {
-        Args: { _notice_id: string }
-        Returns: undefined
-      }
-      mark_practice_thread_read: {
-        Args: { _patient_user_id: string }
-        Returns: number
-      }
       may_manage_practice_patient_records: {
         Args: { _practice_id: string }
         Returns: boolean
@@ -5811,18 +5428,6 @@ export type Database = {
       may_read_practice_patient_record: {
         Args: { _linked_user_id: string; _practice_id: string }
         Returns: boolean
-      }
-      may_resolve_departed_work: {
-        Args: { _patient_user_id: string; _practice_id: string }
-        Returns: boolean
-      }
-      member_is_active_clinician: {
-        Args: { _practice_id: string; _user_id: string }
-        Returns: boolean
-      }
-      message_thread_practice: {
-        Args: { _clinician: string; _patient: string }
-        Returns: string
       }
       my_institution_care_team: {
         Args: never
@@ -5835,31 +5440,6 @@ export type Database = {
           practice_name: string
           practice_slug: string
           specialty: string
-        }[]
-      }
-      my_message_counterparties: {
-        Args: never
-        Returns: {
-          can_send: boolean
-          clinician_name: string
-          clinician_status: string | null
-          clinician_user_id: string
-          continues_with: Json
-          ended_at: string | null
-          ended_by_patient: boolean
-          practice_id: string | null
-          practice_name: string | null
-          reason: string
-        }[]
-      }
-      my_message_history_patients: {
-        Args: never
-        Returns: {
-          last_at: string
-          patient_name: string | null
-          patient_user_id: string
-          practice_id: string | null
-          practice_name: string | null
         }[]
       }
       my_message_threads: {
@@ -5955,19 +5535,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      offboarding_impact: {
-        Args: { _practice_id: string; _user_id: string }
-        Returns: Json
-      }
-      open_snapshot_link: {
-        Args: {
-          _document_id?: string
-          _passcode?: string
-          _token_hash: string
-          _user_agent?: string
-        }
-        Returns: Json
-      }
       owner_may_remove_document: {
         Args: { _file_path: string }
         Returns: boolean
@@ -6003,10 +5570,6 @@ export type Database = {
           resource_type: string
         }[]
       }
-      practice_clinical_access: {
-        Args: { _patient_user_id: string; _practice_id: string }
-        Returns: boolean
-      }
       practice_contact_details: {
         Args: { _practice_id: string }
         Returns: {
@@ -6025,19 +5588,6 @@ export type Database = {
       practice_delete_department: {
         Args: { _department_id: string; _reason?: string }
         Returns: undefined
-      }
-      practice_handover_queue: {
-        Args: { _practice_id: string }
-        Returns: {
-            departed_name: string
-            departed_user_id: string
-            detail: string
-            item_id: string
-            kind: string
-            patient_name: string
-            patient_user_id: string
-            since: string
-          }[]
       }
       practice_has_clinical_access: {
         Args: { patient_uuid: string }
@@ -6154,17 +5704,9 @@ export type Database = {
         }[]
       }
       purge_expired_kingschat_attempts: { Args: never; Returns: number }
-      record_context_practice: {
-        Args: { _author: string; _patient: string }
-        Returns: string
-      }
       rename_document_folder: {
         Args: { _folder_id: string; _new_name: string }
         Returns: undefined
-      }
-      request_care_record_snapshot: {
-        Args: { _share_id: string }
-        Returns: string
       }
       request_client_ip: { Args: never; Returns: string }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
@@ -6172,11 +5714,6 @@ export type Database = {
         Args: { _sent_at: string }
         Returns: string
       }
-      resolve_departed_draft: {
-        Args: { _action: string; _id: string; _kind: string; _note?: string; _share_with_patient?: boolean }
-        Returns: string
-      }
-      revoke_snapshot_link: { Args: { _link_id: string }; Returns: string }
       respond_to_change_proposal: {
         Args: { p_accept: boolean; p_note?: string; p_proposal_id: string }
         Returns: {
@@ -6329,10 +5866,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      withdraw_guidance: {
-        Args: { _guidance_id: string; _reason: string }
-        Returns: undefined
       }
       withdraw_shared_file: {
         Args: {
