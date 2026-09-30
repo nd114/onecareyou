@@ -166,9 +166,18 @@ export function KingsChatSignInButton({
     popup.current = window.open("", "_blank", "width=520,height=680");
 
     try {
-      const { data: rows, error } = await supabase.rpc("kingschat_begin_login", {
-        _return_origin: window.location.origin,
-      });
+      // The generated types lag this function's current signature (they still
+      // describe the first version, which took no arguments and returned a
+      // string). types.ts is auto-generated, so the correct signature is
+      // declared here at the call site instead.
+      interface BegunLogin {
+        nonce: string;
+        browser_secret: string;
+      }
+      const { data: rows, error } = (await supabase.rpc(
+        "kingschat_begin_login" as never,
+        { _return_origin: window.location.origin } as never,
+      )) as { data: BegunLogin[] | null; error: { message: string } | null };
       const begun = rows?.[0];
       if (error || !begun?.nonce || !begun?.browser_secret) {
         finish(error?.message || "Could not start KingsChat sign-in");

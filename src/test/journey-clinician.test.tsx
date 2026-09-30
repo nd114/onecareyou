@@ -54,7 +54,10 @@ describe('C1 — dictation survives the whole way through', () => {
     // fits inside.
     const page = await import('@/pages/ClinicianDictations');
     expect(page.default).toBeTruthy();
-  });
+    // Importing the page pulls in the recorder and its dependency tree; under
+    // a full-suite parallel run that transform alone can outlast the default
+    // 5s budget even though nothing is wrong.
+  }, 20000);
 
   it('only ever writes a status the database will accept', async () => {
     // A cross-file join nothing else checks: the page writes status strings and
