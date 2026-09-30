@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
 import { clinicianShareGrants } from "../_shared/share-access.ts";
+import { safeFhirFetch } from "../_shared/safe-fhir-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,7 +124,7 @@ async function exportVitalToFHIR(
   observation: object
 ): Promise<{ success: boolean; resourceId?: string; error?: string }> {
   try {
-    const response = await fetch(`${fhirBaseUrl}/Observation`, {
+    const response = await safeFhirFetch(fhirBaseUrl, `/Observation`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/fhir+json',
