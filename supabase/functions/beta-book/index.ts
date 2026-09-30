@@ -1,6 +1,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3.23.8';
+import { escapeHtml } from "../_shared/html.ts";
 
 const CAL_API = 'https://api.cal.com/v2';
 const APP_URL = 'https://onecare.you';
@@ -196,16 +197,16 @@ Deno.serve(async (req) => {
       const html = `
         <div style="font-family:Arial,Helvetica,sans-serif;color:#12241c;max-width:560px">
           <h2 style="margin:0 0 16px">Your OneCare beta onboarding call is confirmed</h2>
-          <p>Hi ${b.fullName.split(' ')[0]},</p>
+          <p>Hi ${escapeHtml(b.fullName.split(' ')[0])},</p>
           <p>Thanks for joining the OneCare beta programme. Your call is booked for:</p>
-          <p style="font-size:18px;font-weight:bold">${when} (${b.timeZone})</p>
+          <p style="font-size:18px;font-weight:bold">${escapeHtml(when)} (${escapeHtml(b.timeZone)})</p>
           ${meetingUrl ? `<p>Join link: <a href="${meetingUrl}">${meetingUrl}</a></p>` : ''}
           <p>A calendar invite is on its way, along with reminders 24 hours and 1 hour before the call.</p>
           <hr style="border:none;border-top:1px solid #e3e8e4;margin:24px 0" />
           <h3 style="margin:0 0 8px">Copy of what you signed</h3>
           <ul style="line-height:1.7">
-            <li><strong>Document:</strong> OneCare Beta Programme Mutual NDA (version ${b.ndaVersion})</li>
-            <li><strong>Signed name:</strong> ${b.signedName}</li>
+            <li><strong>Document:</strong> OneCare Beta Programme Mutual NDA (version ${escapeHtml(b.ndaVersion)})</li>
+            <li><strong>Signed name:</strong> ${escapeHtml(b.signedName)}</li>
             <li><strong>Signed at:</strong> ${signedAt} (UTC)</li>
             <li><strong>IP address:</strong> ${ip ?? 'not recorded'}</li>
             <li><strong>Reference:</strong> ${signature.id}</li>
