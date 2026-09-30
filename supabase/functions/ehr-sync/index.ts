@@ -286,8 +286,9 @@ serve(async (req) => {
           // ---- Medications ------------------------------------------------
           // Not date-windowed: a prescription written a year ago is still
           // live, and asking only for recent ones would import nothing.
-          const medResponse = await fetch(
-            `${fhirBaseUrl}/MedicationRequest?patient=${patientFhirId}&status=${MEDICATION_STATUSES}&_count=100`,
+          const medResponse = await safeFhirFetch(
+            importBase,
+            `/MedicationRequest?patient=${encodeURIComponent(patientFhirId)}&status=${MEDICATION_STATUSES}&_count=100`,
             { headers },
           );
 

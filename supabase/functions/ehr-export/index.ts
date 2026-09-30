@@ -437,6 +437,25 @@ serve(async (req) => {
           }
         }
 
+        // The FHIR patient id must be the one this connection links to the
+        // vital's owner; a caller-typed id would file the reading under
+        // somebody else's chart on the EHR.
+        {
+          const { data: vRow } = await supabaseClient
+            .from('vitals').select('user_id').eq('id', vitalId).maybeSingle();
+          const { data: connRow } = await supabaseClient
+            .from('ehr_connections').select('patient_id_mapping').eq('id', connectionId).maybeSingle();
+          const maps = (connRow?.patient_id_mapping as Array<{ fhirPatientId?: string; onecareUserId?: string }> | null) ?? [];
+          const linked = !!vRow && maps.some(
+            (m) => m?.fhirPatientId === patientFhirId && m?.onecareUserId === vRow.user_id,
+          );
+          if (!linked) {
+            return new Response(JSON.stringify({ error: "That patient is not linked to this connection" }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+
         // Check if already queued
         const { data: existing } = await supabaseClient
           .from('ehr_export_queue')
