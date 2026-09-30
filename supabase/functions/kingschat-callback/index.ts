@@ -22,7 +22,6 @@
 // See docs: https://developers.kingschat.online/docs/login
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  decodeJwtClaims,
   identityFromClaims,
   identityFromProfile,
   isPlaceholderEmail,
@@ -85,12 +84,10 @@ async function resolveIdentity(accessToken: string): Promise<KingsChatIdentity> 
     console.error("KINGSCHAT_API_KEY is not set — falling back to the token's own claims");
   }
 
-  const identity = identityFromClaims(decodeJwtClaims(accessToken));
-  console.log(
-    "KingsChat token claims present:",
-    Object.keys(identity.claims).join(", ") || "none",
-  );
-  return identity;
+  // No fallback to the token's own claims: they are unsigned as far as we can
+  // check here, and trusting them would let a forged token name any account.
+  // Without a verified profile answer, the sign-in fails.
+  return identityFromClaims(null);
 }
 
 function json(body: unknown, status = 200) {
