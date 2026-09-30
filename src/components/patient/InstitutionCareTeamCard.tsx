@@ -30,7 +30,8 @@ export function InstitutionCareTeamCard() {
   const { byPractice, isLoading } = useInstitutionCareTeam();
   const { notices, markSeen } = usePatientNotices();
   // Told once: a handover shows until the patient says they have seen it.
-  const unseen = notices.filter((n) => !n.seenAt);
+  // Only handovers belong here; a withdrawn instruction is told on the Instructions page.
+  const unseen = notices.filter((n) => n.noticeType === 'care_handed_over' && !n.seenAt);
 
   // Nothing to say when no hospital has assigned anyone — the connection itself
   // is already shown by HospitalShareCard above.

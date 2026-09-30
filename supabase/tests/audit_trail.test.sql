@@ -65,12 +65,14 @@ BEGIN
   --    (misattributing a row to another clinician is not tested here because
   --    RLS refuses the insert outright — a stronger guarantee than the log.)
   -- ==========================================================================
+  --    Amending issues a new instruction and withdraws the original
+  --    (20261010160000), so the change to the original is its withdrawal.
   DELETE FROM public.hipaa_audit_logs;
   PERFORM set_config('request.jwt.claim.sub', _doc::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
-  UPDATE public.clinician_guidance
-     SET instruction = 'Three times daily instead.'
-   WHERE patient_user_id = _patient;
+  PERFORM public.amend_guidance(
+    (SELECT id FROM public.clinician_guidance WHERE patient_user_id = _patient LIMIT 1),
+    'Check your BP', 'Three times daily instead.', 'Readings still high.');
   EXECUTE 'SET LOCAL ROLE postgres';
 
   SELECT count(*) INTO _count FROM public.hipaa_audit_logs

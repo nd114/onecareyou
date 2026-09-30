@@ -7,8 +7,7 @@ import {
   CheckCircle,
   Loader2,
   Plus,
-  Archive,
-  Undo2,
+  Ban,
   Search,
   FileText,
   Eye,
@@ -36,26 +35,28 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { ClinicianGuidance } from '@/hooks/useClinicianGuidance';
+import { Textarea } from '@/components/ui/textarea';
+import { describeWithdrawal } from '@/lib/guidance-status';
 
 const ClinicianGuidance = () => {
   const navigate = useNavigate();
   const { isLoading: isLoadingProfile, isClinician } = useClinicianProfile();
   const {
     clinicianGuidance,
-    archivedGuidance,
+    withdrawnGuidance,
     isLoading: isLoadingGuidance,
-    archiveGuidance,
-    restoreGuidance,
+    withdrawGuidance,
   } = useClinicianGuidance();
   const { patients } = useClinicianPatients();
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showArchived, setShowArchived] = useState(false);
-  // Archiving an instruction a patient may already have acted on is worth a
-  // second's pause, and this used to happen on one click of a bin icon.
-  const [confirmArchive, setConfirmArchive] = useState<ClinicianGuidance | null>(null);
 
-  const list = showArchived ? archivedGuidance : clinicianGuidance;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showWithdrawn, setShowWithdrawn] = useState(false);
+  // Withdrawing is permanent and the patient is told the reason, so it asks
+  // for one before anything is sent.
+  const [confirmWithdraw, setConfirmWithdraw] = useState<ClinicianGuidance | null>(null);
+  const [withdrawReason, setWithdrawReason] = useState('');
+
+  const list = showWithdrawn ? withdrawnGuidance : clinicianGuidance;
 
   const isLoading = isLoadingProfile || isLoadingGuidance;
 
@@ -106,7 +107,7 @@ const ClinicianGuidance = () => {
     };
     return (
       <Badge variant={variants[status] || 'secondary'} className="capitalize">
-        {status}
+        {status === 'archived' ? 'withdrawn' : status}
       </Badge>
     );
   };
@@ -239,15 +240,15 @@ const ClinicianGuidance = () => {
               <div>
                 <CardTitle className="text-base sm:text-lg">Guidance History</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
-                  {showArchived
-                    ? `${archivedGuidance.length} archived`
+                  {showWithdrawn
+                    ? `${withdrawnGuidance.length} withdrawn — kept in each patient's record, marked withdrawn`
                     : `${clinicianGuidance.length} instruction${clinicianGuidance.length !== 1 ? 's' : ''} sent`}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-              {(showArchived || archivedGuidance.length > 0) && (
-                <Button variant="ghost" size="sm" onClick={() => setShowArchived((v) => !v)}>
-                  {showArchived ? 'Back to guidance' : `Archived (${archivedGuidance.length})`}
+              {(showWithdrawn || withdrawnGuidance.length > 0) && (
+                <Button variant="ghost" size="sm" onClick={() => setShowWithdrawn((v) => !v)}>
+                  {showWithdrawn ? 'Back to guidance' : `Withdrawn (${withdrawnGuidance.length})`}
                 </Button>
               )}
               <CreateGuidanceDialog
@@ -338,30 +339,29 @@ const ClinicianGuidance = () => {
                                 </>
                               )}
                             </div>
+                            {showWithdrawn && (
+                              <p className="mt-2 text-xs text-muted-foreground italic">
+                                {describeWithdrawal(guidance, 'you')}
+                              </p>
+                            )}
                           </div>
                         </div>
-                        {showArchived ? (
+                        {/* A withdrawal is final: no restore. Issue new guidance instead. */}
+                        {!showWithdrawn && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8"
-                            onClick={() => restoreGuidance.mutate(guidance)}
-                            disabled={restoreGuidance.isPending}
+                            className="h-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              setWithdrawReason('');
+                              setConfirmWithdraw(guidance);
+                            }}
+                            disabled={withdrawGuidance.isPending}
+                            aria-label={`Withdraw "${guidance.title}"`}
+                            title="Withdraw this instruction"
                           >
-                            <Undo2 className="mr-1.5 h-4 w-4" />
-                            Restore
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => setConfirmArchive(guidance)}
-                            disabled={archiveGuidance.isPending}
-                            aria-label={`Archive "${guidance.title}"`}
-                            title="Archive this instruction"
-                          >
-                            <Archive className="h-4 w-4" />
+                            <Ban className="mr-1.5 h-4 w-4" />
+                            Withdraw
                           </Button>
                         )}
                       </div>
@@ -374,30 +374,48 @@ const ClinicianGuidance = () => {
         </motion.div>
       </main>
 
-      {/* Archiving withdraws an instruction the patient may already have acted
-          on, so it says what actually happens and offers the way back. */}
+      {/* The patient may already have acted on this, so it is never deleted:
+          it stays in their record marked withdrawn, with the reason, and they
+          are told. Saying so here is the difference between a clinician
+          choosing this and being surprised by it. */}
       <AlertDialog
-        open={!!confirmArchive}
-        onOpenChange={(open) => !open && setConfirmArchive(null)}
+        open={!!confirmWithdraw}
+        onOpenChange={(open) => !open && setConfirmWithdraw(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive this instruction?</AlertDialogTitle>
+            <AlertDialogTitle>Withdraw this instruction?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{confirmArchive?.title}” leaves your list and the patient's. Nothing is
-              deleted — the instruction, their acknowledgement and anything they
-              completed stay on the record, and you can restore it from Archived.
+              “{confirmWithdraw?.title}” stays in the patient's record, marked withdrawn by
+              you today with the reason below, and they are notified. It cannot be deleted or
+              undone. To change what you said, send new guidance.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="withdraw-reason" className="text-sm font-medium">
+              Reason (the patient will see this)
+            </label>
+            <Textarea
+              id="withdraw-reason"
+              value={withdrawReason}
+              onChange={(e) => setWithdrawReason(e.target.value)}
+              placeholder="For example: sent to the wrong patient, or the dose was wrong"
+              maxLength={1000}
+              rows={3}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep it</AlertDialogCancel>
             <AlertDialogAction
+              disabled={!withdrawReason.trim() || withdrawGuidance.isPending}
               onClick={() => {
-                if (confirmArchive) archiveGuidance.mutate(confirmArchive.id);
-                setConfirmArchive(null);
+                if (confirmWithdraw && withdrawReason.trim()) {
+                  withdrawGuidance.mutate({ id: confirmWithdraw.id, reason: withdrawReason.trim() });
+                }
+                setConfirmWithdraw(null);
               }}
             >
-              Archive
+              Withdraw
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -29,7 +29,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { isArchivedGuidance } from '@/lib/guidance-status';
+import { describeWithdrawal, isWithdrawnGuidance } from '@/lib/guidance-status';
+import { usePatientNotices } from '@/hooks/useOffboarding';
 
 interface GuidanceItem {
   id: string;
@@ -42,6 +43,8 @@ interface GuidanceItem {
   due_date: string | null;
   acknowledged_at: string | null;
   completed_at: string | null;
+  withdrawn_at?: string | null;
+  withdrawal_reason?: string | null;
   clinician_name?: string;
   clinician_title?: string;
   clinician_specialty?: string;
@@ -50,7 +53,10 @@ interface GuidanceItem {
 
 const PatientGuidance = () => {
   const { guidance, isLoading, acknowledgeGuidance, completeGuidance } = usePatientGuidance();
-  
+  // A withdrawal is told once, here, until the patient says they have seen it.
+  const { notices, markSeen } = usePatientNotices();
+  const withdrawalNotices = notices.filter((n) => n.noticeType === 'guidance_withdrawn' && !n.seenAt);
+
   // Initialize service worker for push notifications
   useServiceWorker();
   
@@ -74,7 +80,7 @@ const PatientGuidance = () => {
    * as such rather than hidden: "your doctor took this back" is itself part of
    * the history.
    */
-  const pastGuidance = [...completedGuidance, ...guidance.filter(isArchivedGuidance)].sort(
+  const pastGuidance = [...completedGuidance, ...guidance.filter(isWithdrawnGuidance)].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
@@ -142,9 +148,9 @@ const PatientGuidance = () => {
             </Badge>
             {/* Withdrawn is not the same as done, and the difference is part of
                 the history rather than something to hide. */}
-            {isArchivedGuidance(item) && (
-              <Badge variant="outline" className="text-[10px] sm:text-xs">
-                Withdrawn by your clinician
+            {isWithdrawnGuidance(item) && (
+              <Badge variant="destructive" className="text-[10px] sm:text-xs">
+                Withdrawn
               </Badge>
             )}
           </div>
@@ -215,6 +221,15 @@ const PatientGuidance = () => {
           Completed on {format(new Date(item.completed_at), 'MMM d, yyyy h:mm a')}
         </p>
       )}
+      {/* Who took it back, when and why, where the instruction is. */}
+      {isWithdrawnGuidance(item) && (
+        <p className="text-xs text-destructive mt-2">
+          {describeWithdrawal(
+            item,
+            item.clinician_name ? `${item.clinician_title || 'Dr.'} ${item.clinician_name}` : null,
+          )}
+        </p>
+      )}
     </motion.div>
   );
 
@@ -238,6 +253,31 @@ const PatientGuidance = () => {
             What your clinicians have asked you to do, and what you have done about it.
           </p>
         </motion.div>
+
+        {withdrawalNotices.length > 0 && (
+          <div className="space-y-2 mb-6">
+            {withdrawalNotices.map((notice) => (
+              <div
+                key={notice.id}
+                role="status"
+                className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3"
+              >
+                <div className="flex gap-2 min-w-0">
+                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-sm">{notice.message}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={markSeen.isPending}
+                  onClick={() => markSeen.mutate(notice.id)}
+                >
+                  Got it
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Quick Stats */}
         <motion.div

@@ -255,7 +255,7 @@ export type Database = {
       baa_agreements: {
         Row: {
           agreement_version: string
-          clinician_user_id: string
+          clinician_user_id: string | null
           contact_email: string
           contact_name: string
           contact_phone: string | null
@@ -267,12 +267,14 @@ export type Database = {
           practice_npi: string | null
           signed_at: string
           status: string
+          subject_email_sha256: string | null
+          subject_id_sha256: string | null
           updated_at: string
           user_agent: string | null
         }
         Insert: {
           agreement_version?: string
-          clinician_user_id: string
+          clinician_user_id?: string | null
           contact_email: string
           contact_name: string
           contact_phone?: string | null
@@ -284,12 +286,14 @@ export type Database = {
           practice_npi?: string | null
           signed_at?: string
           status?: string
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           updated_at?: string
           user_agent?: string | null
         }
         Update: {
           agreement_version?: string
-          clinician_user_id?: string
+          clinician_user_id?: string | null
           contact_email?: string
           contact_name?: string
           contact_phone?: string | null
@@ -301,6 +305,8 @@ export type Database = {
           practice_npi?: string | null
           signed_at?: string
           status?: string
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           updated_at?: string
           user_agent?: string | null
         }
@@ -823,8 +829,12 @@ export type Database = {
           resend_interval_hours: number | null
           share_id: string | null
           status: string | null
+          supersedes_guidance_id: string | null
           title: string
           updated_at: string
+          withdrawal_reason: string | null
+          withdrawn_at: string | null
+          withdrawn_by: string | null
         }
         Insert: {
           acknowledged_at?: string | null
@@ -842,8 +852,12 @@ export type Database = {
           resend_interval_hours?: number | null
           share_id?: string | null
           status?: string | null
+          supersedes_guidance_id?: string | null
           title: string
           updated_at?: string
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+          withdrawn_by?: string | null
         }
         Update: {
           acknowledged_at?: string | null
@@ -861,10 +875,21 @@ export type Database = {
           resend_interval_hours?: number | null
           share_id?: string | null
           status?: string | null
+          supersedes_guidance_id?: string | null
           title?: string
           updated_at?: string
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+          withdrawn_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clinician_guidance_supersedes_guidance_id_fkey"
+            columns: ["supersedes_guidance_id"]
+            isOneToOne: false
+            referencedRelation: "clinician_guidance"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clinician_guidance_share_id_fkey"
             columns: ["share_id"]
@@ -1148,8 +1173,10 @@ export type Database = {
           metadata: Json | null
           new_value: boolean | null
           previous_value: boolean | null
+          subject_email_sha256: string | null
+          subject_id_sha256: string | null
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -1160,8 +1187,10 @@ export type Database = {
           metadata?: Json | null
           new_value?: boolean | null
           previous_value?: boolean | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -1172,8 +1201,10 @@ export type Database = {
           metadata?: Json | null
           new_value?: boolean | null
           previous_value?: boolean | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2628,24 +2659,30 @@ export type Database = {
           document_id: string
           id: string
           ip_address: string | null
+          subject_email_sha256: string | null
+          subject_id_sha256: string | null
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           accepted_at?: string
           document_id: string
           id?: string
           ip_address?: string | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           accepted_at?: string
           document_id?: string
           id?: string
           ip_address?: string | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -5404,6 +5441,15 @@ export type Database = {
           role: string
         }[]
       }
+      amend_guidance: {
+        Args: {
+          _guidance_id: string
+          _instruction: string
+          _reason: string
+          _title: string
+        }
+        Returns: string
+      }
       apply_medication_proposal: {
         Args: {
           p_proposal: Database["public"]["Tables"]["record_change_proposals"]["Row"]
@@ -6264,6 +6310,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      withdraw_guidance: {
+        Args: { _guidance_id: string; _reason: string }
+        Returns: undefined
       }
       withdraw_shared_file: {
         Args: {

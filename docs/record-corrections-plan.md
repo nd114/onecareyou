@@ -111,6 +111,22 @@ Four rules, each of which came from a failure mode worth naming:
   access; it cannot unsee what was already read, and an incident record that
   implies otherwise is worse than none.
 
+**Guidance is withdrawn the same way** (founder's decision, 30 September 2026;
+`20261010160000_guidance_and_evidence_are_kept`). An instruction reaches the
+patient the moment it is written, and "not acknowledged" does not mean not
+seen or not acted on, so guidance is never deleted — by the clinician, the
+patient or the service role. A clinician who issued it in error calls
+`withdraw_guidance` with a reason: the row stays exactly as sent, marked who
+withdrew it, when and why; the patient gets a notice; the Instructions page and
+every care record snapshot show it as "Withdrawn by [clinician] on [date]:
+[reason]". A withdrawal is final. Unlike a withdrawn document the text stays
+visible, because guidance was written to this patient and what it said is the
+point of keeping it. To change what was said, `amend_guidance` issues a new
+instruction linked to the old (`supersedes_guidance_id`) and withdraws the old
+one with the reason — the Git revert, not an edit. Rewriting a sent
+instruction in place, setting it to archived without a reason, or clearing the
+patient's acknowledgement are all refused at the row.
+
 ## What other software does with the same problem
 
 | Product | Mechanism | What we take from it |
@@ -148,7 +164,7 @@ Named so they are not discovered one at a time in production:
 
 ## Sequencing
 
-Document retraction and clinician proposals are done. Next, in order of how
+Document retraction, guidance withdrawal and clinician proposals are done. Next, in order of how
 much harm the absence does: encounters marked entered-in-error (1), then
 addenda (4), then merge (2 in the scenarios above), which should not be
 attempted until the first two are settled.

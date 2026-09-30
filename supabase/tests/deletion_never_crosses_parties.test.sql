@@ -395,8 +395,11 @@ BEGIN
     ) cascades
    WHERE k NOT IN (
      -- A deleted account takes its own data, and only its own.
+     -- (consent_logs, legal_acceptances and baa_agreements used to be listed
+     -- here. They are OneCare's evidence of what the person agreed to, not the
+     -- person's data, and since 20261010160000 they survive the account,
+     -- unlinked and hashed. Do not add them back.)
      'profiles.user_id', 'medications.user_id', 'vitals.user_id', 'schedule_entries.user_id',
-     'consent_logs.user_id', 'legal_acceptances.user_id', 'baa_agreements.clinician_user_id',
      'snapshot_links.user_id',
      -- Children of a patient's own rows.
      'schedule_entries.medication_id', 'medication_photos.medication_id', 'ehr_export_queue.vital_id',
@@ -416,8 +419,9 @@ BEGIN
      'practice_department_members.practice_id', 'practice_department_members.department_id',
      'practice_patient_departments.practice_id', 'practice_patient_departments.department_id',
      'practice_clinician_allowlist.practice_id',
-     -- Platform-only.
-     'qhin_record_provenance.import_id', 'beta_nda_signatures.tester_id'
+     -- Platform-only. (beta_nda_signatures.tester_id is SET NULL since
+     -- 20261010160000: a signed NDA is evidence and outlives the tester row.)
+     'qhin_record_provenance.import_id'
    );
   PERFORM pg_temp.assert(_extra IS NULL, 'D no unreviewed ON DELETE CASCADE: ' || COALESCE(_extra, 'none'));
 

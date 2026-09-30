@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { ARCHIVED_STATUS, isArchivedGuidance, statusFromHistory } from '@/lib/guidance-status';
+import { isWithdrawnGuidance } from '@/lib/guidance-status';
 
 export interface ClinicianGuidance {
   id: string;
@@ -14,7 +14,7 @@ export interface ClinicianGuidance {
   category: 'medication' | 'lifestyle' | 'monitoring' | 'appointment' | 'general';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   due_date: string | null;
-  status: 'pending' | 'acknowledged' | 'completed' | 'dismissed';
+  status: 'pending' | 'acknowledged' | 'completed' | 'archived';
   acknowledged_at: string | null;
   completed_at: string | null;
   auto_resend_enabled: boolean;
@@ -22,6 +22,10 @@ export interface ClinicianGuidance {
   last_resent_at: string | null;
   created_at: string;
   updated_at: string;
+  withdrawn_at: string | null;
+  withdrawn_by: string | null;
+  withdrawal_reason: string | null;
+  supersedes_guidance_id: string | null;
 }
 
 export interface CreateGuidanceData {
@@ -114,28 +118,6 @@ export const useClinicianGuidance = (patientUserId?: string) => {
     },
   });
 
-  const updateGuidance = useMutation({
-    mutationFn: async ({ id, ...data }: Partial<ClinicianGuidance> & { id: string }) => {
-      if (!user) throw new Error('Not authenticated');
-
-      const { data: updated, error } = await supabase
-        .from('clinician_guidance')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return updated;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-guidance'] });
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update guidance');
-    },
-  });
-
   // Patient acknowledges guidance
   const acknowledgeGuidance = useMutation({
     mutationFn: async (id: string) => {
@@ -193,92 +175,58 @@ export const useClinicianGuidance = (patientUserId?: string) => {
   });
 
   /**
-   * Withdrawing an instruction, rather than destroying it.
+   * Withdrawing an instruction issued in error.
    *
-   * This was a hard DELETE: one click on a bin icon took the instruction, the
-   * patient's acknowledgement, the completion record and — through the
-   * notifications table's ON DELETE CASCADE — the notification trail with it,
-   * with no confirmation and no way back. It also vanished from the patient's
-   * screen, so an instruction they may have acted on left no trace on either
-   * side.
-   *
-   * The row is marked instead. It leaves the active lists, the clinician can
-   * see it again under Archived, and restoring puts it back in the state it
-   * was in — see statusFromHistory.
+   * Guidance is permanent once sent: the patient may have acted on it before
+   * acknowledging anything. So there is no delete and no restore. The
+   * database records who withdrew it, when and the reason, tells the patient,
+   * and keeps it in their history and in care record snapshots, marked
+   * withdrawn. withdraw_guidance refuses anyone but the issuing clinician and
+   * a blank reason; the dialog asks for one so the refusal is never the first
+   * the clinician hears of it.
    */
-  const archiveGuidance = useMutation({
-    mutationFn: async (id: string) => {
+  const withdrawGuidance = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('clinician_guidance')
-        .update({ status: ARCHIVED_STATUS })
-        .eq('id', id)
-        .eq('clinician_user_id', user.id);
-
+      const { error } = await supabase.rpc('withdraw_guidance', { _guidance_id: id, _reason: reason });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clinician-guidance'] });
       queryClient.invalidateQueries({ queryKey: ['patient-guidance'] });
       toast.success('Instruction withdrawn', {
-        description:
-          'Off your active list and the patient\'s, and kept in their history. Restore it from Archived.',
+        description: 'The patient has been told, with your reason. It stays in their record, marked withdrawn.',
       });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to archive guidance');
+      toast.error(error.message || 'Failed to withdraw guidance');
     },
   });
 
-  const restoreGuidance = useMutation({
-    mutationFn: async (guidance: ClinicianGuidance) => {
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('clinician_guidance')
-        .update({ status: statusFromHistory(guidance) })
-        .eq('id', guidance.id)
-        .eq('clinician_user_id', user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clinician-guidance'] });
-      queryClient.invalidateQueries({ queryKey: ['patient-guidance'] });
-      toast.success('Guidance restored');
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to restore guidance');
-    },
-  });
-
-  // Archived rows leave the clinician's working list, but not the record.
-  const activeClinicianGuidance = clinicianGuidance.filter((g) => !isArchivedGuidance(g));
-  const archivedGuidance = clinicianGuidance.filter((g) => isArchivedGuidance(g));
+  // Withdrawn rows leave the clinician's working list, but not the record.
+  const activeClinicianGuidance = clinicianGuidance.filter((g) => !isWithdrawnGuidance(g));
+  const withdrawnGuidance = clinicianGuidance.filter((g) => isWithdrawnGuidance(g));
 
   // The patient keeps all of it. An instruction from a clinician is
   // professional counsel someone may have acted on, so it belongs in their
   // record permanently — a patient asked in two years why they changed a dose
   // needs to be able to point at who told them to and when. Withdrawing it
   // takes it off the active list; it does not take it out of their history.
-  const activePatientGuidance = patientGuidance.filter((g) => !isArchivedGuidance(g));
+  const activePatientGuidance = patientGuidance.filter((g) => !isWithdrawnGuidance(g));
 
   const pendingGuidance = activePatientGuidance.filter(g => g.status === 'pending');
   const pendingCount = pendingGuidance.length;
 
   return {
     clinicianGuidance: activeClinicianGuidance,
-    archivedGuidance,
+    withdrawnGuidance,
     patientGuidance: activePatientGuidance,
     pendingGuidance,
     pendingCount,
     isLoading: isLoadingClinician || isLoadingPatient,
     createGuidance,
-    updateGuidance,
     acknowledgeGuidance,
     completeGuidance,
-    archiveGuidance,
-    restoreGuidance,
+    withdrawGuidance,
   };
 };

@@ -55,6 +55,13 @@ revoke. The clinician retains **read-only** access to the historical record they
 (messages they sent, guidance they issued, what the patient reported at the time) because that
 record informed their clinical decisions and both sides may need it legally.
 
+**Guidance is permanent once sent** (founder's decision, 30 September 2026): not acknowledged does
+not mean not seen and not done. Nobody deletes it. A clinician who issued it in error withdraws it
+with a reason; it stays in the patient's record and every care record snapshot marked "withdrawn by
+[clinician] on [date]: [reason]", and the patient is notified. Changing what was said issues a new,
+linked instruction and withdraws the old one; the text the patient received is never rewritten.
+See `record-corrections-plan.md`, class 3.
+
 ### B. Institution share (`practice_shares`)
 Patient shares with a hospital as an institution, usually on admission or registration, using the
 hospital's code (set by the hospital's owner/admin in Practice → Hospital code). The patient either
@@ -96,7 +103,7 @@ An institution share never overrides, replaces or weakens a private share, and v
 | --- | --- |
 | Vitals, medications, live documents | Clinician loses forward access immediately |
 | Messages | Preserved; both sides keep read-only access until the account is closed or the author deletes a message (which leaves a remnant). No time limit (decided 29 September 2026; the code's 90-day wind-down for a private clinician is being removed in separate work). On a hospital thread "the other side" is the hospital's care team, not a clinician who has since left (§5) |
-| Guidance and acknowledgements | Preserved; read-only |
+| Guidance and acknowledgements | Preserved; read-only. Never deleted; the issuing clinician can still withdraw guidance with a reason after disconnection, and the patient is told (§2A) |
 | Alerts raised | Preserved |
 | Care record snapshot | Generated at disconnection, watermarked, filed in the patient's Vault, undeletable |
 | Relationship ledger (`share_events`) | Append-only; shows connected / changed / paused / revoked / reconnected |
@@ -213,6 +220,16 @@ record; the only deletion route is §7, taken by the controller of that record.
   Closing disables sign-in and keeps the person's name for attribution on what they wrote, so the
   record others rely on still says who wrote it; nothing is decided by accident (for example by a
   foreign-key cascade). See `plans/clinician-offboarding.md` §5.7.
+  - **OneCare's own evidence outlives the account** (founder's decision, 30 September 2026;
+    `20261010160000`). Terms acceptances (`legal_acceptances`), consent changes (`consent_logs`),
+    BAAs (`baa_agreements`) and beta NDAs (`beta_nda_signatures`) are what OneCare needs if an
+    agreement is ever disputed, and a dispute can outlive the account. Deleting the account no
+    longer deletes them: the account column is set to NULL and the row keeps the document version,
+    timestamps, IP and user agent, plus a SHA-256 of the account id and of the email it was made
+    under, so it can still be matched to the person who presents that email. SET NULL rather than
+    RESTRICT, because every account has an acceptance and RESTRICT would make no account closable,
+    including under a verified erasure request for data OneCare controls (§7.2). The audit logs
+    already name people without a foreign key and survive in the same way.
 - **Jurisdiction.** We build to a US/EU baseline, which satisfies most other regimes; final policy
   confirmed with legal counsel per market.
 

@@ -18,26 +18,30 @@ BEGIN
     (v_pat,'p@example.com',now()), (v_clin,'c@example.com',now());
 
   -- -------------------------------------------------------------------------
-  -- 1. Advice the patient acknowledged stands. Advice never seen can go.
+  -- 1. Advice stands once sent, acknowledged or not.
   -- -------------------------------------------------------------------------
   INSERT INTO public.clinician_guidance (clinician_user_id,patient_user_id,title,instruction,acknowledged_at)
   VALUES (v_clin,v_pat,'Reduce your dose','Take one instead of two',now()) RETURNING id INTO v_id;
   PERFORM set_config('request.jwt.claim.sub', v_clin::text, true);
   SET LOCAL ROLE authenticated;
-  DELETE FROM public.clinician_guidance WHERE id = v_id;
+  -- Refused by the grant now (20261010160000), not just by an absent policy.
+  BEGIN DELETE FROM public.clinician_guidance WHERE id = v_id; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   RESET ROLE;
   IF (SELECT count(*) FROM public.clinician_guidance WHERE id = v_id) <> 1 THEN
     RAISE EXCEPTION 'FAIL: a clinician deleted advice the patient had acknowledged';
   END IF;
 
+  -- Not acknowledged is not unseen: the patient may have acted on it without
+  -- tapping anything (20261010160000). Withdrawal is the route, not deletion.
   INSERT INTO public.clinician_guidance (clinician_user_id,patient_user_id,title,instruction)
-  VALUES (v_clin,v_pat,'Draft','Not sent yet') RETURNING id INTO v_id2;
+  VALUES (v_clin,v_pat,'Unacknowledged','Sent, not yet confirmed') RETURNING id INTO v_id2;
   PERFORM set_config('request.jwt.claim.sub', v_clin::text, true);
   SET LOCAL ROLE authenticated;
-  DELETE FROM public.clinician_guidance WHERE id = v_id2;
+  -- Refused by the grant now (20261010160000), not just by an absent policy.
+  BEGIN DELETE FROM public.clinician_guidance WHERE id = v_id2; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   RESET ROLE;
-  IF (SELECT count(*) FROM public.clinician_guidance WHERE id = v_id2) <> 0 THEN
-    RAISE EXCEPTION 'FAIL: a clinician cannot remove guidance nobody has seen';
+  IF (SELECT count(*) FROM public.clinician_guidance WHERE id = v_id2) <> 1 THEN
+    RAISE EXCEPTION 'FAIL: a clinician deleted guidance the patient had not yet acknowledged';
   END IF;
 
   -- -------------------------------------------------------------------------
