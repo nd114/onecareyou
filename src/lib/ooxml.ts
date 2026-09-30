@@ -73,7 +73,7 @@ async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
       controller.close();
     },
   });
-  const stream = source.pipeThrough(new DecompressionStream('deflate-raw'));
+  const stream = source.pipeThrough(new DecompressionStream('deflate-raw') as unknown as ReadableWritablePair<Uint8Array, Uint8Array>);
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
