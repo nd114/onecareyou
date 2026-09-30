@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
           <p>Hi ${escapeHtml(b.fullName.split(' ')[0])},</p>
           <p>Thanks for joining the OneCare beta programme. Your call is booked for:</p>
           <p style="font-size:18px;font-weight:bold">${escapeHtml(when)} (${escapeHtml(b.timeZone)})</p>
-          ${meetingUrl ? `<p>Join link: <a href="${meetingUrl}">${meetingUrl}</a></p>` : ''}
+          ${meetingUrl ? `<p>Join link: <a href="${escapeHtml(meetingUrl)}">${escapeHtml(meetingUrl)}</a></p>` : ''}
           <p>A calendar invite is on its way, along with reminders 24 hours and 1 hour before the call.</p>
           <hr style="border:none;border-top:1px solid #e3e8e4;margin:24px 0" />
           <h3 style="margin:0 0 8px">Copy of what you signed</h3>
@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
             <li><strong>Document:</strong> OneCare Beta Programme Mutual NDA (version ${escapeHtml(b.ndaVersion)})</li>
             <li><strong>Signed name:</strong> ${escapeHtml(b.signedName)}</li>
             <li><strong>Signed at:</strong> ${signedAt} (UTC)</li>
-            <li><strong>IP address:</strong> ${ip ?? 'not recorded'}</li>
+            <li><strong>IP address:</strong> ${escapeHtml(ip ?? "not recorded")}</li>
             <li><strong>Reference:</strong> ${signature.id}</li>
           </ul>
           <p>Read the full agreement any time at <a href="${APP_URL}/beta/nda">${APP_URL}/beta/nda</a>.</p>
