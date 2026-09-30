@@ -222,7 +222,7 @@ BEGIN
   PERFORM pg_temp.assert(jsonb_array_length(_r->'snapshot'->'vitals') = 1
       AND (_r->'snapshot'->'vitals'->0->>'value')::numeric = 71,
     'readings recorded after the link was made do not leak through it');
-  PERFORM pg_temp.assert((_r->'snapshot'->'vitals')::text NOT LIKE '%140%',
+  PERFORM pg_temp.assert(NOT EXISTS (SELECT 1 FROM jsonb_array_elements(_r->'snapshot'->'vitals') v WHERE (v->>'value')::numeric = 140),
     'a family member''s readings are not the patient''s snapshot');
   PERFORM pg_temp.assert((_r->'snapshot'->'medications')::text NOT LIKE '%Added Later%'
       AND (_r->'snapshot'->'medications')::text LIKE '%Salbutamol%',
