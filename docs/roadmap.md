@@ -28,7 +28,8 @@
 - [`sharing-access-consent-model.md`](./sharing-access-consent-model.md) — consent + access matrix
 - [`pricing-roadmap.md`](./pricing-roadmap.md) — tiers, packs, storage economics
 - [`platform-documentation.md`](./platform-documentation.md) — system reference
-- [`branding.md`](./branding.md), [`caregiver-access-system.md`](./caregiver-access-system.md)
+- [`plans/family-caregivers-and-next-of-kin.md`](./plans/family-caregivers-and-next-of-kin.md) — dependents and guardians, caregivers, verified next of kin (proposed; supersedes the caregiver plan)
+- [`branding.md`](./branding.md), [`caregiver-access-system.md`](./plans/caregiver-access-system.md)
 - [`beta-tester-pack.md`](./beta-tester-pack.md), [`beta-nda.md`](./beta-nda.md)
 - [`funding-strategy.md`](./funding-strategy.md), [`strategy/`](./strategy)
 
@@ -65,8 +66,9 @@
    - **A non-clinical member can file a "From your clinician" document** (from definitions, not
      exercised): the clinician document INSERT policy and its storage twin still use the role-blind
      `institution_has_patient_access`. Close with sharing v2 phase 1 (G11 there).
-   - **Message history:** the 90-day wind-down for a private clinician is being removed (separate
-     work); history is kept until account closure or author deletion.
+   - **Message history:** done — the 90-day wind-down is removed; history is kept until account
+     closure or author deletion.
+   - **Family, caregivers and next of kin** are designed in [`plans/family-caregivers-and-next-of-kin.md`](./plans/family-caregivers-and-next-of-kin.md): a dependent becomes a patient of record with their own id, guardians and caregivers share one delegation object in the share vocabulary, and next of kin, emergency contact and alert contacts become one verified contact. Phase 0 (2–3 days) closes defects live today behind the hidden flag: removing a family member hard-deletes their medications and readings and moves their documents into the owner's record, and a parent's clinician reads a child's readings as the parent's. Next of kin (phase 1, about a week) is recommended next. The rest waits on the pause being lifted and the questions in §9.
    - **Realtime is dead in production.** The websocket answers 500 at handshake on every page, so anything live is silently stale. Check the hosted project's Realtime settings in the Supabase dashboard first; it is probably configuration. The typing indicator now uses a private channel and is unverified live until this is fixed.
    - **Decisions needed:**
      - Should an inactive practice (`practices.is_active = false`, set only by the platform admin's Active switch) lose staff access? Today view-all staff keep reading; only assigned staff lose it. The workspace switcher follows the database as it stands: an inactive practice is offered, marked Inactive, and its capabilities are whatever `has_practice_capability` grants. If this decision goes the other way, the switcher and the capability hook have to change with it.
