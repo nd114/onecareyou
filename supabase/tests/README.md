@@ -310,5 +310,21 @@ SELECT on `auth.users` — hence the SECURITY DEFINER wrapper.
 **Replaying locally:** the test shim's `auth.users` is minimal. Add
 `email_confirmed_at timestamptz` before running this suite.
 
+`deletion_never_crosses_parties.test.sql` — one party's deletion never removes the other's copy:
+
+| Rule | Why |
+| --- | --- |
+| A patient's account going keeps the consent rows, change proposals and snapshot-view ledger | they are the institution's evidence and the patient's access record |
+| A share going keeps its `share_events` and the clinician's alert rules | the ledger is append-only; the rules are the clinician's |
+| A tenant going keeps patients' shares, members, the membership ledger, appointments, invoices, care plans | consent model 4 and 7.4 |
+| A clinician's account going keeps what they sent: Vault document and file, messages, guidance | the recipient's copy is independent |
+| A sent message attachment cannot be deleted by its sender; an unsent upload still can | one object, two readers |
+| Every remaining `ON DELETE CASCADE` is on a reviewed same-side list | a new one fails naming itself |
+
+Most sections delete as the superuser, the way the dashboard or the service role
+would, and each fixture holds one kind of dependent row so that reverting any
+single constraint fails its own assertion. Failures are collected, so a run
+names every broken boundary at once.
+
 Please extend these files rather than starting new ones when the rules change,
 and add a row above so the coverage stays legible.

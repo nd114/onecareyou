@@ -278,14 +278,19 @@ Microsoft 365 and Google Workspace: a recycle bin with a recovery window.
 - **Never cascades into another party's copy.** Deleting an institution's record never removes the
   patient's copy in their Vault or anything another party holds, and a patient deleting their upload
   never removes a record an institution made from it. Neither party deletes the other's record.
-- **The act is logged, and absence stays visible.** An append-only record says what class of record
-  was deleted, by whom, when, and when it became permanent; it survives the deletion, the content
-  does not. Where the other party relied on the record, a remnant stands in its place carrying no
-  content and no title that would itself disclose it.
-- **Never by a foreign-key cascade.** Today `provider_shares.user_id` and
-  `practice_shares.practice_id` are declared `ON DELETE CASCADE`, so deleting an account or a tenant
-  would erase the consent history with it. Any deletion path must be an explicit, logged operation,
-  and those cascades must be changed before one is built.
+- **The act is logged.** An append-only deletion record states what class of record was deleted,
+  on whose instruction, on what basis (retention expired, erasure request, compelled by law), who
+  executed it and when. It survives the deletion; the content does not.
+- **Absence stays visible** where the other party relied on the record: a remnant in its place that
+  says a record was deleted, when, and on what basis, carrying no content and no title that would
+  itself disclose it. *[Counsel to confirm that a content-free remnant is compatible with erasure.]*
+- **Deletion is never done by a foreign-key cascade.** Since `20261010120000` every key that could
+  carry an account's or a tenant's deletion into the other party's rows or a ledger is `RESTRICT`
+  (the consent rows, `share_events`, `practice_membership_events`, `snapshot_link_views`, members,
+  appointments, invoices, care plans, change proposals, alert rules), so an account or tenant with a
+  relationship behind it cannot be deleted by one statement. Any deletion path must be an explicit,
+  logged operation that decides row by row. The cascades that remain are same-side and listed in
+  `supabase/tests/deletion_never_crosses_parties.test.sql`, which fails on any new one.
 
 ### 7.4 Erasure and amendment requests go to the controller
 

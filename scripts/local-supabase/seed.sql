@@ -14,6 +14,20 @@ DECLARE
   share uuid;
   med uuid;
 BEGIN
+  -- Resetting the demo removes its relationships explicitly. The keys under
+  -- them refuse a cascade from the account on purpose (20261010120000), so a
+  -- real account cannot take the other party's rows with it.
+  DELETE FROM public.snapshot_link_views WHERE link_id IN (
+    SELECT l.id FROM public.snapshot_links l JOIN auth.users u ON u.id = l.user_id
+     WHERE u.email LIKE 'demo-%@onecare.you');
+  DELETE FROM public.share_events WHERE patient_user_id IN (
+    SELECT id FROM auth.users WHERE email LIKE 'demo-%@onecare.you');
+  DELETE FROM public.clinician_alert_rules WHERE patient_user_id IN (
+    SELECT id FROM auth.users WHERE email LIKE 'demo-%@onecare.you');
+  DELETE FROM public.record_change_proposals WHERE patient_user_id IN (
+    SELECT id FROM auth.users WHERE email LIKE 'demo-%@onecare.you');
+  DELETE FROM public.provider_shares WHERE user_id IN (
+    SELECT id FROM auth.users WHERE email LIKE 'demo-%@onecare.you');
   DELETE FROM auth.users WHERE email LIKE 'demo-%@onecare.you';
 
   INSERT INTO auth.users (id, email, raw_user_meta_data, email_confirmed_at)
