@@ -385,9 +385,9 @@ const ClinicianSignUp = () => {
                       on, or what happens if you leave it blank. Both are worth
                       knowing before you type a licence number into a form. */}
                   <p className="text-xs text-muted-foreground">
-                    Optional. Accounts without one work exactly the same and show as
-                    "Trust-based" rather than "Verified"; patients still choose what you
-                    can see either way. You can add it later in Settings.
+                    Optional, and accounts without one work exactly the same. OneCare does
+                    not check licences, so it is not shown as a verification to patients;
+                    they choose what you can see either way. You can add it later in Settings.
                   </p>
                 </div>
                 

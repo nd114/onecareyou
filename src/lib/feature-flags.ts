@@ -33,3 +33,15 @@
  * for" pickers and the Family nav entry all read this flag.
  */
 export const FAMILY_HEALTH_ENABLED = false;
+
+/**
+ * The clinician "Verified" / "Trust-based" badge.
+ *
+ * OneCare does not verify clinicians (foundations, pillar 9), and patients are
+ * told so wherever they connect with one (CLINICIAN_VERIFICATION_NOTICE). A
+ * badge reading "Verified" said the opposite: nothing checks a licence, so the
+ * word only ever meant an administrator had set clinician_profiles.is_verified
+ * by hand. Hidden, not deleted, in clinician settings and the admin account
+ * view. Clinician verification is on the roadmap to revisit much later.
+ */
+export const CLINICIAN_VERIFICATION_BADGE_ENABLED = false;

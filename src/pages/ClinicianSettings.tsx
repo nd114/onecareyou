@@ -48,6 +48,7 @@ import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { usePractice } from '@/hooks/usePractice';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import { BRAND } from '@/lib/brand-constants';
+import { CLINICIAN_VERIFICATION_BADGE_ENABLED } from '@/lib/feature-flags';
 import { ClinicianAppearanceCard } from '@/components/clinician/ClinicianAppearanceCard';
 
 const ClinicianSettings = () => {
@@ -499,12 +500,19 @@ const ClinicianSettings = () => {
 
               {/* Verification Status & Save Button - stacked on mobile */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Verification Status:</span>
-                  <Badge variant={clinicianProfile?.is_verified ? 'default' : 'secondary'}>
-                    {clinicianProfile?.is_verified ? 'Verified' : 'Trust-based'}
-                  </Badge>
-                </div>
+                {/* Hidden: OneCare does not verify clinicians, so "Verified"
+                    claimed a check that never happens (feature-flags.ts). The
+                    empty span keeps Save on the right. */}
+                {CLINICIAN_VERIFICATION_BADGE_ENABLED ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Verification Status:</span>
+                    <Badge variant={clinicianProfile?.is_verified ? 'default' : 'secondary'}>
+                      {clinicianProfile?.is_verified ? 'Verified' : 'Trust-based'}
+                    </Badge>
+                  </div>
+                ) : (
+                  <span />
+                )}
                 <Button 
                   onClick={handleSaveProfile}
                   disabled={isSavingProfile}

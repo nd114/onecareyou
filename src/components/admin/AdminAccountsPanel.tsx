@@ -21,6 +21,7 @@ import {
   type DirectoryRow,
 } from '@/hooks/useAdminAccounts';
 import { formatBytes } from '@/lib/storage-constants';
+import { CLINICIAN_VERIFICATION_BADGE_ENABLED } from '@/lib/feature-flags';
 import { formatDay, formatDayTime } from '@/lib/format-date';
 
 const KINDS: Array<{ value: AccountKind; label: string }> = [
@@ -249,7 +250,8 @@ function AccountDrawer({ row, onClose }: { row: DirectoryRow | null; onClose: ()
                   value={detail.created_at ? formatDay(detail.created_at) : 'Unknown'}
                 />
                 {detail.specialty && <Fact label="Specialty" value={detail.specialty} />}
-                {row?.kind === 'clinician' && (
+                {/* Hidden with the clinician badge: nothing verifies a clinician. */}
+                {CLINICIAN_VERIFICATION_BADGE_ENABLED && row?.kind === 'clinician' && (
                   <Fact label="Verified" value={detail.is_verified ? 'Yes' : 'No'} />
                 )}
                 {row?.kind === 'patient' && (
