@@ -14,7 +14,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PASSWORD = "Demo123!";
+// Not kept in source: set DEMO_ACCOUNT_PASSWORD as a backend secret. Without
+// it a fresh random password is used each run (returned only to the admin caller).
+const PASSWORD = Deno.env.get("DEMO_ACCOUNT_PASSWORD") ||
+  `Demo-${crypto.randomUUID()}-${crypto.randomUUID().slice(0, 8)}!`;
 const HOSPITAL_NAME = "OneCare Demo Hospital";
 // 3-7 characters: the app only treats a slug of that shape as a tenant address
 // (see isValidSlug in src/lib/tenant-host.ts), so demoh.onecare.you resolves.

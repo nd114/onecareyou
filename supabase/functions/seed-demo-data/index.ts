@@ -8,7 +8,10 @@ const corsHeaders = {
 };
 
 // Demo account credentials
-const DEMO_PASSWORD = "Demo123!";
+// Not kept in source: set DEMO_ACCOUNT_PASSWORD as a backend secret. Without
+// it a fresh random password is used each run (returned only to the admin caller).
+const DEMO_PASSWORD = Deno.env.get("DEMO_ACCOUNT_PASSWORD") ||
+  `Demo-${crypto.randomUUID()}-${crypto.randomUUID().slice(0, 8)}!`;
 
 // Clinician definitions
 const clinicians = [
@@ -313,8 +316,10 @@ function generateScheduleEntries(
 function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  // Cryptographically random, and long enough that guessing is not viable.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  for (const b of bytes) {
+    code += chars.charAt(b % chars.length);
   }
   return code;
 }
