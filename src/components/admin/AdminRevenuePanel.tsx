@@ -26,6 +26,7 @@ import { AdminPagination, usePagination } from '@/components/admin/AdminPaginati
 import { useAdminRevenue, type RevenueTenant } from '@/hooks/useAdminRevenue';
 import { formatBytes } from '@/lib/storage-constants';
 import { formatDay, formatDayTime } from '@/lib/format-date';
+import { clinicianTierName } from '@/hooks/useClinicianSubscription';
 
 const money = (n: number) =>
   n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -254,7 +255,7 @@ export function AdminRevenuePanel() {
                           {t.tenant_type ?? 'practice'}
                         </Badge>
                         <Badge variant="outline" className="capitalize">
-                          {t.subscription_tier}
+                          {clinicianTierName(t.subscription_tier)}
                         </Badge>
                         {!t.is_active && <Badge variant="destructive">Suspended</Badge>}
                         {t.subscription_status !== 'active' && (

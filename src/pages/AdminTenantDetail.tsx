@@ -11,6 +11,7 @@ import { useAdminTenantDetail } from '@/hooks/useAdminTenantDetail';
 import { AdminTenantBrandingCard } from '@/components/admin/AdminTenantBrandingCard';
 import { AdminTenantContactCard } from '@/components/admin/AdminTenantContactCard';
 import { formatDay } from '@/lib/format-date';
+import { clinicianTierName } from '@/hooks/useClinicianSubscription';
 
 
 const GB = 1024 ** 3;
@@ -69,7 +70,7 @@ export default function AdminTenantDetail() {
                   </Badge>
                   {tenant.subscription_tier && (
                     <Badge variant="outline" className="capitalize">
-                      {tenant.subscription_tier}
+                      {clinicianTierName(tenant.subscription_tier)}
                     </Badge>
                   )}
                   <Badge variant={tenant.is_active === false ? 'destructive' : 'outline'}>

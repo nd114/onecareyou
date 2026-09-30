@@ -11,8 +11,10 @@
 > `src/lib/pricing-constants.ts`). Every clinician is billed for their own account, and a practice
 > that outgrows the Practice limits upgrades to Enterprise. **Everything below — including the
 > August note's "From $399/month" and every Solo/Pro figure — is historical** and kept for the
-> reasoning only. Some screens still say "Solo" and "Pro" (`PatientLimitBanner.tsx`), which is a code
-> fix, not a pricing question.
+> reasoning only. The screens that still said "Solo" and "Pro" (the patient-limit banner, the
+> practice page, the subscription welcome and the admin tenant panels) now read the names from
+> `CLINICIAN_TIER_INFO` (30 September 2026). "Family member profiles" is not sold as a Premium
+> feature while `FAMILY_HEALTH_ENABLED` is off, and caregiver claims stay behind `CAREGIVERS_ENABLED`.
 >
 > **Read this first (August 2026 — superseded by the note above where they differ).** This file grew in layers and the older tables below no longer
 > match what is live or what is planned. The current position:

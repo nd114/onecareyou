@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAdminOps } from '@/hooks/useAdminOps';
+import { clinicianTierName } from '@/hooks/useClinicianSubscription';
 
 const TIERS = ['trial', 'solo', 'pro', 'enterprise'];
 
@@ -147,7 +148,7 @@ export function CreateTenantDialog() {
                 <SelectContent>
                   {TIERS.map((t) => (
                     <SelectItem key={t} value={t} className="capitalize">
-                      {t}
+                      {clinicianTierName(t)}
                     </SelectItem>
                   ))}
                 </SelectContent>

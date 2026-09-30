@@ -56,7 +56,7 @@ const ClinicianSubscriptionSuccess = () => {
             >
               <Check className="h-12 w-12 text-green-600" />
             </motion.div>
-            <h1 className="text-3xl font-bold mb-2">Welcome to {tierInfo?.name || 'Pro'}!</h1>
+            <h1 className="text-3xl font-bold mb-2">{tierInfo?.name ? `Welcome to ${tierInfo.name}!` : 'Welcome aboard!'}</h1>
             <p className="text-muted-foreground text-lg">
               Your subscription is now active. You're ready to provide better care.
             </p>

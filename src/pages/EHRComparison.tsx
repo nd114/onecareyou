@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { SEOHead } from '@/components/seo/SEOHead';
 import { CAREGIVERS_ENABLED } from '@/lib/features';
+import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 import { 
   Check, 
   X, 
@@ -222,7 +223,7 @@ const EHRComparison = () => {
 
               {/* Table Rows */}
               <div className="space-y-3">
-                {comparisonData.filter((r) => CAREGIVERS_ENABLED || r.feature !== "Caregiver Integration").map((row, index) => (
+                {comparisonData.filter((r) => (CAREGIVERS_ENABLED || r.feature !== "Caregiver Integration") && (FAMILY_HEALTH_ENABLED || r.feature !== "Family Management")).map((row, index) => (
                   <motion.div
                     key={row.feature}
                     initial={{ opacity: 0, x: -20 }}
@@ -277,7 +278,7 @@ const EHRComparison = () => {
             </motion.div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {advantages.map((advantage, index) => (
+              {advantages.filter((a) => FAMILY_HEALTH_ENABLED || a.title !== "Whole-Family Health Hub").map((advantage, index) => (
                 <motion.div
                   key={advantage.title}
                   initial={{ opacity: 0, y: 20 }}
@@ -355,7 +356,7 @@ const EHRComparison = () => {
                         </div>
                         <div>
                           <div className="font-medium text-foreground">Bridges care gaps</div>
-                          <div className="text-sm text-muted-foreground">{CAREGIVERS_ENABLED ? "Family management, caregiver alerts, multi-provider" : "Family management, multi-provider"}</div>
+                          <div className="text-sm text-muted-foreground">{[FAMILY_HEALTH_ENABLED && "Family management", CAREGIVERS_ENABLED && "caregiver alerts", "multi-provider"].filter(Boolean).join(", ").replace(/^./, (c) => c.toUpperCase())}</div>
                         </div>
                       </div>
                     </div>

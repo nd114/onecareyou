@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
+import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
 import { STRIPE_PRICES, PRICE_INFO, FREE_FEATURE_DETAIL, PREMIUM_FEATURE_DETAIL, COMING_SOON_FEATURES } from '@/lib/pricing-constants';
 import {
   Accordion,
@@ -36,7 +37,7 @@ const faqs = [
   },
   {
     question: 'What\'s the difference between Free and Premium?',
-    answer: 'The Free plan lets you track up to 3 medications with all core features including vitals tracking and Care Circle sharing. Premium unlocks unlimited medications, family member profiles, AI lab report parsing, health reports export, and more.',
+    answer: `The Free plan lets you track up to 3 medications with all core features including vitals tracking and Care Circle sharing. Premium unlocks unlimited medications, ${FAMILY_HEALTH_ENABLED ? 'family member profiles, ' : ''}AI lab report parsing, health reports export, and more.`,
   },
   {
     question: 'What payment methods do you accept?',
@@ -131,11 +132,11 @@ const Pricing = () => {
     <div className="min-h-screen flex flex-col">
       <SEOHead
         title="Pricing — Free & Premium Health Tracking Plans"
-        description="Compare OneCare plans. Start free with medication tracking and vitals monitoring. Upgrade to Premium for unlimited medications, health vault, AI lab parsing, and family profiles."
+        description="Compare OneCare plans. Start free with medication tracking and vitals monitoring. Upgrade to Premium for unlimited medications, health vault and AI lab parsing."
         canonical="/pricing"
         jsonLd={[
           breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Pricing', path: '/pricing' }]),
-          productSchema('OneCare Premium', 'Premium health tracking with unlimited medications, family profiles, and AI-powered features', '9.99'),
+          productSchema('OneCare Premium', 'Premium health tracking with unlimited medications, a health vault and AI-powered features', '9.99'),
         ]}
       />
       <Header />
@@ -171,7 +172,7 @@ const Pricing = () => {
             
             <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               Keeping your own health record should not be a subscription. Premium adds the
-              heavier tools — unlimited medications, family profiles, lab parsing — and you can
+              heavier tools — unlimited medications, lab parsing, AI document summaries — and you can
               leave with your data whenever you like.
             </p>
 

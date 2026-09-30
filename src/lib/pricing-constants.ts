@@ -1,5 +1,7 @@
 // Single Source of Truth for all patient pricing, feature lists, and limits
 
+import { FAMILY_HEALTH_ENABLED } from './feature-flags';
+
 export const FREE_MEDICATION_LIMIT = 3;
 export const FREE_DOCUMENT_LIMIT = 3;
 
@@ -41,7 +43,9 @@ export const FREE_FEATURES = [
 export const PREMIUM_FEATURES = [
   'Unlimited medications',
   '10 GB document storage',
-  'Family member profiles',
+  // Family health is switched off (feature-flags.ts); selling it as a Premium
+  // feature charged people for a screen they could not reach.
+  ...(FAMILY_HEALTH_ENABLED ? ['Family member profiles'] : []),
   'AI lab report parsing',
   'Health reports export',
   'Health Document Vault',
@@ -77,7 +81,7 @@ export const LANDING_FREE_FEATURES = [
 export const LANDING_PREMIUM_FEATURES = [
   'Everything in Free',
   'Unlimited medications',
-  'Family member profiles',
+  ...(FAMILY_HEALTH_ENABLED ? ['Family member profiles'] : []),
   'AI lab report parsing',
   'Health Document Vault',
   'Health reports export',

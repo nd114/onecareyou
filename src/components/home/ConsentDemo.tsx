@@ -3,6 +3,7 @@ import { Check, Lock, Building2, UserRound, HeartHandshake } from "lucide-react"
 import { Panel, PanelGlyph, PanelHeader, PanelRow, PanelRows } from "@/components/ui/panel";
 import { TogglePill } from "@/components/ui/toggle-pill";
 import { cn } from "@/lib/utils";
+import { CAREGIVERS_ENABLED } from "@/lib/features";
 
 /**
  * The hero, and the argument.
@@ -39,8 +40,12 @@ const INITIAL: Viewer[] = [
     sees: ["vitals", "meds", "notes", "labs", "vault"], on: true },
   { id: "hospital", name: "City General", role: "cardiology", icon: Building2,
     sees: ["vitals", "meds", "labs"], on: true },
-  { id: "family", name: "Amara", role: "your sister", icon: HeartHandshake,
-    sees: ["meds"], on: false },
+  // A relative as a viewer is the caregiver feature, which is paused
+  // (features.ts); the demo does not offer what the product cannot do.
+  ...(CAREGIVERS_ENABLED
+    ? [{ id: "family", name: "Amara", role: "your sister", icon: HeartHandshake,
+        sees: ["meds"], on: false } as Viewer]
+    : []),
 ];
 
 export function ConsentDemo() {

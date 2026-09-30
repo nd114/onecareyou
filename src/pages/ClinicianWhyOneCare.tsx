@@ -20,6 +20,7 @@ import {
 
 import { SEOHead } from "@/components/seo/SEOHead";
 import { CAREGIVERS_ENABLED } from "@/lib/features";
+import { FAMILY_HEALTH_ENABLED } from "@/lib/feature-flags";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { Footer } from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -246,7 +247,7 @@ const ClinicianWhyOneCare = () => {
     },
     {
       title: "Fill the Gaps",
-      description: CAREGIVERS_ENABLED ? "Family management, caregiver alerts, and multi-provider visibility that your EHR doesn't provide." : "Family management and multi-provider visibility that your EHR doesn't provide."
+      description: `${[FAMILY_HEALTH_ENABLED && "Family management", CAREGIVERS_ENABLED && "caregiver alerts", "multi-provider visibility"].filter(Boolean).join(", ").replace(/^./, (c) => c.toUpperCase())} that your EHR doesn't provide.`
     },
     {
       title: "Export Adherence Data",
@@ -328,7 +329,7 @@ const ClinicianWhyOneCare = () => {
             </motion.div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {uniqueAdvantages.filter((a) => CAREGIVERS_ENABLED || a.title !== "Caregiver Alert Network").map((advantage, index) => (
+              {uniqueAdvantages.filter((a) => (CAREGIVERS_ENABLED || a.title !== "Caregiver Alert Network") && (FAMILY_HEALTH_ENABLED || a.title !== "Whole-Family Health Hub")).map((advantage, index) => (
                 <motion.div
                   key={advantage.title}
                   initial={{ opacity: 0, y: 20 }}
@@ -395,7 +396,7 @@ const ClinicianWhyOneCare = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {comparisonData.filter((r) => CAREGIVERS_ENABLED || r.feature !== "Caregiver Alerts").map((row, index) => (
+                  {comparisonData.filter((r) => (CAREGIVERS_ENABLED || r.feature !== "Caregiver Alerts") && (FAMILY_HEALTH_ENABLED || r.feature !== "Family Management")).map((row, index) => (
                     <motion.tr
                       key={row.feature}
                       initial={{ opacity: 0, x: -20 }}

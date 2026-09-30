@@ -95,6 +95,18 @@ export const CLINICIAN_TIER_INFO = {
   },
 } as const;
 
+/**
+ * The name a person should read for a stored tier key. The keys stay
+ * solo/pro so existing subscriptions keep resolving; showing the key itself
+ * put "Solo" and "Pro" on admin screens for plans sold as Individual and
+ * Practice. An unknown key is shown as stored rather than guessed.
+ */
+export function clinicianTierName(key: string | null | undefined): string {
+  if (!key) return '';
+  const info = (CLINICIAN_TIER_INFO as Record<string, { name: string }>)[key];
+  return info ? info.name : key;
+}
+
 // Feature access by minimum tier required
 export const CLINICIAN_FEATURE_TIERS = {
   engagement_analytics: ['pro', 'enterprise'] as string[],

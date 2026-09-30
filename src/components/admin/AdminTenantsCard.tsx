@@ -9,6 +9,7 @@ import { formatBytes } from '@/lib/storage-constants';
 import { CreateTenantDialog } from '@/components/admin/CreateTenantDialog';
 import { AdminTenantRowActions } from '@/components/admin/AdminTenantRowActions';
 import { AdminPagination, usePagination } from '@/components/admin/AdminPagination';
+import { clinicianTierName } from '@/hooks/useClinicianSubscription';
 
 /** Every practice and hospital on the platform. Organisations browse freely. */
 export function AdminTenantsCard() {
@@ -79,7 +80,7 @@ export function AdminTenantsCard() {
                       )}
                       {t.subscription_tier && (
                         <Badge variant="outline" className="capitalize">
-                          {t.subscription_tier}
+                          {clinicianTierName(t.subscription_tier)}
                         </Badge>
                       )}
                     </div>

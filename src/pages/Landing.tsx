@@ -11,6 +11,7 @@ import { Footer } from '@/components/layout/Footer';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { ConsentDemo } from '@/components/home/ConsentDemo';
 import { AuroraField } from '@/components/home/AuroraField';
+import { CAREGIVERS_ENABLED } from '@/lib/features';
 
 /**
  * The case for OneCare, from the patient's side.
@@ -118,7 +119,7 @@ const Landing = () => {
 
               <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
                 Everything about your health in one place you own — and a switch beside
-                every clinician, hospital and family member who can see it.
+                every clinician{CAREGIVERS_ENABLED ? ", hospital and family member" : " and hospital"} who can see it.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">

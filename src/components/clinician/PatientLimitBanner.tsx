@@ -36,11 +36,19 @@ export function PatientLimitBanner({ patientCount }: PatientLimitBannerProps) {
 
   const tierInfo = tier && tier !== 'expired' ? CLINICIAN_TIER_INFO[tier as keyof typeof CLINICIAN_TIER_INFO] : null;
   
-  // Determine upgrade suggestion
-  const getUpgradeSuggestion = () => {
-    if (isTrial || tier === 'trial') return { tier: 'solo', name: 'Solo', limit: 25 };
-    if (tier === 'solo') return { tier: 'pro', name: 'Pro', limit: 100 };
-    if (tier === 'pro') return { tier: 'enterprise', name: 'Enterprise', limit: 'unlimited' };
+  // The next plan up, named and sized from CLINICIAN_TIER_INFO. This used to
+  // say "Solo" and "Pro" with limits of 25 and 100 — names the plans no longer
+  // carry and limits they never had, so the banner quoted a plan nobody could
+  // find on the pricing page.
+  const getUpgradeSuggestion = (): { tier: string; name: string; limit: number | 'unlimited' } | null => {
+    const next = (key: 'solo' | 'pro') => ({
+      tier: key,
+      name: CLINICIAN_TIER_INFO[key].name,
+      limit: CLINICIAN_TIER_INFO[key].patientLimit,
+    });
+    if (isTrial || tier === 'trial' || tier === 'community') return next('solo');
+    if (tier === 'solo') return next('pro');
+    if (tier === 'pro') return { tier: 'enterprise', name: CLINICIAN_TIER_INFO.enterprise.name, limit: 'unlimited' };
     return null;
   };
 
@@ -80,7 +88,7 @@ export function PatientLimitBanner({ patientCount }: PatientLimitBannerProps) {
               {isAtLimit 
                 ? 'You cannot add new patients until you upgrade.' 
                 : `Only ${patientLimit - patientCount} patient slot${patientLimit - patientCount === 1 ? '' : 's'} remaining.`}
-              {upgrade && ` Upgrade to ${upgrade.name} for ${typeof upgrade.limit === 'number' ? `${upgrade.limit} patients` : 'unlimited patients'}.`}
+              {upgrade && ` Upgrade to ${upgrade.name} for ${typeof upgrade.limit === 'number' ? `up to ${upgrade.limit.toLocaleString('en-US')} patients` : 'unlimited patients'}.`}
             </p>
             <Button 
               size="sm" 

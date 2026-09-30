@@ -193,7 +193,7 @@ function TeamUpgradeCard() {
           Adding colleagues
         </CardTitle>
         <CardDescription>
-          Inviting other clinicians into the practice, and giving them roles, is part of the Pro
+          Inviting colleagues into the practice, and giving them roles, is part of the Practice
           plan and above.
         </CardDescription>
       </CardHeader>
@@ -204,7 +204,7 @@ function TeamUpgradeCard() {
           wrong one the moment somebody covers for you.
         </p>
         <Button asChild size="sm">
-          <Link to="/pricing?audience=clinicians">See what Pro includes</Link>
+          <Link to="/pricing?audience=clinicians">See what Practice includes</Link>
         </Button>
       </CardContent>
     </Card>
