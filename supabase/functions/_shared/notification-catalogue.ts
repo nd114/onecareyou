@@ -85,6 +85,19 @@ export const NOTIFICATION_CATEGORIES: readonly NotificationCategory[] = [
     producer: "useAdherenceReport (in-app only — nothing is emailed)",
   },
   {
+    key: "document_received",
+    audience: ["patient"],
+    channels: ["in_app"],
+    defaultEnabled: true,
+    mandatory: true,
+    label: "A document was sent to your Vault",
+    description:
+      "In the app, when a clinic or clinician files a document into your Health Vault, naming who sent it.",
+    mandatoryReason:
+      "It goes straight into your own record. Something added to your record without you knowing is exactly what this notice prevents.",
+    producer: "tell_patient_of_document (database trigger)",
+  },
+  {
     key: "patient_vital_alert",
     audience: ["clinician"],
     channels: ["email"],

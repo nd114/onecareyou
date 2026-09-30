@@ -15,6 +15,7 @@ import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { DocumentCard } from '@/components/documents/DocumentCard';
+import { ReceivedDocumentNotices } from '@/components/documents/ReceivedDocumentNotices';
 import { PersonalNoteCard } from '@/components/documents/PersonalNoteCard';
 import { PersonalNoteDialog } from '@/components/documents/PersonalNoteDialog';
 import type { HealthDocument } from '@/hooks/useHealthDocuments';
@@ -231,6 +232,7 @@ const HealthVault = () => {
             </div>
           </div>
 
+          <ReceivedDocumentNotices />
 
           {/* Premium Upsell Banner for free users at limit */}
           {isOverFreeLimit && (

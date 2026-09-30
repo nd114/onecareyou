@@ -149,6 +149,21 @@ rules (29 September 2026):
   where ("From Dr X · St Elsewhere"). There is no separate "Received" area and no "offer" step
   (founder's decision, superseding the earlier Received-area proposal). Attachments in a message
   thread can also be added to the Vault from the thread.
+- **Non-clinical staff may send documents too, and the origin says so** (founder's decision, 30
+  September 2026; built in `20261010140000_document_origin.sql`). Intake paperwork is a front-desk
+  job, so a hospital's front desk or billing member who has the patient on their roster can still
+  use "Send to Vault". The danger was never the upload: it was the label, which called every sender
+  "your clinician". The origin is now stamped by the database at insert from the sender's membership
+  and role at that moment — "From Dr Ada Obi · St Elsewhere General" for a clinical member, "From
+  Dr Kemi Bello" for a private clinician, "From St Elsewhere General (front desk)" for a
+  non-clinical member, who is not named — and no client can supply or change it, so it survives a
+  later role change, a departure or a rename. The distinction that does matter clinically is
+  enforced by category: a non-clinical member may file only insurance, billing and other paperwork;
+  lab results, prescriptions, discharge summaries, imaging, vaccination records, referrals and visit
+  notes need a clinical role (an allowlist, so a new category is clinical until decided otherwise).
+  Documents filed before the origin existed keep no origin and read "From a clinic or clinician",
+  because the role at the time was never recorded and guessing it from today's memberships would
+  reintroduce the mislabelling.
 - **While not sharing, the patient can still add anything to their own Vault.** What they add in
   that time is delivered to the clinician when sharing resumes, just as the clinician's interim
   additions are delivered to them.
@@ -160,10 +175,9 @@ rules (29 September 2026):
   through a relationship the patient closed.
 
 Until `plans/sharing-infrastructure-v2.md` phase 1 is built, every clinician-to-patient write
-(messages, guidance, documents into the Vault) still requires a live share, a sent document is
-labelled only "From your clinician", and no notification is raised on receipt. So the additions
-above can be held but not yet delivered, and these rules are decided design rather than current
-behaviour.
+(messages, guidance, documents into the Vault) still requires a live share. So the additions above
+can be held but not yet delivered, and these rules are decided design rather than current
+behaviour. The named origin and the notification on receipt are built (`20261010140000`).
 
 ## 4. Vault record classes
 
@@ -171,9 +185,9 @@ The Health Vault is the patient's system of record and holds three classes:
 
 - **a. Medical tests & results** — uploads, lab reports, imaging reports.
 - **b. Clinician output** — prognosis, prescriptions, letters and healthcare actions a clinician
-  marks patient-facing. A document sent with "Send to Vault" is filed straight into the Vault. *Today*
-  it is labelled "From your clinician"; *decided:* the patient is notified on receipt and the label
-  names the sender and institution ("From Dr X · St Elsewhere") (§3). Internal clinician notes stay
+  marks patient-facing. A document sent with "Send to Vault" is filed straight into the Vault, the patient
+  is notified on receipt, and the label names the sender and institution as the server recorded them
+  ("From Dr X · St Elsewhere", or "From St Elsewhere (front desk)" for non-clinical staff) (§3). Internal clinician notes stay
   private and are never filed.
 - **c. Conversation records** — immutable, watermarked transcript snapshots per relationship.
 

@@ -2294,6 +2294,10 @@ export type Database = {
           id: string
           mime_type: string | null
           notes: string | null
+          origin_label: string | null
+          origin_practice_id: string | null
+          origin_practice_name: string | null
+          origin_role: string | null
           patient_friendly_explanation: string | null
           retracted_at: string | null
           retracted_by: string | null
@@ -2322,6 +2326,10 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          origin_label?: string | null
+          origin_practice_id?: string | null
+          origin_practice_name?: string | null
+          origin_role?: string | null
           patient_friendly_explanation?: string | null
           retracted_at?: string | null
           retracted_by?: string | null
@@ -2350,6 +2358,10 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          origin_label?: string | null
+          origin_practice_id?: string | null
+          origin_practice_name?: string | null
+          origin_role?: string | null
           patient_friendly_explanation?: string | null
           retracted_at?: string | null
           retracted_by?: string | null
@@ -2367,6 +2379,13 @@ export type Database = {
             columns: ["family_member_id"]
             isOneToOne: false
             referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "health_documents_origin_practice_id_fkey"
+            columns: ["origin_practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]

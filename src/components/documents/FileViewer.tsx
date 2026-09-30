@@ -571,6 +571,7 @@ export function FileViewerDialog({
   fileName,
   mimeType,
   loadSource,
+  subtitle,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -578,13 +579,19 @@ export function FileViewerDialog({
   fileName?: string | null;
   mimeType?: string | null;
   loadSource: () => Promise<ViewerSource | null>;
+  /** A line under the title, such as who sent a Vault document. */
+  subtitle?: string | null;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[85vh] w-[95vw] max-w-4xl flex-col gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 pr-12">
           <DialogTitle className="truncate text-base">{title}</DialogTitle>
-          <DialogDescription className="sr-only">Document viewer</DialogDescription>
+          {subtitle ? (
+            <DialogDescription className="truncate text-xs">{subtitle}</DialogDescription>
+          ) : (
+            <DialogDescription className="sr-only">Document viewer</DialogDescription>
+          )}
         </DialogHeader>
         {/* Mounted only while open, so each opening asks for a fresh signed URL. */}
         {open && (

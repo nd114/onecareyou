@@ -49,8 +49,8 @@
      messages into the void) is done. The founder decided the open questions on 29 September (§10
      there). To build: the **relationship apart from the data grant** (stop sharing and end care as
      two acts; a clinician-side pause; messaging and delivery without live data); clinician
-     documents still filed straight to the Vault, now with a **notification on receipt** and a
-     **named origin tag** ("From Dr X · St Elsewhere"); the **snapshot link opening with no account
+     documents still filed straight to the Vault (the **notification on receipt** and the **named
+     origin tag** are built, `20261010140000`); the **snapshot link opening with no account
      and never refused over another OneCare session**; **hospital and
      practice alert rules**; hospital thread reads by governance roles, logged and disclosed; and
      in-app viewing for every document format (Word, HEIC, message attachments and clinicians'
@@ -63,9 +63,13 @@
      institution's responsible officials, no cascade into the other party's copy, and erasure
      requests routed to the controller are decided in draft (sharing model §7, pending review) and
      not built. Removing the `ON DELETE CASCADE` on the share tables comes first.
-   - **A non-clinical member can file a "From your clinician" document** (from definitions, not
-     exercised): the clinician document INSERT policy and its storage twin still use the role-blind
-     `institution_has_patient_access`. Close with sharing v2 phase 1 (G11 there).
+   - ~~**A non-clinical member can file a "From your clinician" document**~~ **Resolved (30
+     September 2026)** by the founder's decision to keep the upload and fix the label: every
+     document sent to a Vault carries a server-stamped origin ("From Dr Ada Obi · St Elsewhere
+     General", "From St Elsewhere General (front desk)"), the patient is notified on receipt, and a
+     non-clinical member cannot file a clinical category (`20261010140000`; G11 in sharing v2).
+   - **'Leave this practice'** — decide later whether to show it only for small practices
+     (hospitals remove their staff).
    - **Message history:** done — the 90-day wind-down is removed; history is kept until account
      closure or author deletion.
    - **Family, caregivers and next of kin** are designed in [`plans/family-caregivers-and-next-of-kin.md`](./plans/family-caregivers-and-next-of-kin.md): a dependent becomes a patient of record with their own id, guardians and caregivers share one delegation object in the share vocabulary, and next of kin, emergency contact and alert contacts become one verified contact. Phase 0 (2–3 days) closes defects live today behind the hidden flag: removing a family member hard-deletes their medications and readings and moves their documents into the owner's record, and a parent's clinician reads a child's readings as the parent's. Next of kin (phase 1, about a week) is recommended next. The rest waits on the pause being lifted and the questions in §9.
@@ -431,6 +435,11 @@ console errors, failed requests, HTTP >=400 and horizontal overflow.
    §8.1). For now a clinician signs out and in; a switcher between their accounts comes later.
 
 ## Deferred (with reasons)
+
+- **Clinician verification — revisit much later (not a priority).** OneCare does not check a
+  clinician's licence or credentials (foundations, pillar 9). The "Verified" / "Trust-based" badge
+  that implied otherwise is hidden in the product (September 2026); `clinician_profiles.is_verified`
+  is kept, unread by any screen.
 
 - **Caregiver features — paused, and hidden in the product,** until later in the roadmap (confirmed
   29 September 2026). A caregiver acting for a patient multiplies every open sharing question; it

@@ -9,6 +9,7 @@ import { DOCUMENT_CATEGORIES } from '@/hooks/useHealthDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { edgeFunctionError } from '@/lib/edge-function-error';
+import { documentOriginLabel } from '@/lib/document-origin';
 
 interface SharedDocumentsTabProps {
   patientUserId: string;
@@ -39,7 +40,8 @@ export function SharedDocumentsTab({
           .from('health_documents')
           .select(`
             id, title, file_name, file_path, category, document_date,
-            ai_summary, ai_tags, mime_type, file_size, notes, created_at
+            ai_summary, ai_tags, mime_type, file_size, notes, created_at,
+            source_context, origin_label
           `)
           .eq('user_id', patientUserId)
           // Archiving is the patient saying "not part of my current picture".
@@ -75,7 +77,9 @@ export function SharedDocumentsTab({
             ai_tags,
             mime_type,
             file_size,
-            notes
+            notes,
+            source_context,
+            origin_label
           )
         `)
         .eq('provider_share_id', shareId)
@@ -163,6 +167,11 @@ export function SharedDocumentsTab({
                             <span className="text-xs text-muted-foreground">
                               Shared {format(new Date(share.shared_at), 'MMM d')}
                             </span>
+                            {documentOriginLabel(doc) && (
+                              <span className="text-xs text-muted-foreground">
+                                {documentOriginLabel(doc)}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <Button

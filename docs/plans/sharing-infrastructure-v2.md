@@ -100,7 +100,7 @@ latest migration, not exercised against a replayed database.
 | G8 | **The snapshot promise is larger than the producer.** No care-record snapshot on hospital disconnection, on expiry, or from any screen but Care Circle; no quarterly producer | Code search | Medium | Open — phase 5 |
 | G9 | **Consent history can be deleted by cascade.** `provider_shares.user_id` and `practice_shares.practice_id` are `ON DELETE CASCADE` | Schema | Low now; high the day anything deletes an account or tenant | Open — before any deletion is built (sharing model §7) |
 | G10 | **The selected practice is a browser preference.** A clinician account with several memberships (a rotating clinician, say) picks its practice in `localStorage`. Clinical rows now carry a server-stamped practice (`20261010070000`), which removes most of the harm | Code, audit §8.2 | Low | Open — phase 4 |
-| G11 | **A non-clinical member can file a "From your clinician" document.** The clinician INSERT policy on `health_documents` and its storage twin (`20260820100000`) still use the role-blind `institution_has_patient_access`. A front-desk or billing member who holds view-all (a manager can grant it deliberately) or an assignment passes it. Messaging was fixed for exactly this in `20261010030000`; documents were not | From definitions, not exercised | Medium | Open — fold into phase 1, which rewrites that policy anyway |
+| G11 | **A non-clinical member can file a "From your clinician" document.** The clinician INSERT policy on `health_documents` and its storage twin (`20260820100000`) still use the role-blind `institution_has_patient_access`. A front-desk or billing member who holds view-all (a manager can grant it deliberately) or an assignment passes it. Messaging was fixed for exactly this in `20261010030000`; documents were not | From definitions, not exercised | Medium | **Resolved (30 September 2026) by labelling, not by blocking** — founder's decision: front desk keeps "Send to Vault" for intake paperwork. `20261010140000` stamps a server-side origin from the sender's role at the time ("From St Elsewhere General (front desk)"), refuses a non-clinical member any clinical category, and notifies the patient. `document_origin.test.sql`. Sharing model §3 records the reasoning |
 
 ### 3.3 How a clinician gets a document to a patient today
 
@@ -290,8 +290,8 @@ Hospital or to Dr Obi's private practice.
 | `relationship_status` (`active` \| `paused` \| `closed`), `closed_at/by/reason`, `paused_at/by` on both share tables; `expires_at`, `ends_on_discharge` on `practice_shares`; `batch_id` on the matching `share_events` | Extends the existing rows; `is_active` keeps meaning "grant live" |
 | `has_care_relationship(patient)` — relationship active, caller a clinician on it (provider share) or an active clinical member assigned or view-all (institution) | New helper beside the grant helpers; **no policy ORs it into a read** |
 | Policies moved from grant to relationship: messages INSERT/SELECT/UPDATE, guidance INSERT, clinician document INSERT (still filed straight to the Vault), addenda and record-of-care additions | G1 |
-| Clinician document INSERT gated on a clinical role (`institution_has_clinical_access`, not `institution_has_patient_access`), row and storage | G11 |
-| A notification to the patient when a clinician document is filed (a producer in the notification catalogue); the sender's name and institution stored and shown as the document's origin; the interim-additions batch in both directions | §4.4 |
+| ~~Clinician document INSERT gated on a clinical role~~ — superseded by the founder's decision of 30 September: non-clinical staff keep the upload; a server-stamped origin names them as such and clinical categories need a clinical role (`20261010140000`) | G11 (resolved) |
+| **Built (`20261010140000`):** a notification to the patient when a clinician document is filed (`patient_notices`, `document_received` in the catalogue, mandatory); the sender's name, role and institution stamped at insert and shown as the document's origin. Still to build: the interim-additions batch in both directions | §4.4 |
 | Thread reads by governance roles, each read logged to the patient's access history | §4.4, phase 3 |
 | `practice_id` on `clinician_alert_rules` and `clinician_guidance`; alert policies and `check-vital-alerts` as §4.6; `on_share_ended` institution-aware | G5 |
 | Server-side care-record snapshot on every grant end, queued by trigger and produced by an edge function | G8 |
@@ -347,9 +347,10 @@ rewritten" in the sharing model). With the personal workspace dropped there is *
    is told.
 3. **Hospital threads** keep the `practice_id` back-filled by `20261010070000` (only where exactly
    one practice fits); ambiguous threads stay unstamped and keep the old reading.
-4. **Clinician documents already in the Vault** stay there, labelled "From your clinician". Whether
-   their origin tag is back-filled with the sender's name and institution (the sender is stored in
-   `uploaded_by_user_id`; the institution is not) is an implementation choice for phase 1.
+4. **Clinician documents already in the Vault** stay there. They are **not** back-filled: the
+   sender is stored in `uploaded_by_user_id`, but neither the institution nor the sender's role at
+   the time is, and inferring them from today's memberships would write the very mislabelling G11
+   was about. They read "From a clinic or clinician" (`20261010140000`).
 
 ## 7. Phases
 
@@ -435,6 +436,11 @@ Family-member targeting and caregivers stay paused.
     already ignores the caller's session; the route guards and the browser client on `/s` still need
     checking with a signed-in and an expired session (phase 4's re-vet).
 15. **Caregiver features are paused** and hidden until later in the roadmap.
+16. **Non-clinical staff sending documents (G11), 30 September.** They keep "Send to Vault" —
+    intake paperwork is a front-desk job. The fix is an accurate origin rather than a block: stamped
+    by the server from the sender's role at the time ("From St Elsewhere General (front desk)"),
+    never "From your clinician" for a non-clinical sender, and clinical categories refused to a
+    non-clinical role. Built in `20261010140000`; the reasoning is in the sharing model §3.
 
 ### Still open
 

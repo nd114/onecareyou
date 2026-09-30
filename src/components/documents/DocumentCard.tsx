@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
-import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, Stethoscope, Pencil } from 'lucide-react';
+import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, Stethoscope, Pencil, Building2 } from 'lucide-react';
+import { documentOriginIsClinical, documentOriginLabel } from '@/lib/document-origin';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +64,9 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   // (guard_health_document_record); the category alone is only a label an
   // older upload may carry.
   const isCareRecord = doc.source_context === CARE_RECORD_SOURCE;
+  // A document you did not upload yourself says who did, as the server
+  // recorded it — never a generic "your clinician" for a receptionist.
+  const originLabel = documentOriginLabel(doc);
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
   const { allShareCounts } = useDocumentShares();
   const [downloading, setDownloading] = useState(false);
@@ -157,10 +161,12 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                     {/* A document you did not upload yourself needs to say so.
                         Finding an unexplained file in your own Vault is worse
                         than not having it. */}
-                    {doc.source_context === 'clinician_upload' && (
-                      <Badge variant="outline" className="text-[10px] h-5 gap-1">
-                        <Stethoscope className="h-2.5 w-2.5" />
-                        From your clinician
+                    {originLabel && (
+                      <Badge variant="outline" className="text-[10px] h-5 gap-1 max-w-full" title={originLabel}>
+                        {documentOriginIsClinical(doc)
+                          ? <Stethoscope className="h-2.5 w-2.5 shrink-0" />
+                          : <Building2 className="h-2.5 w-2.5 shrink-0" />}
+                        <span className="truncate">{originLabel}</span>
                       </Badge>
                     )}
                     {/* Two different dates, and conflating them loses the one

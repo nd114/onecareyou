@@ -15,10 +15,18 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { DOCUMENT_CATEGORIES } from "@/hooks/useHealthDocuments";
+import { NON_CLINICAL_DOCUMENT_CATEGORIES } from "@/lib/document-origin";
 
 interface Props {
   patientUserId: string;
   patientName: string;
+  /**
+   * Whether the sender holds a clinical role for this patient. Front desk and
+   * billing may send paperwork (insurance, billing, other) but not a clinical
+   * document; the database refuses the rest (stamp_document_origin), this only
+   * stops offering what would be refused.
+   */
+  clinical?: boolean;
 }
 
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -35,19 +43,20 @@ const MAX_BYTES = 20 * 1024 * 1024;
  * it, file it, share it onward or delete it. The clinician can add and nothing
  * else — see the policies in 20260820100000.
  */
-export function SendToVaultDialog({ patientUserId, patientName }: Props) {
+export function SendToVaultDialog({ patientUserId, patientName, clinical = true }: Props) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("referral");
+  const defaultCategory = clinical ? "referral" : "other";
+  const [category, setCategory] = useState(defaultCategory);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
     setFile(null);
     setTitle("");
-    setCategory("referral");
+    setCategory(defaultCategory);
     setNotes("");
   };
 
@@ -112,8 +121,10 @@ export function SendToVaultDialog({ patientUserId, patientName }: Props) {
         <DialogHeader>
           <DialogTitle>Send a document to {patientName}</DialogTitle>
           <DialogDescription>
-            It goes into their Health Vault, labelled as coming from you. They can read it, file
-            it and share it onward. You cannot edit or remove it afterwards, and you will only
+            It goes into their Health Vault and they are notified. OneCare labels it with who
+            sent it — your name and practice if you are clinical staff, otherwise the practice and
+            your role — and nobody can change that label. They can read it, file it and share it
+            onward. You cannot edit or remove it afterwards, and you will only
             see it here again if they share their documents back with you.
           </DialogDescription>
         </DialogHeader>
@@ -147,7 +158,10 @@ export function SendToVaultDialog({ patientUserId, patientName }: Props) {
               <SelectContent>
                 {/* care_record is written by the managed-record flow and shown
                     as a permanent record; it is not something to upload here. */}
-                {DOCUMENT_CATEGORIES.filter((c) => c.value !== 'care_record').map((c) => (
+                {DOCUMENT_CATEGORIES.filter((c) =>
+                  c.value !== 'care_record' &&
+                  (clinical || (NON_CLINICAL_DOCUMENT_CATEGORIES as readonly string[]).includes(c.value)),
+                ).map((c) => (
                   <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                 ))}
               </SelectContent>

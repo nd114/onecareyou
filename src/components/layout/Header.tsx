@@ -25,6 +25,7 @@ import {
   Monitor,
   ShieldCheck,
   LifeBuoy,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import { usePatientGuidance } from "@/hooks/usePatientGuidance";
+import { usePatientNotices } from "@/hooks/useOffboarding";
 import { useClinicianNotifications } from "@/hooks/useClinicianNotifications";
 import { describeNotification } from "@/lib/notification-display";
 import { toast } from "sonner";
@@ -62,6 +64,7 @@ export function Header() {
   const { isClinician, clinicianProfile } = useClinicianProfile();
   const { isAdmin } = useAdminRole();
   const { guidance } = usePatientGuidance();
+  const { notices: patientNotices, markSeen: markPatientNoticeSeen } = usePatientNotices();
   const {
     unreadNotifications: clinicianNotifications,
     unreadCount: clinicianUnreadCount,
@@ -92,9 +95,15 @@ export function Header() {
 
   // Get unread notifications for patients (guidance items that haven't been acknowledged)
   const unreadGuidance = !isClinician ? guidance.filter((g) => g.status === "pending" || g.status === "sent") : [];
+  // A document someone else filed into the patient's Vault. Told once, until
+  // they open it from here.
+  const unseenDocumentNotices = !isClinician
+    ? patientNotices.filter((n) => !n.seenAt && n.noticeType === "document_received")
+    : [];
+  const patientUnread = unreadGuidance.length + unseenDocumentNotices.length;
   // For clinicians, use clinician notifications
-  const hasUnreadNotifications = isClinician ? clinicianUnreadCount > 0 : unreadGuidance.length > 0;
-  const notificationCount = isClinician ? clinicianUnreadCount : unreadGuidance.length;
+  const hasUnreadNotifications = isClinician ? clinicianUnreadCount > 0 : patientUnread > 0;
+  const notificationCount = isClinician ? clinicianUnreadCount : patientUnread;
 
   // Helper to get icon for notification type
   const getNotificationIcon = (type: string) => {
@@ -286,9 +295,30 @@ export function Header() {
                         <p className="text-xs mt-1">You'll be notified when patients respond to your guidance</p>
                       </div>
                     )
-                  ) : unreadGuidance.length > 0 ? (
+                  ) : patientUnread > 0 ? (
                     <ScrollArea className="max-h-80">
                       <div className="divide-y">
+                        {unseenDocumentNotices.slice(0, 10).map((notice) => (
+                          <Link
+                            key={notice.id}
+                            to="/health-vault"
+                            onClick={() => {
+                              markPatientNoticeSeen.mutate(notice.id);
+                              setNotificationsOpen(false);
+                            }}
+                            className="block p-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-start gap-2">
+                              <FileText className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm line-clamp-2">{notice.message}</p>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {format(new Date(notice.createdAt), "MMM d, h:mm a")}
+                                </span>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                         {unreadGuidance.slice(0, 10).map((item) => (
                           <Link
                             key={item.id}

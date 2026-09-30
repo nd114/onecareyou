@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { HealthDocument, useHealthDocuments } from '@/hooks/useHealthDocuments';
 import { FileViewerDialog } from '@/components/documents/FileViewer';
+import { documentOriginLabel } from '@/lib/document-origin';
 
 /**
  * A Vault document (including care records) in the shared viewer. The signed
@@ -27,6 +28,8 @@ export function DocumentViewerDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={doc.title || doc.file_name}
+      // Who put it in the Vault, as the server stamped it (document-origin.ts).
+      subtitle={documentOriginLabel(doc)}
       fileName={doc.file_name}
       mimeType={doc.mime_type}
       loadSource={loadSource}

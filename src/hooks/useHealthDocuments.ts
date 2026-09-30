@@ -63,6 +63,10 @@ export interface HealthDocument {
   source_context: string;
   /** Set when a clinician put this in the Vault; null when the patient did. */
   uploaded_by_user_id: string | null;
+  /** Who filed it, as stamped by the server at insert ("From Dr Ada Obi · St Elsewhere"). */
+  origin_label?: string | null;
+  /** The sender's role when they filed it, or private_clinician. */
+  origin_role?: string | null;
   /** When the patient put this away. Null means active. Archiving destroys nothing. */
   archived_at: string | null;
   archived_reason: string | null;

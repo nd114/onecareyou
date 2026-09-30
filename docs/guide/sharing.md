@@ -36,10 +36,14 @@ Conversations with a hospital clinician belong to the hospital. If your
 clinician leaves, the team now caring for you there can read the conversation
 and carry it on, and you are told once who has taken over.
 
-## Documents from your clinician
+## Documents from your clinician or hospital
 
 A clinician can send you a letter, a referral or a result. It arrives in your
-Vault labelled "From your clinician". A file sent in a message can be saved to
+Vault and you are told it has arrived. Each document says who sent it: "From
+Dr Ada Obi · St Elsewhere General" from a clinician, or "From St Elsewhere
+General (front desk)" when a hospital's reception or billing team sends you
+paperwork such as a registration form. Reception and billing staff can send
+paperwork only, never a result or a prescription. A file sent in a message can be saved to
 your records too: right-click it on a computer, or press and hold on a phone,
 and choose "Save to my records".
 

@@ -821,6 +821,7 @@ const ClinicianPatientDetail = () => {
                 <SendToVaultDialog
                   patientUserId={patient.user_id}
                   patientName={patient.patient_name || 'this patient'}
+                  clinical={!!clinicalStaff}
                 />
               </div>
               <SharedDocumentsTab

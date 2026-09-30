@@ -168,8 +168,12 @@ export function useLeavePractice() {
 export interface PatientNotice {
   id: string;
   practiceId: string | null;
-  /** 'care_handed_over' or 'guidance_withdrawn'; each screen shows its own. */
+  /**
+   * care_handed_over, guidance_withdrawn or document_received
+   * (patient_notices_notice_type_check); each screen shows its own.
+   */
   noticeType: string;
+  relatedId: string | null;
   message: string;
   createdAt: string;
   seenAt: string | null;
@@ -185,7 +189,7 @@ export function usePatientNotices() {
     queryFn: async (): Promise<PatientNotice[]> => {
       const { data, error } = await supabase
         .from('patient_notices')
-        .select('id, practice_id, notice_type, message, created_at, seen_at')
+        .select('id, practice_id, notice_type, related_id, message, created_at, seen_at')
         .eq('patient_user_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(20);
@@ -194,6 +198,7 @@ export function usePatientNotices() {
         id: n.id,
         practiceId: n.practice_id,
         noticeType: n.notice_type,
+        relatedId: n.related_id,
         message: n.message,
         createdAt: n.created_at,
         seenAt: n.seen_at,

@@ -81,8 +81,8 @@ conventions rules 4–7 (`.claude/skills/onecare-conventions`).
   late result or discharge summary can still reach the patient. *(building)*
 - What a clinician sends goes straight into the patient's Vault, with a notification when it
   arrives and a visible origin on the document — "From Dr X · St Elsewhere" — so the patient always
-  knows who put it there. *(Filing and the "From your clinician" label are built; the notification
-  and the named origin are building.)* Additions a clinic makes to its own record of care while the
+  knows who put it there. A hospital's front desk may send paperwork too, labelled as the front
+  desk, never as a clinician. *(Built: filing, the notification and the named origin.)* Additions a clinic makes to its own record of care while the
   patient is not sharing are delivered, labelled as such, when sharing resumes. *(building)*
 - A clinician or hospital stepping back pauses the relationship rather than slamming a door; it can
   become active again. *(building)*
@@ -172,9 +172,9 @@ the clarity, not the arbitration.**
 advice — and it says so plainly.**
 
 - OneCare does not check a clinician's licence or credentials. That is for the hospitals, employers
-  and regulators who already do it, and patients are told so in plain words. *(building: the
-  patient-facing statement; clinician settings still show a "Verified" / "Trust-based" badge that
-  needs to agree with this)*
+  and regulators who already do it, and patients are told so in plain words wherever they connect
+  with a clinician. The "Verified" / "Trust-based" badge is hidden; verification is on the roadmap
+  to revisit much later.
 - The assistant explains the patient's own record and quotes drug labels with the source named. It
   does not diagnose, prescribe or change a dose, and every answer says it is not medical advice.
 - For a hospital's clinical records OneCare acts on the hospital's instructions (a processor). For
