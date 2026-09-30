@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { safeOrigin } from "../_shared/safe-origin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,7 +97,9 @@ serve(async (req) => {
       );
     }
 
-    const { priceId, tier } = parseResult.data;
+    const { tier } = parseResult.data;
+    // The price is chosen by the server from the tier; the client value is ignored.
+    const priceId = CLINICIAN_PRICES[`${tier}_monthly` as keyof typeof CLINICIAN_PRICES];
     logStep("Request params validated", { priceId, tier });
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -129,7 +132,7 @@ serve(async (req) => {
       logStep("Using existing customer from profile", { customerId });
     }
 
-    const origin = req.headers.get("origin") || "https://onecare.you";
+    const origin = safeOrigin(req);
 
     // Determine patient limit based on tier
     const patientLimits: Record<string, number> = {

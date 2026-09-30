@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireServiceRoleOrAdmin } from "../_shared/auth.ts";
+import { escapeHtml } from "../_shared/html.ts";
 
 /**
  * The morning digest for platform admins: yesterday's movement, the current
@@ -49,9 +50,9 @@ function render(snapshot: Snapshot, dateLabel: string): string {
     .map(
       ([label, value, hint]) => `
       <tr>
-        <td style="padding:8px 0;color:#334155;font-size:14px;">${label}</td>
-        <td style="padding:8px 0;text-align:right;font-weight:600;color:#064E3B;font-size:14px;">${value}</td>
-        <td style="padding:8px 0 8px 12px;color:#64748B;font-size:12px;">${hint}</td>
+        <td style="padding:8px 0;color:#334155;font-size:14px;">${escapeHtml(label)}</td>
+        <td style="padding:8px 0;text-align:right;font-weight:600;color:#064E3B;font-size:14px;">${escapeHtml(value)}</td>
+        <td style="padding:8px 0 8px 12px;color:#64748B;font-size:12px;">${escapeHtml(hint)}</td>
       </tr>`,
     )
     .join("");
@@ -62,8 +63,8 @@ function render(snapshot: Snapshot, dateLabel: string): string {
         .map(
           (a) => `
         <li style="margin-bottom:8px;color:#334155;font-size:14px;">
-          <strong style="color:${a.severity === "critical" ? "#B91C1C" : "#064E3B"};">${a.title}</strong>
-          ${a.detail ? `<br><span style="color:#64748B;font-size:12px;">${a.detail}</span>` : ""}
+          <strong style="color:${a.severity === "critical" ? "#B91C1C" : "#064E3B"};">${escapeHtml(a.title)}</strong>
+          ${a.detail ? `<br><span style="color:#64748B;font-size:12px;">${escapeHtml(a.detail)}</span>` : ""}
         </li>`,
         )
         .join("")
@@ -77,7 +78,7 @@ function render(snapshot: Snapshot, dateLabel: string): string {
     <div style="background:#064E3B;color:#ECFDF5;border-radius:16px;padding:20px 24px;">
       <p style="margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.75;">OneCare command centre</p>
       <h1 style="margin:6px 0 0;font-size:22px;">Your morning brief</h1>
-      <p style="margin:6px 0 0;font-size:13px;opacity:.8;">${dateLabel}</p>
+      <p style="margin:6px 0 0;font-size:13px;opacity:.8;">${escapeHtml(dateLabel)}</p>
     </div>
 
     <div style="background:#fff;border-radius:16px;padding:20px 24px;margin-top:16px;">

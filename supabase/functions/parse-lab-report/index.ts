@@ -154,6 +154,19 @@ Deno.serve(async (req) => {
 
     console.log('Processing lab report for user:', user.id);
 
+    // AI lab report parsing is a Premium feature; checked here, not only on screen.
+    const { data: tierRow } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (tierRow?.subscription_tier !== 'premium') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'AI lab report parsing is part of Premium.' }),
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Parse and validate input
     const rawBody = await req.json();
     const parseResult = LabReportInputSchema.safeParse(rawBody);
@@ -388,7 +401,7 @@ Important:
       cleanContent = cleanContent.trim();
       
       extractedVitals = JSON.parse(cleanContent);
-      console.log('Extracted vitals:', extractedVitals);
+      console.log('Extracted vitals count:', extractedVitals.length);
     } catch (parseError) {
       console.error('Failed to parse vital extraction response:', content);
       return new Response(
@@ -407,7 +420,7 @@ Important:
                        typeof v.value === 'number' && 
                        !isNaN(v.value);
         if (!isValid) {
-          console.log('Filtering out invalid vital:', v);
+          console.log('Filtering out an invalid vital entry');
         }
         return isValid;
       })
@@ -418,7 +431,7 @@ Important:
         unit: VITAL_UNITS[v.type] || ''
       }));
 
-    console.log('Valid vitals to return:', validVitals);
+    console.log('Valid vitals to return:', validVitals.length);
     console.log('Processing complete. PII stripped, vitals extracted from anonymized data.');
 
     const privacyNote = usedLocalOCR 

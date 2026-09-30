@@ -275,7 +275,48 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    const { recipientEmail, recipientName, vitals, dateRange } = parseResult.data;
+    const { recipientEmail, recipientName, dateRange } = parseResult.data;
+
+    // The recipient must be the sender's own confirmed address, or a clinician
+    // the sender has an active share with. Anything else would let a signed-in
+    // user mail "health reports" from OneCare's domain to any address.
+    const target = recipientEmail.trim().toLowerCase();
+    const ownConfirmed =
+      userData.user.email_confirmed_at && userEmail ? userEmail.trim().toLowerCase() : null;
+    let allowed = target === ownConfirmed;
+    if (!allowed) {
+      const { data: shares } = await supabase
+        .from('provider_shares')
+        .select('provider_email, expires_at')
+        .eq('user_id', userId)
+        .eq('is_active', true);
+      allowed = (shares ?? []).some(
+        (s: { provider_email: string | null; expires_at: string | null }) =>
+          (s.provider_email ?? '').trim().toLowerCase() === target &&
+          (!s.expires_at || new Date(s.expires_at) > new Date()),
+      );
+    }
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Reports can only be sent to your own address or a care provider you share with.' }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Report content comes from the sender's own stored readings, not the request.
+    const ids = parseResult.data.vitals.map((v) => v.id);
+    const { data: storedVitals, error: vitalsError } = await supabase
+      .from('vitals')
+      .select('id, type, value, secondary_value, unit, recorded_at, notes')
+      .eq('user_id', userId)
+      .in('id', ids);
+    if (vitalsError || !storedVitals || storedVitals.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No readings found' }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    const vitals = storedVitals as VitalRecord[];
     
     console.log(`Sending report with ${vitals.length} vitals`);
 

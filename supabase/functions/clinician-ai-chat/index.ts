@@ -408,7 +408,11 @@ ${unreadLines || "(none)"}`;
 
     const convo: any[] = [
       { role: "system", content: BASE_PROMPT + snapshot },
-      ...recentMessages.map((m: any) => ({ role: m.role, content: m.content })),
+      // Only user/assistant turns from the caller; anything claiming to be a
+      // system or developer message would override the safeguards above.
+      ...recentMessages
+        .filter((m: any) => m && (m.role === "user" || m.role === "assistant"))
+        .map((m: any) => ({ role: m.role, content: String(m.content ?? "") })),
     ];
 
     const first = await callGateway(lovableApiKey, convo, allowActions);

@@ -248,25 +248,11 @@ const handler = async (req: Request): Promise<Response> => {
     // to add their own headers, so it never reaches one.
     const plainSubject = subject.replace(/[\r\n]/g, " ").slice(0, 120);
 
-    // Confirmation to the sender, so "message sent" is something they can check.
-    await sendEmail(
-      [contactEmail],
-      "We received your message",
-      `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;color:#0d0d0d;">
-        <h1 style="color:#064e3b;margin:0 0 16px;font-size:22px;">Thanks, ${safe.name}</h1>
-        <p style="line-height:1.6;">We have your message and someone will reply. If it is urgent and clinical, please contact your care provider directly rather than waiting on us.</p>
-        <div style="background:#f5f0e0;border-radius:12px;padding:16px;margin:20px 0;">
-          <p style="margin:0 0 8px;color:#064e3b;"><strong>What you sent</strong></p>
-          <p style="margin:4px 0;"><strong>Type:</strong> ${safe.type}</p>
-          <p style="margin:4px 0;"><strong>Subject:</strong> ${safe.subject}</p>
-          <p style="margin:12px 0 0;line-height:1.6;">${excerpt}</p>
-        </div>
-        <hr style="border:none;border-top:1px solid #e2ded0;margin:24px 0;"/>
-        <p style="color:#6b7280;font-size:12px;">This is an automated confirmation from OneCare. You can reply to this email. If you did not write to us, you can ignore this — nothing has been shared with anybody.</p>
-      </div>`,
-      "hello@onecare.you",
-    );
+    // No confirmation is mailed to the address typed into the form: this
+    // endpoint is public, so that address is unverified and mailing it would
+    // let anyone send OneCare-branded mail to any inbox. The page itself
+    // confirms the message was received.
+    void excerpt;
 
     // Notification to us, with reply-to set so a reply reaches the sender.
     await sendEmail(

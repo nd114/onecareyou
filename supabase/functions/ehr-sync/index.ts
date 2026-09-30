@@ -10,6 +10,7 @@ import {
   type FhirObservation,
   type PatientMapping,
 } from "../_shared/fhir-observation.ts";
+import { safeFhirFetch } from "../_shared/safe-fhir-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,7 +85,7 @@ serve(async (req) => {
         logStep("Testing FHIR connection", { fhirBaseUrl });
         
         try {
-          const response = await fetch(`${fhirBaseUrl}/metadata`, {
+          const response = await safeFhirFetch(fhirBaseUrl, `/metadata`, {
             headers: {
               'Accept': 'application/fhir+json',
               'Authorization': accessToken ? `Bearer ${accessToken}` : '',
@@ -168,6 +169,10 @@ serve(async (req) => {
           .eq('id', connectionId)
           .single();
         if (!connection) throw new Error("Connection not found");
+        // Fetch only from the server saved (and tested) on this connection,
+        // never an address supplied with the request.
+        const importBase: string = connection.fhir_base_url || '';
+        if (!importBase) throw new Error("This connection has no tested FHIR server yet");
 
         // ---- 1. Who is this, in our records? ----------------------------
         const mappings = (connection.patient_id_mapping as PatientMapping[] | null) ?? [];
@@ -214,7 +219,7 @@ serve(async (req) => {
         };
 
         try {
-          const patientResponse = await fetch(`${fhirBaseUrl}/Patient/${patientFhirId}`, { headers });
+          const patientResponse = await safeFhirFetch(importBase, `/Patient/${encodeURIComponent(patientFhirId)}`, { headers });
           if (!patientResponse.ok) {
             throw new Error(`Failed to fetch patient: ${patientResponse.status}`);
           }
@@ -227,8 +232,9 @@ serve(async (req) => {
           let importedMedications = 0;
 
           // ---- Observations ---------------------------------------------
-          const obsResponse = await fetch(
-            `${fhirBaseUrl}/Observation?patient=${patientFhirId}&category=vital-signs&_count=100&_sort=-date`,
+          const obsResponse = await safeFhirFetch(
+            importBase,
+            `/Observation?patient=${encodeURIComponent(patientFhirId)}&category=vital-signs&_count=100&_sort=-date`,
             { headers },
           );
 
@@ -280,8 +286,9 @@ serve(async (req) => {
           // ---- Medications ------------------------------------------------
           // Not date-windowed: a prescription written a year ago is still
           // live, and asking only for recent ones would import nothing.
-          const medResponse = await fetch(
-            `${fhirBaseUrl}/MedicationRequest?patient=${patientFhirId}&status=${MEDICATION_STATUSES}&_count=100`,
+          const medResponse = await safeFhirFetch(
+            importBase,
+            `/MedicationRequest?patient=${encodeURIComponent(patientFhirId)}&status=${MEDICATION_STATUSES}&_count=100`,
             { headers },
           );
 

@@ -438,6 +438,11 @@ async function handleAuth(req, res, url) {
 // --------------------------------------------------------------- rest
 async function handleRest(req, res, url) {
   const rel = url.pathname.replace('/rest/v1/', '');
+  // Table, function and argument names are spliced into SQL as identifiers,
+  // so only plain identifiers are accepted.
+  const IDENT = /^[A-Za-z_][A-Za-z0-9_]{0,62}$/;
+  const relName = rel.startsWith('rpc/') ? rel.slice(4) : rel;
+  if (!IDENT.test(relName)) return json(res, 400, { message: 'Invalid relation name' });
   const prefer = String(req.headers.prefer || '');
   const wantsOne = String(req.headers.accept || '').includes('vnd.pgrst.object');
 
@@ -448,6 +453,7 @@ async function handleRest(req, res, url) {
     const meta = (await procs()).get(name);
     if (!meta) return json(res, 404, { code: 'PGRST202', message: `Could not find the function public.${name}` });
     const names = Object.keys(args);
+    if (!names.every((k) => IDENT.test(k))) return json(res, 400, { message: 'Invalid argument name' });
     const typeOf = (k) => {
       const i = (meta.argnames || []).indexOf(k);
       return i === -1 ? null : (meta.argtypes || [])[i];

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { timingSafeEqual } from "../_shared/auth.ts";
 import { clinicianShareGrants } from "../_shared/share-access.ts";
+import { safeFhirFetch } from "../_shared/safe-fhir-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,7 +124,7 @@ async function exportVitalToFHIR(
   observation: object
 ): Promise<{ success: boolean; resourceId?: string; error?: string }> {
   try {
-    const response = await fetch(`${fhirBaseUrl}/Observation`, {
+    const response = await safeFhirFetch(fhirBaseUrl, `/Observation`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/fhir+json',
@@ -434,6 +435,25 @@ serve(async (req) => {
                 status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
               });
             }
+          }
+        }
+
+        // The FHIR patient id must be the one this connection links to the
+        // vital's owner; a caller-typed id would file the reading under
+        // somebody else's chart on the EHR.
+        {
+          const { data: vRow } = await supabaseClient
+            .from('vitals').select('user_id').eq('id', vitalId).maybeSingle();
+          const { data: connRow } = await supabaseClient
+            .from('ehr_connections').select('patient_id_mapping').eq('id', connectionId).maybeSingle();
+          const maps = (connRow?.patient_id_mapping as Array<{ fhirPatientId?: string; onecareUserId?: string }> | null) ?? [];
+          const linked = !!vRow && maps.some(
+            (m) => m?.fhirPatientId === patientFhirId && m?.onecareUserId === vRow.user_id,
+          );
+          if (!linked) {
+            return new Response(JSON.stringify({ error: "That patient is not linked to this connection" }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
           }
         }
 

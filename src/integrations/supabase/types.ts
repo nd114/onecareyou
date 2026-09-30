@@ -255,7 +255,7 @@ export type Database = {
       baa_agreements: {
         Row: {
           agreement_version: string
-          clinician_user_id: string
+          clinician_user_id: string | null
           contact_email: string
           contact_name: string
           contact_phone: string | null
@@ -267,12 +267,14 @@ export type Database = {
           practice_npi: string | null
           signed_at: string
           status: string
+          subject_email_sha256: string | null
+          subject_id_sha256: string | null
           updated_at: string
           user_agent: string | null
         }
         Insert: {
           agreement_version?: string
-          clinician_user_id: string
+          clinician_user_id?: string | null
           contact_email: string
           contact_name: string
           contact_phone?: string | null
@@ -284,12 +286,14 @@ export type Database = {
           practice_npi?: string | null
           signed_at?: string
           status?: string
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           updated_at?: string
           user_agent?: string | null
         }
         Update: {
           agreement_version?: string
-          clinician_user_id?: string
+          clinician_user_id?: string | null
           contact_email?: string
           contact_name?: string
           contact_phone?: string | null
@@ -301,6 +305,8 @@ export type Database = {
           practice_npi?: string | null
           signed_at?: string
           status?: string
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           updated_at?: string
           user_agent?: string | null
         }
@@ -551,9 +557,104 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "care_alert_settings_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
+            referencedColumns: ["id", "owner_user_id"]
+          },
+        ]
+      }
+      care_record_snapshot_jobs: {
+        Row: {
+          attempts: number
+          claimed_at: string | null
+          clinician_user_id: string | null
+          content_sha256: string | null
+          document_id: string | null
+          filed_at: string | null
+          id: string
+          last_error: string | null
+          patient_user_id: string
+          practice_id: string | null
+          practice_share_id: string | null
+          provider_share_id: string | null
+          relationship_id: string
+          relationship_kind: string
+          requested_at: string
+          requested_by: string | null
+          status: string
+          trigger_key: string
+          trigger_kind: string
+        }
+        Insert: {
+          attempts?: number
+          claimed_at?: string | null
+          clinician_user_id?: string | null
+          content_sha256?: string | null
+          document_id?: string | null
+          filed_at?: string | null
+          id?: string
+          last_error?: string | null
+          patient_user_id: string
+          practice_id?: string | null
+          practice_share_id?: string | null
+          provider_share_id?: string | null
+          relationship_id: string
+          relationship_kind: string
+          requested_at?: string
+          requested_by?: string | null
+          status?: string
+          trigger_key: string
+          trigger_kind: string
+        }
+        Update: {
+          attempts?: number
+          claimed_at?: string | null
+          clinician_user_id?: string | null
+          content_sha256?: string | null
+          document_id?: string | null
+          filed_at?: string | null
+          id?: string
+          last_error?: string | null
+          patient_user_id?: string
+          practice_id?: string | null
+          practice_share_id?: string | null
+          provider_share_id?: string | null
+          relationship_id?: string
+          relationship_kind?: string
+          requested_at?: string
+          requested_by?: string | null
+          status?: string
+          trigger_key?: string
+          trigger_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_record_snapshot_jobs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "health_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_record_snapshot_jobs_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_record_snapshot_jobs_practice_share_id_fkey"
+            columns: ["practice_share_id"]
+            isOneToOne: false
+            referencedRelation: "practice_shares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_record_snapshot_jobs_provider_share_id_fkey"
+            columns: ["provider_share_id"]
+            isOneToOne: false
+            referencedRelation: "provider_shares"
             referencedColumns: ["id"]
           },
         ]
@@ -710,9 +811,14 @@ export type Database = {
           archived_at: string | null
           archived_by: string | null
           audio_path: string
+          author_departed_at: string | null
           bulk_approved: boolean
           clinician_user_id: string
           created_at: string
+          disposition: string | null
+          disposition_at: string | null
+          disposition_by: string | null
+          disposition_note: string | null
           duration_seconds: number | null
           encounter_id: string | null
           error_message: string | null
@@ -721,6 +827,7 @@ export type Database = {
           metadata: Json
           patient_label: string | null
           patient_user_id: string | null
+          practice_id: string | null
           status: string
           summary: string | null
           summary_approved_at: string | null
@@ -734,9 +841,14 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           audio_path: string
+          author_departed_at?: string | null
           bulk_approved?: boolean
           clinician_user_id: string
           created_at?: string
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
           duration_seconds?: number | null
           encounter_id?: string | null
           error_message?: string | null
@@ -745,6 +857,7 @@ export type Database = {
           metadata?: Json
           patient_label?: string | null
           patient_user_id?: string | null
+          practice_id?: string | null
           status?: string
           summary?: string | null
           summary_approved_at?: string | null
@@ -758,9 +871,14 @@ export type Database = {
           archived_at?: string | null
           archived_by?: string | null
           audio_path?: string
+          author_departed_at?: string | null
           bulk_approved?: boolean
           clinician_user_id?: string
           created_at?: string
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
           duration_seconds?: number | null
           encounter_id?: string | null
           error_message?: string | null
@@ -769,6 +887,7 @@ export type Database = {
           metadata?: Json
           patient_label?: string | null
           patient_user_id?: string | null
+          practice_id?: string | null
           status?: string
           summary?: string | null
           summary_approved_at?: string | null
@@ -784,6 +903,13 @@ export type Database = {
             columns: ["encounter_id"]
             isOneToOne: false
             referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinician_dictations_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -805,8 +931,12 @@ export type Database = {
           resend_interval_hours: number | null
           share_id: string | null
           status: string | null
+          supersedes_guidance_id: string | null
           title: string
           updated_at: string
+          withdrawal_reason: string | null
+          withdrawn_at: string | null
+          withdrawn_by: string | null
         }
         Insert: {
           acknowledged_at?: string | null
@@ -824,8 +954,12 @@ export type Database = {
           resend_interval_hours?: number | null
           share_id?: string | null
           status?: string | null
+          supersedes_guidance_id?: string | null
           title: string
           updated_at?: string
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+          withdrawn_by?: string | null
         }
         Update: {
           acknowledged_at?: string | null
@@ -843,8 +977,12 @@ export type Database = {
           resend_interval_hours?: number | null
           share_id?: string | null
           status?: string | null
+          supersedes_guidance_id?: string | null
           title?: string
           updated_at?: string
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+          withdrawn_by?: string | null
         }
         Relationships: [
           {
@@ -854,35 +992,57 @@ export type Database = {
             referencedRelation: "provider_shares"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "clinician_guidance_supersedes_guidance_id_fkey"
+            columns: ["supersedes_guidance_id"]
+            isOneToOne: false
+            referencedRelation: "clinician_guidance"
+            referencedColumns: ["id"]
+          },
         ]
       }
       clinician_guidance_notifications: {
         Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
           clinician_user_id: string
           created_at: string
-          guidance_id: string
+          guidance_id: string | null
           id: string
           is_read: boolean
+          message: string | null
           notification_type: string
           patient_user_id: string
+          practice_id: string | null
+          related_id: string | null
         }
         Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
           clinician_user_id: string
           created_at?: string
-          guidance_id: string
+          guidance_id?: string | null
           id?: string
           is_read?: boolean
+          message?: string | null
           notification_type: string
           patient_user_id: string
+          practice_id?: string | null
+          related_id?: string | null
         }
         Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
           clinician_user_id?: string
           created_at?: string
-          guidance_id?: string
+          guidance_id?: string | null
           id?: string
           is_read?: boolean
+          message?: string | null
           notification_type?: string
           patient_user_id?: string
+          practice_id?: string | null
+          related_id?: string | null
         }
         Relationships: [
           {
@@ -890,6 +1050,13 @@ export type Database = {
             columns: ["guidance_id"]
             isOneToOne: false
             referencedRelation: "clinician_guidance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinician_guidance_notifications_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -920,6 +1087,7 @@ export type Database = {
           provider_share_id: string | null
           tags: Json | null
           updated_at: string
+          updated_by: string | null
           visits: Json
           vitals_history: Json | null
         }
@@ -948,6 +1116,7 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
+          updated_by?: string | null
           visits?: Json
           vitals_history?: Json | null
         }
@@ -976,6 +1145,7 @@ export type Database = {
           provider_share_id?: string | null
           tags?: Json | null
           updated_at?: string
+          updated_by?: string | null
           visits?: Json
           vitals_history?: Json | null
         }
@@ -1105,8 +1275,10 @@ export type Database = {
           metadata: Json | null
           new_value: boolean | null
           previous_value: boolean | null
+          subject_email_sha256: string | null
+          subject_id_sha256: string | null
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -1117,8 +1289,10 @@ export type Database = {
           metadata?: Json | null
           new_value?: boolean | null
           previous_value?: boolean | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -1129,8 +1303,10 @@ export type Database = {
           metadata?: Json | null
           new_value?: boolean | null
           previous_value?: boolean | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1287,10 +1463,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "document_folders_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "owner_user_id"]
           },
         ]
       }
@@ -1693,10 +1869,15 @@ export type Database = {
       encounters: {
         Row: {
           assessment: string | null
+          author_departed_at: string | null
           chief_complaint: string | null
           clinician_user_id: string
           cpt_codes: string[] | null
           created_at: string
+          disposition: string | null
+          disposition_at: string | null
+          disposition_by: string | null
+          disposition_note: string | null
           follow_up_in_days: number | null
           follow_up_task_id: string | null
           icd_codes: string[] | null
@@ -1720,10 +1901,15 @@ export type Database = {
         }
         Insert: {
           assessment?: string | null
+          author_departed_at?: string | null
           chief_complaint?: string | null
           clinician_user_id: string
           cpt_codes?: string[] | null
           created_at?: string
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
           follow_up_in_days?: number | null
           follow_up_task_id?: string | null
           icd_codes?: string[] | null
@@ -1747,10 +1933,15 @@ export type Database = {
         }
         Update: {
           assessment?: string | null
+          author_departed_at?: string | null
           chief_complaint?: string | null
           clinician_user_id?: string
           cpt_codes?: string[] | null
           created_at?: string
+          disposition?: string | null
+          disposition_at?: string | null
+          disposition_by?: string | null
+          disposition_note?: string | null
           follow_up_in_days?: number | null
           follow_up_task_id?: string | null
           icd_codes?: string[] | null
@@ -1839,6 +2030,7 @@ export type Database = {
       family_members: {
         Row: {
           allergies: Json | null
+          archived_at: string | null
           avatar_color: string | null
           blood_type: string | null
           created_at: string
@@ -1855,6 +2047,7 @@ export type Database = {
         }
         Insert: {
           allergies?: Json | null
+          archived_at?: string | null
           avatar_color?: string | null
           blood_type?: string | null
           created_at?: string
@@ -1871,6 +2064,7 @@ export type Database = {
         }
         Update: {
           allergies?: Json | null
+          archived_at?: string | null
           avatar_color?: string | null
           blood_type?: string | null
           created_at?: string
@@ -2202,6 +2396,10 @@ export type Database = {
           id: string
           mime_type: string | null
           notes: string | null
+          origin_label: string | null
+          origin_practice_id: string | null
+          origin_practice_name: string | null
+          origin_role: string | null
           patient_friendly_explanation: string | null
           retracted_at: string | null
           retracted_by: string | null
@@ -2230,6 +2428,10 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          origin_label?: string | null
+          origin_practice_id?: string | null
+          origin_practice_name?: string | null
+          origin_role?: string | null
           patient_friendly_explanation?: string | null
           retracted_at?: string | null
           retracted_by?: string | null
@@ -2258,6 +2460,10 @@ export type Database = {
           id?: string
           mime_type?: string | null
           notes?: string | null
+          origin_label?: string | null
+          origin_practice_id?: string | null
+          origin_practice_name?: string | null
+          origin_role?: string | null
           patient_friendly_explanation?: string | null
           retracted_at?: string | null
           retracted_by?: string | null
@@ -2272,9 +2478,16 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "health_documents_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
+            referencedColumns: ["id", "owner_user_id"]
+          },
+          {
+            foreignKeyName: "health_documents_origin_practice_id_fkey"
+            columns: ["origin_practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -2326,6 +2539,7 @@ export type Database = {
           id: string
           patient_user_id: string
           pinned: boolean
+          practice_id: string | null
           updated_at: string
           visibility: string
         }
@@ -2336,6 +2550,7 @@ export type Database = {
           id?: string
           patient_user_id: string
           pinned?: boolean
+          practice_id?: string | null
           updated_at?: string
           visibility?: string
         }
@@ -2346,10 +2561,19 @@ export type Database = {
           id?: string
           patient_user_id?: string
           pinned?: boolean
+          practice_id?: string | null
           updated_at?: string
           visibility?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "internal_notes_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       international_drug_mappings: {
         Row: {
@@ -2564,24 +2788,30 @@ export type Database = {
           document_id: string
           id: string
           ip_address: string | null
+          subject_email_sha256: string | null
+          subject_id_sha256: string | null
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           accepted_at?: string
           document_id: string
           id?: string
           ip_address?: string | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           accepted_at?: string
           document_id?: string
           id?: string
           ip_address?: string | null
+          subject_email_sha256?: string | null
+          subject_id_sha256?: string | null
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2766,10 +2996,10 @@ export type Database = {
           },
           {
             foreignKeyName: "medications_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "owner_user_id"]
           },
           {
             foreignKeyName: "medications_source_document_id_fkey"
@@ -2792,6 +3022,7 @@ export type Database = {
           external_message_id: string | null
           id: string
           patient_user_id: string
+          practice_id: string | null
           read_at: string | null
           sender_user_id: string
           transport: string
@@ -2807,6 +3038,7 @@ export type Database = {
           external_message_id?: string | null
           id?: string
           patient_user_id: string
+          practice_id?: string | null
           read_at?: string | null
           sender_user_id: string
           transport?: string
@@ -2822,11 +3054,20 @@ export type Database = {
           external_message_id?: string | null
           id?: string
           patient_user_id?: string
+          practice_id?: string | null
           read_at?: string | null
           sender_user_id?: string
           transport?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_preferences: {
         Row: {
@@ -2952,6 +3193,47 @@ export type Database = {
           },
         ]
       }
+      patient_notices: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          notice_type: string
+          patient_user_id: string
+          practice_id: string | null
+          related_id: string | null
+          seen_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          notice_type: string
+          patient_user_id: string
+          practice_id?: string | null
+          related_id?: string | null
+          seen_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          notice_type?: string
+          patient_user_id?: string
+          practice_id?: string | null
+          related_id?: string | null
+          seen_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_notices_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_recordings: {
         Row: {
           archived_at: string | null
@@ -3061,10 +3343,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "personal_notes_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "owner_user_id"]
           },
         ]
       }
@@ -3300,6 +3582,9 @@ export type Database = {
           can_manage_settings: boolean | null
           can_view_all_patients: boolean | null
           created_at: string
+          end_reason: string | null
+          ended_at: string | null
+          ended_by: string | null
           id: string
           invited_at: string | null
           invited_by: string | null
@@ -3317,6 +3602,9 @@ export type Database = {
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
           created_at?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -3334,6 +3622,9 @@ export type Database = {
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
           created_at?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -3346,6 +3637,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "practice_members_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_membership_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          member_id: string | null
+          practice_id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          member_id?: string | null
+          practice_id: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          member_id?: string | null
+          practice_id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_membership_events_practice_id_fkey"
             columns: ["practice_id"]
             isOneToOne: false
             referencedRelation: "practices"
@@ -4071,6 +4406,7 @@ export type Database = {
           medication_id: string | null
           patient_user_id: string
           payload: Json
+          practice_id: string | null
           proposed_by_user_id: string
           rationale: string | null
           responded_at: string | null
@@ -4086,6 +4422,7 @@ export type Database = {
           medication_id?: string | null
           patient_user_id: string
           payload?: Json
+          practice_id?: string | null
           proposed_by_user_id: string
           rationale?: string | null
           responded_at?: string | null
@@ -4101,6 +4438,7 @@ export type Database = {
           medication_id?: string | null
           patient_user_id?: string
           payload?: Json
+          practice_id?: string | null
           proposed_by_user_id?: string
           rationale?: string | null
           responded_at?: string | null
@@ -4135,6 +4473,13 @@ export type Database = {
             columns: ["medication_id"]
             isOneToOne: false
             referencedRelation: "medications_with_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_change_proposals_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
             referencedColumns: ["id"]
           },
         ]
@@ -4254,10 +4599,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "schedule_entries_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "owner_user_id"]
           },
           {
             foreignKeyName: "schedule_entries_medication_id_fkey"
@@ -4344,6 +4689,86 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      snapshot_link_views: {
+        Row: {
+          document_id: string | null
+          id: number
+          kind: string
+          link_id: string
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          document_id?: string | null
+          id?: never
+          kind: string
+          link_id: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          document_id?: string | null
+          id?: never
+          kind?: string
+          link_id?: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snapshot_link_views_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "snapshot_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      snapshot_links: {
+        Row: {
+          categories: string[]
+          created_at: string
+          document_ids: string[]
+          expires_at: string
+          id: string
+          label: string | null
+          passcode_hash: string | null
+          revoked_at: string | null
+          sharer_first_name: string
+          snapshot: Json
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          categories: string[]
+          created_at?: string
+          document_ids?: string[]
+          expires_at: string
+          id?: string
+          label?: string | null
+          passcode_hash?: string | null
+          revoked_at?: string | null
+          sharer_first_name: string
+          snapshot: Json
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          categories?: string[]
+          created_at?: string
+          document_ids?: string[]
+          expires_at?: string
+          id?: string
+          label?: string | null
+          passcode_hash?: string | null
+          revoked_at?: string | null
+          sharer_first_name?: string
+          snapshot?: Json
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       storage_ledger: {
         Row: {
@@ -4519,10 +4944,10 @@ export type Database = {
           },
           {
             foreignKeyName: "vitals_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "owner_user_id"]
           },
           {
             foreignKeyName: "vitals_source_document_id_fkey"
@@ -4672,10 +5097,10 @@ export type Database = {
           },
           {
             foreignKeyName: "medications_family_member_id_fkey"
-            columns: ["family_member_id"]
+            columns: ["family_member_id", "user_id"]
             isOneToOne: false
             referencedRelation: "family_members"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "owner_user_id"]
           },
         ]
       }
@@ -4786,6 +5211,10 @@ export type Database = {
       }
       accept_tenant_owner_invitation: {
         Args: { _invitation_id: string }
+        Returns: string
+      }
+      acknowledge_practice_notice: {
+        Args: { _notification_id: string }
         Returns: string
       }
       admin_access_log_search: {
@@ -5118,6 +5547,7 @@ export type Database = {
           country: string
           created_at: string
           id: string
+          is_active: boolean
           member_count: number
           name: string
           revenue_share_pct: number
@@ -5155,12 +5585,22 @@ export type Database = {
           role: string
         }[]
       }
+      amend_guidance: {
+        Args: {
+          _guidance_id: string
+          _instruction: string
+          _reason: string
+          _title: string
+        }
+        Returns: string
+      }
       apply_medication_proposal: {
         Args: {
           p_proposal: Database["public"]["Tables"]["record_change_proposals"]["Row"]
         }
         Returns: string
       }
+      archive_alert_rules_without_access: { Args: never; Returns: number }
       assign_practice_patient: {
         Args: {
           _clinician_user_id: string
@@ -5190,12 +5630,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      author_may_file_under: {
+        Args: { _author: string; _practice_id: string }
+        Returns: boolean
+      }
       bulk_allowlist_clinicians: {
         Args: { _entries: Json; _practice_id: string }
         Returns: {
           added: number
           skipped: number
         }[]
+      }
+      caller_is_clinician: { Args: never; Returns: boolean }
+      caller_may_share_document: {
+        Args: { _document_id: string; _provider_share_id: string }
+        Returns: boolean
       }
       can_manage_department: {
         Args: { _department_id: string }
@@ -5206,7 +5655,80 @@ export type Database = {
         Args: { object_name: string }
         Returns: boolean
       }
+      care_alert_missed_doses: {
+        Args: { _from: string; _setting_id: string; _until: string }
+        Returns: {
+          entry_id: string
+          medication_name: string
+          scheduled_time: string
+        }[]
+      }
+      care_record_counterparty: { Args: { _share_id: string }; Returns: string }
+      care_record_entries: {
+        Args: {
+          _clinician: string
+          _patient: string
+          _practice: string
+          _relationship_id: string
+        }
+        Returns: {
+          author_user_id: string
+          body: string
+          extra: Json
+          heading: string
+          occurred_at: string
+          section: string
+        }[]
+      }
+      care_record_html: { Args: { _t: string }; Returns: string }
+      care_record_person_label: { Args: { _user_id: string }; Returns: string }
+      care_record_utc_key: { Args: { _ts: string }; Returns: string }
+      care_record_when: { Args: { _ts: string; _tz: string }; Returns: string }
+      change_practice_member_access: {
+        Args: {
+          _can_view_all_patients?: boolean
+          _practice_id: string
+          _reason?: string
+          _role?: Database["public"]["Enums"]["practice_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       check_signin_allowed: { Args: { _email: string }; Returns: undefined }
+      claim_care_record_snapshot_jobs: {
+        Args: { _job_id?: string; _limit?: number; _patient?: string }
+        Returns: {
+          attempts: number
+          claimed_at: string | null
+          clinician_user_id: string | null
+          content_sha256: string | null
+          document_id: string | null
+          filed_at: string | null
+          id: string
+          last_error: string | null
+          patient_user_id: string
+          practice_id: string | null
+          practice_share_id: string | null
+          provider_share_id: string | null
+          relationship_id: string
+          relationship_kind: string
+          requested_at: string
+          requested_by: string | null
+          status: string
+          trigger_key: string
+          trigger_kind: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "care_record_snapshot_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      clinician_can_see_patient_as: {
+        Args: { _clinician: string; _patient: string; _permission: string }
+        Returns: boolean
+      }
       clinician_had_patient_access: {
         Args: { patient_user_id: string }
         Returns: boolean
@@ -5223,7 +5745,27 @@ export type Database = {
         Args: { patient_user_id: string; permission_key: string }
         Returns: boolean
       }
+      clinician_still_reaches_patient: {
+        Args: { _clinician: string; _patient: string }
+        Returns: boolean
+      }
+      compile_care_record_snapshot: { Args: { _job_id: string }; Returns: Json }
       confirmed_email: { Args: never; Returns: string }
+      create_snapshot_link: {
+        Args: {
+          _categories: string[]
+          _document_ids: string[]
+          _expires_in_hours: number
+          _label?: string
+          _with_passcode?: boolean
+        }
+        Returns: {
+          expires_at: string
+          link_id: string
+          passcode: string
+          token: string
+        }[]
+      }
       currency_minor_units: { Args: { _currency: string }; Returns: number }
       decline_practice_invitation: {
         Args: { _invitation_id: string }
@@ -5233,7 +5775,16 @@ export type Database = {
         Args: { _folder_id: string }
         Returns: undefined
       }
+      dictation_audio_blocked: {
+        Args: { _for_delete?: boolean; _path: string }
+        Returns: boolean
+      }
       document_is_withdrawn: { Args: { _file_path: string }; Returns: boolean }
+      document_origin_role_label: { Args: { _role: string }; Returns: string }
+      end_practice_membership: {
+        Args: { _practice_id: string; _reason?: string; _user_id: string }
+        Returns: undefined
+      }
       enforce_rate_limit: {
         Args: {
           _bucket: string
@@ -5243,6 +5794,33 @@ export type Database = {
           _window: string
         }
         Returns: undefined
+      }
+      enqueue_care_record_snapshot: {
+        Args: {
+          _key: string
+          _requested_at?: string
+          _requested_by: string
+          _share_id: string
+          _trigger: string
+        }
+        Returns: string
+      }
+      enqueue_due_care_record_snapshots: {
+        Args: { _as_of?: string }
+        Returns: Json
+      }
+      fail_care_record_snapshot_job: {
+        Args: { _error: string; _job_id: string }
+        Returns: undefined
+      }
+      file_care_record_snapshot: {
+        Args: {
+          _compiled: Json
+          _file_path: string
+          _file_size: number
+          _job_id: string
+        }
+        Returns: string
       }
       find_institution_by_slug: {
         Args: { _slug: string }
@@ -5312,6 +5890,10 @@ export type Database = {
         }[]
       }
       get_user_storage_bytes: { Args: { _user_id: string }; Returns: number }
+      has_current_clinical_access: {
+        Args: { _patient_user_id: string; _practice_id?: string }
+        Returns: boolean
+      }
       has_practice_capability:
         | { Args: { _capability: string; _user_id: string }; Returns: boolean }
         | {
@@ -5364,6 +5946,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_clinical_practice_member: {
+        Args: { _practice_id: string }
+        Returns: boolean
+      }
+      is_clinician_account: { Args: { _user_id: string }; Returns: boolean }
       is_department_lead: { Args: { _practice_id: string }; Returns: boolean }
       is_institution_slug_available: {
         Args: { _practice_id?: string; _slug: string }
@@ -5393,7 +5980,27 @@ export type Database = {
         Args: { _nonce: string; _subject: string; _token_hash: string }
         Returns: string
       }
+      leave_practice: {
+        Args: { _practice_id: string; _reason?: string }
+        Returns: undefined
+      }
       led_department_ids: { Args: never; Returns: string[] }
+      list_my_snapshot_links: {
+        Args: never
+        Returns: {
+          categories: string[]
+          created_at: string
+          document_count: number
+          expires_at: string
+          has_passcode: boolean
+          id: string
+          label: string
+          last_viewed_at: string
+          locked: boolean
+          revoked_at: string
+          view_count: number
+        }[]
+      }
       log_platform_admin_action: {
         Args: {
           _action: string
@@ -5421,12 +6028,49 @@ export type Database = {
             }
             Returns: undefined
           }
+      mark_patient_notice_seen: {
+        Args: { _notice_id: string }
+        Returns: undefined
+      }
+      mark_practice_thread_read: {
+        Args: { _patient_user_id: string }
+        Returns: number
+      }
       may_manage_practice_patient_records: {
         Args: { _practice_id: string }
         Returns: boolean
       }
       may_read_practice_patient_record: {
         Args: { _linked_user_id: string; _practice_id: string }
+        Returns: boolean
+      }
+      may_resolve_departed_work: {
+        Args: { _patient_user_id: string; _practice_id: string }
+        Returns: boolean
+      }
+      member_is_active_clinician: {
+        Args: { _practice_id: string; _user_id: string }
+        Returns: boolean
+      }
+      message_attachment_never_sent: {
+        Args: { _name: string }
+        Returns: boolean
+      }
+      message_readable_by_caller: {
+        Args: {
+          _clinician: string
+          _created_at: string
+          _patient: string
+          _practice_id: string
+        }
+        Returns: boolean
+      }
+      message_thread_practice: {
+        Args: { _clinician: string; _patient: string }
+        Returns: string
+      }
+      message_thread_readers_exist: {
+        Args: { _clinician: string; _patient: string; _practice_id: string }
         Returns: boolean
       }
       my_institution_care_team: {
@@ -5440,6 +6084,31 @@ export type Database = {
           practice_name: string
           practice_slug: string
           specialty: string
+        }[]
+      }
+      my_message_counterparties: {
+        Args: never
+        Returns: {
+          can_send: boolean
+          clinician_name: string
+          clinician_status: string
+          clinician_user_id: string
+          continues_with: Json
+          ended_at: string
+          ended_by_patient: boolean
+          practice_id: string
+          practice_name: string
+          reason: string
+        }[]
+      }
+      my_message_history_patients: {
+        Args: never
+        Returns: {
+          last_at: string
+          patient_name: string
+          patient_user_id: string
+          practice_id: string
+          practice_name: string
         }[]
       }
       my_message_threads: {
@@ -5505,6 +6174,8 @@ export type Database = {
         }[]
       }
       normalise_clinical_list: { Args: { _value: Json }; Returns: Json }
+      notice_patient_name: { Args: { _user_id: string }; Returns: string }
+      notice_person_name: { Args: { _user_id: string }; Returns: string }
       notification_allowed: {
         Args: { _category: string; _channel: string; _user_id: string }
         Returns: boolean
@@ -5534,6 +6205,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      offboarding_impact: {
+        Args: { _practice_id: string; _user_id: string }
+        Returns: Json
+      }
+      open_snapshot_link: {
+        Args: {
+          _document_id?: string
+          _passcode?: string
+          _token_hash: string
+          _user_agent?: string
+        }
+        Returns: Json
       }
       owner_may_remove_document: {
         Args: { _file_path: string }
@@ -5570,6 +6254,14 @@ export type Database = {
           resource_type: string
         }[]
       }
+      practice_clinical_access: {
+        Args: { _patient_user_id: string; _practice_id: string }
+        Returns: boolean
+      }
+      practice_clinical_access_as: {
+        Args: { _patient_user_id: string; _practice_id: string; _user: string }
+        Returns: boolean
+      }
       practice_contact_details: {
         Args: { _practice_id: string }
         Returns: {
@@ -5588,6 +6280,19 @@ export type Database = {
       practice_delete_department: {
         Args: { _department_id: string; _reason?: string }
         Returns: undefined
+      }
+      practice_handover_queue: {
+        Args: { _practice_id: string }
+        Returns: {
+          departed_name: string
+          departed_user_id: string
+          detail: string
+          item_id: string
+          kind: string
+          patient_name: string
+          patient_user_id: string
+          since: string
+        }[]
       }
       practice_has_clinical_access: {
         Args: { patient_uuid: string }
@@ -5689,6 +6394,14 @@ export type Database = {
           user_id: string
         }[]
       }
+      practice_thread_readable: {
+        Args: {
+          _patient: string
+          _practice_id: string
+          _thread_clinician: string
+        }
+        Returns: boolean
+      }
       public_institution_by_slug: {
         Args: { _slug: string }
         Returns: {
@@ -5704,14 +6417,32 @@ export type Database = {
         }[]
       }
       purge_expired_kingschat_attempts: { Args: never; Returns: number }
+      record_context_practice: {
+        Args: { _author: string; _patient: string }
+        Returns: string
+      }
       rename_document_folder: {
         Args: { _folder_id: string; _new_name: string }
         Returns: undefined
+      }
+      request_care_record_snapshot: {
+        Args: { _share_id: string }
+        Returns: string
       }
       request_client_ip: { Args: never; Returns: string }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       required_withdrawal_authority: {
         Args: { _sent_at: string }
+        Returns: string
+      }
+      resolve_departed_draft: {
+        Args: {
+          _action: string
+          _id: string
+          _kind: string
+          _note?: string
+          _share_with_patient?: boolean
+        }
         Returns: string
       }
       respond_to_change_proposal: {
@@ -5724,6 +6455,7 @@ export type Database = {
           medication_id: string | null
           patient_user_id: string
           payload: Json
+          practice_id: string | null
           proposed_by_user_id: string
           rationale: string | null
           responded_at: string | null
@@ -5738,6 +6470,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revoke_snapshot_link: { Args: { _link_id: string }; Returns: string }
       search_documents: {
         Args: { max_results?: number; query: string }
         Returns: {
@@ -5853,6 +6586,7 @@ export type Database = {
           medication_id: string | null
           patient_user_id: string
           payload: Json
+          practice_id: string | null
           proposed_by_user_id: string
           rationale: string | null
           responded_at: string | null
@@ -5866,6 +6600,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      withdraw_guidance: {
+        Args: { _guidance_id: string; _reason: string }
+        Returns: undefined
       }
       withdraw_shared_file: {
         Args: {

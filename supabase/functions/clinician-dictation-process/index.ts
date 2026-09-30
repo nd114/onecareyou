@@ -47,6 +47,16 @@ Deno.serve(async (req) => {
       .single();
     if (error || !row) return json({ error: "Not found" }, 404);
     if (row.clinician_user_id !== userData.user.id) return json({ error: "Forbidden" }, 403);
+    // The stored path is written by the clinician, so it must sit in their own
+    // folder; otherwise any clinician could name another's recording.
+    const audioPath = String(row.audio_path ?? "");
+    if (
+      !audioPath.startsWith(`${userData.user.id}/`) ||
+      audioPath.includes("..") ||
+      audioPath.includes("//")
+    ) {
+      return json({ error: "Forbidden" }, 403);
+    }
 
     // Download audio
     const { data: file, error: dlErr } = await admin.storage

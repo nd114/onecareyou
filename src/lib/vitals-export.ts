@@ -5,6 +5,14 @@ import { format } from 'date-fns';
 import { toFhirBundle } from '@/lib/fhir/observation';
 
 // CSV Export
+const escapePrintHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export function exportVitalsToCSV(vitals: VitalRecord[], filename: string = 'vitals-export') {
   const headers = ['Type', 'Value', 'Unit', 'Status', 'Notes', 'Recorded At', 'Logged At'];
   
@@ -286,7 +294,7 @@ export function exportVitalsToPDF(vitals: VitalRecord[], filename: string = 'vit
                   <td><strong>${config.label}</strong></td>
                   <td>${formatValue(vital)} ${config.unit}</td>
                   <td><span class="status ${statusClass}">${status}</span></td>
-                  <td>${vital.notes || '-'}</td>
+                  <td>${escapePrintHtml(vital.notes || '-')}</td>
                   <td>${format(new Date(vital.recorded_at), 'MMM d, yyyy h:mm a')}</td>
                 </tr>
               `;

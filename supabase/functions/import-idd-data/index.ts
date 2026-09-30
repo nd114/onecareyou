@@ -69,9 +69,28 @@ serve(async (req) => {
     // Direct batch import from client
     if (action === 'import-batch' && mappings) {
       // Deduplicate by brand_name_normalized within this batch (keep last occurrence)
-      const uniqueMap = new Map<string, typeof mappings[0]>();
-      for (const m of mappings) {
-        uniqueMap.set(m.brand_name_normalized, m);
+      // Only the known mapping fields are written, each as bounded text.
+      if (!Array.isArray(mappings) || mappings.length > 5000) {
+        return new Response(JSON.stringify({ error: 'mappings must be an array of at most 5000 rows' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const text = (v: unknown, n: number) =>
+        typeof v === 'string' && v.trim() ? v.trim().slice(0, n) : null;
+      const uniqueMap = new Map<string, Record<string, string | null>>();
+      for (const raw of mappings as Record<string, unknown>[]) {
+        const brand = text(raw?.brand_name, 200);
+        const normalized = text(raw?.brand_name_normalized, 200)?.toLowerCase() ?? null;
+        const generic = text(raw?.generic_name, 300);
+        if (!brand || !normalized || !generic) continue;
+        uniqueMap.set(normalized, {
+          brand_name: brand,
+          brand_name_normalized: normalized,
+          generic_name: generic,
+          rxcui: text(raw?.rxcui, 20),
+          country_code: text(raw?.country_code, 3)?.toUpperCase() ?? null,
+          source: text(raw?.source, 100),
+        });
       }
       const dedupedMappings = Array.from(uniqueMap.values());
       
@@ -105,8 +124,26 @@ serve(async (req) => {
         csvText = csvContent;
         console.log('Processing direct CSV content...');
       } else if (fileUrl) {
-        console.log('Fetching CSV file from:', fileUrl);
-        const response = await fetch(fileUrl);
+        // Only fetch from approved public data hosts over HTTPS; never an
+        // address the caller picks (internal services, metadata endpoints).
+        const ALLOWED_HOSTS = new Set([
+          'raw.githubusercontent.com',
+          'data.nafdac.gov.ng',
+          'download.nlm.nih.gov',
+        ]);
+        let parsedUrl: URL;
+        try {
+          parsedUrl = new URL(String(fileUrl));
+        } catch {
+          throw new Error('Invalid fileUrl');
+        }
+        if (parsedUrl.protocol !== 'https:' || !ALLOWED_HOSTS.has(parsedUrl.hostname)) {
+          return new Response(JSON.stringify({ error: 'That file address is not on the approved list' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        console.log('Fetching CSV file from:', parsedUrl.hostname);
+        const response = await fetch(parsedUrl.toString(), { redirect: 'error' });
         if (!response.ok) {
           throw new Error(`Failed to fetch file: ${response.status}`);
         }

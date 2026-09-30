@@ -101,28 +101,9 @@ const handler = async (req: Request): Promise<Response> => {
       requirements: inquiry.requirements ? esc(inquiry.requirements).replace(/\n/g, "<br/>") : "—",
     };
 
-    // Contact confirmation
-    await sendEmail(
-      [contactEmail],
-      "We received your OneCare Enterprise inquiry",
-      `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;color:#0f172a;">
-        <h1 style="color:#14b8a6;margin:0 0 16px;">Thanks, ${safe.name}!</h1>
-        <p style="line-height:1.6;">We've received your enterprise inquiry for <strong>${safe.practice}</strong>. A member of our team will be in touch within <strong>1 business day</strong> to schedule a personalized demo and discuss your practice's needs.</p>
-        <div style="background:#f8fafc;border-radius:8px;padding:16px;margin:20px 0;">
-          <p style="margin:0 0 8px;"><strong>Summary</strong></p>
-          <p style="margin:4px 0;">Practice: ${safe.practice}</p>
-          <p style="margin:4px 0;">Size: ${safe.size}</p>
-          <p style="margin:4px 0;">Specialty: ${safe.specialty}</p>
-          <p style="margin:4px 0;">EHR: ${safe.ehr}</p>
-          <p style="margin:4px 0;">Country: ${safe.country}</p>
-        </div>
-        <p style="line-height:1.6;">In the meantime, you can explore <a href="https://onecare.you" style="color:#14b8a6;">onecare.you</a> or reply to this email with any questions.</p>
-        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;"/>
-        <p style="color:#94a3b8;font-size:12px;">This is an automated confirmation from OneCare.</p>
-      </div>`,
-      "hello@onecare.you"
-    );
+    // No confirmation is mailed to the contact address: the caller only
+    // names an inquiry id and has not proved they own that address. Only our
+    // own team inbox is notified.
 
     // Internal notification
     await sendEmail(
