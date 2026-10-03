@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePractice } from '@/hooks/usePractice';
 import { toast } from 'sonner';
+import { limitErrorMessage } from '@/lib/limit-errors';
 
 export const ADMINISTRATIVE_ROLES = ['owner', 'admin', 'sub_admin'] as const;
 export type AdministrativeRole = (typeof ADMINISTRATIVE_ROLES)[number];
@@ -100,7 +101,8 @@ export function usePracticeAdminActions(practiceId?: string | null) {
       toast.success(vars.status === 'archived' ? 'Team member archived' : 'Team member restored');
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message || 'Could not update this team member'),
+    onError: (e: Error) =>
+      toast.error(limitErrorMessage(e, 'owner') ?? (e.message || 'Could not update this team member')),
   });
 
   /**

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { limitErrorMessage } from '@/lib/limit-errors';
 import { toClinicalList } from "@/lib/clinical-lists";
 
 export interface ManagedVital {
@@ -106,7 +107,7 @@ export function useClinicianPatientRecords() {
     },
     onError: (error) => {
       console.error('Error adding record:', error);
-      toast.error('Failed to add patient record');
+      toast.error(limitErrorMessage(error, 'clinician') ?? 'Failed to add patient record');
     },
   });
 
@@ -187,6 +188,15 @@ export function useClinicianPatientRecords() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['clinician-patient-records'] });
+      if (data?.limit_reached) {
+        // Some rows fit and some did not: say so plainly, and that nothing
+        // already on file was touched.
+        const left = data.skipped_over_limit ?? 0;
+        toast.warning(
+          `Imported ${data.imported} patients. ${left} ${left === 1 ? 'record was' : 'records were'} not added because you reached your patient limit. Existing patients and records are unaffected.`,
+        );
+        return;
+      }
       toast.success(`Imported ${data.imported} patients (${data.duplicates} duplicates skipped)`);
     },
     onError: (error) => {

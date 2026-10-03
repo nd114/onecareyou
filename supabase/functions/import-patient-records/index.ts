@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { patientCapacity, remainingPatientSlots } from '../_shared/entitlements.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -123,6 +124,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // The plan's patient allowance. This function writes with the service role,
+    // which the database cap trigger trusts, so the cap is applied here: new
+    // records are added while there is room and the rest are left out and
+    // reported. Patients already on file are never touched, and an account over
+    // its limit simply has no room for more.
+    const capacity = await patientCapacity(adminClient, user.id, practice_id)
+    let slotsLeft = remainingPatientSlots(capacity)
+    let overLimitCount = 0
+
     // Fetch existing records for dedup
     const { data: existingRecords } = await adminClient
       .from('clinician_patient_records')
@@ -171,6 +181,12 @@ Deno.serve(async (req) => {
           errorCount++
           continue
         }
+
+        if (slotsLeft <= 0) {
+          overLimitCount++
+          continue
+        }
+        slotsLeft--
 
         toInsert.push({
           clinician_user_id: user.id,
@@ -250,6 +266,9 @@ Deno.serve(async (req) => {
         success_count: successCount,
         duplicate_count: duplicateCount,
         error_count: errorCount,
+        skipped_over_limit: overLimitCount,
+        patient_limit: capacity.limit,
+        patients_before_import: capacity.used,
         import_source,
         data_sharing_model,
       },
@@ -263,6 +282,13 @@ Deno.serve(async (req) => {
         duplicates: duplicateCount,
         errors: errorCount,
         error_details: errors.slice(0, 20),
+        // Records left out because the plan's patient limit was reached. Zero
+        // when everything fit. Existing patients and records are unaffected.
+        skipped_over_limit: overLimitCount,
+        limit_reached: overLimitCount > 0,
+        patient_limit: capacity.limit,
+        patients_before_import: capacity.used,
+        error_code: overLimitCount > 0 ? 'patient_limit_reached' : undefined,
       }),
       {
         status: 200,

@@ -27,6 +27,7 @@ import { useClinicianSubscription } from '@/hooks/useClinicianSubscription';
 import { InvitePatientDialog } from '@/components/clinician/InvitePatientDialog';
 import { AddManagedPatientDialog } from '@/components/clinician/AddManagedPatientDialog';
 import { PatientLimitBanner } from '@/components/clinician/PatientLimitBanner';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useClinicianPatientRecords } from '@/hooks/useClinicianPatientRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InviteToOneCareButton, PatientTagManager } from '@/components/clinician/ManagedRecordActions';
@@ -62,7 +63,12 @@ const ClinicianPatients = () => {
     autoClaimShares,
   } = useClinicianPatients();
   const { records: managedRecords, isLoading: isLoadingRecords } = useClinicianPatientRecords();
-  const { patientLimit, tier, isTrial } = useClinicianSubscription();
+  const { patientLimit: subscriptionLimit, tier, isTrial } = useClinicianSubscription();
+  // The limit the database enforces (entitlements_for). Until it has answered,
+  // the subscription check's figure stands in; unlimited is Infinity here.
+  const { entitlements, ready: entitlementsReady } = useEntitlements();
+  const patientLimit =
+    entitlementsReady && entitlements ? (entitlements.patientLimit ?? Infinity) : subscriptionLimit;
 
   // An expired trial reports a limit of 0, which is not a limit the clinician
   // "reached" — telling them so sends them looking for a plan upgrade when what

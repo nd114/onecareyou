@@ -10,6 +10,7 @@ import { usePractice, PracticeMember, PracticeRole } from '@/hooks/usePractice';
 import { useLeavePractice, useOffboardingImpact } from '@/hooks/useOffboarding';
 import { CreatePracticeDialog } from './CreatePracticeDialog';
 import { InviteTeamMemberDialog } from './InviteTeamMemberDialog';
+import { EntitlementBanner } from '@/components/LimitBanner';
 import { OffboardingImpactList } from './OffboardingImpactList';
 import { isClinicalRole } from '@/lib/staff-roles';
 import { Building2, UserPlus, Users, MoreVertical, Crown, Shield, Stethoscope, User, Loader2, Mail, Search, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
@@ -166,6 +167,9 @@ export function PracticeTeamSection() {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
+          {canManagePractice && currentPractice && (
+            <EntitlementBanner kind="seats" practiceId={currentPractice.id} />
+          )}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

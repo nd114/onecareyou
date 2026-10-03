@@ -14,6 +14,10 @@ export const CLINICIAN_STRIPE_PRICES = {
   enterprise_monthly: 'price_1SuL1ADycAbKvlfcmvKgb99I',
 } as const;
 
+// Display copy for the plan cards and the pricing page. The enforced limits are
+// in the tier_limits table (see useEntitlements); a test keeps the patient
+// figures below equal to that table's, so a limit change that updates one and
+// not the other fails the build.
 export const CLINICIAN_TIER_INFO = {
   trial: {
     name: 'Trial',
@@ -121,13 +125,11 @@ export const CLINICIAN_FEATURE_TIERS = {
   departments: ['enterprise'] as string[],
 } as const;
 
-export const TEAM_SEAT_LIMITS: Record<string, number> = {
-  trial: 1,
-  community: 1,
-  solo: 1,
-  pro: 6, // owner + 5 seats
-  enterprise: 999999,
-};
+// Team seat counts are not kept here. They live in the tier_limits table and
+// are read through useEntitlements (entitlements_for). This file used to carry
+// a TEAM_SEAT_LIMITS map that said 6 for the Practice plan against the pricing
+// page's 5, and nothing read it; it was removed rather than corrected so there
+// is one place for the number.
 
 export function hasFeatureAccess(tier: string, feature: keyof typeof CLINICIAN_FEATURE_TIERS): boolean {
   return CLINICIAN_FEATURE_TIERS[feature].includes(tier);

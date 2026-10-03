@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { limitErrorMessage } from '@/lib/limit-errors';
 import { fileQueuedCareRecords } from '@/hooks/useCareRecordSnapshot';
 
 export interface InstitutionInfo {
@@ -112,7 +113,7 @@ export function useMyInstitutionShares() {
       queryClient.invalidateQueries({ queryKey: ['practice-shared-patients'] });
       queryClient.invalidateQueries({ queryKey: ['practice-patient-overview'] });
     },
-    onError: (e: Error) => toast.error(e.message || 'Could not connect'),
+    onError: (e: Error) => toast.error(limitErrorMessage(e, 'patient') ?? (e.message || 'Could not connect')),
   });
 
   const disconnect = useMutation({
@@ -370,7 +371,7 @@ export function usePracticeSharedPatients(practiceId?: string | null) {
       queryClient.invalidateQueries({ queryKey: ['practice-patient-overview'] });
       queryClient.invalidateQueries({ queryKey: ['patient-action-log'] });
     },
-    onError: (e: Error) => toast.error(e.message || 'Could not assign patient'),
+    onError: (e: Error) => toast.error(limitErrorMessage(e, 'clinician') ?? (e.message || 'Could not assign patient')),
   });
 
   return {

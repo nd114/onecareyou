@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { limitErrorMessage } from '@/lib/limit-errors';
 
 /**
  * A type alias, not an interface: this is written straight into a jsonb
@@ -244,7 +245,7 @@ export function useProviderShares() {
     },
     onError: (error) => {
       console.error("Error creating share:", error);
-      toast.error("Failed to create share link");
+      toast.error(limitErrorMessage(error, 'patient') ?? "Failed to create share link");
     },
   });
 
@@ -350,7 +351,7 @@ export function useProviderShares() {
     },
     onError: (error) => {
       console.error("Error resuming share:", error);
-      toast.error("Failed to resume sharing");
+      toast.error(limitErrorMessage(error, 'patient') ?? "Failed to resume sharing");
     },
   });
 

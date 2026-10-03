@@ -1,106 +1,43 @@
-import { AlertTriangle, ArrowUpRight, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
-import { useClinicianSubscription, CLINICIAN_TIER_INFO } from '@/hooks/useClinicianSubscription';
+import { LimitBanner } from '@/components/LimitBanner';
+import { useEntitlements } from '@/hooks/useEntitlements';
+import { CLINICIAN_TIER_INFO } from '@/hooks/useClinicianSubscription';
 
 interface PatientLimitBannerProps {
   patientCount: number;
 }
 
+/**
+ * The next plan up, named and sized from CLINICIAN_TIER_INFO (the pricing page's
+ * own figures), as a sentence for the banner. Null when there is nothing above.
+ */
+export function upgradeHintFor(tier: string): string | null {
+  const next = (key: 'solo' | 'pro') =>
+    `Upgrade to ${CLINICIAN_TIER_INFO[key].name} for up to ${CLINICIAN_TIER_INFO[key].patientLimit.toLocaleString('en-US')} patients.`;
+  if (tier === 'trial' || tier === 'community') return next('solo');
+  if (tier === 'solo') return next('pro');
+  if (tier === 'pro') return `Upgrade to ${CLINICIAN_TIER_INFO.enterprise.name} for unlimited patients.`;
+  return null;
+}
+
+/**
+ * The clinician's patient-limit banner. The limit comes from entitlements_for,
+ * the same figure the database enforces; the count is the page's own so the
+ * banner and the list agree. Drawn only once the answer is in.
+ */
 export function PatientLimitBanner({ patientCount }: PatientLimitBannerProps) {
   const navigate = useNavigate();
-  const { tier, patientLimit, isTrial, subscriptionReady } = useClinicianSubscription();
+  const { entitlements, ready } = useEntitlements();
 
-  // Until the first check returns, tier is "trial" and the limit is 5 by
-  // default — so on Today and Patients this drew "Patient Limit Reached" in
-  // red for a moment on every load, then corrected itself. A warning that
-  // appears and withdraws is worse than no warning.
-  if (!subscriptionReady) {
-    return null;
-  }
-
-  // Don't show for enterprise (unlimited)
-  if (tier === 'enterprise' || patientLimit === 999999) {
-    return null;
-  }
-
-  const usagePercentage = patientLimit > 0 ? Math.min((patientCount / patientLimit) * 100, 100) : 0;
-  const isNearLimit = usagePercentage >= 80;
-  const isAtLimit = patientCount >= patientLimit;
-
-  // Only show banner when near limit (80%+)
-  if (!isNearLimit) {
-    return null;
-  }
-
-  const tierInfo = tier && tier !== 'expired' ? CLINICIAN_TIER_INFO[tier as keyof typeof CLINICIAN_TIER_INFO] : null;
-  
-  // The next plan up, named and sized from CLINICIAN_TIER_INFO. This used to
-  // say "Solo" and "Pro" with limits of 25 and 100 — names the plans no longer
-  // carry and limits they never had, so the banner quoted a plan nobody could
-  // find on the pricing page.
-  const getUpgradeSuggestion = (): { tier: string; name: string; limit: number | 'unlimited' } | null => {
-    const next = (key: 'solo' | 'pro') => ({
-      tier: key,
-      name: CLINICIAN_TIER_INFO[key].name,
-      limit: CLINICIAN_TIER_INFO[key].patientLimit,
-    });
-    if (isTrial || tier === 'trial' || tier === 'community') return next('solo');
-    if (tier === 'solo') return next('pro');
-    if (tier === 'pro') return { tier: 'enterprise', name: CLINICIAN_TIER_INFO.enterprise.name, limit: 'unlimited' };
-    return null;
-  };
-
-  const upgrade = getUpgradeSuggestion();
+  if (!ready || !entitlements) return null;
 
   return (
-    <div className={`rounded-lg p-4 mb-4 ${
-      isAtLimit 
-        ? 'bg-destructive/10 border border-destructive/30' 
-        : 'bg-amber-500/10 border border-amber-500/30'
-    }`}>
-      <div className="flex items-start gap-3">
-        <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          isAtLimit ? 'bg-destructive/20' : 'bg-amber-500/20'
-        }`}>
-          {isAtLimit ? (
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-          ) : (
-            <Users className="h-5 w-5 text-amber-600" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className={`font-medium ${isAtLimit ? 'text-destructive' : 'text-amber-700 dark:text-amber-400'}`}>
-              {isAtLimit ? 'Patient Limit Reached' : 'Approaching Patient Limit'}
-            </p>
-            <span className="text-sm font-medium">
-              {patientCount} / {patientLimit}
-            </span>
-          </div>
-          <Progress 
-            value={usagePercentage} 
-            className={`h-1.5 mt-2 ${isAtLimit ? '[&>div]:bg-destructive' : '[&>div]:bg-amber-500'}`}
-          />
-          <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
-            <p className="text-sm text-muted-foreground">
-              {isAtLimit 
-                ? 'You cannot add new patients until you upgrade.' 
-                : `Only ${patientLimit - patientCount} patient slot${patientLimit - patientCount === 1 ? '' : 's'} remaining.`}
-              {upgrade && ` Upgrade to ${upgrade.name} for ${typeof upgrade.limit === 'number' ? `up to ${upgrade.limit.toLocaleString('en-US')} patients` : 'unlimited patients'}.`}
-            </p>
-            <Button 
-              size="sm" 
-              className="gradient-primary border-0 h-8"
-              onClick={() => navigate('/clinician/pricing')}
-            >
-              <ArrowUpRight className="h-3 w-3 mr-1" />
-              Upgrade Plan
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <LimitBanner
+      kind="patients"
+      used={patientCount}
+      limit={entitlements.patientLimit}
+      upgradeHint={upgradeHintFor(entitlements.tier)}
+      onUpgrade={() => navigate('/clinician/pricing')}
+    />
   );
 }

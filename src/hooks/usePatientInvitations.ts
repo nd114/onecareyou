@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { limitErrorMessage } from '@/lib/limit-errors';
 
 export interface PatientInvitation {
   id: string;
@@ -176,8 +177,8 @@ export function usePatientInvitations() {
       queryClient.invalidateQueries({ queryKey: ['provider-shares'] });
       toast.success('Invitation accepted! Your data is now shared with this provider.');
     },
-    onError: () => {
-      toast.error('Failed to accept invitation');
+    onError: (error) => {
+      toast.error(limitErrorMessage(error, 'patient') ?? 'Failed to accept invitation');
     },
   });
 

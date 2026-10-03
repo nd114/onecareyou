@@ -3,6 +3,7 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { safeOrigin } from "../_shared/safe-origin.ts";
+import { loadTierLimits, storedPatientLimit } from "../_shared/entitlements.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -134,12 +135,9 @@ serve(async (req) => {
 
     const origin = safeOrigin(req);
 
-    // Determine patient limit based on tier
-    const patientLimits: Record<string, number> = {
-      solo: 150,
-      pro: 1000,
-      enterprise: 999999, // Unlimited
-    };
+    // Patient limit for the tier, from the tier_limits table (unlimited is
+    // carried as 999999 in subscription metadata, as before).
+    const patientLimit = storedPatientLimit(await loadTierLimits(supabaseClient), tier);
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId || undefined,
@@ -158,7 +156,7 @@ serve(async (req) => {
           user_id: user.id,
           clinician_profile_id: clinicianProfile.id,
           tier: tier,
-          patient_limit: patientLimits[tier],
+          patient_limit: patientLimit,
         },
       },
       allow_promotion_codes: true,

@@ -4905,6 +4905,36 @@ export type Database = {
           },
         ]
       }
+      tier_limits: {
+        Row: {
+          note: string | null
+          patient_limit: number | null
+          scribe_included: boolean
+          scribe_minutes_monthly: number | null
+          seat_limit: number | null
+          storage_mb: number | null
+          tier: string
+        }
+        Insert: {
+          note?: string | null
+          patient_limit?: number | null
+          scribe_included?: boolean
+          scribe_minutes_monthly?: number | null
+          seat_limit?: number | null
+          storage_mb?: number | null
+          tier: string
+        }
+        Update: {
+          note?: string | null
+          patient_limit?: number | null
+          scribe_included?: boolean
+          scribe_minutes_monthly?: number | null
+          seat_limit?: number | null
+          storage_mb?: number | null
+          tier?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -5960,6 +5990,26 @@ export type Database = {
           _window: string
         }
         Returns: undefined
+      }
+      entitlements_for: {
+        Args: { _user?: string }
+        Returns: {
+          at_patient_limit: boolean
+          at_seat_limit: boolean
+          over_patient_limit: boolean
+          over_seat_limit: boolean
+          patient_count: number
+          patient_limit: number
+          practice_id: string
+          practice_patient_count: number
+          practice_patient_limit: number
+          scribe_included: boolean
+          scribe_minutes_monthly: number
+          seat_count: number
+          seat_limit: number
+          storage_mb: number
+          tier: string
+        }[]
       }
       enqueue_care_record_snapshot: {
         Args: {

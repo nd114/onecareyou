@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { limitErrorMessage } from '@/lib/limit-errors';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 import { useWorkspaceSelection } from './useWorkspaceSelection';
 import { activeMembership, workspaceMemberships } from '@/lib/staff-roles';
@@ -350,7 +351,7 @@ export function usePractice() {
       }
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to create invitation');
+      toast.error(limitErrorMessage(error, 'owner') ?? (error.message || 'Failed to create invitation'));
     },
   });
 
@@ -373,7 +374,7 @@ export function usePractice() {
       toast.success('You have joined the practice');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to accept invitation');
+      toast.error(limitErrorMessage(error, 'invitee') ?? (error.message || 'Failed to accept invitation'));
     },
   });
 

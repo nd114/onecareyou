@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { loadTierLimits, storedPatientLimit } from "../_shared/entitlements.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,15 +25,6 @@ const PRICE_TIER_MAP: Record<string, string> = {
   // Sep 2026 ladder: Individual $99 (solo key), Practice $299 (pro key).
   "price_1UEWquDycAbKvlfcHGRwg9HO": "solo",
   "price_1UEWqvDycAbKvlfcgkECMwx6": "pro",
-};
-
-// Patient limits per tier
-const TIER_LIMITS: Record<string, number> = {
-  trial: 5,
-  community: 25,
-  solo: 150,
-  pro: 1000,
-  enterprise: 999999,
 };
 
 /**
@@ -123,6 +115,11 @@ serve(async (req) => {
     }
     logStep("Clinician profile found", { profileId: clinicianProfile.id });
 
+    // Patient limits come from the tier_limits table, the same figures the
+    // database enforces. Unlimited is stored in this column as 999999.
+    const tierLimits = await loadTierLimits(supabaseClient);
+    const limitFor = (tier: string) => storedPatientLimit(tierLimits, tier);
+
     // Demo accounts short-circuit before any Stripe work. Doing it here also
     // normalises the stored row: one demo account had a stale patient_limit of
     // 1000 that the expiry branch would have reset to 0 on the next check.
@@ -134,7 +131,7 @@ serve(async (req) => {
         .update({
           subscription_tier: DEMO_TIER,
           subscription_status: 'active',
-          patient_limit: TIER_LIMITS[DEMO_TIER],
+          patient_limit: limitFor(DEMO_TIER),
         })
         .eq('user_id', user.id);
 
@@ -142,7 +139,7 @@ serve(async (req) => {
         subscribed: true,
         tier: DEMO_TIER,
         is_clinician: true,
-        patient_limit: TIER_LIMITS[DEMO_TIER],
+        patient_limit: limitFor(DEMO_TIER),
         is_in_trial: false,
         is_demo: true,
       }), {
@@ -182,7 +179,7 @@ serve(async (req) => {
           tier: 'trial',
           is_clinician: true,
           trial_ends_at: trialEndsAt?.toISOString(),
-          patient_limit: TIER_LIMITS.trial,
+          patient_limit: limitFor('trial'),
           is_in_trial: true,
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -196,7 +193,7 @@ serve(async (req) => {
         .update({ 
           subscription_tier: 'expired',
           subscription_status: 'inactive',
-          patient_limit: 0,
+          patient_limit: limitFor('expired'),
         })
         .eq('user_id', user.id);
 
@@ -205,7 +202,7 @@ serve(async (req) => {
         tier: 'expired',
         is_clinician: true,
         trial_ends_at: trialEndsAt?.toISOString(),
-        patient_limit: 0,
+        patient_limit: limitFor('expired'),
         is_in_trial: false,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -238,7 +235,7 @@ serve(async (req) => {
           tier: 'trial',
           is_clinician: true,
           trial_ends_at: trialEndsAt?.toISOString(),
-          patient_limit: TIER_LIMITS.trial,
+          patient_limit: limitFor('trial'),
           is_in_trial: true,
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -252,7 +249,7 @@ serve(async (req) => {
         .update({ 
           subscription_tier: 'expired',
           subscription_status: 'inactive',
-          patient_limit: 0,
+          patient_limit: limitFor('expired'),
         })
         .eq('user_id', user.id);
 
@@ -260,7 +257,7 @@ serve(async (req) => {
         subscribed: false,
         tier: 'expired',
         is_clinician: true,
-        patient_limit: 0,
+        patient_limit: limitFor('expired'),
         is_in_trial: false,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -272,7 +269,7 @@ serve(async (req) => {
     const priceId = clinicianSubscription.items.data[0].price.id;
     const tier = PRICE_TIER_MAP[priceId] || 'unknown';
     const subscriptionEnd = new Date(clinicianSubscription.current_period_end * 1000).toISOString();
-    const patientLimit = TIER_LIMITS[tier] || 0;
+    const patientLimit = limitFor(tier);
 
     logStep("Active subscription found", { 
       subscriptionId: clinicianSubscription.id, 
