@@ -4620,6 +4620,47 @@ export type Database = {
           },
         ]
       }
+      scribe_usage: {
+        Row: {
+          audio_seconds: number
+          billed_minutes: number | null
+          created_at: string
+          id: string
+          kind: string
+          practice_id: string | null
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          audio_seconds: number
+          billed_minutes?: never
+          created_at?: string
+          id?: string
+          kind: string
+          practice_id?: string | null
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          audio_seconds?: number
+          billed_minutes?: never
+          created_at?: string
+          id?: string
+          kind?: string
+          practice_id?: string | null
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scribe_usage_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       share_events: {
         Row: {
           actor_role: string
@@ -6445,6 +6486,21 @@ export type Database = {
         }
         Returns: string
       }
+      record_scribe_usage: {
+        Args: {
+          _audio_seconds: number
+          _kind: string
+          _practice_id: string
+          _request_id: string
+          _user_id: string
+        }
+        Returns: {
+          audio_seconds: number
+          billed_minutes: number
+          id: string
+          inserted: boolean
+        }[]
+      }
       respond_to_change_proposal: {
         Args: { p_accept: boolean; p_note?: string; p_proposal_id: string }
         Returns: {
@@ -6471,6 +6527,15 @@ export type Database = {
         }
       }
       revoke_snapshot_link: { Args: { _link_id: string }; Returns: string }
+      scribe_usage_summary: {
+        Args: { _month: string; _practice_id: string }
+        Returns: {
+          audio_seconds: number
+          billed_minutes: number
+          kind: string
+          sessions: number
+        }[]
+      }
       search_documents: {
         Args: { max_results?: number; query: string }
         Returns: {
