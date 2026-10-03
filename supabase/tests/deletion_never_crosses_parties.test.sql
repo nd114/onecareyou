@@ -407,6 +407,9 @@ BEGIN
      -- (Keys to family_members are RESTRICT since 20261010150000: removing a
      -- family member archives, and never takes their history with it.)
      'care_alert_logs.setting_id', 'ai_messages.conversation_id',
+     -- A clinician's own working material (voice memos): unfiled jottings that
+     -- go with their account; anything filed is already an encounter note.
+     'voice_memos.clinician_user_id',
      -- Children of a clinician's own rows.
      'clinician_guidance_notifications.guidance_id', 'ehr_sync_logs.connection_id',
      'ehr_export_queue.connection_id', 'encounter_addenda.encounter_id',
