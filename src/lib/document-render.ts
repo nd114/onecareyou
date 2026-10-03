@@ -3,6 +3,10 @@
  * parsing, HTML sanitising, and printing.
  */
 
+import DOMPurify from 'dompurify';
+
+type DOMPurifyInstance = ReturnType<typeof DOMPurify>;
+
 /* ------------------------------------------------------------------- CSV */
 
 /** RFC 4180, with quoted fields that may hold commas, quotes and newlines. */
@@ -45,23 +49,24 @@ export function parseCsv(text: string, delimiter?: string): string[][] {
 
 /* ------------------------------------------------------------------ HTML */
 
-const ALLOWED_TAGS = new Set([
+const ALLOWED_TAGS = [
   'a', 'abbr', 'b', 'blockquote', 'br', 'caption', 'code', 'col', 'colgroup', 'dd', 'del', 'div', 'dl', 'dt',
   'em', 'figcaption', 'figure', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'img', 'ins', 'li', 'mark',
   'ol', 'p', 'pre', 'q', 's', 'section', 'article', 'header', 'footer', 'main', 'aside', 'small', 'span',
   'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'u', 'ul', 'style',
-]);
+];
 
 /** Removed along with everything inside them. */
-const DROP_WITH_CONTENT = new Set([
+const DROP_WITH_CONTENT = [
   'script', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'form', 'input', 'button', 'select',
   'textarea', 'link', 'meta', 'base', 'svg', 'math', 'template', 'noscript', 'audio', 'video', 'source',
-  'track', 'portal', 'title', 'head',
-]);
+  'track', 'portal', 'title', 'head', 'noembed', 'noframes', 'plaintext', 'xmp', 'foreignobject',
+  'annotation-xml', 'desc',
+];
 
-const ALLOWED_ATTRS = new Set([
+const ALLOWED_ATTR = [
   'href', 'src', 'alt', 'title', 'colspan', 'rowspan', 'style', 'class', 'align', 'width', 'height', 'dir', 'lang',
-]);
+];
 
 function safeUrl(value: string, forImage: boolean): boolean {
   const v = value.trim().toLowerCase().replace(/[\u0000-\u001f\s]/g, '');
@@ -69,51 +74,62 @@ function safeUrl(value: string, forImage: boolean): boolean {
   return v.startsWith('https:') || v.startsWith('http:') || v.startsWith('mailto:') || v.startsWith('#');
 }
 
+let purifier: DOMPurifyInstance | null = null;
+
+/** One DOMPurify instance with our hooks, built on first use (needs a window). */
+function getPurifier(): DOMPurifyInstance {
+  if (purifier) return purifier;
+  const p = DOMPurify(window);
+  // Style text can still call home through url() and @import.
+  p.addHook('uponSanitizeElement', (node, data) => {
+    if (data.tagName === 'style') node.textContent = cleanCss(node.textContent ?? '');
+  });
+  p.addHook('afterSanitizeAttributes', (node) => {
+    if (!(node instanceof Element)) return;
+    const tag = node.localName;
+    for (const name of ['href', 'src']) {
+      const v = node.getAttribute(name);
+      if (v !== null && !safeUrl(v, tag === 'img' && name === 'src')) node.removeAttribute(name);
+    }
+    const style = node.getAttribute('style');
+    if (style !== null) node.setAttribute('style', cleanCss(style));
+    if (tag === 'a') node.setAttribute('rel', 'noopener noreferrer');
+  });
+  purifier = p;
+  return p;
+}
+
 /**
  * Strips a stored HTML document down to text, structure and inline styling.
  *
  * Scripts, event handlers, frames, forms and javascript: links go; so do
  * remote images, which in a patient's document are a read receipt for
- * whoever planted them. The output is still only ever shown inside a
- * sandboxed frame with a no-script CSP â€” this is the second lock, not the only
- * one. Parsing uses an inert document, so nothing runs while it is cleaned.
+ * whoever planted them. DOMPurify does the cleaning with our allowlist; the
+ * output is still only ever shown inside a sandboxed frame with a no-script
+ * CSP — this is the second lock, not the only one.
  */
 export function sanitizeHtml(html: string): { head: string; body: string } {
+  // An inert parse, used only to lift <style> blocks out of <head>.
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const styles = Array.from(doc.head?.querySelectorAll('style') ?? [])
     .map((s) => `<style>${cleanCss(s.textContent ?? '')}</style>`)
     .join('');
 
-  const clean = (node: Element) => {
-    for (const el of Array.from(node.children)) {
-      const tag = el.localName;
-      if (DROP_WITH_CONTENT.has(tag)) {
-        el.remove();
-        continue;
-      }
-      if (!ALLOWED_TAGS.has(tag)) {
-        // Keep the words, lose the wrapper.
-        clean(el);
-        el.replaceWith(...Array.from(el.childNodes));
-        continue;
-      }
-      if (tag === 'style') {
-        el.textContent = cleanCss(el.textContent ?? '');
-        continue;
-      }
-      for (const a of Array.from(el.attributes)) {
-        const name = a.name.toLowerCase();
-        if (!ALLOWED_ATTRS.has(name)) el.removeAttribute(a.name);
-        else if ((name === 'href' || name === 'src') && !safeUrl(a.value, tag === 'img' && name === 'src')) {
-          el.removeAttribute(a.name);
-        } else if (name === 'style') el.setAttribute('style', cleanCss(a.value));
-      }
-      if (tag === 'a') el.setAttribute('rel', 'noopener noreferrer');
-      clean(el);
-    }
-  };
-  if (doc.body) clean(doc.body);
-  return { head: styles, body: doc.body?.innerHTML ?? '' };
+  const body = getPurifier().sanitize(html, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOW_DATA_ATTR: false,
+    ALLOW_ARIA_ATTR: false,
+    ALLOW_UNKNOWN_PROTOCOLS: false,
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|#|data:image\/)/i,
+    FORBID_CONTENTS: DROP_WITH_CONTENT,
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'svg', 'math'],
+    FORBID_ATTR: ['srcset', 'xlink:href', 'formaction', 'action', 'background', 'poster'],
+    WHOLE_DOCUMENT: false,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false,
+  }) as string;
+  return { head: styles, body };
 }
 
 /** CSS cannot run script in a modern browser, but url() and @import can call home. */
