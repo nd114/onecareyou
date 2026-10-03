@@ -47,6 +47,7 @@ const PAGE_KEYWORDS: Record<string, string[]> = {
   '/clinician/today': ['home', 'dashboard', 'overview', 'tasks'],
   '/clinician/schedule': ['appointments', 'calendar', 'diary'],
   '/clinician/scribe': ['scribe', 'visit notes', 'visit note', 'dictation', 'notes', 'soap', 'record visit', 'record'],
+  '/clinician/voice-memos': ['voice memo', 'voice memos', 'memo', 'memos', 'dictate my notes', 'my notes', 'unfiled notes'],
   '/clinician/alerts': ['alerts', 'rules', 'thresholds', 'notifications'],
   '/clinician/patients': ['patients', 'panel', 'list', 'caseload'],
   '/clinician/patients/import': ['import', 'upload', 'csv', 'invite patients'],
@@ -97,7 +98,7 @@ const PRACTICE_KEYWORDS: Record<string, string[]> = {
 export const SCRIBE_LOCKED_REASON = 'Scribe needs clinical access in this practice';
 
 export interface QuickAction {
-  id: 'start-scribe';
+  id: 'start-scribe' | 'voice-memos';
   label: string;
   to: string;
   keywords: string[];
@@ -126,6 +127,13 @@ export function buildQuickActions({
       label: 'Start scribe',
       to: '/clinician/scribe',
       keywords: ['scribe', 'record', 'visit note', 'visit notes', 'dictate', 'dictation'],
+      ...(allowed ? {} : { lockedReason: SCRIBE_LOCKED_REASON }),
+    },
+    {
+      id: 'voice-memos',
+      label: 'Voice memos',
+      to: '/clinician/voice-memos',
+      keywords: ['voice memo', 'memo', 'memos', 'dictate my notes', 'my notes'],
       ...(allowed ? {} : { lockedReason: SCRIBE_LOCKED_REASON }),
     },
   ];

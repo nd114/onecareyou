@@ -17,6 +17,7 @@ import { useBeforeUnloadGuard } from "@/hooks/useBeforeUnloadGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { encodeWav } from "@/lib/wav-encoder";
 import { uploadAndDraft } from "@/lib/scribe-pipeline";
+import { notifyVoiceMemosChanged, uploadMemo } from "@/lib/voice-memo-pipeline";
 import {
   appendChunk,
   deletePending,
@@ -32,6 +33,8 @@ import {
 
 export interface ScribeTarget {
   encounterId: string;
+  /** A voice memo (the clinician's own notes). encounterId is empty and live words are off. */
+  kind?: "memo";
   /** App path to return to (kept on this device only). */
   returnTo: string;
 }
@@ -57,6 +60,10 @@ export interface ScribeRecorderValue {
   /** Recordings kept on this device that have not produced a confirmed draft. */
   unsent: PendingRecording[];
   start: (target: ScribeTarget, noteStyle: string) => Promise<boolean>;
+  /** Start a voice memo: the clinician's own dictation, never a patient conversation. */
+  startMemo: (returnTo: string) => Promise<boolean>;
+  /** True while a memo is being uploaded. */
+  memoBusy: boolean;
   stop: () => void;
   pause: () => void;
   resume: () => void;
@@ -114,6 +121,8 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
   const [busy, setBusy] = useState<null | "uploading" | "processing">(null);
   const [busyEncounterId, setBusyEncounterId] = useState<string | null>(null);
   const [result, setResult] = useState<ScribeResult | null>(null);
+  const [memoBusy, setMemoBusy] = useState(false);
+  const memoInFlight = useRef<Set<string>>(new Set());
   const [unsent, setUnsent] = useState<PendingRecording[]>([]);
   const sessionRef = useRef<ActiveSession | null>(null);
   const noteStyleRef = useRef("soap");
@@ -128,6 +137,8 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
 
   // Live words: each window of audio comes back as text while the visit runs.
   const appendLive = useCallback(async (wav: Blob) => {
+    // A memo is never sent anywhere until it is finished.
+    if (sessionRef.current?.target.kind === "memo") return;
     try {
       const form = new FormData();
       form.append("file", wav, "segment.wav");
@@ -155,6 +166,7 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
       id: s.id,
       userId,
       encounterId: s.target.encounterId,
+      ...(s.target.kind ? { kind: s.target.kind } : {}),
       sampleRate: s.rate,
       startedAt: 0,
       transcript: liveTextRef.current,
@@ -185,6 +197,36 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
   useBeforeUnloadGuard(live.recording);
 
   /**
+   * Send a finished voice memo. The audio leaves this device copy only once it
+   * is safely uploaded and the memo row exists; from then on the inbox owns
+   * the memo and any processing failure is retried from there. Until then the
+   * local copy stays, so a failed upload can be retried (with backoff) or
+   * recovered after a reload.
+   */
+  const runMemo = useCallback(
+    async (rec: PendingRecording) => {
+      if (!userId || memoInFlight.current.has(rec.id)) return;
+      memoInFlight.current.add(rec.id);
+      setMemoBusy(true);
+      try {
+        await uploadMemo({ userId, memoId: rec.id, blob: rec.blob, durationMs: (rec.durationSeconds ?? 0) * 1000 });
+        await deletePending(rec.id);
+        toast.success("Memo saved. Transcribing now.");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Could not save the memo", {
+          description: "Your memo is saved on this device. It will retry when you are back online.",
+        });
+      } finally {
+        memoInFlight.current.delete(rec.id);
+        setMemoBusy(memoInFlight.current.size > 0);
+        notifyVoiceMemosChanged();
+        await refreshUnsent();
+      }
+    },
+    [userId, refreshUnsent],
+  );
+
+  /**
    * Send a finished recording. The audio is already on this device; it is only
    * removed once the server has confirmed a draft, so every failure leaves a
    * copy to retry or download.
@@ -192,6 +234,10 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
   const run = useCallback(
     async (rec: PendingRecording) => {
       if (!userId) return;
+      if (rec.kind === "memo") {
+        await runMemo(rec);
+        return;
+      }
       setBusyEncounterId(rec.encounterId);
       try {
         const res = await uploadAndDraft({
@@ -218,7 +264,8 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
         await refreshUnsent();
       }
     },
-    [userId, refreshUnsent],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, refreshUnsent, runMemo],
   );
 
   const submit = useCallback(
@@ -234,6 +281,7 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
         createdAt: Date.now(),
         durationSeconds,
         returnTo: t.returnTo,
+        ...(t.kind ? { kind: t.kind } : {}),
       };
       const saved = await savePending(rec);
       if (!saved) toast.warning("Could not keep a copy on this device. Do not close this page until the draft is ready.");
@@ -263,6 +311,7 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
         id,
         userId,
         encounterId: t.encounterId,
+        ...(t.kind ? { kind: t.kind } : {}),
         sampleRate: 48000,
         startedAt: Date.now(),
         transcript: "",
@@ -274,6 +323,8 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
     },
     [live, userId],
   );
+
+  const startMemo = useCallback((returnTo: string) => start({ encounterId: "", kind: "memo", returnTo }, "soap"), [start]);
 
   const stop = useCallback(() => {
     const s = sessionRef.current;
@@ -327,6 +378,7 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
         createdAt: s.startedAt || Date.now(),
         recovered: true,
         returnTo: s.returnTo,
+        ...(s.kind ? { kind: s.kind } : {}),
       });
       if (ok) await deleteSession(s.id);
       changed = true;
@@ -344,6 +396,18 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
     return () => window.clearInterval(t);
   }, [recoverInterrupted]);
 
+  // A memo that could not upload is tried again whenever the browser says the
+  // network is back.
+  const unsentRef = useRef(unsent);
+  unsentRef.current = unsent;
+  useEffect(() => {
+    const onOnline = () => {
+      for (const r of unsentRef.current) if (r.kind === "memo") void runMemo(r);
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [runMemo]);
+
   const retry = useCallback(
     async (id: string) => {
       const rec = unsent.find((r) => r.id === id);
@@ -356,7 +420,7 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
     (id: string) => {
       const rec = unsent.find((r) => r.id === id);
       if (!rec) return;
-      downloadBlob(rec.blob, `visit-recording-${new Date(rec.createdAt).toISOString().slice(0, 10)}.${extFor(rec.blob)}`);
+      downloadBlob(rec.blob, `${rec.kind === "memo" ? "voice-memo" : "visit-recording"}-${new Date(rec.createdAt).toISOString().slice(0, 10)}.${extFor(rec.blob)}`);
     },
     [unsent],
   );
@@ -382,6 +446,8 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
       result,
       unsent,
       start,
+      startMemo,
+      memoBusy,
       stop,
       pause: live.pause,
       resume: live.resume,
@@ -394,7 +460,7 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
       discard,
       clearResult: () => setResult(null),
     }),
-    [live, liveText, target, busy, busyEncounterId, result, unsent, start, stop, submitFile, retry, download, discard],
+    [live, liveText, target, busy, busyEncounterId, result, unsent, start, startMemo, memoBusy, stop, submitFile, retry, download, discard],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

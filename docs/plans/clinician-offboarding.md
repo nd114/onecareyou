@@ -107,6 +107,7 @@ The suites were not re-run for this documentation pass.
 | Unsigned drafts | Frozen (`author_departed_at`); never signable by anyone later, the author included | Routed to owners, admins and the patient's department lead, who sign off (an addendum under their own name; authorship unchanged), mark entered in error, or archive (`resolve_departed_draft`) | — | Suite |
 | Addenda to their notes | Cannot add | Can add, under their own name | — | Suite |
 | Team internal notes | No read, no rewrite, no delete | Kept | Not visible to patients | Suite |
+| Voice memos (`voice_memos`) | Unassigned and unfiled memos are the leaver's own working material and go with their account; no practice sees them. Filed memos are already part of a signed or draft encounter, which follows the encounter rows above | Not visible | Not visible | From definitions |
 | Unfiled dictations | Frozen | Routed as drafts are; signing off starts a draft note under the lead's own name | — | Suite |
 | Managed records filed for the hospital | No read, no edit, no delete | Kept | — | Suite |
 | Hospital message threads (`messages.practice_id`) | Lost | The patient's current assigned or view-all clinical staff read and continue them | Can write whenever someone is covering; otherwise the composer says the thread is waiting, and reopens when the hospital assigns someone (`20261010090000`) | Suite |

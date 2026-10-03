@@ -1175,6 +1175,7 @@ export type Database = {
           first_name: string | null
           id: string
           is_verified: boolean | null
+          keep_memo_audio: boolean
           last_name: string | null
           license_number: string | null
           notify_on_guidance_acknowledged: boolean | null
@@ -1207,6 +1208,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_verified?: boolean | null
+          keep_memo_audio?: boolean
           last_name?: string | null
           license_number?: string | null
           notify_on_guidance_acknowledged?: boolean | null
@@ -1239,6 +1241,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_verified?: boolean | null
+          keep_memo_audio?: boolean
           last_name?: string | null
           license_number?: string | null
           notify_on_guidance_acknowledged?: boolean | null
@@ -4923,6 +4926,78 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_memos: {
+        Row: {
+          assigned_at: string | null
+          audio_deleted_at: string | null
+          audio_path: string
+          clinician_user_id: string
+          created_at: string
+          draft: Json | null
+          duration_ms: number | null
+          encounter_id: string | null
+          error_code: string | null
+          id: string
+          patient_user_id: string | null
+          practice_id: string | null
+          status: string
+          transcript: string | null
+          transcript_confirmed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          audio_deleted_at?: string | null
+          audio_path: string
+          clinician_user_id: string
+          created_at?: string
+          draft?: Json | null
+          duration_ms?: number | null
+          encounter_id?: string | null
+          error_code?: string | null
+          id?: string
+          patient_user_id?: string | null
+          practice_id?: string | null
+          status?: string
+          transcript?: string | null
+          transcript_confirmed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          audio_deleted_at?: string | null
+          audio_path?: string
+          clinician_user_id?: string
+          created_at?: string
+          draft?: Json | null
+          duration_ms?: number | null
+          encounter_id?: string | null
+          error_code?: string | null
+          id?: string
+          patient_user_id?: string | null
+          practice_id?: string | null
+          status?: string
+          transcript?: string | null
+          transcript_confirmed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_memos_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_memos_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vitals: {
         Row: {
           created_at: string
@@ -5246,6 +5321,56 @@ export type Database = {
       }
     }
     Functions: {
+      assign_voice_memo: {
+        Args: { _memo_id: string; _patient_user_id: string; _practice_id?: string }
+        Returns: {
+          assigned_at: string | null
+          audio_deleted_at: string | null
+          audio_path: string
+          clinician_user_id: string
+          created_at: string
+          draft: Json | null
+          duration_ms: number | null
+          encounter_id: string | null
+          error_code: string | null
+          id: string
+          patient_user_id: string | null
+          practice_id: string | null
+          status: string
+          transcript: string | null
+          transcript_confirmed_at: string | null
+          updated_at: string
+        }
+      }
+      file_voice_memo: {
+        Args: { _encounter_id: string; _memo_id: string }
+        Returns: {
+          assigned_at: string | null
+          audio_deleted_at: string | null
+          audio_path: string
+          clinician_user_id: string
+          created_at: string
+          draft: Json | null
+          duration_ms: number | null
+          encounter_id: string | null
+          error_code: string | null
+          id: string
+          patient_user_id: string | null
+          practice_id: string | null
+          status: string
+          transcript: string | null
+          transcript_confirmed_at: string | null
+          updated_at: string
+        }
+      }
+      voice_memo_audio_due: {
+        Args: { _limit?: number }
+        Returns: { audio_path: string; id: string }[]
+      }
+      voice_memo_mark_audio_deleted: {
+        Args: { _ids: string[] }
+        Returns: number
+      }
       accept_practice_invitation: {
         Args: { _invitation_id: string }
         Returns: string

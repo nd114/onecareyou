@@ -89,6 +89,8 @@ const ClinicianPatientDetail = () => {
   // Arriving with ?scribe=1 (from Today, or the button on this page) opens the
   // visit-note recorder straight away instead of asking for three more clicks.
   const autoScribe = searchParams.get('scribe') === '1';
+  // Arriving from the memo inbox: the draft note starts from this voice memo.
+  const memoId = searchParams.get('memo');
 
   const [showRiskDetails, setShowRiskDetails] = useState(false);
   const [recordingVital, setRecordingVital] = useState(false);
@@ -545,6 +547,7 @@ const ClinicianPatientDetail = () => {
                 patientUserId={patient.user_id}
                 patientName={patient.patient_name || 'Patient'}
                 autoStartScribe={autoScribe}
+                memoId={memoId}
               />
             </TabsContent>
 

@@ -26,6 +26,7 @@ import { Fragment, useEffect } from "react";
 import { toast } from "sonner";
 import { useScribeAccess } from "@/hooks/useScribeAccess";
 import { useOptionalScribeRecorder } from "@/contexts/ScribeRecorderContext";
+import { useOptionalVoiceMemoSheet } from "@/components/clinician/VoiceMemoSheet";
 import { cn } from "@/lib/utils";
 
 const PATIENT_ICONS: Record<PatientPillarKey, React.ElementType> = {
@@ -86,6 +87,7 @@ export function MobileBottomNav() {
   const { isAdmin } = useAdminRole();
   const scribeAccess = useScribeAccess();
   const recorder = useOptionalScribeRecorder();
+  const memoSheet = useOptionalVoiceMemoSheet();
 
   // Hooks must run on every render, before any early return: the visibility
   // conditions below depend on async auth/role state, so a hook placed after
@@ -137,7 +139,23 @@ export function MobileBottomNav() {
             <Fragment key={p.key}>
               {isClinician && index === 2 && (
                 <li className="flex items-center justify-center">
-                  {scribeAccess.allowed ? (
+                  {scribeAccess.allowed && memoSheet ? (
+                    // The record control opens the capture sheet: a voice memo
+                    // here, or Record visit for a patient conversation.
+                    <button
+                      type="button"
+                      onClick={memoSheet.openSheet}
+                      aria-label={recorder?.recording ? "Recording in progress. Open recorder" : "Record: voice memo or visit"}
+                      className={cn(
+                        "-mt-4 flex h-12 w-12 items-center justify-center rounded-full shadow-lg",
+                        recorder?.recording
+                          ? "bg-destructive text-destructive-foreground animate-pulse"
+                          : "bg-primary text-primary-foreground",
+                      )}
+                    >
+                      <Mic className="h-5 w-5" aria-hidden />
+                    </button>
+                  ) : scribeAccess.allowed ? (
                     <Link
                       to="/clinician/scribe"
                       aria-label={recorder?.recording ? "Scribe - recording in progress" : "Start scribe"}

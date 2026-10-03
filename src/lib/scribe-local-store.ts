@@ -28,6 +28,8 @@ export interface PendingRecording {
   recovered?: boolean;
   /** Where to send the clinician back to (a local app path; kept on this device only). */
   returnTo?: string;
+  /** A clinician's own voice memo, not a visit: encounterId is empty and nothing is drafted here. */
+  kind?: "memo";
 }
 
 export interface SessionMeta {
@@ -39,6 +41,7 @@ export interface SessionMeta {
   transcript: string;
   noteStyle: string;
   returnTo?: string;
+  kind?: "memo";
   /** Updated while recording; a session that stops beating was interrupted. */
   heartbeatAt?: number;
 }

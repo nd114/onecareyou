@@ -14,6 +14,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ScribeRecorderProvider } from "@/contexts/ScribeRecorderContext";
 import { ScribeRecordingPill } from "@/components/clinician/ScribeRecordingPill";
+import { VoiceMemoSheetProvider } from "@/components/clinician/VoiceMemoSheet";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
 import { RequireCapability } from "@/components/clinician/RequireCapability";
@@ -93,6 +94,7 @@ const ClinicianGuidance = lazy(() => import("./pages/ClinicianGuidance"));
 const ClinicianAlerts = lazy(() => import("./pages/ClinicianAlerts"));
 const ClinicianSchedule = lazy(() => import("./pages/ClinicianSchedule"));
 const ClinicianScribe = lazy(() => import("./pages/ClinicianScribe"));
+const ClinicianVoiceMemos = lazy(() => import("./pages/ClinicianVoiceMemos"));
 const ClinicianInvoices = lazy(() => import("./pages/ClinicianInvoices"));
 const ClinicianPatientImport = lazy(() => import("./pages/ClinicianPatientImport"));
 const ClinicianManagedRecord = lazy(() => import("./pages/ClinicianManagedRecord"));
@@ -150,6 +152,7 @@ const App = () => (
         <AuthProvider>
         <FamilyProvider>
         <ScribeRecorderProvider>
+          <VoiceMemoSheetProvider>
         <BrowserRouter future={routerFutureFlags}>
           <ScrollToTop />
           <RouteTitle />
@@ -243,6 +246,14 @@ const App = () => (
               <ClinicianRoute>
                 <RequireCapability capability="edit_clinical">
                   <ClinicianScribe />
+                </RequireCapability>
+              </ClinicianRoute>
+            } />
+            {/* The clinician's own dictated notes: capture is the record control, this is the inbox. */}
+            <Route path="/clinician/voice-memos" element={
+              <ClinicianRoute>
+                <RequireCapability capability="edit_clinical">
+                  <ClinicianVoiceMemos />
                 </RequireCapability>
               </ClinicianRoute>
             } />
@@ -569,6 +580,7 @@ const App = () => (
             <ScribeRecordingPill />
           </AppChrome>
         </BrowserRouter>
+          </VoiceMemoSheetProvider>
         </ScribeRecorderProvider>
         </FamilyProvider>
       </AuthProvider>

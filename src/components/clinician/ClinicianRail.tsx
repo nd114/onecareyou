@@ -19,6 +19,7 @@ import {
   type ClinicianPillarKey,
 } from '@/lib/nav-ia';
 import { useScribeAccess } from '@/hooks/useScribeAccess';
+import { useOptionalVoiceMemoSheet } from '@/components/clinician/VoiceMemoSheet';
 import { useClinicianCapabilities } from '@/hooks/useClinicianCapabilities';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +49,7 @@ export function ClinicianRail() {
   const { pathname, hash } = useLocation();
   const { can } = useClinicianCapabilities();
   const scribeAccess = useScribeAccess();
+  const memoSheet = useOptionalVoiceMemoSheet();
   const activePillar = getClinicianPillarForRoute(pathname);
 
   const [collapsed, setCollapsed] = useState(
@@ -177,6 +179,22 @@ export function ClinicianRail() {
                 </span>
               </TooltipTrigger>
               <TooltipContent side="right">{scribeAccess.reason}</TooltipContent>
+            </Tooltip>
+          )}
+          {can('edit_clinical') && memoSheet && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn('mb-1 w-full', collapsed ? 'px-0' : 'justify-start gap-2')}
+                  aria-label="New voice memo"
+                  onClick={memoSheet.openSheet}
+                >
+                  <Mic className="h-4 w-4" />
+                  {!collapsed && 'Voice memo'}
+                </Button>
+              </TooltipTrigger>
+              {collapsed && <TooltipContent side="right">Voice memo</TooltipContent>}
             </Tooltip>
           )}
           {can('edit_clinical') && (

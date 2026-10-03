@@ -40,6 +40,8 @@ interface Props {
    * record instead of hunting for it.
    */
   autoStartScribe?: boolean;
+  /** A voice memo to draft this note from (assigned to this patient). */
+  memoId?: string | null;
 }
 
 const VISIT_TYPES = [
@@ -51,7 +53,7 @@ const VISIT_TYPES = [
   { value: "procedure", label: "Procedure" },
 ];
 
-export function EncountersTab({ patientUserId, patientName, autoStartScribe }: Props) {
+export function EncountersTab({ patientUserId, patientName, autoStartScribe, memoId }: Props) {
   const { encounters, isLoading, create, update, sign, setShared } = useEncounters(patientUserId);
   const { log } = usePatientActionLog(patientUserId);
   const { templates } = useClinicalTemplates("visit");
@@ -59,6 +61,19 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
   const [active, setActive] = useState<Encounter | null>(null);
   const [scribeFor, setScribeFor] = useState<Encounter | null>(null);
   const scribeRecorder = useScribeRecorder();
+  // A memo only seeds a note for the patient it was assigned to.
+  const { data: seedMemo } = useQuery({
+    queryKey: ["voice-memo", memoId],
+    enabled: !!memoId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("voice_memos")
+        .select("id, patient_user_id, transcript, draft, status")
+        .eq("id", memoId as string)
+        .maybeSingle();
+      return data && data.patient_user_id === patientUserId && data.status === "assigned" && data.transcript ? data : null;
+    },
+  });
   const location = useLocation();
   const returnTo = `${location.pathname}?tab=encounters`;
   const [signing, setSigning] = useState<Encounter | null>(null);
@@ -542,6 +557,15 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
             <EncounterScribePanel
               encounter={scribeFor}
               returnTo={returnTo}
+              memo={seedMemo ? { id: seedMemo.id, transcript: seedMemo.transcript, draft: seedMemo.draft } : undefined}
+              onMemoApplied={async () => {
+                if (!seedMemo) return;
+                const { error } = await supabase.rpc("file_voice_memo", {
+                  _memo_id: seedMemo.id,
+                  _encounter_id: scribeFor.id,
+                });
+                if (error) toast.error("The note was drafted, but the memo could not be marked as filed.");
+              }}
               onApply={(fields) => {
                 setScribeFor(null);
                 setActive(scribeFor);

@@ -147,6 +147,7 @@ export const CLINICIAN_PILLARS: ClinicianPillar[] = [
       // The scribe was buried inside one patient's Encounters tab. A clinician
       // between two patients needs it in one tap, before they know which chart.
       { to: "/clinician/scribe", label: "Scribe", capability: "edit_clinical" },
+      { to: "/clinician/voice-memos", label: "Voice memos", capability: "edit_clinical" },
       { to: "/clinician/alerts", label: "Alert rules", capability: "view_phi" },
     ],
 

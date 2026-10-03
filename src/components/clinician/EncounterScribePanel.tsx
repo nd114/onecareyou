@@ -48,6 +48,10 @@ interface Props {
   encounter: Encounter;
   /** App path the recording pill returns to (the patient's Encounters tab). */
   returnTo?: string;
+  /** A voice memo this note starts from. Its words and draft are shown for review, never applied automatically. */
+  memo?: { id: string; transcript: string | null; draft: unknown };
+  /** Called after the clinician applies the draft, so the memo can be marked filed. */
+  onMemoApplied?: () => void | Promise<void>;
   onApply: (fields: {
     chief_complaint: string;
     subjective: string;
@@ -63,7 +67,10 @@ function fmt(ms: number) {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export function EncounterScribePanel({ encounter, onApply, returnTo }: Props) {
+export const MEMO_DRAFT_BANNER = "AI draft from your voice memo. Not reviewed.";
+export const MEMO_TRANSCRIPT_BANNER = "Transcript from your voice memo. Not reviewed.";
+
+export function EncounterScribePanel({ encounter, onApply, returnTo, memo, onMemoApplied }: Props) {
   const { user } = useAuth();
   const [transcript, setTranscript] = useState(encounter.scribe_transcript ?? "");
   const [draft, setDraft] = useState<ScribeDraft>((encounter.scribe_draft as ScribeDraft) ?? {});
@@ -107,6 +114,22 @@ export function EncounterScribePanel({ encounter, onApply, returnTo }: Props) {
     setDraft(r.draft as ScribeDraft);
     setAccepted(new Set(ALL_SECTIONS));
   }, [scribe.result, encounter.id]);
+
+  // Starting from a voice memo: show its words and draft. A memo recorded
+  // before a patient was assigned has no AI draft, so its words are offered as
+  // the starting text of the subjective section for the clinician to edit.
+  const memoHasDraft = Boolean(memo?.draft && typeof memo.draft === "object" && Object.keys(memo.draft as object).length);
+  useEffect(() => {
+    if (!memo) return;
+    setTranscript(memo.transcript ?? "");
+    setDraft(
+      memoHasDraft
+        ? (memo.draft as ScribeDraft)
+        : { chief_complaint: "", subjective: memo.transcript ?? "", objective: "", assessment: "", plan: "" },
+    );
+    setAccepted(new Set(ALL_SECTIONS));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memo?.id]);
 
   const startRecording = async () => {
     if (!hasRecordingConsent) {
@@ -210,6 +233,7 @@ export function EncounterScribePanel({ encounter, onApply, returnTo }: Props) {
       follow_up_in_days: draft.follow_up_in_days != null ? String(draft.follow_up_in_days) : "",
     });
     scribe.clearResult();
+    if (memo) void onMemoApplied?.();
     toast.success("Draft copied into the note — edit and sign when ready");
   };
 
@@ -368,6 +392,12 @@ export function EncounterScribePanel({ encounter, onApply, returnTo }: Props) {
             placeholder="Words will appear here a few seconds behind the conversation…"
           />
         </div>
+      )}
+
+      {memo && !live.recording && (
+        <p role="note" className="rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs">
+          {memoHasDraft ? MEMO_DRAFT_BANNER : MEMO_TRANSCRIPT_BANNER}
+        </p>
       )}
 
       {!live.recording && (transcript || hasDraft) && (

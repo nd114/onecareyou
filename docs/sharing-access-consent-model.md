@@ -412,6 +412,15 @@ through to `/s` has not been checked in a browser and is on the sharing plan's l
 
 ---
 
+### 8.7 Voice memos
+
+A voice memo is the clinician dictating their own notes; no patient is recorded, so none is asked. The memo
+audio and an unfiled transcript are the clinician's working material: only the clinician can read them, they
+are never shown to the patient, and assigning a memo to a patient creates no patient-visible trace. A memo
+reaches a patient's chart only when the clinician applies a draft to an encounter and signs it, and that
+requires current clinical access to the patient. The audio is deleted 24 hours after the clinician files,
+keeps or discards the memo (30 days at most), unless they choose to keep it.
+
 ## One vocabulary (September 2026)
 
 The two sharing pathways grew separately and ended up naming the same things

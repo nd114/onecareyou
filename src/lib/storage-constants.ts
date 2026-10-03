@@ -52,6 +52,14 @@ export const PATIENT_AUDIO_POINT =
 export const CLINICIAN_AUDIO_POINT =
   'Dictation audio is transcribed then discarded — the note is kept, the recording is not';
 
+/**
+ * Voice memos are the clinician's own notes to themselves, not a patient's
+ * recording and not a dictation: the transcript is the working material and
+ * the audio is a short-lived backup of it.
+ */
+export const MEMO_AUDIO_POINT =
+  'Voice memo audio is deleted 24 hours after you file, keep or discard the memo, and after 30 days at most, unless you choose to keep it';
+
 export function formatBytes(bytes: number): string {
   if (!bytes || bytes < 0) return '0 MB';
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;

@@ -10,6 +10,7 @@ import {
   STORAGE_PACKS,
   DURABILITY_POINTS,
   CLINICIAN_AUDIO_POINT,
+  MEMO_AUDIO_POINT,
   formatBytes,
   storagePercent,
 } from '@/lib/storage-constants';
@@ -69,7 +70,7 @@ export const PracticeStorageCard = () => {
         <div>
           <p className="text-sm font-medium mb-2">How we protect it</p>
           <ul className="space-y-1.5 text-xs text-muted-foreground">
-            {[...DURABILITY_POINTS, CLINICIAN_AUDIO_POINT].map((point) => (
+            {[...DURABILITY_POINTS, CLINICIAN_AUDIO_POINT, MEMO_AUDIO_POINT].map((point) => (
               <li key={point} className="flex gap-2">
                 <span aria-hidden className="text-primary">
                   •
