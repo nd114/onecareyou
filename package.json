@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/seo/generate-sitemap.mjs && vite build && node scripts/seo/prerender.mjs",
     "build:dev": "vite build --mode development",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seo:sitemap": "node scripts/seo/generate-sitemap.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.1",
