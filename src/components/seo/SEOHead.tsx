@@ -24,9 +24,12 @@ export function SEOHead({
     ? `${title} | ${BRAND.name}`
     : `${BRAND.name} — ${BRAND.tagline}`;
 
-  const canonicalUrl = canonical
-    ? `${BRAND.urls.published}${canonical}`
-    : undefined;
+  // Default the canonical to the current path (no query or hash) so every
+  // indexable page declares one and parameter variants collapse to it.
+  const path =
+    canonical ??
+    (typeof window !== 'undefined' ? window.location.pathname.replace(/[/]+$/, '') || '/' : undefined);
+  const canonicalUrl = !noIndex && path ? `${BRAND.urls.published}${path}` : undefined;
 
   return (
     <Helmet>

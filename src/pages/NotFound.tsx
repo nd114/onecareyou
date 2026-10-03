@@ -5,6 +5,7 @@ import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { Header } from "@/components/layout/Header";
 import { ClinicianHeader } from "@/components/clinician/ClinicianHeader";
 import { AuthHeader } from "@/components/layout/AuthHeader";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
@@ -25,6 +26,7 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOHead title="Page not found" description="This page does not exist." noIndex />
       <HeaderEl />
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center max-w-md">

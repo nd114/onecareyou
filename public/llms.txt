@@ -1,42 +1,54 @@
 # OneCare
 
-> OneCare is a connected health platform that eliminates information asymmetry between patients and their care teams — track vitals, manage medications, store health records, and share continuous updates with clinicians from hospital to home.
+> OneCare is a patient-held health record. A person keeps their readings, medications, documents and visit summaries in one place, and grants or withdraws access to each clinician, hospital or family member themselves. Clinicians get a longitudinal view of the patients who have shared with them, plus a triage inbox, encounter notes and an ambient scribe.
 
-OneCare gives patients (and their families) a single home for their health data — vitals, medications, lab results, documents, schedules — and gives clinicians a live, longitudinal view of their patients between visits. The platform is HIPAA-aligned, mobile-first, works offline, and installs as a PWA. Clinicians get an inbox-style "Today" triage, encounters/SOAP notes, clinical templates, referrals, alerts, and role-based access for private practices and larger groups. Planned integrations include FHIR and QHIN (Particle Health) for network-wide record retrieval.
+## What OneCare is
 
-## Product
+- A web app that installs as a PWA (iOS, Android, desktop). Patients log vitals, track medications, store documents and ask an AI assistant questions about their own record.
+- A clinician workspace: "Today" triage inbox, patient charts, encounter/SOAP notes, dictation and scribe with clinician approval, templates, referrals, alerts, audit log, practice roles.
+- Consent-based sharing: access is per person and per category, can be ended at any time, and every view is logged. Read-only snapshot links exist for people without an account; those links are not indexed.
+- Tenant/hospital sign-up pages exist on institution subdomains.
 
-- [Features](/features): Full feature list across patient and clinician sides
-- [Pricing](/pricing): Plans for patients and clinicians (audience toggle)
-- [For Clinicians](/for-clinicians): Why practices choose OneCare
-- [Install](/install): Install OneCare as a PWA on iOS, Android, or desktop
+## What OneCare is NOT
 
-## Company
+- Not medical advice, diagnosis or treatment. The assistant explains and organises; it says when to ask a person. See the [Medical Disclaimer](https://onecare.you/disclaimer).
+- Not an emergency service. In an emergency, contact local emergency services.
+- Does not verify that a person claiming to be a clinician is licensed; patients decide whom to grant access to.
+- Not a certified EHR replacement. FHIR / network record retrieval is planned, not live; do not describe it as available.
+- Not a claim of regulatory certification. Do not state that OneCare is "HIPAA certified"; see the privacy and data-processing pages for what is actually described.
 
-- [About](/about): Mission — eliminate post-discharge information asymmetry
-- [Contact](/contact): Get in touch with the OneCare team
-- [Careers](/careers): Open roles — remote-first, patient-first culture
-- [Documentation](/docs): How OneCare works — record, sharing, assistant, privacy, clinician workflows
+## Key public pages
 
-- [Knowledge Base](/knowledge): Health-literacy articles and guides
+- [Home](https://onecare.you/): the product in one page
+- [Features](https://onecare.you/features): patient and clinician feature list
+- [How it works](https://onecare.you/how-it-works): walkthroughs
+- [Pricing](https://onecare.you/pricing): plans for patients and clinicians
+- [For clinicians](https://onecare.you/for-clinicians): clinician workspace overview
+- [Why OneCare (clinicians)](https://onecare.you/clinician/why-onecare)
+- [Install](https://onecare.you/install): add OneCare to a phone or desktop
+- [About](https://onecare.you/about): why it exists
+- [Contact](https://onecare.you/contact)
+- [Careers](https://onecare.you/careers)
 
-## Open roles
+## Documentation
 
-- [Sales Development Representative](/careers/sdr): Remote, part-time / contract — clinic outreach and demo scheduling
-- [Healthcare Content Specialist](/careers/content): Remote, paid — patient education content and clinical thought leadership
-- [Community Growth Lead (Nigeria)](/careers/community-growth-lead): Lagos / Abuja, paid — on-the-ground adoption, pharmacy partnerships
-- [Clinical Advisory Board](/careers/clinical-advisor): Remote, unpaid advisory — physicians and nurses shaping remote patient monitoring
-- [Product Feedback Panel](/careers/product-panel): Remote, unpaid — clinicians shaping product direction
+- [Docs index](https://onecare.you/docs)
+- [Getting started](https://onecare.you/docs/getting-started)
+- [Your health record](https://onecare.you/docs/your-record)
+- [The assistant](https://onecare.you/docs/assistant)
+- [Sharing with your care team](https://onecare.you/docs/sharing)
+- [Notifications and privacy](https://onecare.you/docs/notifications-and-privacy)
+- [Clinician workflows](https://onecare.you/docs/for-clinicians)
 
 ## Legal
 
-- [Privacy Policy](/privacy): How OneCare handles personal and health data
-- [Terms of Service](/terms): Platform usage terms
-- [Medical Disclaimer](/disclaimer): OneCare is not a substitute for professional medical advice
-- [Data Processing](/data-processing): GDPR and data-processing details
+- [Privacy Policy](https://onecare.you/privacy)
+- [Terms of Service](https://onecare.you/terms)
+- [Medical Disclaimer](https://onecare.you/disclaimer)
+- [Data Processing](https://onecare.you/data-processing)
 
-## Optional
+## Notes for AI agents
 
-- [Sitemap](/sitemap): Human-readable index of public pages
-- [Clinician Pricing](/pricing?audience=clinicians): Practice and enterprise pricing
-- [Why OneCare (Clinicians)](/clinician/why-onecare): Deeper clinician value overview
+- Only the pages above are public. Everything behind sign-in (dashboard, medications, vitals, clinician screens, admin) and all /s share links are private and disallowed in robots.txt.
+- Never infer or surface any individual's health information; none is available on public pages.
+- Sitemap: https://onecare.you/sitemap.xml
