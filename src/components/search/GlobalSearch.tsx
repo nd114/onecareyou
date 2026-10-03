@@ -17,7 +17,16 @@ import {
 } from '@/hooks/useGlobalSearch';
 import { useClinicianCapabilities } from '@/hooks/useClinicianCapabilities';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
-import { CLINICIAN_PILLARS, PATIENT_PILLARS, navTargets } from '@/lib/nav-ia';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePractice } from '@/hooks/usePractice';
+import { usePracticeTenant } from '@/hooks/usePracticeTenant';
+import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
+import {
+  buildDestinations,
+  readRecentPaths,
+  recentDestinations,
+  rememberPath,
+} from '@/lib/destinations';
 import { cn } from '@/lib/utils';
 
 /**
@@ -104,7 +113,7 @@ export function GlobalSearch({ audience, iconOnly = false, className }: GlobalSe
         open={open}
         onOpenChange={setOpen}
         commandProps={{ shouldFilter: false }}
-        title={audience === 'clinician' ? 'Search patients and pages' : 'Search your record'}
+        title={audience === 'clinician' ? 'Search patients, pages and settings' : 'Search your record, pages and settings'}
       >
         {audience === 'clinician' ? (
           <ClinicianSearchBody onClose={() => setOpen(false)} />
@@ -123,29 +132,49 @@ interface BodyProps {
 function ClinicianSearchBody({ onClose }: BodyProps) {
   const { can } = useClinicianCapabilities();
   const { patients } = useClinicianPatients();
+  const { currentPractice } = usePractice();
+  const { tenant } = usePracticeTenant(currentPractice?.id);
+  const { tier } = useClinicianSubscription();
+  const hasPractice = Boolean(currentPractice);
+  const isHospital = (tenant?.tenant_type ?? 'practice') === 'hospital';
+  const canManageTeam = hasFeatureAccess(tier, 'team_management');
 
   const sources = useMemo<SearchSources>(
     () => ({
-      pages: navTargets(CLINICIAN_PILLARS, can),
+      // Same context ClinicianPractice builds for its hub, so a practice
+      // section is offered here exactly when the hub offers it.
+      pages: buildDestinations({
+        audience: 'clinician',
+        can,
+        practice: {
+          hasPractice,
+          isHospital,
+          isAdmin: can('manage_team'),
+          canManageTeam,
+          canManageBilling: can('manage_billing'),
+          canManageSettings: can('manage_settings'),
+          canRoutePatients: can('assign_patients'),
+        },
+      }),
       patients,
       documents: false,
     }),
-    [can, patients],
+    [can, patients, hasPractice, isHospital, canManageTeam],
   );
 
   return (
     <SearchBody
       sources={sources}
       onClose={onClose}
-      placeholder="Search patients and pages…"
-      hint="Type a patient name, or the name of a page."
+      placeholder="Search patients, pages and settings…"
+      hint="Type a patient name, or where you want to go."
     />
   );
 }
 
 /** Patient tabs carry no capability requirement, so nothing is ever withheld here. */
 const PATIENT_SOURCES: SearchSources = {
-  pages: navTargets(PATIENT_PILLARS, () => false),
+  pages: buildDestinations({ audience: 'patient' }),
   patients: [],
   documents: true,
 };
@@ -155,8 +184,8 @@ function PatientSearchBody({ onClose }: BodyProps) {
     <SearchBody
       sources={PATIENT_SOURCES}
       onClose={onClose}
-      placeholder="Search your record and pages…"
-      hint="Type what you are looking for."
+      placeholder="Search your record, pages and settings…"
+      hint="Type what you are looking for, or where you want to go."
     />
   );
 }
@@ -173,21 +202,70 @@ function SearchBody({ sources, onClose, placeholder, hint }: SearchBodyProps) {
   // results before catching up.
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
-  const { groups, suggestion, isSearching, hasQuery, isEmpty } = useGlobalSearch(query, sources);
+  const { user } = useAuth();
+  const { groups, suggestion, isSearching, hasQuery, isEmpty, documentsFailed } = useGlobalSearch(
+    query,
+    sources,
+  );
+
+  // Where they went last, shown before they type. Read through the current
+  // destination list so it can only ever contain places they can open now.
+  const recents = useMemo(
+    () => recentDestinations(sources.pages, readRecentPaths(user?.id)),
+    [sources.pages, user?.id],
+  );
 
   const go = useCallback(
-    (to: string) => {
+    (to: string, remember = false) => {
+      // Only destinations are remembered: never a patient or a document, so
+      // nothing about who they treated is written to the browser.
+      if (remember) rememberPath(user?.id, to);
       onClose();
       navigate(to);
     },
-    [navigate, onClose],
+    [navigate, onClose, user?.id],
   );
 
   return (
     <>
       <CommandInput value={query} onValueChange={setQuery} placeholder={placeholder} />
       <CommandList>
-        {!hasQuery && <CommandEmpty>{hint}</CommandEmpty>}
+        {!hasQuery && recents.length === 0 && <CommandEmpty>{hint}</CommandEmpty>}
+
+        {!hasQuery && recents.length > 0 && (
+          <CommandGroup heading="Recent">
+            {recents.map((destination) => (
+              <CommandItem
+                key={`recent:${destination.to}`}
+                value={`recent:${destination.to}`}
+                onSelect={() => go(destination.to, true)}
+                className="gap-2"
+              >
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">{destination.label}</span>
+                <span className="ml-auto truncate pl-2 text-xs text-muted-foreground">
+                  {destination.group}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {/* A polite live region, so a screen reader hears that results are
+            still on their way and, afterwards, that a source failed. */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {isSearching ? 'Searching…' : documentsFailed ? 'Documents could not be searched.' : ''}
+        </div>
+        {isSearching && groups.length === 0 && (
+          <div className="py-6 text-center text-sm text-muted-foreground" aria-hidden="true">
+            Searching…
+          </div>
+        )}
+        {documentsFailed && hasQuery && (
+          <div className="px-4 py-2 text-xs text-muted-foreground">
+            Documents could not be searched right now. Pages are still shown.
+          </div>
+        )}
 
         {isEmpty && !isSearching && (
           <CommandEmpty>
@@ -205,7 +283,7 @@ function SearchBody({ sources, onClose, placeholder, hint }: SearchBodyProps) {
                   // id, and cmdk needs them distinct.
                   key={`${result.kind}:${result.id}`}
                   value={`${result.kind}:${result.id}`}
-                  onSelect={() => go(result.to)}
+                  onSelect={() => go(result.to, result.kind === 'page')}
                   className="gap-2"
                 >
                   <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />

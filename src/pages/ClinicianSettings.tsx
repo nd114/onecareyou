@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClinicianHeader } from '@/components/clinician/ClinicianHeader';
+import { clinicianSettingsTab } from '@/lib/settings-tabs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuditTrailSection } from '@/components/settings/AuditTrailSection';
 
@@ -54,6 +55,9 @@ import { ClinicianAppearanceCard } from '@/components/clinician/ClinicianAppeara
 const ClinicianSettings = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const linkedTab = clinicianSettingsTab(location.search, location.hash);
+  const [tab, setTab] = useState<string>(linkedTab);
+  useEffect(() => setTab(linkedTab), [linkedTab, location.key]);
 
   useEffect(() => {
     if (location.hash) {
@@ -263,7 +267,7 @@ const ClinicianSettings = () => {
           </div>
 
           {/* Same three-part shape as the patient side, minus care &amp; alerts. */}
-          <Tabs defaultValue="account">
+          <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="account">Account</TabsTrigger>
               <TabsTrigger value="privacy">Privacy &amp; data</TabsTrigger>

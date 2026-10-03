@@ -99,3 +99,15 @@ list and managed records.
 The remaining in-memory filters — admin panels, help topics, message threads —
 still use `includes()`. They are small lists where the cost of a bad match is
 low, and `search()` is a drop-in replacement when each is next touched.
+
+## Global search: "Go to"
+
+The header search (Cmd/Ctrl+K) also finds *places*: every navigation page the
+member can open, Settings and its sections (`/settings?section=notifications`
+lands on the Preferences tab; `?section=` and `#hash` both work), and, for a
+clinician, the practice sections the hub itself offers. `src/lib/destinations.ts`
+derives pages from `nav-ia` (same capability filter) and only adds the extras.
+A destination named exactly ("settings") leads the results; otherwise patients
+do. With an empty query the last five destinations are listed (paths only, in
+localStorage, never patients or queries). Settings deep links are tab-level;
+cards inside a tab have no anchors yet.

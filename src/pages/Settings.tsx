@@ -7,6 +7,7 @@ import {
   BellRing, TrendingUp, Crown, CreditCard, Loader2, ExternalLink, Camera
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { patientSettingsTab } from '@/lib/settings-tabs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -176,15 +177,11 @@ const Settings = () => {
    * is not rendered until it is selected. An anchor that lands on a closed tab
    * is worse than no anchor at all.
    */
-  const initialTab = (() => {
-    const hash = location.hash.replace('#', '');
-    const section = new URLSearchParams(location.search).get('section');
-    const target = hash || section || '';
-    if (['sharing-history', 'ai-history', 'audit', 'privacy'].includes(target)) return 'privacy';
-    if (['notifications', 'preferences', 'units', 'simple-mode'].includes(target)) return 'prefs';
-    if (['emergency', 'alerts', 'care'].includes(target)) return 'care';
-    return 'account';
-  })();
+  const linkedTab = patientSettingsTab(location.search, location.hash);
+  const [tab, setTab] = useState<string>(linkedTab);
+  // A link from search can arrive while this page is already open, and an
+  // uncontrolled Tabs would ignore it.
+  useEffect(() => setTab(linkedTab), [linkedTab, location.key]);
   
   // Use centralized theme
   const { theme, setTheme } = useTheme();
@@ -321,7 +318,7 @@ const Settings = () => {
               past to change a unit preference. Grouped rather than split into
               routes: the sections are short, and a sub-page each would trade
               scrolling for navigating. */}
-          <Tabs defaultValue={initialTab} className="w-full">
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
               <TabsTrigger value="account">Account</TabsTrigger>
               <TabsTrigger value="care">Care &amp; alerts</TabsTrigger>

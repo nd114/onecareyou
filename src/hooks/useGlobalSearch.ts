@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { searchItems, didYouMean } from '@/lib/search';
-import type { NavTarget } from '@/lib/nav-ia';
+import { searchItems, didYouMean, normaliseForSearch } from '@/lib/search';
+import type { Destination } from '@/lib/destinations';
 
 /**
  * Matching and ranking for the search box. Deliberately fetches nothing of its
@@ -72,8 +72,11 @@ const MIN_SERVER_QUERY = 2;
 /** A palette is a shortcut, not a report. Long lists defeat the point. */
 const PER_GROUP_LIMIT = 6;
 
+/** Settings alone has half a dozen sections; a query for it should show them all. */
+const DESTINATION_LIMIT = 8;
+
 export interface SearchSources {
-  pages: NavTarget[];
+  pages: Destination[];
   /** A clinician's panel. Empty on the patient side, which has no panel. */
   patients: readonly SearchablePatient[];
   /**
@@ -96,8 +99,8 @@ export function useGlobalSearch(query: string, sources: SearchSources) {
 
   const pageResults = useMemo<SearchResult[]>(() => {
     if (!trimmed) return [];
-    return searchItems(pages, trimmed, (page) => [page.label, page.group], {
-      limit: PER_GROUP_LIMIT,
+    return searchItems(pages, trimmed, (page) => [page.label, ...page.keywords, page.group], {
+      limit: DESTINATION_LIMIT,
     }).map(({ item, score }) => ({
       kind: 'page' as const,
       id: item.to,
@@ -130,7 +133,11 @@ export function useGlobalSearch(query: string, sources: SearchSources) {
     }));
   }, [patients, trimmed]);
 
-  const { data: documentResults = [], isFetching: documentsFetching } = useQuery({
+  const {
+    data: documentResults = [],
+    isFetching: documentsFetching,
+    isError: documentsFailed,
+  } = useQuery({
     queryKey: ['global-search-documents', user?.id ?? null, settled],
     queryFn: async (): Promise<SearchResult[]> => {
       const { data, error } = await supabase.rpc('search_documents', {
@@ -166,15 +173,25 @@ export function useGlobalSearch(query: string, sources: SearchSources) {
     );
   }, [trimmed, pageResults.length, patientResults.length, documentResults.length, patients, pages]);
 
-  const groups = useMemo(
-    () =>
-      [
-        { kind: 'patient' as const, heading: 'Patients', results: patientResults },
-        { kind: 'page' as const, heading: 'Pages', results: pageResults },
-        { kind: 'document' as const, heading: 'Documents', results: documentResults },
-      ].filter((group) => group.results.length > 0),
-    [patientResults, pageResults, documentResults],
-  );
+  /**
+   * Somebody typing a destination's own name ("settings", "billing") wants to
+   * go there, so those lead. Otherwise patients and records come first: a name
+   * is far more often a person than a page, and a stray page match should not
+   * push the person they typed down the list.
+   */
+  const destinationNamed = useMemo(() => {
+    const wanted = normaliseForSearch(trimmed);
+    return !!wanted && pageResults.some((r) => normaliseForSearch(r.label) === wanted);
+  }, [pageResults, trimmed]);
+
+  const groups = useMemo(() => {
+    const go = { kind: 'page' as const, heading: 'Go to', results: pageResults };
+    const patientsGroup = { kind: 'patient' as const, heading: 'Patients', results: patientResults };
+    const docsGroup = { kind: 'document' as const, heading: 'Documents', results: documentResults };
+    return (destinationNamed ? [go, patientsGroup, docsGroup] : [patientsGroup, go, docsGroup]).filter(
+      (group) => group.results.length > 0,
+    );
+  }, [patientResults, pageResults, documentResults, destinationNamed]);
 
   // Only a server source can lag behind the typing; the in-memory ones answer
   // on the keystroke. Without the `wantsDocuments` guard the clinician side sat
@@ -186,6 +203,8 @@ export function useGlobalSearch(query: string, sources: SearchSources) {
     groups,
     suggestion,
     isSearching: waitingOnServer,
+    /** Documents could not be searched; pages and patients still answered. */
+    documentsFailed,
     hasQuery: trimmed.length > 0,
     isEmpty: trimmed.length > 0 && groups.length === 0,
   };
