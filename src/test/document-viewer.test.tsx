@@ -103,6 +103,14 @@ const XLSX = makeZip(
   false,
 );
 
+vi.mock('@/components/documents/PdfPages', () => ({
+  default: ({ url, onFail }: { url: string; onFail: () => void }) => (
+    <div data-testid="pdfjs" data-url={url}>
+      <button onClick={onFail}>fail-pdfjs</button>
+    </div>
+  ),
+}));
+
 describe('format detection', () => {
   it.each([
     ['letter.pdf', null, 'pdf'],
@@ -291,14 +299,22 @@ describe('the viewer chooses a renderer per type', () => {
     );
   };
 
-  it('PDF: an <object> on a typed blob, not a sandboxed frame', async () => {
+  it('PDF: drawn by pdf.js from the typed blob, never a frame', async () => {
     const { container } = show('letter.pdf', PDF);
+    const pages = await screen.findByTestId('pdfjs');
+    expect(pages.getAttribute('data-url')).toBe('blob:mock');
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(screen.getByRole('button', { name: /print/i })).toBeInTheDocument();
+  });
+
+  it('PDF: falls back to an <object> when pdf.js cannot read it', async () => {
+    const { container } = show('letter.pdf', PDF);
+    (await screen.findByRole('button', { name: 'fail-pdfjs' })).click();
     await waitFor(() => expect(container.querySelector('object')).not.toBeNull());
     const obj = container.querySelector('object')!;
     expect(obj.getAttribute('type')).toBe('application/pdf');
     expect(obj.getAttribute('data')).toBe('blob:mock');
     expect(container.querySelector('iframe')).toBeNull();
-    expect(screen.getByRole('button', { name: /print/i })).toBeInTheDocument();
   });
 
   it('a web page renamed .pdf is refused, with a download', async () => {

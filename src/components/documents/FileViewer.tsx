@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Download, FileDown, Loader2, Printer } from 'lucide-react';
+const PdfPages = lazy(() => import('./PdfPages'));
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -306,6 +307,8 @@ function Body({
   onDownload: () => void;
 }) {
   const [mediaFailed, setMediaFailed] = useState(false);
+  const [pdfFailed, setPdfFailed] = useState(false);
+  const onPdfFail = useCallback(() => setPdfFailed(true), []);
   const html = useMemo(
     () => (loaded.kind === 'html' && loaded.text !== undefined ? buildHtmlDocument(loaded.text, isDarkMode()) : ''),
     [loaded],
@@ -316,14 +319,22 @@ function Body({
 
   switch (loaded.kind) {
     case 'pdf':
-      // A blob we typed as application/pdf after checking its signature, in
-      // an <object> rather than a sandboxed frame, which Chrome's PDF viewer
-      // refuses to load into. Phones without an inline PDF viewer get the
-      // fallback inside the element.
-      return (
+      // Drawn by pdf.js so phones without an inline PDF viewer still show it;
+      // the native <object> is the fallback if pdf.js cannot read the file.
+      return pdfFailed ? (
         <object data={loaded.blobUrl} type="application/pdf" className="h-full min-h-[60vh] w-full" aria-label={title}>
           <Notice onDownload={onDownload}>This browser cannot show PDFs inside the page. Download it to open it.</Notice>
         </object>
+      ) : (
+        <Suspense
+          fallback={
+            <div className="flex h-full items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          }
+        >
+          <PdfPages url={loaded.blobUrl!} onFail={onPdfFail} />
+        </Suspense>
       );
     case 'image':
       return (
