@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useLiveScribe } from "@/hooks/useLiveScribe";
+import { useScribeRecorder } from "@/contexts/ScribeRecorderContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { parseMentionedVital } from "@/lib/mentioned-vitals";
 import { Button } from "@/components/ui/button";
@@ -26,15 +26,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Encounter } from "@/hooks/useEncounters";
 import { toast } from "sonner";
-import { useBeforeUnloadGuard } from "@/hooks/useBeforeUnloadGuard";
-import { uploadAndDraft } from "@/lib/scribe-pipeline";
-import {
-  savePending,
-  listPending,
-  deletePending,
-  downloadBlob,
-  type PendingRecording,
-} from "@/lib/scribe-local-store";
 
 export interface ScribeDraft {
   chief_complaint?: string;
@@ -55,8 +46,8 @@ export type SectionKey = (typeof ALL_SECTIONS)[number];
 
 interface Props {
   encounter: Encounter;
-  /** Lets the host dialog refuse to close while audio is being captured. */
-  onRecordingChange?: (recording: boolean) => void;
+  /** App path the recording pill returns to (the patient's Encounters tab). */
+  returnTo?: string;
   onApply: (fields: {
     chief_complaint: string;
     subjective: string;
@@ -67,27 +58,17 @@ interface Props {
   }) => void;
 }
 
-function extFor(blob: Blob) {
-  const t = blob.type.toLowerCase();
-  if (t.includes("wav")) return "wav";
-  if (t.includes("mp4") || t.includes("m4a")) return "mp4";
-  return "webm";
-}
-
 function fmt(ms: number) {
   const s = Math.floor(ms / 1000);
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: Props) {
+export function EncounterScribePanel({ encounter, onApply, returnTo }: Props) {
   const { user } = useAuth();
-  const [busy, setBusy] = useState<null | "uploading" | "processing">(null);
   const [transcript, setTranscript] = useState(encounter.scribe_transcript ?? "");
   const [draft, setDraft] = useState<ScribeDraft>((encounter.scribe_draft as ScribeDraft) ?? {});
   const [noteStyle, setNoteStyle] = useState<NoteStyle>("soap");
-  const [liveText, setLiveText] = useState("");
   const [accepted, setAccepted] = useState<Set<SectionKey>>(new Set(ALL_SECTIONS));
-  const liveTextRef = useRef("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [pickedVitals, setPickedVitals] = useState<Set<number>>(new Set());
   const [recordingVitals, setRecordingVitals] = useState(false);
@@ -99,107 +80,40 @@ export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: 
   const hasRecordingConsent =
     consentConfirmedLocally || Boolean(encounter.metadata?.recording_consent_confirmed_at);
 
-  /**
-   * Live transcription: each window of audio comes back as words while the
-   * consultation is still happening, so the clinician can see the scribe is
-   * listening instead of trusting a timer.
-   */
-  const appendLive = async (wav: Blob) => {
-    try {
-      const form = new FormData();
-      form.append("file", wav, "segment.wav");
-      const { data, error } = await supabase.functions.invoke("transcribe-segment", { body: form });
-      if (error || data?.error) return; // a lost window is not worth interrupting a visit for
-      const text = typeof data?.text === "string" ? data.text.trim() : "";
-      if (!text) return;
-      liveTextRef.current = `${liveTextRef.current} ${text}`.trim();
-      setLiveText(liveTextRef.current);
-    } catch {
-      /* ignore — the full recording is still drafted at the end */
-    }
+  // The recorder lives above the router (ScribeRecorderProvider), so the
+  // recording, the live words and any unsent audio outlive this dialog.
+  const scribe = useScribeRecorder();
+  const target = { encounterId: encounter.id, returnTo: returnTo ?? "/clinician/today" };
+  const isRec = scribe.recording && scribe.target?.encounterId === encounter.id;
+  const otherRecording = scribe.recording && !isRec;
+  const busy = scribe.busyEncounterId === encounter.id ? scribe.busy : null;
+  const liveText = isRec ? scribe.liveText : "";
+  const unsent = scribe.unsent.filter((r) => r.encounterId === encounter.id);
+  const live = {
+    recording: isRec,
+    paused: scribe.paused,
+    elapsed: scribe.elapsed,
+    level: scribe.level,
+    pause: scribe.pause,
+    resume: scribe.resume,
   };
 
-  const live = useLiveScribe({
-    onWindow: appendLive,
-    onError: (m) => toast.error(m),
-  });
-
-  /** Recordings kept on this device because upload or drafting did not finish. */
-  const [unsent, setUnsent] = useState<PendingRecording[]>([]);
-  const refreshUnsent = async () => {
-    if (!user?.id) return;
-    const all = await listPending(user.id);
-    setUnsent(all.filter((r) => r.encounterId === encounter.id));
-  };
+  // A draft that finished while this panel was closed (or on another page) is
+  // picked up when it is shown again.
   useEffect(() => {
-    void refreshUnsent();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, encounter.id]);
-
-  useEffect(() => {
-    onRecordingChange?.(live.recording);
-  }, [live.recording, onRecordingChange]);
-  useBeforeUnloadGuard(live.recording);
-
-  /**
-   * The audio is already on this device (see persistThenProcess); it is only
-   * removed once the server has confirmed a draft, so any failure here leaves
-   * a copy to retry or download.
-   */
-  const runPending = async (rec: PendingRecording) => {
-    if (!user?.id) return;
-    try {
-      const res = await uploadAndDraft({
-        userId: user.id,
-        encounterId: rec.encounterId,
-        recordingId: rec.id,
-        blob: rec.blob,
-        ext: extFor(rec.blob),
-        noteStyle: rec.noteStyle,
-        liveTranscript: rec.transcript,
-        durationSeconds: rec.durationSeconds,
-        onStage: setBusy,
-      });
-      setTranscript(res.transcript);
-      setDraft(res.draft as ScribeDraft);
-      setAccepted(new Set(ALL_SECTIONS));
-      await deletePending(rec.id);
-      toast.success("Draft ready — review before applying");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Scribe failed", {
-        description: "Your recording is saved on this device. You can retry or download it.",
-      });
-    } finally {
-      setBusy(null);
-      await refreshUnsent();
-    }
-  };
-
-  const persistThenProcess = async (blob: Blob, liveTranscript: string, durationSeconds?: number) => {
-    if (!user?.id) return;
-    const rec: PendingRecording = {
-      id: crypto.randomUUID(),
-      userId: user.id,
-      encounterId: encounter.id,
-      blob,
-      transcript: liveTranscript,
-      noteStyle,
-      createdAt: Date.now(),
-      durationSeconds,
-    };
-    const saved = await savePending(rec);
-    if (!saved) toast.warning("Could not keep a copy on this device. Do not close this page until the draft is ready.");
-    await runPending(rec);
-  };
+    const r = scribe.result;
+    if (!r || r.encounterId !== encounter.id) return;
+    setTranscript(r.transcript);
+    setDraft(r.draft as ScribeDraft);
+    setAccepted(new Set(ALL_SECTIONS));
+  }, [scribe.result, encounter.id]);
 
   const startRecording = async () => {
     if (!hasRecordingConsent) {
       setConsentDialogOpen(true);
       return;
     }
-    liveTextRef.current = "";
-    setLiveText("");
-    await live.start();
+    await scribe.start(target, noteStyle);
   };
 
   /**
@@ -231,19 +145,11 @@ export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: 
         console.error("Could not record scribe consent confirmation", error);
       }
     }
-    liveTextRef.current = "";
-    setLiveText("");
-    await live.start();
+    await scribe.start(target, noteStyle);
   };
 
   const stopRecording = () => {
-    const elapsedMs = live.elapsed;
-    const wav = live.stop();
-    if (!wav) {
-      toast.error("That recording was empty — try again");
-      return;
-    }
-    void persistThenProcess(wav, liveTextRef.current, Math.round(elapsedMs / 1000));
+    scribe.stop();
   };
 
   /**
@@ -303,6 +209,7 @@ export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: 
       plan: keep("plan"),
       follow_up_in_days: draft.follow_up_in_days != null ? String(draft.follow_up_in_days) : "",
     });
+    scribe.clearResult();
     toast.success("Draft copied into the note — edit and sign when ready");
   };
 
@@ -351,7 +258,7 @@ export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: 
               </span>
             </>
           ) : (
-            <Button size="sm" className="gap-2" onClick={startRecording} disabled={!!busy}>
+            <Button size="sm" className="gap-2" onClick={startRecording} disabled={!!busy || otherRecording}>
               <Mic className="h-3.5 w-3.5" /> Record visit
             </Button>
           )}
@@ -362,7 +269,7 @@ export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: 
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
-              if (f) void persistThenProcess(f, "");
+              if (f) void scribe.submitFile(f, target, noteStyle);
               if (fileRef.current) fileRef.current.value = "";
             }}
           />
@@ -371,11 +278,17 @@ export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: 
             variant="outline"
             className="gap-2"
             onClick={() => fileRef.current?.click()}
-            disabled={live.recording || !!busy}
+            disabled={live.recording || otherRecording || !!busy}
           >
             <Upload className="h-3.5 w-3.5" /> Upload audio
           </Button>
-          <Select value={noteStyle} onValueChange={(v) => setNoteStyle(v as NoteStyle)}>
+          <Select
+            value={noteStyle}
+            onValueChange={(v) => {
+              setNoteStyle(v as NoteStyle);
+              scribe.setNoteStyle(v);
+            }}
+          >
             <SelectTrigger className="h-8 w-[190px] text-xs" aria-label="Note style">
               <SelectValue />
             </SelectTrigger>
@@ -413,32 +326,33 @@ export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: 
           </div>
           {unsent.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center gap-2">
-              <Button size="sm" className="gap-2" onClick={() => void runPending(r)}>
+              <Button size="sm" className="gap-2" onClick={() => void scribe.retry(r.id)}>
                 <RotateCw className="h-3.5 w-3.5" /> Retry
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-2"
-                onClick={() =>
-                  downloadBlob(r.blob, `visit-recording-${new Date(r.createdAt).toISOString().slice(0, 10)}.${extFor(r.blob)}`)
-                }
+                onClick={() => scribe.download(r.id)}
               >
                 <Download className="h-3.5 w-3.5" /> Download audio
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={async () => {
-                  await deletePending(r.id);
-                  await refreshUnsent();
-                }}
+                onClick={() => void scribe.discard(r.id)}
               >
                 Discard
               </Button>
             </div>
           ))}
         </div>
+      )}
+
+      {otherRecording && (
+        <p className="text-xs text-muted-foreground">
+          A different visit is being recorded. Stop it before recording this one.
+        </p>
       )}
 
       {live.recording && (

@@ -20,9 +20,11 @@ export interface LiveScribeOptions {
   /** Called with a complete WAV of each window while recording. */
   onWindow: (wav: Blob) => void;
   onError?: (message: string) => void;
+  /** Every captured slice (raw samples), for incremental persistence. */
+  onChunk?: (samples: Float32Array, sampleRate: number) => void;
 }
 
-export function useLiveScribe({ onWindow, onError }: LiveScribeOptions) {
+export function useLiveScribe({ onWindow, onError, onChunk }: LiveScribeOptions) {
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -41,6 +43,8 @@ export function useLiveScribe({ onWindow, onError }: LiveScribeOptions) {
   const startedAtRef = useRef(0);
   const onWindowRef = useRef(onWindow);
   onWindowRef.current = onWindow;
+  const onChunkRef = useRef(onChunk);
+  onChunkRef.current = onChunk;
 
   const teardown = useCallback(() => {
     if (tickRef.current) window.clearInterval(tickRef.current);
@@ -69,7 +73,7 @@ export function useLiveScribe({ onWindow, onError }: LiveScribeOptions) {
     onWindowRef.current(encodeWav(chunks, rate));
   }, []);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (): Promise<boolean> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const ctx = new AudioContext();
@@ -87,6 +91,7 @@ export function useLiveScribe({ onWindow, onError }: LiveScribeOptions) {
         const copy = new Float32Array(e.inputBuffer.getChannelData(0));
         allRef.current.push(copy);
         windowRef.current.push(copy);
+        onChunkRef.current?.(copy, ctx.sampleRate);
         setLevel(Math.min(1, peakLevel([copy]) * 3));
         if (Date.now() - lastFlushRef.current >= WINDOW_MS) flushWindow();
       };
@@ -103,8 +108,10 @@ export function useLiveScribe({ onWindow, onError }: LiveScribeOptions) {
       tickRef.current = window.setInterval(() => {
         if (!pausedRef.current) setElapsed(accruedRef.current + (Date.now() - startedAtRef.current));
       }, 500);
+      return true;
     } catch {
       onError?.("Microphone unavailable — check browser permissions");
+      return false;
     }
   }, [flushWindow, onError]);
 

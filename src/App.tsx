@@ -12,6 +12,8 @@ const routerFutureFlags = {
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FamilyProvider } from "@/contexts/FamilyContext";
+import { ScribeRecorderProvider } from "@/contexts/ScribeRecorderContext";
+import { ScribeRecordingPill } from "@/components/clinician/ScribeRecordingPill";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
 import { RequireCapability } from "@/components/clinician/RequireCapability";
@@ -147,6 +149,7 @@ const App = () => (
         <Sonner />
         <AuthProvider>
         <FamilyProvider>
+        <ScribeRecorderProvider>
         <BrowserRouter future={routerFutureFlags}>
           <ScrollToTop />
           <RouteTitle />
@@ -563,8 +566,10 @@ const App = () => (
               <BugReportButton />
             </FabStack>
             <MobileBottomNav />
+            <ScribeRecordingPill />
           </AppChrome>
         </BrowserRouter>
+        </ScribeRecorderProvider>
         </FamilyProvider>
       </AuthProvider>
     </TooltipProvider>

@@ -10,7 +10,7 @@ import { render, screen, fireEvent, waitFor, renderHook } from "@testing-library
 const { uploadMock, invokeMock, liveState, downloadMock } = vi.hoisted(() => ({
   uploadMock: vi.fn(),
   invokeMock: vi.fn(),
-  liveState: { recording: true, wav: null as Blob | null },
+  liveState: { wav: null as Blob | null },
   downloadMock: vi.fn(),
 }));
 
@@ -22,21 +22,30 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "clinician-1" } }) }));
-vi.mock("@/hooks/useLiveScribe", () => ({
-  useLiveScribe: () => ({
-    recording: liveState.recording,
-    paused: false,
-    elapsed: 5000,
-    level: 0,
-    start: vi.fn(),
-    pause: vi.fn(),
-    resume: vi.fn(),
-    stop: () => {
-      liveState.recording = false;
-      return liveState.wav;
+vi.mock("@/hooks/useLiveScribe", async () => {
+  const React = await import("react");
+  return {
+    useLiveScribe: () => {
+      const [rec, setRec] = React.useState(false);
+      return {
+        recording: rec,
+        paused: false,
+        elapsed: 5000,
+        level: 0,
+        start: async () => {
+          setRec(true);
+          return true;
+        },
+        pause: vi.fn(),
+        resume: vi.fn(),
+        stop: () => {
+          setRec(false);
+          return liveState.wav;
+        },
+      };
     },
-  }),
-}));
+  };
+});
 vi.mock("@/lib/edge-function-error", () => ({ edgeFunctionError: async (e: Error) => e }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn(), warning: vi.fn() }) }));
 vi.mock("@/lib/scribe-local-store", async (orig) => {
@@ -44,6 +53,7 @@ vi.mock("@/lib/scribe-local-store", async (orig) => {
   return { ...actual, downloadBlob: downloadMock };
 });
 
+import { ScribeRecorderProvider } from "@/contexts/ScribeRecorderContext";
 import { EncounterScribePanel } from "@/components/clinician/EncounterScribePanel";
 import { UPLOAD_BACKOFF_MS } from "@/lib/scribe-pipeline";
 import { createMemoryKV, setScribeStoreBackend, listPending } from "@/lib/scribe-local-store";
@@ -56,21 +66,29 @@ const encounter = {
   metadata: { recording_consent_confirmed_at: "2026-01-01" },
 } as unknown as Encounter;
 
+async function startAndStop() {
+  render(
+    <ScribeRecorderProvider>
+      <EncounterScribePanel encounter={encounter} onApply={vi.fn()} />
+    </ScribeRecorderProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /record visit/i }));
+  fireEvent.click(await screen.findByRole("button", { name: /stop/i }));
+}
+
 beforeEach(() => {
   setScribeStoreBackend(createMemoryKV());
   UPLOAD_BACKOFF_MS.splice(0, UPLOAD_BACKOFF_MS.length); // no waiting in tests
   uploadMock.mockReset();
   invokeMock.mockReset();
   downloadMock.mockReset();
-  liveState.recording = true;
   liveState.wav = new Blob([new Uint8Array(4096)], { type: "audio/wav" });
 });
 
 describe("scribe stop -> upload", () => {
   it("keeps the recording locally and offers retry + download when upload fails", async () => {
     uploadMock.mockResolvedValue({ error: { message: "network down" } });
-    render(<EncounterScribePanel encounter={encounter} onApply={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: /stop/i }));
+    await startAndStop();
 
     await screen.findByText(/saved on this device/i);
     expect(invokeMock).not.toHaveBeenCalled();
@@ -90,8 +108,7 @@ describe("scribe stop -> upload", () => {
   it("reuses one requestId across retries and sends the duration", async () => {
     uploadMock.mockResolvedValue({ error: null });
     invokeMock.mockResolvedValue({ data: { error: "gateway busy" }, error: null });
-    render(<EncounterScribePanel encounter={encounter} onApply={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: /stop/i }));
+    await startAndStop();
     await screen.findByText(/saved on this device/i);
     fireEvent.click(screen.getByRole("button", { name: /retry/i }));
     await waitFor(() => expect(invokeMock).toHaveBeenCalledTimes(2));
@@ -104,8 +121,7 @@ describe("scribe stop -> upload", () => {
   it("keeps the local copy when drafting fails after a good upload", async () => {
     uploadMock.mockResolvedValue({ error: null });
     invokeMock.mockResolvedValue({ data: { error: "gateway busy" }, error: null });
-    render(<EncounterScribePanel encounter={encounter} onApply={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: /stop/i }));
+    await startAndStop();
     await screen.findByText(/saved on this device/i);
     expect((await listPending("clinician-1")).length).toBe(1);
   });
@@ -113,8 +129,7 @@ describe("scribe stop -> upload", () => {
   it("clears the local copy only after a confirmed draft", async () => {
     uploadMock.mockResolvedValue({ error: null });
     invokeMock.mockResolvedValue({ data: { transcript: "t", draft: { subjective: "s" } }, error: null });
-    render(<EncounterScribePanel encounter={encounter} onApply={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: /stop/i }));
+    await startAndStop();
     await waitFor(() => expect(invokeMock).toHaveBeenCalled());
     await waitFor(async () => expect((await listPending("clinician-1")).length).toBe(0));
   });
@@ -126,8 +141,7 @@ describe("scribe stop -> upload", () => {
       .mockResolvedValueOnce({ error: { message: "x" } })
       .mockResolvedValueOnce({ error: null });
     invokeMock.mockResolvedValue({ data: { transcript: "t", draft: {} }, error: null });
-    render(<EncounterScribePanel encounter={encounter} onApply={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: /stop/i }));
+    await startAndStop();
     await waitFor(() => expect(invokeMock).toHaveBeenCalled());
     expect(uploadMock).toHaveBeenCalledTimes(3);
   });

@@ -41,6 +41,7 @@ vi.mock("@/hooks/useLiveScribe", () => ({
   }),
 }));
 
+import { ScribeRecorderProvider } from "@/contexts/ScribeRecorderContext";
 import { EncounterScribePanel } from "@/components/clinician/EncounterScribePanel";
 import type { Encounter } from "@/hooks/useEncounters";
 
@@ -77,7 +78,7 @@ describe("EncounterScribePanel recording consent", () => {
   });
 
   it("does not start recording on the first click — it asks for consent instead", () => {
-    render(<EncounterScribePanel encounter={baseEncounter} onApply={vi.fn()} />);
+    render(<ScribeRecorderProvider><EncounterScribePanel encounter={baseEncounter} onApply={vi.fn()} /></ScribeRecorderProvider>);
     fireEvent.click(screen.getByRole("button", { name: /record visit/i }));
 
     expect(startMock).not.toHaveBeenCalled();
@@ -85,7 +86,7 @@ describe("EncounterScribePanel recording consent", () => {
   });
 
   it("starts recording and records consent on the encounter once confirmed", async () => {
-    render(<EncounterScribePanel encounter={baseEncounter} onApply={vi.fn()} />);
+    render(<ScribeRecorderProvider><EncounterScribePanel encounter={baseEncounter} onApply={vi.fn()} /></ScribeRecorderProvider>);
     fireEvent.click(screen.getByRole("button", { name: /record visit/i }));
     fireEvent.click(screen.getByRole("button", { name: /they've agreed/i }));
 
@@ -105,7 +106,7 @@ describe("EncounterScribePanel recording consent", () => {
       ...baseEncounter,
       metadata: { recording_consent_confirmed_at: new Date().toISOString() },
     } as unknown as Encounter;
-    render(<EncounterScribePanel encounter={alreadyConfirmed} onApply={vi.fn()} />);
+    render(<ScribeRecorderProvider><EncounterScribePanel encounter={alreadyConfirmed} onApply={vi.fn()} /></ScribeRecorderProvider>);
     fireEvent.click(screen.getByRole("button", { name: /record visit/i }));
 
     expect(startMock).toHaveBeenCalled();

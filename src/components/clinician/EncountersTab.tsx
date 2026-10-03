@@ -28,6 +28,8 @@ import { useClinicalTemplates } from "@/hooks/useClinicalTemplates";
 import { format } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
+import { useScribeRecorder } from "@/contexts/ScribeRecorderContext";
 
 interface Props {
   patientUserId: string;
@@ -56,10 +58,9 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Encounter | null>(null);
   const [scribeFor, setScribeFor] = useState<Encounter | null>(null);
-  // Closing the scribe dialog mid-recording used to unmount the recorder and
-  // throw the visit away. Escape, an outside click and the X all land here.
-  const [scribeRecording, setScribeRecording] = useState(false);
-  const [confirmCloseScribe, setConfirmCloseScribe] = useState(false);
+  const scribeRecorder = useScribeRecorder();
+  const location = useLocation();
+  const returnTo = `${location.pathname}?tab=encounters`;
   const [signing, setSigning] = useState<Encounter | null>(null);
   const [shareOnSign, setShareOnSign] = useState(true);
   const [bookFollowUp, setBookFollowUp] = useState(true);
@@ -100,7 +101,9 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
     if (!autoStartScribe || isLoading || startedRef.current) return;
     startedRef.current = true;
     // Never a draft frozen when its author left: nobody can write to it.
-    const openDraft = encounters.find((e) => !e.signed_at && !e.author_departed_at);
+    const openDraft =
+      encounters.find((e) => e.id === scribeRecorder.target?.encounterId) ??
+      encounters.find((e) => !e.signed_at && !e.author_departed_at);
     if (openDraft) {
       setScribeFor(openDraft);
       return;
@@ -110,6 +113,19 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
       .then((created: any) => setScribeFor(created))
       .catch(() => toast.error("Could not start a visit note"));
   }, [autoStartScribe, isLoading, encounters, create, patientUserId]);
+
+  // Coming back from the Recording pill: reopen the encounter being recorded
+  // (or whose draft just finished). The nonce makes each tap count once.
+  const reopenNonce = (location.state as { scribeReopen?: number } | null)?.scribeReopen;
+  const handledReopen = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (!reopenNonce || handledReopen.current === reopenNonce || isLoading) return;
+    const id = scribeRecorder.target?.encounterId ?? scribeRecorder.result?.encounterId;
+    const enc = id ? encounters.find((e) => e.id === id) : undefined;
+    if (!enc) return;
+    handledReopen.current = reopenNonce;
+    setScribeFor(enc);
+  }, [reopenNonce, isLoading, encounters, scribeRecorder.target, scribeRecorder.result]);
 
   const resetDraft = () =>
     setDraft({
@@ -510,9 +526,10 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
         open={!!scribeFor}
         onOpenChange={(o) => {
           if (o) return;
-          if (scribeRecording) {
-            setConfirmCloseScribe(true);
-            return;
+          // The recorder lives above the router, so closing this window never
+          // discards a recording: it minimises to the recording pill instead.
+          if (scribeRecorder.recording) {
+            toast.info("Still recording. Use the Recording pill to come back.");
           }
           setScribeFor(null);
         }}
@@ -524,7 +541,7 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
           {scribeFor && (
             <EncounterScribePanel
               encounter={scribeFor}
-              onRecordingChange={setScribeRecording}
+              returnTo={returnTo}
               onApply={(fields) => {
                 setScribeFor(null);
                 setActive(scribeFor);
@@ -543,29 +560,6 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
           )}
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={confirmCloseScribe} onOpenChange={setConfirmCloseScribe}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Recording in progress</AlertDialogTitle>
-            <AlertDialogDescription>
-              Closing this window will discard the visit recorded so far. Keep recording, or discard it?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep recording</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setConfirmCloseScribe(false);
-                setScribeRecording(false);
-                setScribeFor(null);
-              }}
-            >
-              Discard recording
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   );
 }

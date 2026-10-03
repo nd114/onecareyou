@@ -26,6 +26,8 @@ export interface PendingRecording {
   durationSeconds?: number;
   /** Set when the recording was rebuilt from chunks after an interruption. */
   recovered?: boolean;
+  /** Where to send the clinician back to (a local app path; kept on this device only). */
+  returnTo?: string;
 }
 
 export interface SessionMeta {
@@ -36,6 +38,9 @@ export interface SessionMeta {
   startedAt: number;
   transcript: string;
   noteStyle: string;
+  returnTo?: string;
+  /** Updated while recording; a session that stops beating was interrupted. */
+  heartbeatAt?: number;
 }
 
 export interface ChunkRecord {
