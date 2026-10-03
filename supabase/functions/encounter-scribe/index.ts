@@ -8,6 +8,13 @@
  * reviews, edits and signs in the UI.
  *
  * Auth: requires a JWT. Caller must own the encounter (clinician_user_id).
+ *
+ * Usage is recorded (log only, nothing is limited) in scribe_usage after a
+ * successful draft. The client may send `requestId`; a repeat of the same
+ * requestId for the same encounter returns the stored draft and records
+ * nothing, so a retry neither re-spends gateway cost nor double-counts
+ * minutes. Without a requestId the server makes one up, so retries cannot be
+ * detected for that call.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -67,6 +74,13 @@ Deno.serve(async (req) => {
     // The browser may already have the words from live transcription. Reusing
     // them keeps the draft quick and avoids paying to transcribe twice.
     const liveTranscript = typeof body.liveTranscript === "string" ? body.liveTranscript.trim() : "";
+    const clientRequestId = typeof body.requestId === "string" && body.requestId.length > 0 &&
+        body.requestId.length <= 100
+      ? body.requestId
+      : "";
+    const clientDuration = typeof body.durationSeconds === "number" && Number.isFinite(body.durationSeconds)
+      ? Math.max(0, Math.min(86400, Math.round(body.durationSeconds)))
+      : null;
     if (!encounterId || !audioPath) return json({ error: "encounterId and audioPath are required" }, 400);
 
     const authHeader = req.headers.get("Authorization") || "";
@@ -99,6 +113,35 @@ Deno.serve(async (req) => {
     if (!canWrite) return json({ error: "You no longer have access to this patient's record" }, 403);
     // Audio must live under the caller's own folder in the dictations bucket.
     if (!audioPath.startsWith(`${userId}/`)) return json({ error: "Forbidden" }, 403);
+
+    // Idempotency: scoped to the encounter so an id cannot surface another
+    // encounter's draft. Only a request that already recorded usage (so one
+    // that finished) is replayed.
+    const usageRequestId = `encounter:${encounterId}:${clientRequestId || crypto.randomUUID()}`;
+    if (clientRequestId) {
+      const { data: prior } = await admin
+        .from("scribe_usage")
+        .select("audio_seconds, billed_minutes")
+        .eq("request_id", usageRequestId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (prior) {
+        const { data: done } = await admin
+          .from("encounters")
+          .select("scribe_transcript, scribe_draft, scribe_generated_at")
+          .eq("id", encounterId)
+          .single();
+        if (done?.scribe_draft) {
+          return json({
+            transcript: done.scribe_transcript,
+            draft: done.scribe_draft,
+            generatedAt: done.scribe_generated_at,
+            noteStyle,
+            usage: { audioSeconds: prior.audio_seconds, billedMinutes: prior.billed_minutes, repeated: true },
+          });
+        }
+      }
+    }
 
     const { data: file, error: dlErr } = await admin.storage
       .from("clinician-dictations")
@@ -162,12 +205,51 @@ Deno.serve(async (req) => {
       ref_id: encounterId,
     });
 
-    return json({ transcript, draft, generatedAt, noteStyle });
+    // Log only. A failure to count must never fail a note that already exists.
+    let usage: { audioSeconds: number; billedMinutes: number } | undefined;
+    try {
+      const seconds = wavSeconds(buf) ?? clientDuration ?? 0;
+      const { data: rec, error: usageErr } = await admin.rpc("record_scribe_usage", {
+        _user_id: userId,
+        _practice_id: enc.practice_id ?? null,
+        _kind: "encounter",
+        _audio_seconds: seconds,
+        _request_id: usageRequestId,
+      });
+      if (usageErr) throw usageErr;
+      const r = Array.isArray(rec) ? rec[0] : rec;
+      if (r) usage = { audioSeconds: r.audio_seconds, billedMinutes: r.billed_minutes };
+    } catch (usageErr) {
+      console.error("encounter-scribe usage not recorded", usageErr);
+    }
+
+    return json({ transcript, draft, generatedAt, noteStyle, ...(usage ? { usage } : {}) });
   } catch (e) {
     console.error("encounter-scribe error", e);
     return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
+
+/** Seconds of audio in a canonical PCM WAV, read from its own header; null if not a WAV. */
+function wavSeconds(b: Uint8Array): number | null {
+  if (b.byteLength < 44) return null;
+  const tag = (o: number) => String.fromCharCode(b[o], b[o + 1], b[o + 2], b[o + 3]);
+  if (tag(0) !== "RIFF" || tag(8) !== "WAVE") return null;
+  const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  let o = 12;
+  let byteRate = 0;
+  while (o + 8 <= b.byteLength) {
+    const id = tag(o);
+    const size = v.getUint32(o + 4, true);
+    if (id === "fmt ") byteRate = v.getUint32(o + 16, true);
+    if (id === "data") {
+      const bytes = Math.min(size, b.byteLength - (o + 8));
+      return byteRate > 0 ? Math.round(bytes / byteRate) : null;
+    }
+    o += 8 + size + (size % 2);
+  }
+  return null;
+}
 
 function base64(bytes: Uint8Array): string {
   let out = "";

@@ -106,6 +106,22 @@ Deno.serve(async (req) => {
       })
       .eq("id", dictationId);
 
+    // Usage is logged (never limited). One count per dictation: the request id
+    // is the dictation id, so re-processing it is not counted twice. The
+    // duration is the client-reported one stored on the row.
+    try {
+      const { error: usageErr } = await admin.rpc("record_scribe_usage", {
+        _user_id: userData.user.id,
+        _practice_id: null,
+        _kind: "dictation",
+        _audio_seconds: Math.max(0, Math.min(86400, Math.round(Number(row.duration_seconds) || 0))),
+        _request_id: `dictation:${dictationId}`,
+      });
+      if (usageErr) throw usageErr;
+    } catch (usageErr) {
+      console.error("clinician-dictation-process usage not recorded", usageErr);
+    }
+
     return json({ transcript, summary, extracted });
   } catch (e) {
     console.error("clinician-dictation-process error", e);
