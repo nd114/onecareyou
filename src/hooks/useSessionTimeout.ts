@@ -40,19 +40,23 @@ export function useSessionTimeout(timeoutMs = DEFAULT_TIMEOUT_MS) {
   useEffect(() => {
     if (!user) return;
 
-    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'] as const;
+    const events = [
+      'keydown', 'input', 'change', 'pointerdown', 'pointermove', 'mousedown',
+      'mousemove', 'touchstart', 'touchmove', 'scroll', 'wheel',
+    ] as const;
     const onActivity = () => {
-      // Throttle: only reset if >30s since last reset
-      if (Date.now() - lastActivityRef.current > 30000) {
+      // Throttle: only reset if >5s since last reset
+      if (Date.now() - lastActivityRef.current > 5000) {
         resetTimer();
       }
     };
 
-    events.forEach(e => window.addEventListener(e, onActivity, { passive: true }));
+    const opts = { passive: true, capture: true } as const;
+    events.forEach(e => document.addEventListener(e, onActivity, opts));
     resetTimer();
 
     return () => {
-      events.forEach(e => window.removeEventListener(e, onActivity));
+      events.forEach(e => document.removeEventListener(e, onActivity, true));
       if (timerRef.current) clearTimeout(timerRef.current);
       if (warningRef.current) clearTimeout(warningRef.current);
     };
