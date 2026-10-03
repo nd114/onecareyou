@@ -59,7 +59,7 @@ describe("scribe entry points", () => {
 
   it("quick action matches scribe, record and visit note searches", () => {
     const a = buildQuickActions({ can: () => true });
-    for (const q of ["scribe", "rec", "visit note", ""]) expect(matchQuickActions(a, q)).toHaveLength(1);
+    for (const q of ["scribe", "rec", "visit note"]) expect(matchQuickActions(a, q).map((x) => x.id)).toEqual(["start-scribe"]);
     expect(matchQuickActions(a, "invoice")).toHaveLength(0);
   });
 
@@ -70,5 +70,16 @@ describe("scribe entry points", () => {
     expect(tabs.some((t) => t.label === "Visit notes")).toBe(false);
     const dest = buildDestinations({ audience: "clinician", can: () => true }).find((d) => d.to === "/clinician/scribe");
     expect(dest?.keywords).toContain("visit notes");
+  });
+  it("memo quick action and palette destination exist, and memo words do not match the scribe action", () => {
+    const a = buildQuickActions({ can: () => true });
+    const memo = a.find((x) => x.id === "voice-memos");
+    expect(memo).toMatchObject({ label: "Voice memos", to: "/clinician/voice-memos" });
+    expect(matchQuickActions(a, "memo").map((x) => x.id)).toEqual(["voice-memos"]);
+    expect(matchQuickActions(a, "scribe").map((x) => x.id)).toEqual(["start-scribe"]);
+    const dest = buildDestinations({ audience: "clinician", can: () => true }).find((d) => d.to === "/clinician/voice-memos");
+    expect(dest).toBeTruthy();
+    const tabs = CLINICIAN_PILLARS.flatMap((p) => p.tabs);
+    expect(tabs.some((t) => t.to === "/clinician/voice-memos" && t.label === "Voice memos")).toBe(true);
   });
 });
