@@ -56,6 +56,10 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Encounter | null>(null);
   const [scribeFor, setScribeFor] = useState<Encounter | null>(null);
+  // Closing the scribe dialog mid-recording used to unmount the recorder and
+  // throw the visit away. Escape, an outside click and the X all land here.
+  const [scribeRecording, setScribeRecording] = useState(false);
+  const [confirmCloseScribe, setConfirmCloseScribe] = useState(false);
   const [signing, setSigning] = useState<Encounter | null>(null);
   const [shareOnSign, setShareOnSign] = useState(true);
   const [bookFollowUp, setBookFollowUp] = useState(true);
@@ -502,7 +506,17 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!scribeFor} onOpenChange={(o) => !o && setScribeFor(null)}>
+      <Dialog
+        open={!!scribeFor}
+        onOpenChange={(o) => {
+          if (o) return;
+          if (scribeRecording) {
+            setConfirmCloseScribe(true);
+            return;
+          }
+          setScribeFor(null);
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Ambient scribe — {patientName}</DialogTitle>
@@ -510,6 +524,7 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
           {scribeFor && (
             <EncounterScribePanel
               encounter={scribeFor}
+              onRecordingChange={setScribeRecording}
               onApply={(fields) => {
                 setScribeFor(null);
                 setActive(scribeFor);
@@ -528,6 +543,29 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe }: P
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmCloseScribe} onOpenChange={setConfirmCloseScribe}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Recording in progress</AlertDialogTitle>
+            <AlertDialogDescription>
+              Closing this window will discard the visit recorded so far. Keep recording, or discard it?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep recording</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmCloseScribe(false);
+                setScribeRecording(false);
+                setScribeFor(null);
+              }}
+            >
+              Discard recording
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

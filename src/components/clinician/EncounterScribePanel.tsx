@@ -1,8 +1,8 @@
 // Ambient clinical scribe — record/upload visit audio, review the AI draft
 // side-by-side with the transcript, then apply it to the encounter note.
 // Nothing reaches the encounter's clinical fields until the clinician applies.
-import { useRef, useState } from "react";
-import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle, Activity, Pause, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Mic, Square, Upload, Loader2, Wand2, Check, AlertTriangle, Activity, Pause, Play, Download, RotateCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -26,7 +26,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Encounter } from "@/hooks/useEncounters";
 import { toast } from "sonner";
-import { edgeFunctionError } from '@/lib/edge-function-error';
+import { useBeforeUnloadGuard } from "@/hooks/useBeforeUnloadGuard";
+import { uploadAndDraft } from "@/lib/scribe-pipeline";
+import {
+  savePending,
+  listPending,
+  deletePending,
+  downloadBlob,
+  type PendingRecording,
+} from "@/lib/scribe-local-store";
 
 export interface ScribeDraft {
   chief_complaint?: string;
@@ -47,6 +55,8 @@ export type SectionKey = (typeof ALL_SECTIONS)[number];
 
 interface Props {
   encounter: Encounter;
+  /** Lets the host dialog refuse to close while audio is being captured. */
+  onRecordingChange?: (recording: boolean) => void;
   onApply: (fields: {
     chief_complaint: string;
     subjective: string;
@@ -57,12 +67,19 @@ interface Props {
   }) => void;
 }
 
+function extFor(blob: Blob) {
+  const t = blob.type.toLowerCase();
+  if (t.includes("wav")) return "wav";
+  if (t.includes("mp4") || t.includes("m4a")) return "mp4";
+  return "webm";
+}
+
 function fmt(ms: number) {
   const s = Math.floor(ms / 1000);
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export function EncounterScribePanel({ encounter, onApply }: Props) {
+export function EncounterScribePanel({ encounter, onApply, onRecordingChange }: Props) {
   const { user } = useAuth();
   const [busy, setBusy] = useState<null | "uploading" | "processing">(null);
   const [transcript, setTranscript] = useState(encounter.scribe_transcript ?? "");
@@ -107,36 +124,72 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
     onError: (m) => toast.error(m),
   });
 
-  const process = async (blob: Blob, ext: string, liveTranscript?: string) => {
+  /** Recordings kept on this device because upload or drafting did not finish. */
+  const [unsent, setUnsent] = useState<PendingRecording[]>([]);
+  const refreshUnsent = async () => {
+    if (!user?.id) return;
+    const all = await listPending(user.id);
+    setUnsent(all.filter((r) => r.encounterId === encounter.id));
+  };
+  useEffect(() => {
+    void refreshUnsent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, encounter.id]);
+
+  useEffect(() => {
+    onRecordingChange?.(live.recording);
+  }, [live.recording, onRecordingChange]);
+  useBeforeUnloadGuard(live.recording);
+
+  /**
+   * The audio is already on this device (see persistThenProcess); it is only
+   * removed once the server has confirmed a draft, so any failure here leaves
+   * a copy to retry or download.
+   */
+  const runPending = async (rec: PendingRecording) => {
     if (!user?.id) return;
     try {
-      setBusy("uploading");
-      const path = `${user.id}/encounters/${encounter.id}-${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("clinician-dictations")
-        .upload(path, blob, { contentType: blob.type || "audio/webm" });
-      if (upErr) throw new Error(upErr.message);
-
-      setBusy("processing");
-      const { data, error } = await supabase.functions.invoke("encounter-scribe", {
-        body: {
-          encounterId: encounter.id,
-          audioPath: path,
-          noteStyle,
-          liveTranscript: liveTranscript ?? "",
-        },
+      const res = await uploadAndDraft({
+        userId: user.id,
+        encounterId: rec.encounterId,
+        recordingId: rec.id,
+        blob: rec.blob,
+        ext: extFor(rec.blob),
+        noteStyle: rec.noteStyle,
+        liveTranscript: rec.transcript,
+        durationSeconds: rec.durationSeconds,
+        onStage: setBusy,
       });
-      if (data?.error) throw new Error(data.error);
-      if (error) throw new Error((await edgeFunctionError(error)).message);
-      setTranscript(data.transcript ?? "");
-      setDraft((data.draft ?? {}) as ScribeDraft);
+      setTranscript(res.transcript);
+      setDraft(res.draft as ScribeDraft);
       setAccepted(new Set(ALL_SECTIONS));
+      await deletePending(rec.id);
       toast.success("Draft ready — review before applying");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Scribe failed");
+      toast.error(e instanceof Error ? e.message : "Scribe failed", {
+        description: "Your recording is saved on this device. You can retry or download it.",
+      });
     } finally {
       setBusy(null);
+      await refreshUnsent();
     }
+  };
+
+  const persistThenProcess = async (blob: Blob, liveTranscript: string, durationSeconds?: number) => {
+    if (!user?.id) return;
+    const rec: PendingRecording = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      encounterId: encounter.id,
+      blob,
+      transcript: liveTranscript,
+      noteStyle,
+      createdAt: Date.now(),
+      durationSeconds,
+    };
+    const saved = await savePending(rec);
+    if (!saved) toast.warning("Could not keep a copy on this device. Do not close this page until the draft is ready.");
+    await runPending(rec);
   };
 
   const startRecording = async () => {
@@ -184,12 +237,13 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
   };
 
   const stopRecording = () => {
+    const elapsedMs = live.elapsed;
     const wav = live.stop();
     if (!wav) {
       toast.error("That recording was empty — try again");
       return;
     }
-    process(wav, "wav", liveTextRef.current);
+    void persistThenProcess(wav, liveTextRef.current, Math.round(elapsedMs / 1000));
   };
 
   /**
@@ -308,7 +362,7 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
-              if (f) process(f, f.name.split(".").pop()?.toLowerCase() === "mp4" ? "mp4" : "webm");
+              if (f) void persistThenProcess(f, "");
               if (fileRef.current) fileRef.current.value = "";
             }}
           />
@@ -350,6 +404,42 @@ export function EncounterScribePanel({ encounter, onApply }: Props) {
           AI-generated and enters the record only when you apply and sign it.
         </p>
       </div>
+
+      {unsent.length > 0 && !busy && (
+        <div role="alert" className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 space-y-2 text-xs">
+          <div className="font-medium">
+            {unsent.length === 1 ? "A recording" : `${unsent.length} recordings`} for this visit{" "}
+            {unsent.length === 1 ? "is" : "are"} saved on this device and not yet drafted.
+          </div>
+          {unsent.map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center gap-2">
+              <Button size="sm" className="gap-2" onClick={() => void runPending(r)}>
+                <RotateCw className="h-3.5 w-3.5" /> Retry
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() =>
+                  downloadBlob(r.blob, `visit-recording-${new Date(r.createdAt).toISOString().slice(0, 10)}.${extFor(r.blob)}`)
+                }
+              >
+                <Download className="h-3.5 w-3.5" /> Download audio
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  await deletePending(r.id);
+                  await refreshUnsent();
+                }}
+              >
+                Discard
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {live.recording && (
         <div className="space-y-1.5">
