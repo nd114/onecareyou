@@ -16,7 +16,7 @@ describe('SEO', () => {
   });
 
   it('sitemap.xml on disk matches the generator and has no private URLs', () => {
-    const onDisk = readFileSync(path.join(ROOT, 'public/sitemap.xml'), 'utf8');
+    const onDisk = readFileSync(path.join(ROOT, 'public/sitemap.xml'), 'utf8').replace(/\r?\n/g, '\n');
     expect(onDisk).toBe(buildSitemap());
     const locs = [...onDisk.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
     expect(locs.filter(isPrivate)).toEqual([]);
@@ -24,7 +24,7 @@ describe('SEO', () => {
   });
 
   it('robots.txt is current and blocks share links and app routes', () => {
-    const onDisk = readFileSync(path.join(ROOT, 'public/robots.txt'), 'utf8');
+    const onDisk = readFileSync(path.join(ROOT, 'public/robots.txt'), 'utf8').replace(/\r?\n/g, '\n');
     expect(onDisk).toBe(buildRobots());
     expect(onDisk).toContain('Disallow: /s$');
     expect(onDisk).toContain('Disallow: /dashboard');
