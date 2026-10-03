@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-// @ts-expect-error plain ESM script, no types
 import { publicRoutes, PRIVATE_PREFIXES, ROOT } from '../../scripts/seo/public-routes.mjs';
-// @ts-expect-error plain ESM script, no types
 import { buildSitemap, buildRobots } from '../../scripts/seo/generate-sitemap.mjs';
 
 interface R { path: string; title: string; description: string; file: string }
