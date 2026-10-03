@@ -68,7 +68,7 @@ BEGIN
     (_str,  'saf-str@test.local',  now()),
     (_cg,   'saf-cg@test.local',   now());
 
-  INSERT INTO public.practices (id, name, created_by) VALUES (_prac, 'SAF Clinic', _own);
+  INSERT INTO public.practices (id, name, created_by, member_limit) VALUES (_prac, 'SAF Clinic', _own, 50);
   INSERT INTO public.practice_members (practice_id, user_id, role, status, can_view_all_patients) VALUES
     (_prac, _adm,  'admin',      'active', true),
     (_prac, _doc,  'clinician',  'active', true),

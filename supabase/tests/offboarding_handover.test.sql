@@ -127,9 +127,9 @@ BEGIN
     (_admin, 'Arthur Admin'), (_lead, 'Lara Lead')
   ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name;
 
-  INSERT INTO public.practices (id, name, created_by) VALUES
-    (_prac, 'Handover General', _owner),
-    (_elsewhere, 'Elsewhere Clinic', _owner);
+  INSERT INTO public.practices (id, name, created_by, member_limit) VALUES
+    (_prac, 'Handover General', _owner, 50),
+    (_elsewhere, 'Elsewhere Clinic', _owner, 50);
   INSERT INTO public.practice_members (practice_id, user_id, role, status) VALUES
     (_prac, _owner, 'owner', 'active')
   ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'owner', status = 'active';
