@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInstitutionAssignedPatients } from '@/hooks/usePracticeShares';
 import { toast } from 'sonner';
+import { clinicianShareFilter } from '@/lib/postgrest-filter';
 
 interface SharePermissions {
   vitals: boolean;
@@ -76,7 +77,7 @@ export function useClinicianPatients() {
         .from('provider_shares')
         .select('*')
         .eq('is_active', true)
-        .or(`clinician_user_id.eq.${user.id},provider_email.eq.${user.email}`)
+        .or(clinicianShareFilter(user.id, user.email))
         .order('created_at', { ascending: false });
 
       if (error) throw error;

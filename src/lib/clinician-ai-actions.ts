@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { VITAL_CONFIG, VitalType } from '@/types/health';
 import { toAppointmentRow } from '@/lib/fhir/appointment';
+import { clinicianShareFilter } from '@/lib/postgrest-filter';
 
 /**
  * Approval-gated clinician AI actions.
@@ -105,7 +106,7 @@ async function findShare(clinicianId: string, clinicianEmail: string | undefined
     .select('id')
     .eq('user_id', patientId)
     .eq('is_active', true)
-    .or(`clinician_user_id.eq.${clinicianId},provider_email.eq.${clinicianEmail ?? ''}`)
+    .or(clinicianShareFilter(clinicianId, clinicianEmail))
     .limit(1);
   return data?.[0]?.id ?? null;
 }
