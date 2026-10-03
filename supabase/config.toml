@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.care-record-snapshots]
 verify_jwt = false
+
+[functions.voice-memo-retention]
+verify_jwt = false
