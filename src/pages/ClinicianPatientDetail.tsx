@@ -19,6 +19,7 @@ import {
   FileText,
   MessageSquare,
   Mic,
+  Lock,
   Plus
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +59,8 @@ import { formatDay } from '@/lib/format-date';
 import { ProposeMedicationChange, ProposalsAwaitingPatient } from '@/components/clinician/ProposeMedicationChange';
 import { showsClinicalRecord } from '@/lib/staff-roles';
 import { usePractice } from '@/hooks/usePractice';
+import { useScribeAccess } from '@/hooks/useScribeAccess';
+import { toast } from 'sonner';
 import { PatientSectionNav } from '@/components/clinician/PatientSectionNav';
 import { PatientOverviewTab } from '@/components/clinician/PatientOverviewTab';
 import { AdherenceSummary } from '@/components/clinician/AdherenceSummary';
@@ -66,6 +69,7 @@ import { RecordVitalDialog } from '@/components/clinician/RecordVitalDialog';
 
 const ClinicianPatientDetail = () => {
   const { memberships } = usePractice();
+  const scribeAccess = useScribeAccess();
 
   const { inviteCode } = useParams<{ inviteCode: string }>();
   const navigate = useNavigate();
@@ -298,7 +302,7 @@ const ClinicianPatientDetail = () => {
 
             {/* The one thing a clinician does at the start of a visit, in reach
                 from the top of the chart instead of three tabs down. */}
-            {patient.share_active !== false && (
+            {patient.share_active !== false && scribeAccess.allowed && (
               <Button
                 onClick={() => {
                   const next = new URLSearchParams(searchParams);
@@ -308,8 +312,21 @@ const ClinicianPatientDetail = () => {
                 }}
                 className="gap-2"
               >
-                <Mic className="h-4 w-4" /> Start visit note
+                <Mic className="h-4 w-4" /> Scribe
               </Button>
+            )}
+            {patient.share_active !== false && scribeAccess.locked && (
+              <div className="flex flex-col items-start gap-1">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  aria-disabled="true"
+                  onClick={() => toast.info(scribeAccess.reason)}
+                >
+                  <Lock className="h-4 w-4" /> Scribe
+                </Button>
+                <span className="text-xs text-muted-foreground">{scribeAccess.reason}</span>
+              </div>
             )}
           </div>
 

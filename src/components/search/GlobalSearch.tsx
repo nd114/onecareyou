@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Search, User, ArrowRight } from 'lucide-react';
+import { FileText, Lock, Mic, Search, User, ArrowRight } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -23,6 +23,9 @@ import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
 import {
   buildDestinations,
+  buildQuickActions,
+  matchQuickActions,
+  type QuickAction,
   readRecentPaths,
   recentDestinations,
   rememberPath,
@@ -130,7 +133,11 @@ interface BodyProps {
 }
 
 function ClinicianSearchBody({ onClose }: BodyProps) {
-  const { can } = useClinicianCapabilities();
+  const { can, loading: capsLoading } = useClinicianCapabilities();
+  const quickActions = useMemo(
+    () => buildQuickActions({ can, loading: capsLoading }),
+    [can, capsLoading],
+  );
   const { patients } = useClinicianPatients();
   const { currentPractice } = usePractice();
   const { tenant } = usePracticeTenant(currentPractice?.id);
@@ -165,6 +172,7 @@ function ClinicianSearchBody({ onClose }: BodyProps) {
   return (
     <SearchBody
       sources={sources}
+      quickActions={quickActions}
       onClose={onClose}
       placeholder="Search patients, pages and settings…"
       hint="Type a patient name, or where you want to go."
@@ -192,11 +200,12 @@ function PatientSearchBody({ onClose }: BodyProps) {
 
 interface SearchBodyProps extends BodyProps {
   sources: SearchSources;
+  quickActions?: QuickAction[];
   placeholder: string;
   hint: string;
 }
 
-function SearchBody({ sources, onClose, placeholder, hint }: SearchBodyProps) {
+function SearchBody({ sources, quickActions = [], onClose, placeholder, hint }: SearchBodyProps) {
   // Lives here rather than in GlobalSearch so that closing the dialog unmounts
   // it: a reopened search starts empty instead of flashing the last query's
   // results before catching up.
@@ -215,6 +224,8 @@ function SearchBody({ sources, onClose, placeholder, hint }: SearchBodyProps) {
     [sources.pages, user?.id],
   );
 
+  const visibleActions = useMemo(() => matchQuickActions(quickActions, query), [quickActions, query]);
+
   const go = useCallback(
     (to: string, remember = false) => {
       // Only destinations are remembered: never a patient or a document, so
@@ -230,7 +241,33 @@ function SearchBody({ sources, onClose, placeholder, hint }: SearchBodyProps) {
     <>
       <CommandInput value={query} onValueChange={setQuery} placeholder={placeholder} />
       <CommandList>
-        {!hasQuery && recents.length === 0 && <CommandEmpty>{hint}</CommandEmpty>}
+        {visibleActions.length > 0 && (
+          <CommandGroup heading="Quick actions">
+            {visibleActions.map((action) => (
+              <CommandItem
+                key={`action:${action.id}`}
+                value={`action:${action.id}`}
+                disabled={!!action.lockedReason}
+                onSelect={() => go(action.to, false)}
+                className="gap-2"
+              >
+                {action.lockedReason ? (
+                  <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <Mic className="h-4 w-4 shrink-0 text-muted-foreground" />
+                )}
+                <span className="truncate">{action.label}</span>
+                {action.lockedReason && (
+                  <span className="ml-auto truncate pl-2 text-xs text-muted-foreground">
+                    {action.lockedReason}
+                  </span>
+                )}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {!hasQuery && recents.length === 0 && visibleActions.length === 0 && <CommandEmpty>{hint}</CommandEmpty>}
 
         {!hasQuery && recents.length > 0 && (
           <CommandGroup heading="Recent">

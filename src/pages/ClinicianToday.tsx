@@ -197,7 +197,7 @@ const ClinicianToday = () => {
                 {/* Between two patients, this is the fastest route into a
                     visit note — no chart hunting first. */}
                 <Button size="sm" className="gap-1.5" onClick={() => navigate("/clinician/scribe")}>
-                  <Mic className="h-3.5 w-3.5" /> Record a visit note
+                  <Mic className="h-3.5 w-3.5" /> Start scribe
                 </Button>
                 {counts.alerts > 0 && (
                   <Button

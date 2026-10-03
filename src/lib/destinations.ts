@@ -46,7 +46,7 @@ const PAGE_KEYWORDS: Record<string, string[]> = {
   '/knowledge-base': ['learn', 'conditions', 'articles', 'help'],
   '/clinician/today': ['home', 'dashboard', 'overview', 'tasks'],
   '/clinician/schedule': ['appointments', 'calendar', 'diary'],
-  '/clinician/scribe': ['scribe', 'dictation', 'notes', 'soap', 'record visit'],
+  '/clinician/scribe': ['scribe', 'visit notes', 'visit note', 'dictation', 'notes', 'soap', 'record visit', 'record'],
   '/clinician/alerts': ['alerts', 'rules', 'thresholds', 'notifications'],
   '/clinician/patients': ['patients', 'panel', 'list', 'caseload'],
   '/clinician/patients/import': ['import', 'upload', 'csv', 'invite patients'],
@@ -92,6 +92,50 @@ const PRACTICE_KEYWORDS: Record<string, string[]> = {
   details: ['address', 'branding', 'logo', 'currency', 'joining code', 'hospital code'],
   plan: ['billing', 'subscription', 'usage', 'storage', 'plan', 'pricing', 'upgrade'],
 };
+
+/** Shown wherever the scribe is offered but this member cannot use it. */
+export const SCRIBE_LOCKED_REASON = 'Scribe needs clinical access in this practice';
+
+export interface QuickAction {
+  id: 'start-scribe';
+  label: string;
+  to: string;
+  keywords: string[];
+  /** Set when the member lacks the capability: shown, explained, not runnable. */
+  lockedReason?: string;
+}
+
+/**
+ * Verbs, as opposed to places. Offered with the capability, or - once the
+ * capability answer is in - shown locked with the reason, rather than silently
+ * missing. While capabilities are still loading nothing is shown, so a
+ * clinician never sees a locked flash.
+ */
+export function buildQuickActions({
+  can,
+  loading = false,
+}: {
+  can: (capability: any) => boolean;
+  loading?: boolean;
+}): QuickAction[] {
+  if (loading) return [];
+  const allowed = can('edit_clinical');
+  return [
+    {
+      id: 'start-scribe',
+      label: 'Start scribe',
+      to: '/clinician/scribe',
+      keywords: ['scribe', 'record', 'visit note', 'visit notes', 'dictate', 'dictation'],
+      ...(allowed ? {} : { lockedReason: SCRIBE_LOCKED_REASON }),
+    },
+  ];
+}
+
+export function matchQuickActions(actions: readonly QuickAction[], query: string): QuickAction[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [...actions];
+  return actions.filter((a) => [a.label, ...a.keywords].some((w) => w.toLowerCase().includes(q)));
+}
 
 export interface DestinationOptions {
   audience: DestinationAudience;

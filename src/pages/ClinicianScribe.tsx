@@ -43,7 +43,7 @@ const ClinicianScribe = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Mic className="h-5 w-5 text-primary" /> Record a visit note
+              <Mic className="h-5 w-5 text-primary" /> Scribe
             </CardTitle>
             <CardDescription>
               Choose who you are seeing. The recorder opens on their note, listens while you

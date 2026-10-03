@@ -8,8 +8,7 @@ import {
   Mic,
   PanelLeftClose,
   PanelLeftOpen,
-  Users,
-} from 'lucide-react';
+  Users, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -19,6 +18,7 @@ import {
   visibleTabs,
   type ClinicianPillarKey,
 } from '@/lib/nav-ia';
+import { useScribeAccess } from '@/hooks/useScribeAccess';
 import { useClinicianCapabilities } from '@/hooks/useClinicianCapabilities';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +47,7 @@ const PILLAR_ICONS: Record<ClinicianPillarKey, typeof Inbox> = {
 export function ClinicianRail() {
   const { pathname, hash } = useLocation();
   const { can } = useClinicianCapabilities();
+  const scribeAccess = useScribeAccess();
   const activePillar = getClinicianPillarForRoute(pathname);
 
   const [collapsed, setCollapsed] = useState(
@@ -63,7 +64,7 @@ export function ClinicianRail() {
 
   // While capabilities load, `can` answers no to everything, so only the
   // ungated tabs show. The rail used to show *every* tab until the answer came
-  // back — a front desk account saw Visit notes, Invoices and Compliance for a
+  // back — a front desk account saw Scribe, Invoices and Compliance for a
   // moment and then watched them vanish. Tabs arriving is better than tabs
   // being taken away, and navigation that hints at access should fail closed.
   const pillars = CLINICIAN_PILLARS.map((pillar) => ({
@@ -159,6 +160,25 @@ export function ClinicianRail() {
         <div className="border-t border-border/60 p-2">
           {/* One click to dictation from wherever they are — the reason the rail
               earns its width on a clinic monitor. */}
+          {scribeAccess.locked && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* A span carries the tooltip: a disabled button swallows hover. */}
+                <span tabIndex={0} className="block" aria-label={scribeAccess.reason}>
+                  <Button
+                    variant="secondary"
+                    disabled
+                    className={cn('w-full', collapsed ? 'px-0' : 'justify-start gap-2')}
+                    aria-label={`Scribe locked. ${scribeAccess.reason}`}
+                  >
+                    <Lock className="h-4 w-4" />
+                    {!collapsed && 'Scribe'}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">{scribeAccess.reason}</TooltipContent>
+            </Tooltip>
+          )}
           {can('edit_clinical') && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -166,14 +186,14 @@ export function ClinicianRail() {
                   <Button
                     variant="secondary"
                     className={cn('w-full', collapsed ? 'px-0' : 'justify-start gap-2')}
-                    aria-label="Start a visit note"
+                    aria-label="Start scribe"
                   >
                     <Mic className="h-4 w-4" />
-                    {!collapsed && 'Visit note'}
+                    {!collapsed && 'Scribe'}
                   </Button>
                 </Link>
               </TooltipTrigger>
-              {collapsed && <TooltipContent side="right">Visit note</TooltipContent>}
+              {collapsed && <TooltipContent side="right">Scribe</TooltipContent>}
             </Tooltip>
           )}
 

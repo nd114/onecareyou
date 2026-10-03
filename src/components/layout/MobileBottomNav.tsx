@@ -8,6 +8,8 @@ import {
   UserSquare2,
   MessageCircle,
   Building2,
+  Mic,
+  Lock,
 } from "lucide-react";
 import {
   PATIENT_PILLARS,
@@ -20,7 +22,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useClinicianProfile } from "@/hooks/useClinicianProfile";
 import { useAdminRole } from "@/hooks/useAdminRole";
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
+import { toast } from "sonner";
+import { useScribeAccess } from "@/hooks/useScribeAccess";
+import { useOptionalScribeRecorder } from "@/contexts/ScribeRecorderContext";
 import { cn } from "@/lib/utils";
 
 const PATIENT_ICONS: Record<PatientPillarKey, React.ElementType> = {
@@ -79,6 +84,8 @@ export function MobileBottomNav() {
   const { user } = useAuth();
   const { isClinician } = useClinicianProfile();
   const { isAdmin } = useAdminRole();
+  const scribeAccess = useScribeAccess();
+  const recorder = useOptionalScribeRecorder();
 
   // Hooks must run on every render, before any early return: the visibility
   // conditions below depend on async auth/role state, so a hook placed after
@@ -122,12 +129,41 @@ export function MobileBottomNav() {
         "pb-[env(safe-area-inset-bottom)]"
       )}
     >
-      <ul className="grid grid-cols-4">
-        {pillars.map((p) => {
+      <ul className={cn("grid", isClinician ? "grid-cols-5" : "grid-cols-4")}>
+        {pillars.map((p, index) => {
           const Icon = icons[p.key as PatientPillarKey & ClinicianPillarKey];
           const isActive = activeKey === p.key;
           return (
-            <li key={p.key}>
+            <Fragment key={p.key}>
+              {isClinician && index === 2 && (
+                <li className="flex items-center justify-center">
+                  {scribeAccess.allowed ? (
+                    <Link
+                      to="/clinician/scribe"
+                      aria-label={recorder?.recording ? "Scribe - recording in progress" : "Start scribe"}
+                      className={cn(
+                        "-mt-4 flex h-12 w-12 items-center justify-center rounded-full shadow-lg",
+                        recorder?.recording
+                          ? "bg-destructive text-destructive-foreground animate-pulse"
+                          : "bg-primary text-primary-foreground",
+                      )}
+                    >
+                      <Mic className="h-5 w-5" aria-hidden />
+                    </Link>
+                  ) : scribeAccess.locked ? (
+                    <button
+                      type="button"
+                      aria-label={`Scribe locked. ${scribeAccess.reason}`}
+                      aria-disabled="true"
+                      onClick={() => toast.info(scribeAccess.reason)}
+                      className="-mt-4 flex h-12 w-12 items-center justify-center rounded-full border bg-muted text-muted-foreground"
+                    >
+                      <Lock className="h-5 w-5" aria-hidden />
+                    </button>
+                  ) : null}
+                </li>
+              )}
+            <li>
               <Link
                 to={p.primary}
                 aria-current={isActive ? "page" : undefined}
@@ -142,6 +178,7 @@ export function MobileBottomNav() {
                 <span className="leading-none">{p.label}</span>
               </Link>
             </li>
+            </Fragment>
           );
         })}
       </ul>
