@@ -123,6 +123,52 @@ BEGIN
     'the service role can still set entitlement after payment');
 
   -- ==========================================================================
+  -- 4b. Plan limits cannot be talked around by a client (20261011030000)
+  --
+  -- The limits are a data table the database enforces. A signed-in user must
+  -- not be able to rewrite the table, raise their own cap on their profile, call
+  -- the internal cap helpers, or read another person's usage.
+  -- ==========================================================================
+  PERFORM set_config('request.jwt.claim.sub', _doctor::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  BEGIN
+    UPDATE public.tier_limits SET patient_limit = NULL WHERE tier = 'community';
+    GET DIAGNOSTICS _count = ROW_COUNT;
+    _txt := 'ran:' || _count;
+  EXCEPTION WHEN insufficient_privilege THEN
+    _txt := 'denied';
+  END;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_txt = 'denied', 'a client cannot rewrite tier_limits (' || _txt || ')');
+  PERFORM pg_temp.assert(
+    (SELECT patient_limit FROM public.tier_limits WHERE tier = 'community') IS NOT NULL,
+    'the community limit is unchanged after the attempt');
+
+  PERFORM set_config('request.jwt.claim.sub', _doctor::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  BEGIN
+    PERFORM public._personal_patient_limit(_doctor);
+    _txt := 'ran';
+  EXCEPTION WHEN insufficient_privilege THEN
+    _txt := 'denied';
+  END;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_txt = 'denied', 'a client cannot call the internal limit helpers');
+
+  PERFORM set_config('request.jwt.claim.sub', _doctor::text, true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  BEGIN
+    PERFORM * FROM public.entitlements_for(_patient);
+    _txt := 'ran';
+  EXCEPTION WHEN OTHERS THEN
+    _txt := 'refused';
+  END;
+  EXECUTE 'SET LOCAL ROLE postgres';
+  PERFORM pg_temp.assert(_txt = 'refused', 'a client cannot read another person''s entitlements');
+
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+
+  -- ==========================================================================
   -- 5. The anonymous role holds only the surfaces the product actually has
   --
   -- Supabase grants anon every privilege on every table in `public` by default,
