@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,93 +17,93 @@ import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
 import { RequireCapability } from "@/components/clinician/RequireCapability";
 import { PatientRoute } from "@/components/auth/PatientRoute";
 import { PracticeAdminRoute } from "@/components/auth/PracticeAdminRoute";
-import PracticeAdmin from "./pages/PracticeAdmin";
+const PracticeAdmin = lazy(() => import("./pages/PracticeAdmin"));
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { RouteTitle } from "@/components/layout/RouteTitle";
 import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { queryClient } from "@/lib/query-client";
 import Landing from "./pages/Landing";
-import BetaLanding from "./pages/BetaLanding";
-import BetaBooking from "./pages/BetaBooking";
-import BetaNDA from "./pages/BetaNDA";
-import Dashboard from "./pages/Dashboard";
-import Medications from "./pages/Medications";
-import AddMedication from "./pages/AddMedication";
-import EditMedication from "./pages/EditMedication";
-import Schedule from "./pages/Schedule";
-import Vitals from "./pages/Vitals";
-import CareCircle from "./pages/CareCircle";
-import ClinicianPortal from "./pages/ClinicianPortal";
-import ClinicianSignUp from "./pages/ClinicianSignUp";
-import ClinicianToday from "./pages/ClinicianToday";
-import ClinicianSettings from "./pages/ClinicianSettings";
-import ClinicianPractice from "./pages/ClinicianPractice";
-import ClinicianPracticeSection from "./pages/ClinicianPracticeSection";
-import FamilyDashboard from "./pages/FamilyDashboard";
-import FamilyMemberDetail from "./pages/FamilyMemberDetail";
-import Onboarding from "./pages/Onboarding";
-import SignUp from "./pages/SignUp";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import KingsChatComplete from "./pages/KingsChatComplete";
-import Settings from "./pages/Settings";
-import PatientGuidance from "./pages/PatientGuidance";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import DataProcessing from "./pages/DataProcessing";
-import About from "./pages/About";
-import Features from "./pages/Features";
-import HowItWorks from "./pages/HowItWorks";
-import Pricing from "./pages/Pricing";
-import Contact from "./pages/Contact";
-import MedicalDisclaimer from "./pages/MedicalDisclaimer";
+const BetaLanding = lazy(() => import("./pages/BetaLanding"));
+const BetaBooking = lazy(() => import("./pages/BetaBooking"));
+const BetaNDA = lazy(() => import("./pages/BetaNDA"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Medications = lazy(() => import("./pages/Medications"));
+const AddMedication = lazy(() => import("./pages/AddMedication"));
+const EditMedication = lazy(() => import("./pages/EditMedication"));
+const Schedule = lazy(() => import("./pages/Schedule"));
+const Vitals = lazy(() => import("./pages/Vitals"));
+const CareCircle = lazy(() => import("./pages/CareCircle"));
+const ClinicianPortal = lazy(() => import("./pages/ClinicianPortal"));
+const ClinicianSignUp = lazy(() => import("./pages/ClinicianSignUp"));
+const ClinicianToday = lazy(() => import("./pages/ClinicianToday"));
+const ClinicianSettings = lazy(() => import("./pages/ClinicianSettings"));
+const ClinicianPractice = lazy(() => import("./pages/ClinicianPractice"));
+const ClinicianPracticeSection = lazy(() => import("./pages/ClinicianPracticeSection"));
+const FamilyDashboard = lazy(() => import("./pages/FamilyDashboard"));
+const FamilyMemberDetail = lazy(() => import("./pages/FamilyMemberDetail"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const SignUp = lazy(() => import("./pages/SignUp"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const KingsChatComplete = lazy(() => import("./pages/KingsChatComplete"));
+const Settings = lazy(() => import("./pages/Settings"));
+const PatientGuidance = lazy(() => import("./pages/PatientGuidance"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const DataProcessing = lazy(() => import("./pages/DataProcessing"));
+const About = lazy(() => import("./pages/About"));
+const Features = lazy(() => import("./pages/Features"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Contact = lazy(() => import("./pages/Contact"));
+const MedicalDisclaimer = lazy(() => import("./pages/MedicalDisclaimer"));
 
-import Docs from "./pages/Docs";
+const Docs = lazy(() => import("./pages/Docs"));
 import NotFound from "./pages/NotFound";
-import AdherenceReport from "./pages/AdherenceReport";
-import KnowledgeBase from "./pages/KnowledgeBase";
-import KnowledgeBaseTopic from "./pages/KnowledgeBaseTopic";
-import MedicationInfo from "./pages/MedicationInfo";
-import SubscriptionSuccess from "./pages/SubscriptionSuccess";
-import EHRComparison from "./pages/EHRComparison";
-import AdminImport from "./pages/AdminImport";
-import AdminBugReports from "./pages/AdminBugReports";
-import AdminChangelog from "./pages/AdminChangelog";
-import AdminDocs from "./pages/AdminDocs";
+const AdherenceReport = lazy(() => import("./pages/AdherenceReport"));
+const KnowledgeBase = lazy(() => import("./pages/KnowledgeBase"));
+const KnowledgeBaseTopic = lazy(() => import("./pages/KnowledgeBaseTopic"));
+const MedicationInfo = lazy(() => import("./pages/MedicationInfo"));
+const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const EHRComparison = lazy(() => import("./pages/EHRComparison"));
+const AdminImport = lazy(() => import("./pages/AdminImport"));
+const AdminBugReports = lazy(() => import("./pages/AdminBugReports"));
+const AdminChangelog = lazy(() => import("./pages/AdminChangelog"));
+const AdminDocs = lazy(() => import("./pages/AdminDocs"));
 
-import AdminCareers from "./pages/AdminCareers";
-import AdminConsole, {
-  AdminAccountsPage,
-  AdminRevenuePage,
-  AdminReliabilityPage,
-  AdminTrustPage,
-  AdminWorkshopPage,
-} from "./pages/AdminConsole";
+const AdminCareers = lazy(() => import("./pages/AdminCareers"));
+const AdminConsole = lazy(() => import("./pages/AdminConsole"));
+const AdminAccountsPage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminAccountsPage })));
+const AdminRevenuePage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminRevenuePage })));
+const AdminReliabilityPage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminReliabilityPage })));
+const AdminTrustPage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminTrustPage })));
+const AdminWorkshopPage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminWorkshopPage })));
+
 import { AdminRoute } from "./components/auth/AdminRoute";
-import ClinicianPricing from "./pages/ClinicianPricing";
-import EnterpriseInquiry from "./pages/EnterpriseInquiry";
-import ClinicianBAA from "./pages/ClinicianBAA";
-import ClinicianSubscriptionSuccess from "./pages/ClinicianSubscriptionSuccess";
-import ClinicianWhyOneCare from "./pages/ClinicianWhyOneCare";
-import ClinicianPatientDetail from "./pages/ClinicianPatientDetail";
-import ClinicianPatients from "./pages/ClinicianPatients";
-import ClinicianGuidance from "./pages/ClinicianGuidance";
-import ClinicianAlerts from "./pages/ClinicianAlerts";
-import ClinicianSchedule from "./pages/ClinicianSchedule";
-import ClinicianScribe from "./pages/ClinicianScribe";
-import ClinicianInvoices from "./pages/ClinicianInvoices";
-import ClinicianPatientImport from "./pages/ClinicianPatientImport";
-import ClinicianManagedRecord from "./pages/ClinicianManagedRecord";
+const ClinicianPricing = lazy(() => import("./pages/ClinicianPricing"));
+const EnterpriseInquiry = lazy(() => import("./pages/EnterpriseInquiry"));
+const ClinicianBAA = lazy(() => import("./pages/ClinicianBAA"));
+const ClinicianSubscriptionSuccess = lazy(() => import("./pages/ClinicianSubscriptionSuccess"));
+const ClinicianWhyOneCare = lazy(() => import("./pages/ClinicianWhyOneCare"));
+const ClinicianPatientDetail = lazy(() => import("./pages/ClinicianPatientDetail"));
+const ClinicianPatients = lazy(() => import("./pages/ClinicianPatients"));
+const ClinicianGuidance = lazy(() => import("./pages/ClinicianGuidance"));
+const ClinicianAlerts = lazy(() => import("./pages/ClinicianAlerts"));
+const ClinicianSchedule = lazy(() => import("./pages/ClinicianSchedule"));
+const ClinicianScribe = lazy(() => import("./pages/ClinicianScribe"));
+const ClinicianInvoices = lazy(() => import("./pages/ClinicianInvoices"));
+const ClinicianPatientImport = lazy(() => import("./pages/ClinicianPatientImport"));
+const ClinicianManagedRecord = lazy(() => import("./pages/ClinicianManagedRecord"));
 
-import Sitemap from "./pages/Sitemap";
-import Careers from "./pages/Careers";
-import JobDetail from "./pages/JobDetail";
-import HealthVault from "./pages/HealthVault";
-import Recordings from "./pages/Recordings";
-import Messages from "./pages/Messages";
-import ClinicianMessages from "./pages/ClinicianMessages";
-import Install from "./pages/Install";
-import ForClinicians from "./pages/ForClinicians";
+const Sitemap = lazy(() => import("./pages/Sitemap"));
+const Careers = lazy(() => import("./pages/Careers"));
+const JobDetail = lazy(() => import("./pages/JobDetail"));
+const HealthVault = lazy(() => import("./pages/HealthVault"));
+const Recordings = lazy(() => import("./pages/Recordings"));
+const Messages = lazy(() => import("./pages/Messages"));
+const ClinicianMessages = lazy(() => import("./pages/ClinicianMessages"));
+const Install = lazy(() => import("./pages/Install"));
+const ForClinicians = lazy(() => import("./pages/ForClinicians"));
 import { Navigate } from "react-router-dom";
 import { BugReportButton } from "./components/beta/BugReportButton";
 import { PatientAIChatMount } from "./components/ai/PatientAIChatMount";
@@ -110,18 +111,18 @@ import { ClinicianAIChatMount } from "./components/clinician/ClinicianAIChatMoun
 import { FabStack } from "./components/beta/FabStack";
 import { MobileBottomNav } from "./components/layout/MobileBottomNav";
 import { StandaloneLaunchRedirect } from "@/components/auth/StandaloneLaunchRedirect";
-import AIHub from "./pages/AIHub";
-import ClinicianDictations from "./pages/ClinicianDictations";
-import ClinicianTemplates from "./pages/ClinicianTemplates";
-import ClinicianAudit from "./pages/ClinicianAudit";
-import ClinicianReports from "./pages/ClinicianReports";
-import ClinicianCompliance from "./pages/ClinicianCompliance";
-import AdminTenantDetail from "./pages/AdminTenantDetail";
+const AIHub = lazy(() => import("./pages/AIHub"));
+const ClinicianDictations = lazy(() => import("./pages/ClinicianDictations"));
+const ClinicianTemplates = lazy(() => import("./pages/ClinicianTemplates"));
+const ClinicianAudit = lazy(() => import("./pages/ClinicianAudit"));
+const ClinicianReports = lazy(() => import("./pages/ClinicianReports"));
+const ClinicianCompliance = lazy(() => import("./pages/ClinicianCompliance"));
+const AdminTenantDetail = lazy(() => import("./pages/AdminTenantDetail"));
 import TenantHome from "@/components/tenant/TenantHome";
 import LegacyInstitutionRedirect from "@/components/tenant/LegacyInstitutionRedirect";
 import { FAMILY_HEALTH_ENABLED } from '@/lib/feature-flags';
-import Billing from "./pages/Billing";
-import SnapshotViewer from "./pages/SnapshotViewer";
+const Billing = lazy(() => import("./pages/Billing"));
+const SnapshotViewer = lazy(() => import("./pages/SnapshotViewer"));
 
 /**
  * The read-only snapshot viewer is for somebody with no account, so none of
@@ -150,6 +151,7 @@ const App = () => (
           <ScrollToTop />
           <RouteTitle />
           <StandaloneLaunchRedirect />
+          <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-muted-foreground" role="status" aria-label="Loading">Loading…</div>}>
           <Routes>
             <Route path="/" element={<TenantHome />} />
             {/* Staff registration at the hospital's own address. */}
@@ -552,6 +554,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
           <CookieConsentBanner />
           <AppChrome>
             <FabStack>
