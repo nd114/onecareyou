@@ -297,6 +297,81 @@ function Omitted({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Only Safari decodes HEIC natively. Try the original first; when the browser
+ * cannot, convert to JPEG with heic2any (loaded on demand, so it stays out of
+ * the main bundle). The original blob is untouched for download.
+ */
+function HeicImage({
+  loaded,
+  title,
+  onDownload,
+}: {
+  loaded: Extract<Loaded, { status: 'ready' }>;
+  title: string;
+  onDownload: () => void;
+}) {
+  const [src, setSrc] = useState<string | undefined>(loaded.blobUrl);
+  const [phase, setPhase] = useState<'native' | 'converting' | 'failed'>('native');
+  const convertedRef = useRef<string | undefined>();
+  const [convertedOnce, setConvertedOnce] = useState(false);
+
+  useEffect(
+    () => () => {
+      if (convertedRef.current) URL.revokeObjectURL(convertedRef.current);
+    },
+    [],
+  );
+
+  const convert = useCallback(async () => {
+    if (phase !== 'native' || !loaded.blob) {
+      setPhase('failed');
+      return;
+    }
+    setPhase('converting');
+    try {
+      const { default: heic2any } = await import('heic2any');
+      const out = await heic2any({ blob: loaded.blob.slice(0, loaded.blob.size, 'image/heic'), toType: 'image/jpeg', quality: 0.85 });
+      const jpeg = Array.isArray(out) ? out[0] : out;
+      if (!jpeg) throw new Error('empty');
+      const url = URL.createObjectURL(jpeg);
+      convertedRef.current = url;
+      setSrc(url);
+      setPhase('native');
+      // A converted JPEG that still fails to load goes to the notice.
+      setConvertedOnce(true);
+    } catch {
+      setPhase('failed');
+    }
+  }, [phase, loaded.blob]);
+
+  if (phase === 'failed') {
+    return (
+      <Notice onDownload={onDownload}>
+        This is an iPhone photo (HEIC), which this browser cannot display. Download it to view, or open it
+        in Safari or on an iPhone or Mac.
+      </Notice>
+    );
+  }
+  if (phase === 'converting') {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-full items-center justify-center p-2">
+      <img
+        src={src}
+        alt={title}
+        className="max-h-full max-w-full object-contain"
+        onError={() => (convertedOnce ? setPhase('failed') : void convert())}
+      />
+    </div>
+  );
+}
+
 function Body({
   loaded,
   title,
@@ -343,22 +418,7 @@ function Body({
         </div>
       );
     case 'heic':
-      // Only Safari decodes HEIC natively. Try, and say so when it does not.
-      return mediaFailed ? (
-        <Notice onDownload={onDownload}>
-          This is an iPhone photo (HEIC), which this browser cannot display. Download it to view, or open it
-          in Safari or on an iPhone or Mac.
-        </Notice>
-      ) : (
-        <div className="flex h-full items-center justify-center p-2">
-          <img
-            src={loaded.blobUrl}
-            alt={title}
-            className="max-h-full max-w-full object-contain"
-            onError={() => setMediaFailed(true)}
-          />
-        </div>
-      );
+      return <HeicImage loaded={loaded} title={title} onDownload={onDownload} />;
     case 'audio':
       return mediaFailed ? (
         <Notice onDownload={onDownload}>This browser cannot play this recording. Download it to listen.</Notice>

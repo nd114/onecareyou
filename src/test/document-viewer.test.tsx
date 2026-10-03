@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { deflateRawSync } from 'node:zlib';
 
 import { claimedKind, resolveKind, sniffBytes } from '@/lib/document-formats';
@@ -110,6 +110,9 @@ vi.mock('@/components/documents/PdfPages', () => ({
     </div>
   ),
 }));
+
+const heic2any = vi.hoisted(() => vi.fn());
+vi.mock('heic2any', () => ({ default: heic2any }));
 
 describe('format detection', () => {
   it.each([
@@ -256,6 +259,37 @@ describe('HTML sanitising', () => {
     expect(body).toContain('kept text');
   });
 
+  it('survives hostile input', () => {
+    const cases = [
+      '<img src=x onerror=alert(1)>',
+      '<a href="  JaVa	ScRiPt:alert(1)">x</a>',
+      '<a href="jav&#x61;script:alert(1)">x</a>',
+      '<a href="data:text/html,<script>alert(1)</script>">x</a>',
+      '<svg onload=alert(1)><circle/></svg>',
+      '<math><mtext><table><mglyph><style><img src=x onerror=alert(1)>',
+      '<noscript><p title="</noscript><img src=x onerror=alert(1)>">',
+      '<form><math><mtext></form><form><mglyph><style></math><img src onerror=alert(1)>',
+      '<div style="background:url(https://evil.test/a.png)">x</div>',
+      '<p style="width:expression(alert(1))">x</p>',
+      '<style>@import "https://evil.test/x.css"; p{background:url( https://evil.test/y )}</style><p>x</p>',
+      '<img src="data:image/svg+xml;base64,PHN2Zy8+">',
+      '<img srcset="https://evil.test/a.png 1x" src="x">',
+      '<object data="x"></object><embed src="x"><base href="https://evil.test/">',
+      '<iframe srcdoc="<script>alert(1)</script>"></iframe>',
+    ];
+    for (const c of cases) {
+      const { head, body } = sanitizeHtml(c);
+      const all = head + body;
+      expect(all, c).not.toMatch(/<script|<svg|<iframe|<object|<embed|<base|<form|<math/i);
+      expect(all, c).not.toMatch(/\son\w+\s*=/i);
+      expect(all, c).not.toMatch(/javascript:/i);
+      expect(all, c).not.toMatch(/evil\.test|srcset/i);
+      expect(all, c).not.toMatch(/data:text|data:image\/svg/i);
+      expect(all, c).not.toMatch(/url\s*\(\s*['"]?https?:/i);
+      expect(all, c).not.toMatch(/expression\s*\(|@import/i);
+    }
+  });
+
   it('wraps the result in a no-script CSP', () => {
     const doc = buildHtmlDocument(hostile, false);
     expect(doc).toMatch(/Content-Security-Policy/);
@@ -305,6 +339,33 @@ describe('the viewer chooses a renderer per type', () => {
     expect(pages.getAttribute('data-url')).toBe('blob:mock');
     expect(container.querySelector('iframe')).toBeNull();
     expect(screen.getByRole('button', { name: /print/i })).toBeInTheDocument();
+  });
+
+  it('HEIC: converts to JPEG with heic2any when the browser cannot decode it', async () => {
+    heic2any.mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }));
+    const { container } = show('IMG_0001.HEIC', HEIC);
+    const img = await waitFor(() => {
+      const el = container.querySelector('img');
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    fireEvent.error(img);
+    await waitFor(() => expect(heic2any).toHaveBeenCalled());
+    expect(heic2any.mock.calls[0][0].toType).toBe('image/jpeg');
+    await waitFor(() => expect(container.querySelector('img')).not.toBeNull());
+    expect(screen.queryByText(/iPhone photo/)).toBeNull();
+  });
+
+  it('HEIC: falls back to the notice when conversion fails', async () => {
+    heic2any.mockRejectedValueOnce(new Error('bad'));
+    const { container } = show('IMG_0001.HEIC', HEIC);
+    const img = await waitFor(() => {
+      const el = container.querySelector('img');
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    fireEvent.error(img);
+    await screen.findByText(/iPhone photo/);
   });
 
   it('PDF: falls back to an <object> when pdf.js cannot read it', async () => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useScreenWakeLock } from "@/hooks/useScreenWakeLock";
 import { encodeWav, peakLevel } from "@/lib/wav-encoder";
 
 /**
@@ -55,6 +56,7 @@ export function useLiveScribe({ onWindow, onError }: LiveScribeOptions) {
   }, []);
 
   useEffect(() => teardown, [teardown]);
+  useScreenWakeLock(recording);
 
   const flushWindow = useCallback(() => {
     const chunks = windowRef.current;

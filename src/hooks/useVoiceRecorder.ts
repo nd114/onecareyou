@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+
 /**
  * Minimal MediaRecorder wrapper.
  *
@@ -65,6 +67,7 @@ export function useVoiceRecorder(options: VoiceRecorderOptions = {}) {
   };
 
   useEffect(() => () => cleanup(), []);
+  useScreenWakeLock(isRecording);
 
   const start = useCallback(async () => {
     setError(null);
