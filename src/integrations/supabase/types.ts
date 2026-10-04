@@ -3584,6 +3584,7 @@ export type Database = {
           can_manage_billing: boolean | null
           can_manage_settings: boolean | null
           can_view_all_patients: boolean | null
+          clinical_seat: boolean
           created_at: string
           end_reason: string | null
           ended_at: string | null
@@ -3604,6 +3605,7 @@ export type Database = {
           can_manage_billing?: boolean | null
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
+          clinical_seat?: boolean
           created_at?: string
           end_reason?: string | null
           ended_at?: string | null
@@ -3624,6 +3626,7 @@ export type Database = {
           can_manage_billing?: boolean | null
           can_manage_settings?: boolean | null
           can_view_all_patients?: boolean | null
+          clinical_seat?: boolean
           created_at?: string
           end_reason?: string | null
           ended_at?: string | null
@@ -4859,6 +4862,7 @@ export type Database = {
         Row: {
           accepted_at: string | null
           accepted_by: string | null
+          clinical_seat: boolean
           created_at: string
           email: string
           expires_at: string
@@ -4872,6 +4876,7 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           accepted_by?: string | null
+          clinical_seat?: boolean
           created_at?: string
           email: string
           expires_at?: string
@@ -4885,6 +4890,7 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           accepted_by?: string | null
+          clinical_seat?: boolean
           created_at?: string
           email?: string
           expires_at?: string
@@ -6570,6 +6576,14 @@ export type Database = {
           revenue_share_pct: number
         }[]
       }
+      practice_member_is_clinical: {
+        Args: {
+          _clinical_seat: boolean
+          _practice_id: string
+          _role: Database["public"]["Enums"]["practice_role"]
+        }
+        Returns: boolean
+      }
       practice_role_is_clinical: {
         Args: { _role: Database["public"]["Enums"]["practice_role"] }
         Returns: boolean
@@ -6744,6 +6758,10 @@ export type Database = {
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }
         Returns: string
+      }
+      set_member_clinical_seat: {
+        Args: { _on: boolean; _practice_id: string; _user_id: string }
+        Returns: undefined
       }
       set_practice_affiliation_status: {
         Args: { _practice_id: string; _status: string; _user_id: string }
