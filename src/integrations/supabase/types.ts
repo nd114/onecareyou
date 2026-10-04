@@ -3996,6 +3996,7 @@ export type Database = {
           slug: string | null
           state: string | null
           storage_limit_gb: number
+          staff_seats_purchased: number
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_ends_at: string | null
@@ -4031,6 +4032,7 @@ export type Database = {
           slug?: string | null
           state?: string | null
           storage_limit_gb?: number
+          staff_seats_purchased?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_ends_at?: string | null
@@ -4066,6 +4068,7 @@ export type Database = {
           slug?: string | null
           state?: string | null
           storage_limit_gb?: number
+          staff_seats_purchased?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_ends_at?: string | null
@@ -4918,7 +4921,10 @@ export type Database = {
           scribe_included: boolean
           scribe_minutes_monthly: number | null
           seat_limit: number | null
+          seat_max: number | null
+          staff_seat_model: string
           storage_mb: number | null
+          storage_mb_per_extra_clinician: number | null
           tier: string
         }
         Insert: {
@@ -4927,7 +4933,10 @@ export type Database = {
           scribe_included?: boolean
           scribe_minutes_monthly?: number | null
           seat_limit?: number | null
+          seat_max?: number | null
+          staff_seat_model?: string
           storage_mb?: number | null
+          storage_mb_per_extra_clinician?: number | null
           tier: string
         }
         Update: {
@@ -4936,7 +4945,10 @@ export type Database = {
           scribe_included?: boolean
           scribe_minutes_monthly?: number | null
           seat_limit?: number | null
+          seat_max?: number | null
+          staff_seat_model?: string
           storage_mb?: number | null
+          storage_mb_per_extra_clinician?: number | null
           tier?: string
         }
         Relationships: []
@@ -6002,6 +6014,8 @@ export type Database = {
         Returns: {
           at_patient_limit: boolean
           at_seat_limit: boolean
+          clinician_seat_count: number
+          clinician_seat_limit: number
           over_patient_limit: boolean
           over_seat_limit: boolean
           patient_count: number
@@ -6010,9 +6024,13 @@ export type Database = {
           practice_patient_count: number
           practice_patient_limit: number
           scribe_included: boolean
+          scribe_minutes_included: number
           scribe_minutes_monthly: number
           seat_count: number
           seat_limit: number
+          staff_in_use: number
+          staff_seat_model: string
+          staff_seats_purchased: number
           storage_mb: number
           tier: string
         }[]

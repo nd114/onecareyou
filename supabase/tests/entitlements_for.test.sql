@@ -78,17 +78,17 @@ BEGIN
     'Community: 25 patients, 500 MB, no scribe');
   PERFORM pg_temp.as_user(_solo);
   SELECT * INTO e FROM public.entitlements_for(_solo);
-  PERFORM pg_temp.assert(e.tier = 'solo' AND e.patient_limit = 150 AND e.storage_mb = 10240 AND e.scribe_included,
-    'Individual: 150 patients, 10 GB, scribe included');
+  PERFORM pg_temp.assert(e.tier = 'solo' AND e.patient_limit = 150 AND e.storage_mb = 10240 AND NOT e.scribe_included,
+    'Individual: 150 patients, 10 GB, no scribe');
   PERFORM pg_temp.as_user(_pro);
   SELECT * INTO e FROM public.entitlements_for();
-  PERFORM pg_temp.assert(e.tier = 'pro' AND e.patient_limit = 1000 AND e.seat_limit = 5 AND e.storage_mb = 102400,
-    'Practice: 1,000 patients, 5 seats, 100 GB');
+  PERFORM pg_temp.assert(e.tier = 'pro' AND e.patient_limit = 1000 AND e.seat_limit = 3 AND e.storage_mb = 30720,
+    'Practice: 1,000 patients, 3 clinician seats, 30 GB');
   PERFORM pg_temp.as_user(_ent);
   SELECT * INTO e FROM public.entitlements_for();
-  PERFORM pg_temp.assert(e.tier = 'enterprise' AND e.patient_limit IS NULL AND e.seat_limit IS NULL AND e.storage_mb IS NULL
+  PERFORM pg_temp.assert(e.tier = 'enterprise' AND e.patient_limit IS NULL AND e.seat_limit = 25 AND e.storage_mb = 1048576
                          AND NOT e.at_patient_limit AND NOT e.over_patient_limit,
-    'Enterprise: unlimited patients and seats, negotiated storage');
+    'Enterprise: grandfathered unlimited patients, 25 clinician seats, 1 TB storage');
   PERFORM pg_temp.as_user(_exp);
   SELECT * INTO e FROM public.entitlements_for();
   PERFORM pg_temp.assert(e.tier = 'expired' AND e.patient_limit = 0 AND e.at_patient_limit,
