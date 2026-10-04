@@ -52,9 +52,33 @@ describe("which sections are offered", () => {
     expect(availableSections(soloClinician).map((s) => s.id)).toEqual(["access", "plan"]);
   });
 
-  it("gives a practice owner the core four and a hospital owner the operational sections", () => {
-    expect(availableSections(practiceOwner)).toHaveLength(4);
-    expect(availableSections(hospitalOwner)).toHaveLength(6);
+  it("gives a practice owner the core five and a hospital owner the operational sections", () => {
+    expect(availableSections(practiceOwner)).toHaveLength(5);
+    expect(availableSections(hospitalOwner)).toHaveLength(7);
+  });
+
+  describe("Manage account", () => {
+    const ids = (c: PracticeContext) => availableSections(c).map((s) => s.id);
+    const member: PracticeContext = { hasPractice: true, isHospital: false, isAdmin: false, canManageTeam: true };
+
+    it("is offered to an owner or admin of a practice", () => {
+      expect(ids(practiceOwner)).toContain("account");
+      expect(findSection("account")?.path).toBe("/clinician/practice/account");
+      expect(findSection("account")?.label).toBe("Manage account");
+    });
+
+    it("is offered to whoever manages billing, even if they do not run the team", () => {
+      expect(ids({ ...member, canManageBilling: true })).toContain("account");
+    });
+
+    it("is not offered to an ordinary member, or when billing is simply not known", () => {
+      expect(ids(member)).not.toContain("account");
+      expect(ids({ ...member, canManageBilling: false })).not.toContain("account");
+    });
+
+    it("is not offered without a practice, whatever the capabilities say", () => {
+      expect(ids({ ...soloClinician, isAdmin: true, canManageBilling: true })).not.toContain("account");
+    });
   });
 
   it("keeps them in the same order however many are shown", () => {

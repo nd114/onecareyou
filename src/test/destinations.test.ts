@@ -84,6 +84,7 @@ describe('destination index', () => {
     for (const section of PRACTICE_SECTIONS) expect(owners).toContain(section.path);
     expect(solos).not.toContain('/clinician/practice/people');
     expect(solos).not.toContain('/clinician/practice/details');
+    expect(solos).not.toContain('/clinician/practice/account');
     // Without a context at all, nothing is guessed.
     const unknown = buildDestinations({ audience: 'clinician', can: everything }).map((d) => d.to);
     expect(unknown.some((to) => to.startsWith('/clinician/practice/'))).toBe(false);
@@ -107,6 +108,9 @@ describe('destination index', () => {
       expect.arrayContaining(['/clinician/invoices', '/clinician/practice/plan']),
     );
     expect(find(clinician, 'alert rules')[0]).toBe('/clinician/alerts');
+    for (const query of ['manage account', 'seats', 'add-ons', 'partner', 'scribe minutes']) {
+      expect(find(clinician, query), query).toContain('/clinician/practice/account');
+    }
 
     const patient = buildDestinations({ audience: 'patient' });
     expect(find(patient, 'units')[0]).toBe('/settings?section=units');
