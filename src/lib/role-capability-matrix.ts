@@ -63,9 +63,10 @@ const DEFAULTS: Record<PracticeCapability, PracticeRole[]> = {
 };
 
 /**
- * Owners and admins run the practice. What they read of the clinical record
- * depends on a clinical seat, not on the role, so for these capabilities their
- * cell says so rather than a flat yes.
+ * In a hospital, owners and admins run the organisation and what they read of
+ * the clinical record depends on a clinical seat, not on the role, so for these
+ * capabilities their cell says so rather than a flat yes. Everywhere else an
+ * owner or admin is clinical by role, as before.
  */
 export const SEAT_DEPENDENT: PracticeCapability[] = ['view_phi', 'edit_clinical', 'send_guidance', 'export_data'];
 
@@ -75,8 +76,8 @@ export function roleHas(role: PracticeRole, capability: PracticeCapability): boo
   return DEFAULTS[capability].includes(role);
 }
 
-export function matrixCell(role: PracticeRole, capability: PracticeCapability): CellState {
+export function matrixCell(role: PracticeRole, capability: PracticeCapability, hospital = false): CellState {
   if (!roleHas(role, capability)) return 'no';
-  if ((role === 'owner' || role === 'admin') && SEAT_DEPENDENT.includes(capability)) return 'seat';
+  if (hospital && (role === 'owner' || role === 'admin') && SEAT_DEPENDENT.includes(capability)) return 'seat';
   return 'yes';
 }

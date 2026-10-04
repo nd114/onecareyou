@@ -186,8 +186,11 @@ describe('overview tab', () => {
 });
 
 describe('people and access tab', () => {
-  async function openPeople() {
-    answer(overviewFixture());
+  const hospitalFixture = () =>
+    overviewFixture({ practice: { id: 'p1', name: 'Harbour Hospital', tenant_type: 'hospital', tier: 'enterprise' } });
+
+  async function openPeople(overview: unknown = hospitalFixture()) {
+    answer(overview);
     renderPage();
     await screen.findByTestId('stat-clinician-seats');
     openTab('People & access');
@@ -260,7 +263,7 @@ describe('people and access tab', () => {
     rpc.mockImplementation(async (fn: string) =>
       fn === 'set_member_clinical_seat'
         ? { data: null, error: { code: 'OC002', message: 'seat_limit_reached' } }
-        : { data: overviewFixture(), error: null },
+        : { data: hospitalFixture(), error: null },
     );
     fireEvent.click(screen.getByRole('switch', { name: /Adam Admin/ }));
     await waitFor(() => expect(toastError).toHaveBeenCalled());
@@ -278,6 +281,24 @@ describe('people and access tab', () => {
     expect(within(matrix).queryByRole('switch')).toBeNull();
     expect(within(matrix).queryByRole('checkbox')).toBeNull();
     expect(screen.getByText(/do not see\s+clinical records unless they take a clinical seat/)).toBeInTheDocument();
+  });
+
+  it('keeps owners and admins clinical by role, with no seat switch, outside a hospital', async () => {
+    await openPeople(
+      overviewFixture({
+        members: [
+          { user_id: 'u-owner', name: 'Olivia Owner', role: 'owner', clinical_seat: true, is_clinical: true, status: 'active' },
+          { user_id: 'u-admin', name: 'Adam Admin', role: 'admin', clinical_seat: true, is_clinical: true, status: 'active' },
+          { user_id: 'u-desk', name: 'Fran Front', role: 'front_desk', clinical_seat: false, is_clinical: false, status: 'active' },
+        ],
+      }),
+    );
+    expect(screen.queryAllByRole('switch')).toHaveLength(0);
+    expect(screen.getByTestId('member-u-admin')).toHaveTextContent('Clinical role');
+    const matrix = screen.getByTestId('role-matrix');
+    expect(matrix.querySelector('[data-cell="view_phi:owner:yes"]')).not.toBeNull();
+    expect(matrix.querySelector('[data-cell="view_phi:admin:seat"]')).toBeNull();
+    expect(screen.queryByText(/unless they take a clinical seat/)).toBeNull();
   });
 });
 
@@ -301,7 +322,9 @@ describe('role capability matrix', () => {
     expect(matrixCell('provider', 'manage_team')).toBe('no');
     expect(matrixCell('staff', 'view_phi')).toBe('no');
     expect(matrixCell('owner', 'manage_team')).toBe('yes');
-    expect(matrixCell('owner', 'edit_clinical')).toBe('seat');
+    expect(matrixCell('owner', 'edit_clinical', true)).toBe('seat');
+    expect(matrixCell('owner', 'edit_clinical')).toBe('yes');
+    expect(matrixCell('admin', 'view_phi')).toBe('yes');
   });
 });
 

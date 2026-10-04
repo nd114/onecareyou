@@ -28,8 +28,8 @@ import { formatLimit } from './shared';
 const runsPractice = (role: string) => role === 'owner' || role === 'admin';
 
 /** Why this person does or does not see clinical records, in a phrase. */
-export function clinicalAccessReason(member: AccountMember): string {
-  if (runsPractice(member.role)) {
+export function clinicalAccessReason(member: AccountMember, hospital: boolean): string {
+  if (hospital && runsPractice(member.role)) {
     return member.clinical_seat
       ? 'Takes a clinician seat'
       : 'Runs the practice; no clinician seat, so no clinical records';
@@ -39,6 +39,8 @@ export function clinicalAccessReason(member: AccountMember): string {
 
 export function AccountPeopleTab({ overview }: { overview: PracticeAccountOverview }) {
   const practiceId = overview.practice.id;
+  // Only a hospital's owner or admin is ops-only with an optional clinical seat.
+  const hospital = overview.practice.tenant_type === 'hospital';
   const setSeat = useSetClinicalSeat(practiceId);
   const [confirming, setConfirming] = useState<AccountMember | null>(null);
   const { clinician, staff } = overview.seats;
@@ -85,7 +87,7 @@ export function AccountPeopleTab({ overview }: { overview: PracticeAccountOvervi
                     <TableHead>Name</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Clinical access</TableHead>
-                    <TableHead className="min-w-[220px]">Also practise clinically</TableHead>
+                    <TableHead className="min-w-[220px]">{hospital ? 'Also practise clinically' : 'Seat'}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -95,10 +97,10 @@ export function AccountPeopleTab({ overview }: { overview: PracticeAccountOvervi
                       <TableCell>{roleProfile(m.role).label}</TableCell>
                       <TableCell>
                         <Badge variant={m.is_clinical ? 'default' : 'secondary'}>{m.is_clinical ? 'Yes' : 'No'}</Badge>
-                        <p className="mt-1 text-xs text-muted-foreground">{clinicalAccessReason(m)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{clinicalAccessReason(m, hospital)}</p>
                       </TableCell>
                       <TableCell>
-                        {runsPractice(m.role) ? (
+                        {hospital && runsPractice(m.role) ? (
                           <label className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Switch
                               checked={m.clinical_seat}
@@ -121,7 +123,7 @@ export function AccountPeopleTab({ overview }: { overview: PracticeAccountOvervi
         </CardContent>
       </Card>
 
-      <RoleMatrix />
+      <RoleMatrix hospital={hospital} />
 
       <AlertDialog open={!!confirming} onOpenChange={(open) => !open && setConfirming(null)}>
         <AlertDialogContent>
@@ -151,14 +153,15 @@ export function AccountPeopleTab({ overview }: { overview: PracticeAccountOvervi
 }
 
 /** Read-only. Editing a role's rights is not offered here. */
-function RoleMatrix() {
+function RoleMatrix({ hospital }: { hospital: boolean }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">What each role can do</CardTitle>
         <CardDescription>
-          The defaults for each role, for reference. Owners and admins run the practice and do not see
-          clinical records unless they take a clinical seat.
+          The defaults for each role, for reference.
+          {hospital &&
+            ' Owners and admins run the organisation and do not see clinical records unless they take a clinical seat.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -181,7 +184,7 @@ function RoleMatrix() {
                     {cap.label}
                   </TableCell>
                   {MATRIX_ROLES.map((r) => {
-                    const cell = matrixCell(r.key, cap.key);
+                    const cell = matrixCell(r.key, cap.key, hospital);
                     return (
                       <TableCell key={r.key} className="px-2 text-center" data-cell={`${cap.key}:${r.key}:${cell}`}>
                         {cell === 'yes' && <Check className="mx-auto h-4 w-4 text-primary" aria-label="Yes" />}
