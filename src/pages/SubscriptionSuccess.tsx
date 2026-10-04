@@ -52,7 +52,7 @@ const SubscriptionSuccess = () => {
                   <CheckCircle2 className="h-10 w-10 text-primary-foreground" />
                 </div>
               </motion.div>
-              <CardTitle className="text-3xl">Welcome to Premium!</CardTitle>
+              <CardTitle className="text-3xl">Welcome to Plus!</CardTitle>
               <CardDescription className="text-lg">
                 Your subscription is now active
               </CardDescription>
@@ -72,7 +72,7 @@ const SubscriptionSuccess = () => {
                 >
                   <div className="flex items-center justify-center gap-2 text-primary font-medium">
                     <Sparkles className="h-5 w-5" />
-                    <span>Premium features unlocked!</span>
+                    <span>Plus features unlocked!</span>
                   </div>
                   {subscription.subscription_end && (
                     <p className="text-sm text-muted-foreground mt-2">
@@ -87,7 +87,7 @@ const SubscriptionSuccess = () => {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
-                    Unlimited medications tracking
+                    AI assistant allowance
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />

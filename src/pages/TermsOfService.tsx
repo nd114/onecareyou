@@ -149,13 +149,13 @@ const TermsOfService = () => {
                 </h2>
                 <div className="space-y-3 text-muted-foreground">
                   <p><strong>Free Tier:</strong> Basic features are available at no cost. Free tier users may have limitations on certain features, such as the number of family members or care contacts.</p>
-                  <p><strong>Paid Subscriptions:</strong> Premium features require a paid subscription. By subscribing, you agree to:</p>
+                  <p><strong>Paid Subscriptions:</strong> Plus features require a paid subscription. By subscribing, you agree to:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Pay all applicable fees for your chosen subscription plan</li>
                     <li>Provide valid payment information and keep it current</li>
                     <li>Automatic renewal at the end of each billing period unless cancelled</li>
                   </ul>
-                  <p><strong>Cancellation:</strong> You may cancel your subscription at any time. Access to premium features will continue until the end of your current billing period.</p>
+                  <p><strong>Cancellation:</strong> You may cancel your subscription at any time. Access to Plus features will continue until the end of your current billing period.</p>
                   <p><strong>Refunds:</strong> Subscription fees are generally non-refundable. Exceptions may be made at our sole discretion for billing errors or other extenuating circumstances.</p>
                   <p><strong>Price Changes:</strong> We may change subscription prices with 30 days' advance notice. Continued use after the price change constitutes acceptance.</p>
                 </div>

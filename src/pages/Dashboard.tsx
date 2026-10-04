@@ -376,9 +376,9 @@ const Dashboard = () => {
               {profile?.subscription_tier === 'free' && (
                 <PanelBody className="border-t border-primary/[0.07]">
                   <div className="rounded-xl p-4 gradient-primary text-primary-foreground">
-                    <p className="mb-1 font-semibold">Upgrade to Premium</p>
+                    <p className="mb-1 font-semibold">Upgrade to Plus</p>
                     <p className="mb-3 text-sm opacity-90">
-                      Unlock unlimited medications, a larger Health Vault and AI document summaries
+                      Unlock an AI assistant allowance, a larger Health Vault and AI document summaries
                     </p>
                     <Button size="sm" variant="secondary" asChild>
                       <Link to="/pricing">

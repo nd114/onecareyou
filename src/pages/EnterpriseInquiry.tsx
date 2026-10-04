@@ -361,10 +361,10 @@ const EnterpriseInquiry = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
-                    { icon: Users, text: 'Unlimited patients & team members' },
+                    { icon: Users, text: 'From $2,500/month: 25 clinicians and 5,000 patients' },
                     { icon: Shield, text: 'HIPAA BAA included' },
                     { icon: Link2, text: 'EHR/FHIR integration support' },
-                    { icon: HeadphonesIcon, text: 'Dedicated account manager' },
+                    { icon: HeadphonesIcon, text: 'Priority support' },
                   ].map(({ icon: Icon, text }, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -387,7 +387,7 @@ const EnterpriseInquiry = () => {
                     <br /><br />
                     3. Receive a custom proposal tailored to your practice
                     <br /><br />
-                    4. Complete BAA and get onboarded with priority support
+                    4. Complete the BAA and book onboarding (a paid service, quoted in your proposal)
                   </p>
                 </CardContent>
               </Card>

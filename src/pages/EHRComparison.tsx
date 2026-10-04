@@ -73,7 +73,7 @@ const EHRComparison = () => {
       feature: "Cost Model",
       onecare: "Free for patients",
       traditional: "Per-seat practice licensing",
-      onecareDetail: "Premium features optional",
+      onecareDetail: "Plus features optional",
       traditionalDetail: "$200-500/provider/month"
     }
   ];

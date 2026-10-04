@@ -13,7 +13,7 @@ const ClinicianSubscriptionSuccess = () => {
   const { checkSubscription, subscription } = useClinicianSubscription();
   const [isLoading, setIsLoading] = useState(true);
 
-  const tier = searchParams.get('tier') as 'solo' | 'pro' | 'enterprise' | null;
+  const tier = searchParams.get('tier') as 'solo' | 'pro' | 'clinic' | 'enterprise' | null;
   const tierInfo = tier ? CLINICIAN_TIER_INFO[tier] : null;
 
   useEffect(() => {

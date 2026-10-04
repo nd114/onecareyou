@@ -4,10 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 // Clinician Stripe price IDs.
-// Ladder as of Sep 2026: Community $0, Individual $99, Practice $299,
-// Enterprise from $2,500 (quoted, not self-serve). The tier *keys* stay
+// Ladder as of Oct 2026: Community $0, Individual $99, Practice $299, Clinic
+// $649, Enterprise from $2,500 (quoted, not self-serve). The tier *keys* stay
 // `solo`/`pro`/`enterprise` so existing subscriptions, Stripe metadata and
-// stored patient limits keep resolving; only the labels and amounts changed.
+// stored patient limits keep resolving; `clinic` is a new key. There is no
+// Stripe price for Clinic yet, so it is not in this map and the pricing page
+// sends Clinic enquiries to the contact page rather than to checkout.
 export const CLINICIAN_STRIPE_PRICES = {
   solo_monthly: 'price_1UEWquDycAbKvlfcHGRwg9HO',
   pro_monthly: 'price_1UEWqvDycAbKvlfcgkECMwx6',
@@ -15,9 +17,10 @@ export const CLINICIAN_STRIPE_PRICES = {
 } as const;
 
 // Display copy for the plan cards and the pricing page. The enforced limits are
-// in the tier_limits table (see useEntitlements); a test keeps the patient
-// figures below equal to that table's, so a limit change that updates one and
-// not the other fails the build.
+// in the tier_limits table (see useEntitlements); a test keeps the figures
+// below equal to that table's, so a limit change that updates one and not the
+// other fails the build. Extra clinician seats, staff seats and scribe minute
+// packs are managed from the owner's account page and are not priced here.
 export const CLINICIAN_TIER_INFO = {
   trial: {
     name: 'Trial',
@@ -39,12 +42,14 @@ export const CLINICIAN_TIER_INFO = {
     patientLimit: 25,
     storage: '500 MB',
     features: [
+      '1 clinician',
       'Up to 25 patients',
       'Vitals, medications & adherence tracking',
       'Vital threshold alerts',
       'Secure patient messaging',
       'Assistant in read-only mode',
-      'Community support',
+      'No ambient scribe',
+      'Guides, AI help assistant and email support (best effort)',
     ],
   },
   solo: {
@@ -54,13 +59,14 @@ export const CLINICIAN_TIER_INFO = {
     patientLimit: 150,
     storage: '10 GB',
     features: [
+      '1 clinician',
       'Up to 150 patients',
       'Everything in Community, plus:',
       'Custom alert thresholds',
-      'Ambient scribe & assistant actions (metered)',
       'Patient adherence reports',
       'Encounters, templates & referrals',
-      'Email support',
+      'No ambient scribe minutes',
+      'Email support (best effort)',
     ],
   },
   pro: {
@@ -68,14 +74,34 @@ export const CLINICIAN_TIER_INFO = {
     price: 299,
     period: 'month',
     patientLimit: 1000,
-    storage: '100 GB',
+    storage: '30 GB',
     features: [
+      '3 clinicians included; extra clinician seats $49/month',
+      'Staff seats $15/month each; none included',
       'Up to 1,000 patients',
       'Everything in Individual, plus:',
-      'Staff seats & non-clinical roles',
-      'Patient engagement analytics',
+      'Ambient scribe allowance: 900 minutes a month, pooled across the practice (300 per clinician seat; the owner decides how to divide them). More minutes can be added',
+      '30 GB storage, plus 10 GB per added clinician',
+      'Team management & patient engagement analytics',
       'Invoicing & revenue tracking',
       'Compliance & audit exports',
+      'Guides, AI help assistant and email support',
+    ],
+  },
+  clinic: {
+    name: 'Clinic',
+    price: 649,
+    period: 'month',
+    patientLimit: 3500,
+    storage: '100 GB',
+    features: [
+      '10 clinicians included; extra clinician seats $45/month, up to 30 seats',
+      'Staff seats $15/month each',
+      'Up to 3,500 patients',
+      'Everything in Practice, plus:',
+      'Ambient scribe allowance: 3,000 minutes a month, pooled across the clinic. More minutes can be added',
+      '100 GB storage, plus 10 GB per added clinician',
+      'Multi-site patient routing',
       'Priority support',
     ],
   },
@@ -83,17 +109,18 @@ export const CLINICIAN_TIER_INFO = {
     name: 'Enterprise',
     price: 2500,
     period: 'month',
-    patientLimit: 999999,
-    storage: 'Negotiated',
+    patientLimit: 5000,
+    storage: '1 TB',
     features: [
-      'Unlimited patients',
-      'Everything in Practice, plus:',
-      'Departments, patient routing & sub-admins',
-      'Practice branding (logo & colors)',
-      'Unlimited team seats',
-      'HIPAA BAA included',
+      '25 clinicians and 5,000 patients',
+      'Everything in Clinic, plus:',
+      '15,000 scribe minutes a month, pooled',
+      'Departments & sub-admins',
+      'Custom subdomain & practice branding',
+      'Single sign-on (SSO)',
       'EHR/FHIR connections',
-      'Dedicated account manager & custom onboarding',
+      'HIPAA BAA',
+      'Priority support',
       'Capabilities scoped in your agreement',
     ],
   },
@@ -111,17 +138,24 @@ export function clinicianTierName(key: string | null | undefined): string {
   return info ? info.name : key;
 }
 
-// Feature access by minimum tier required
+// Feature access by minimum tier required. `clinic` is a new key that sits
+// between Practice and Enterprise.
+//
+// ambient_scribe and assistant_actions are NOT edited for the Oct 2026 price
+// change: the pricing page now shows Individual with no scribe minutes, but who
+// may actually use the scribe is enforced elsewhere and was deliberately left
+// alone, so `solo` stays listed here until that enforcement is changed on
+// purpose.
 export const CLINICIAN_FEATURE_TIERS = {
-  engagement_analytics: ['pro', 'enterprise'] as string[],
+  engagement_analytics: ['pro', 'clinic', 'enterprise'] as string[],
   practice_branding: ['enterprise'] as string[],
-  team_management: ['pro', 'enterprise'] as string[],
+  team_management: ['pro', 'clinic', 'enterprise'] as string[],
   hipaa_baa: ['enterprise'] as string[],
   ehr_integration: ['enterprise'] as string[],
-  ambient_scribe: ['trial', 'solo', 'pro', 'enterprise'] as string[],
-  assistant_actions: ['trial', 'solo', 'pro', 'enterprise'] as string[],
-  compliance_export: ['pro', 'enterprise'] as string[],
-  revenue_tracking: ['pro', 'enterprise'] as string[],
+  ambient_scribe: ['trial', 'solo', 'pro', 'clinic', 'enterprise'] as string[],
+  assistant_actions: ['trial', 'solo', 'pro', 'clinic', 'enterprise'] as string[],
+  compliance_export: ['pro', 'clinic', 'enterprise'] as string[],
+  revenue_tracking: ['pro', 'clinic', 'enterprise'] as string[],
   departments: ['enterprise'] as string[],
 } as const;
 
@@ -135,7 +169,7 @@ export function hasFeatureAccess(tier: string, feature: keyof typeof CLINICIAN_F
   return CLINICIAN_FEATURE_TIERS[feature].includes(tier);
 }
 
-export type ClinicianTier = 'trial' | 'community' | 'solo' | 'pro' | 'enterprise' | 'expired';
+export type ClinicianTier = 'trial' | 'community' | 'solo' | 'pro' | 'clinic' | 'enterprise' | 'expired';
 
 
 export interface ClinicianSubscriptionStatus {

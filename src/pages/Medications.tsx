@@ -32,7 +32,6 @@ import { ProposedChangesCard } from '@/components/medications/ProposedChangesCar
 import { MedicationPhotoGallery } from '@/components/medications/MedicationPhotoGallery';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
-import { FREE_MEDICATION_LIMIT } from '@/lib/pricing-constants';
 import { formatDay } from '@/lib/format-date';
 import { medicationTypeLabel } from '@/lib/medication-labels';
 
@@ -62,12 +61,6 @@ const Medications = () => {
   ];
   const filteredMedications = search(searchPool, searchQuery, searchFields);
   const searchSuggestion = didYouMean(searchPool, searchQuery, searchFields);
-
-  const medicationLimit = isPremium ? Infinity : FREE_MEDICATION_LIMIT;
-  const currentCount = activeMedications.length;
-  // Only consider "at limit" after subscription has loaded, so free users don't
-  // see a brief upgrade banner flash while we wait for the tier check.
-  const isAtLimit = subscriptionReady && !isPremium && currentCount >= FREE_MEDICATION_LIMIT;
 
   const handleDelete = async (id: string) => {
     await deleteMedication.mutateAsync(id);
@@ -107,11 +100,6 @@ const Medications = () => {
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              {subscriptionReady && !isPremium && (
-                <Badge variant="outline" className="py-1.5 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm">
-                  {currentCount}/{medicationLimit} medications
-                </Badge>
-              )}
               {subscriptionReady && isPremium && (
                 /* A status chip, not an action. It used to carry the same
                    gradient and padding as the Add button right next to it,
@@ -122,7 +110,7 @@ const Medications = () => {
                   className="gap-1 border border-primary/20 bg-primary/10 py-1 px-2.5 text-xs font-medium text-primary"
                 >
                   <Crown className="h-3 w-3" />
-                  Premium
+                  Plus
                 </Badge>
               )}
               <Button asChild className="gradient-primary border-0 flex-1 sm:flex-none" size="sm">
@@ -139,33 +127,6 @@ const Medications = () => {
         {/* A clinician's proposed change sits above everything else on the page:
             it is the one thing here that is waiting on the patient. */}
         <ProposedChangesCard />
-
-        {/* Upgrade Banner */}
-        {isAtLimit && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8"
-          >
-            <Card className="gradient-primary text-primary-foreground border-0">
-              <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Crown className="h-8 w-8 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1">You've reached your free limit</h3>
-                    <p className="opacity-90">
-                      Upgrade to Premium to add unlimited medications and unlock advanced features.
-                    </p>
-                  </div>
-                </div>
-                <Button variant="secondary" asChild className="flex-shrink-0">
-                  <Link to="/pricing">Upgrade Now</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
 
         {/* Tabs for List/Interactions */}
         <motion.div
