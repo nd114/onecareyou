@@ -39,8 +39,8 @@ BEGIN
   UPDATE public.profiles SET email = 'doc@lmc.org'      WHERE user_id = _domain;
   UPDATE public.profiles SET email = 'someone@else.com' WHERE user_id = _rando;
 
-  INSERT INTO public.practices (id, name, tenant_type, slug, created_by, allowed_email_domains)
-  VALUES (_hosp, 'Affiliation Test Hospital', 'hospital', 'afftest', _chief, ARRAY['lmc.org']);
+  INSERT INTO public.practices (id, name, tenant_type, slug, created_by, allowed_email_domains, member_limit)
+  VALUES (_hosp, 'Affiliation Test Hospital', 'hospital', 'afftest', _chief, ARRAY['lmc.org'], 5);
 
   -- Bulk import from the hospital's staff CSV. The duplicate row is ignored.
   PERFORM set_config('request.jwt.claim.sub', _chief::text, true);

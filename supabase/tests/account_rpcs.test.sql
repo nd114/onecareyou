@@ -407,8 +407,8 @@ BEGIN
   PERFORM pg_temp.assert((SELECT stripe_ref FROM public.scribe_packs WHERE practice_id = _p) = 'evt_arp_5', 'tied to its event');
 
   _j := pg_temp.overview_as(_o, _p);
-  PERFORM pg_temp.assert((_j->'scribe'->>'pack_minutes_total')::int = 500 AND (_j->'scribe'->>'total_minutes')::int = 1400,
-    'the overview shows the pack beside the pool (' || (_j->'scribe'->>'total_minutes') || ')');
+  PERFORM pg_temp.assert((_j->'scribe'->>'pack_minutes_total')::int = 500 AND (_j->'scribe'->>'total_minutes')::int = 900 + 300 + 500,
+    'the overview shows the pack beside the pool: 900 plan + 300 for the one purchased clinician seat + 500 pack (' || (_j->'scribe'->>'total_minutes') || ')');
   PERFORM pg_temp.assert((_j->'seats'->'staff'->>'purchased')::int = 3 AND (_j->'addons'->>'clinician_seats')::int = 1,
     'and the seat add-ons');
   PERFORM pg_temp.assert(jsonb_array_length(_j->'addons'->'scribe_packs') = 1, 'and lists the pack');

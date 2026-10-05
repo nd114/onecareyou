@@ -65,7 +65,7 @@ BEGIN
     SET name = EXCLUDED.name, email = EXCLUDED.email, phone_number = EXCLUDED.phone_number;
 
   -- Hospital B, its clinician, and Bode, who shares with B and nobody else.
-  INSERT INTO public.practices (id, name, created_by) VALUES (_hosp_b, 'Hospital B', _admin_b);
+  INSERT INTO public.practices (id, name, created_by, member_limit) VALUES (_hosp_b, 'Hospital B', _admin_b, 5);
   INSERT INTO public.practice_members (practice_id, user_id, role, status)
   VALUES (_hosp_b, _dr_d, 'clinician', 'active');
   INSERT INTO public.practice_shares (practice_id, user_id, is_active, share_all, permissions)
@@ -77,7 +77,7 @@ BEGIN
   -- 1. The forgery: share yourself, then "end" the share as a stranger's
   -- ==========================================================================
   PERFORM pg_temp.as_user(_attacker);
-  INSERT INTO public.practices (id, name, created_by) VALUES (_front, 'Front Co', _attacker);
+  INSERT INTO public.practices (id, name, created_by, member_limit) VALUES (_front, 'Front Co', _attacker, 5);
   INSERT INTO public.practice_shares (practice_id, user_id, is_active, share_all, permissions)
   VALUES (_front, _attacker, true, true, '{}');
 

@@ -14,7 +14,7 @@ DECLARE v_p uuid := gen_random_uuid();
         v_changed int;
         v_flag boolean;
 BEGIN
-  INSERT INTO public.practices(id, name, created_by) VALUES (v_p, 'Riverside Medical', v_owner);
+  INSERT INTO public.practices(id, name, created_by, member_limit) VALUES (v_p, 'Riverside Medical', v_owner, 5);
   INSERT INTO public.practice_members(practice_id, user_id, role) VALUES (v_p, v_owner, 'owner')
     ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'owner', status = 'active';
   INSERT INTO public.practice_members(practice_id, user_id, role) VALUES (v_p, v_doc, 'clinician')

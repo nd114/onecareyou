@@ -28,8 +28,8 @@ BEGIN
     -- A confirmed account, but the invitation was never sent to it.
     (v_stranger, 'someone-else@x.com',   now());
 
-  INSERT INTO public.practices (id, name, created_by)
-  VALUES (v_practice, 'Test Hospital', v_admin);
+  INSERT INTO public.practices (id, name, created_by, member_limit)
+  VALUES (v_practice, 'Test Hospital', v_admin, 5);
 
   INSERT INTO public.tenant_owner_invitations (practice_id, email, invited_by)
   VALUES (v_practice, 'cmo@hospital.org', v_admin)
