@@ -120,7 +120,10 @@ describe('upgradeHintFor', () => {
   it('names the next plan from the pricing figures', () => {
     expect(upgradeHintFor('trial')).toContain(CLINICIAN_TIER_INFO.solo.name);
     expect(upgradeHintFor('solo')).toContain('1,000');
-    expect(upgradeHintFor('pro')).toContain('unlimited');
+    expect(upgradeHintFor('pro')).toContain(CLINICIAN_TIER_INFO.clinic.name);
+    expect(upgradeHintFor('pro')).toContain('3,500');
+    expect(upgradeHintFor('clinic')).toContain(CLINICIAN_TIER_INFO.enterprise.name);
+    expect(upgradeHintFor('clinic')).toContain('5,000');
     expect(upgradeHintFor('enterprise')).toBeNull();
   });
 });

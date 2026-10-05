@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   STORED_UNLIMITED,
@@ -13,21 +13,39 @@ import { CLINICIAN_TIER_INFO } from '@/hooks/useClinicianSubscription';
 
 type Seed = Record<string, { patient: number | null; seats: number | null; storage: number | null }>;
 
-/** Parses the tier_limits seed out of the migration, so the test reads the same figures the database is given. */
+/**
+ * Parses the tier_limits seed out of the migrations, so the test reads the same
+ * figures the database is given. Every migration that inserts into tier_limits
+ * is read in filename order and a later insert for a tier overrides an earlier
+ * one, which is what ON CONFLICT DO UPDATE does when they run in order.
+ */
 function seedFromMigration(): Seed {
-  const sql = readFileSync(
-    resolve(__dirname, '../../supabase/migrations/20261011030000_tier_limits_entitlements_and_caps.sql'),
-    'utf8',
-  );
-  const start = sql.indexOf('INSERT INTO public.tier_limits');
-  const values = sql.slice(start, sql.indexOf('ON CONFLICT', start));
+  const dir = resolve(__dirname, '../../supabase/migrations');
   const out: Seed = {};
   const n = (v: string) => (v === 'NULL' ? null : Number(v));
-  for (const m of values.matchAll(/\('(\w+)',\s*(NULL|\d+),\s*(NULL|\d+),\s*(NULL|\d+),/g)) {
-    out[m[1]] = { patient: n(m[2]), seats: n(m[3]), storage: n(m[4]) };
+  for (const file of readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()) {
+    const sql = readFileSync(resolve(dir, file), 'utf8');
+    let from = 0;
+    for (;;) {
+      const start = sql.indexOf('INSERT INTO public.tier_limits', from);
+      if (start < 0) break;
+      const conflict = sql.indexOf('ON CONFLICT', start);
+      const end = conflict < 0 ? sql.indexOf(';', start) : conflict;
+      const values = sql.slice(start, end);
+      for (const m of values.matchAll(/\('(\w+)',\s*(NULL|\d+),\s*(NULL|\d+),\s*(NULL|\d+),/g)) {
+        out[m[1]] = { patient: n(m[2]), seats: n(m[3]), storage: n(m[4]) };
+      }
+      from = end;
+    }
   }
   return out;
 }
+
+/** The decided figures, written out here so a change to the page alone is also caught. */
+const DECIDED = {
+  patients: { community: 25, solo: 150, pro: 1000, clinic: 3500, enterprise: 5000 },
+  clinicianSeats: { community: 1, solo: 1, pro: 3, clinic: 10 },
+} as const;
 
 const rows = (r: Array<Partial<TierLimitRow> & { tier: string }>): Record<string, TierLimitRow> =>
   Object.fromEntries(
@@ -118,30 +136,33 @@ describe('loadTierLimits and patientCapacity', () => {
 describe('the seeded limits match the published figures', () => {
   const seed = seedFromMigration();
 
+  it('the page figures are the decided ones', () => {
+    for (const [tier, n] of Object.entries(DECIDED.patients)) {
+      expect(CLINICIAN_TIER_INFO[tier as keyof typeof CLINICIAN_TIER_INFO].patientLimit).toBe(n);
+    }
+  });
+
   it('parsed every plan', () => {
-    expect(Object.keys(seed).sort()).toEqual(['community', 'enterprise', 'expired', 'pro', 'solo', 'trial']);
+    expect(Object.keys(seed).sort()).toEqual(['clinic', 'community', 'enterprise', 'expired', 'pro', 'solo', 'trial']);
   });
 
-  it.each(['trial', 'community', 'solo', 'pro'] as const)('%s patient limit equals the pricing page', (tier) => {
-    expect(seed[tier].patient).toBe(CLINICIAN_TIER_INFO[tier].patientLimit);
-  });
-
-  it('enterprise is unlimited, which the client info stores as the sentinel', () => {
-    expect(seed.enterprise.patient).toBeNull();
-    expect(CLINICIAN_TIER_INFO.enterprise.patientLimit).toBe(STORED_UNLIMITED);
-  });
+  it.each(['trial', 'community', 'solo', 'pro', 'clinic', 'enterprise'] as const)(
+    '%s patient limit equals the pricing page',
+    (tier) => {
+      expect(seed[tier]?.patient).toBe(CLINICIAN_TIER_INFO[tier].patientLimit);
+    },
+  );
 
   it('storage equals the published allowance', () => {
-    const mb = (s: string) => (s.endsWith('GB') ? parseInt(s, 10) * 1024 : parseInt(s, 10));
-    for (const tier of ['trial', 'community', 'solo', 'pro'] as const) {
-      expect(seed[tier].storage).toBe(mb(CLINICIAN_TIER_INFO[tier].storage));
+    const mb = (s: string) =>
+      s.endsWith('TB') ? parseInt(s, 10) * 1024 * 1024 : s.endsWith('GB') ? parseInt(s, 10) * 1024 : parseInt(s, 10);
+    for (const tier of ['trial', 'community', 'solo', 'pro', 'clinic', 'enterprise'] as const) {
+      expect(seed[tier]?.storage).toBe(mb(CLINICIAN_TIER_INFO[tier].storage));
     }
-    expect(seed.enterprise.storage).toBeNull();
   });
 
-  it('seats: Practice is 5 as published, Enterprise unlimited', () => {
-    expect(seed.pro.seats).toBe(5);
-    expect(seed.enterprise.seats).toBeNull();
+  it.each(['community', 'solo', 'pro', 'clinic'] as const)('%s included clinician seats are as decided', (tier) => {
+    expect(seed[tier]?.seats).toBe(DECIDED.clinicianSeats[tier]);
   });
 
   it('an ended trial can add nothing', () => {

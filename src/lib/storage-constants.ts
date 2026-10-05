@@ -5,16 +5,18 @@ export const GB = 1024 * 1024 * 1024;
 
 /** Patient plan allowances (documents, images, transcripts). */
 export const PATIENT_STORAGE_GB = {
-  free: 0.5,
+  free: 2,
   premium: 10,
 } as const;
 
 /** Clinician / practice plan allowances. Enterprise is a pooled tenant allowance. */
 export const CLINICIAN_STORAGE_GB: Record<string, number> = {
   trial: 2,
-  solo: 25,
-  pro: 100,
-  enterprise: 1000,
+  community: 0.5,
+  solo: 10,
+  pro: 30,
+  clinic: 100,
+  enterprise: 1024,
   expired: 2,
 };
 

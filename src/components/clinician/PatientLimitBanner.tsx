@@ -12,11 +12,12 @@ interface PatientLimitBannerProps {
  * own figures), as a sentence for the banner. Null when there is nothing above.
  */
 export function upgradeHintFor(tier: string): string | null {
-  const next = (key: 'solo' | 'pro') =>
+  const next = (key: 'solo' | 'pro' | 'clinic' | 'enterprise') =>
     `Upgrade to ${CLINICIAN_TIER_INFO[key].name} for up to ${CLINICIAN_TIER_INFO[key].patientLimit.toLocaleString('en-US')} patients.`;
   if (tier === 'trial' || tier === 'community') return next('solo');
   if (tier === 'solo') return next('pro');
-  if (tier === 'pro') return `Upgrade to ${CLINICIAN_TIER_INFO.enterprise.name} for unlimited patients.`;
+  if (tier === 'pro') return next('clinic');
+  if (tier === 'clinic') return next('enterprise');
   return null;
 }
 

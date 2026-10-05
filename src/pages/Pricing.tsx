@@ -33,11 +33,11 @@ const premiumFeatures = PREMIUM_FEATURE_DETAIL;
 const faqs = [
   {
     question: 'Can I switch plans at any time?',
-    answer: 'Yes! You can upgrade to Premium at any time. If you downgrade, the change will take effect at the end of your current billing period.',
+    answer: 'Yes! You can upgrade to Plus at any time. If you downgrade, the change will take effect at the end of your current billing period.',
   },
   {
-    question: 'What\'s the difference between Free and Premium?',
-    answer: `The Free plan lets you track up to 3 medications with all core features including vitals tracking and Care Circle sharing. Premium unlocks unlimited medications, ${FAMILY_HEALTH_ENABLED ? 'family member profiles, ' : ''}AI lab report parsing, health reports export, and more.`,
+    question: 'What\'s the difference between Free and Plus?',
+    answer: `The Free plan has unlimited medications and documents, drug interaction warnings, reminders, vitals tracking, Care Circle sharing and 2 GB of storage. Plus adds an AI assistant allowance, ${FAMILY_HEALTH_ENABLED ? 'family member profiles, ' : ''}AI lab report parsing and document summaries, the Health Document Vault, health reports export and 10 GB of storage.`,
   },
   {
     question: 'What payment methods do you accept?',
@@ -45,7 +45,7 @@ const faqs = [
   },
   {
     question: 'Can I cancel my subscription?',
-    answer: 'Yes, you can cancel anytime from your account settings. You\'ll continue to have Premium access until the end of your current billing period.',
+    answer: 'Yes, you can cancel anytime from your account settings. You\'ll continue to have Plus access until the end of your current billing period.',
   },
   {
     question: 'Is my health data secure?',
@@ -131,12 +131,12 @@ const Pricing = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <SEOHead
-        title="Pricing — Free & Premium Health Tracking Plans"
-        description="Compare OneCare plans. Start free with medication tracking and vitals monitoring. Upgrade to Premium for unlimited medications, health vault and AI lab parsing."
+        title="Pricing — Free & Plus Health Tracking Plans"
+        description="Compare OneCare plans. Start free with unlimited medications, documents and vitals monitoring. Upgrade to Plus for an AI assistant allowance, AI lab parsing, health vault and 10 GB storage."
         canonical="/pricing"
         jsonLd={[
           breadcrumbSchema([{ name: 'Home', path: '/' }, { name: 'Pricing', path: '/pricing' }]),
-          productSchema('OneCare Premium', 'Premium health tracking with unlimited medications, a health vault and AI-powered features', '9.99'),
+          productSchema('OneCare Plus', 'Plus health tracking with an AI assistant allowance, AI lab parsing, a health vault and 10 GB of storage', '9.99'),
         ]}
       />
       <Header />
@@ -171,8 +171,8 @@ const Pricing = () => {
             )}
             
             <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Keeping your own health record should not be a subscription. Premium adds the
-              heavier tools — unlimited medications, lab parsing, AI document summaries — and you can
+              Keeping your own health record should not be a subscription. Plus adds the
+              heavier tools — an AI assistant allowance, lab parsing, AI document summaries — and you can
               leave with your data whenever you like.
             </p>
 
@@ -253,7 +253,7 @@ const Pricing = () => {
               </Card>
             </motion.div>
 
-            {/* Premium Plan */}
+            {/* Plus Plan (stored tier key: premium) */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -268,7 +268,7 @@ const Pricing = () => {
                   </span>
                 </div>
                 <CardHeader className="text-center pb-2">
-                  <CardTitle className="text-2xl">Premium</CardTitle>
+                  <CardTitle className="text-2xl">Plus</CardTitle>
                   <CardDescription>Deeper insights for proactive health management</CardDescription>
                   <div className="pt-4">
                     {isAnnual ? (

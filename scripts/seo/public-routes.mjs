@@ -46,7 +46,7 @@ const STATIC = [
   { path: '/how-it-works', file: 'src/pages/HowItWorks.tsx', priority: '0.9',
     title: 'How It Works | OneCare', description: 'Guided walkthroughs of the OneCare patient app and the clinician surface: triage inbox, charts, scribe and audit trail.' },
   { path: '/pricing', file: 'src/pages/Pricing.tsx', priority: '0.9',
-    title: 'Pricing | OneCare', description: 'Compare OneCare plans. Start free with medication tracking and vitals; upgrade for more medications, Health Vault and AI lab parsing.' },
+    title: 'Pricing | OneCare', description: 'Compare OneCare plans. Start free with unlimited medications and vitals tracking; upgrade to Plus for an AI assistant allowance, Health Vault and AI lab parsing.' },
   { path: '/for-clinicians', file: 'src/pages/ForClinicians.tsx', priority: '0.9',
     title: 'OneCare for Clinicians | OneCare', description: 'A connected view of patient vitals, medications and documents after discharge, with an ambient scribe and an audit trail.' },
   { path: '/clinician/why-onecare', file: 'src/pages/ClinicianWhyOneCare.tsx', priority: '0.7',

@@ -28,7 +28,7 @@ export function webApplicationSchema() {
       "@type": "Offer",
       price: "0",
       priceCurrency: "USD",
-      description: "Free plan with medication tracking and vitals monitoring",
+      description: "Free plan with unlimited medication and document tracking and vitals monitoring",
     },
     description:
       "Health tracking platform for patients and healthcare providers. Manage medications, track vitals, and coordinate care.",

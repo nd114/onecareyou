@@ -356,7 +356,7 @@ const Settings = () => {
                     {isPremium && (
                       <Badge className="mt-1 gradient-primary border-0">
                         <Crown className="h-3 w-3 mr-1" />
-                        Premium
+                        Plus
                       </Badge>
                     )}
                   </div>
@@ -373,7 +373,7 @@ const Settings = () => {
                       </div>
                       <div>
                         <p className="font-medium">
-                          {isPremium ? 'Premium Plan' : 'Free Plan'}
+                          {isPremium ? 'Plus Plan' : 'Free Plan'}
                         </p>
                         {subscription?.subscription_end && (
                           <p className="text-xs text-muted-foreground">

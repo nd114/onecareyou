@@ -46,6 +46,7 @@ export function SubscriptionManagementCard({ patientCount = 0 }: SubscriptionMan
     switch (tier) {
       case 'enterprise': return 'default';
       case 'pro': return 'default';
+      case 'clinic': return 'default';
       case 'solo': return 'secondary';
       case 'trial': return 'outline';
       case 'expired': return 'destructive';
@@ -57,6 +58,7 @@ export function SubscriptionManagementCard({ patientCount = 0 }: SubscriptionMan
     switch (tier) {
       case 'enterprise': return <Crown className="h-3 w-3" />;
       case 'pro': return <Sparkles className="h-3 w-3" />;
+      case 'clinic': return <Sparkles className="h-3 w-3" />;
       default: return null;
     }
   };

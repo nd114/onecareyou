@@ -1,16 +1,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  FileText, Search, FolderOpen, Loader2, Crown, Lock, Folder, Files, FolderPlus,
+  FileText, Search, FolderOpen, Loader2, Folder, Files, FolderPlus,
   NotebookPen, Pencil, Trash2, CalendarRange,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { SectionTabs } from '@/components/layout/SectionTabs';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
@@ -60,7 +58,6 @@ const noteSearchFields = (n: PersonalNote) => [
 import { VisitSummariesSection } from '@/components/documents/VisitSummariesSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { FREE_DOCUMENT_LIMIT } from '@/lib/pricing-constants';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,8 +102,6 @@ const HealthVault = () => {
   useEffect(() => {
     checkSubscription().then(() => setCheckedSub(true));
   }, [checkSubscription]);
-
-  const isOverFreeLimit = !isPremium && documents.length >= FREE_DOCUMENT_LIMIT;
 
   // Archived documents are out of the way by default and one toggle from
   // being back. Not hidden: a patient who put something away needs to be able
@@ -224,45 +219,13 @@ const HealthVault = () => {
                 <NotebookPen className="h-4 w-4 mr-2" />
                 New note
               </Button>
-              {!isOverFreeLimit && (
-                <UploadDocumentDialog
-                  defaultFolder={activeFolder === 'all' || activeFolder === '__unfiled__' ? null : activeFolder}
-                />
-              )}
+              <UploadDocumentDialog
+                defaultFolder={activeFolder === 'all' || activeFolder === '__unfiled__' ? null : activeFolder}
+              />
             </div>
           </div>
 
           <ReceivedDocumentNotices />
-
-          {/* Premium Upsell Banner for free users at limit */}
-          {isOverFreeLimit && (
-            <Card className="mb-6 border-primary/30 bg-primary/5">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Crown className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">You've reached {FREE_DOCUMENT_LIMIT} documents</p>
-                  <p className="text-xs text-muted-foreground">Upgrade to Premium for unlimited document storage and AI summaries.</p>
-                </div>
-                <Button size="sm" asChild className="flex-shrink-0">
-                  <Link to="/pricing">
-                    <Crown className="h-4 w-4 mr-1" />
-                    Upgrade
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Free tier info for users not at limit */}
-          {!isPremium && !isOverFreeLimit && documents.length > 0 && (
-            <div className="mb-4 text-xs text-muted-foreground flex items-center gap-1">
-              <Lock className="h-3 w-3" />
-              {documents.length} of {FREE_DOCUMENT_LIMIT} free documents used.{' '}
-              <Link to="/pricing" className="text-primary hover:underline">Upgrade for unlimited</Link>
-            </div>
-          )}
 
           {/* What a clinician wrote after a visit. Sits above the files
               because it is the thing people open the Vault to find after an
