@@ -42,3 +42,9 @@ verify_jwt = false
 
 [functions.voice-memo-retention]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-addon-checkout]
+verify_jwt = true

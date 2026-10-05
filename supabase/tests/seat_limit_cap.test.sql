@@ -162,7 +162,7 @@ BEGIN
   -- 7. The cap is data, not code
   -- ======================================================================
   -- A practice-type tenant takes the larger of its stored figure and the plan
-  -- of its owner; the table says Practice has five seats.
+  -- of its owner; the table says Practice includes three clinician seats.
   PERFORM pg_temp.as_user(NULL);
   INSERT INTO public.clinician_profiles (user_id, first_name, subscription_tier, patient_limit)
   VALUES (_own, 'Seat', 'pro', 1000);
@@ -172,7 +172,7 @@ BEGIN
   VALUES (_prac2, _own, 'owner', 'active')
   ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'owner', status = 'active';
   SELECT seat_limit INTO _lim FROM public._practice_limits(_prac2);
-  PERFORM pg_temp.assert(_lim = 5, 'a practice-type tenant owned by a Practice plan has the published five seats (' || _lim || ')');
+  PERFORM pg_temp.assert(_lim = 3, 'a practice-type tenant owned by a Practice plan has the published three clinician seats (' || _lim || ')');
   UPDATE public.tier_limits SET seat_limit = 2 WHERE tier = 'pro';
   UPDATE public.practices SET member_limit = 1 WHERE id = _prac2;
   SELECT seat_limit INTO _lim FROM public._practice_limits(_prac2);

@@ -207,6 +207,9 @@ serve(async (req) => {
         accepted_at: new Date().toISOString(),
         invited_by: ownerId,
         ...FLAGS[s.role],
+        // The demo owner and admin are the hospital's doctors: they take a clinical
+        // seat. (Without one a hospital owner or admin is ops-only.)
+        clinical_seat: s.role === "owner" || s.role === "admin",
       }, { onConflict: "practice_id,user_id" });
       if (error) notes.push(`member ${s.email}: ${error.message}`);
 
