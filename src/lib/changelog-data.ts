@@ -14,6 +14,23 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-10-05',
+    version: '0.9.13',
+    title: 'Voice memos, plan limits, paid seats, a Manage account page and the new pricing',
+    tags: ['clinician', 'patient', 'platform', 'ai', 'security'],
+    bullets: [
+      'Fix — A visit recording no longer loses audio when a transcription window fails: the scribe keeps what it has, says what is missing and lets you retry. Recording now shows a small pill from anywhere in the app, and the scribe can be started from the patient page, the schedule and Search.',
+      'What clinicians will notice — Voice memos: dictate a quick memo on a phone or tablet, find it in the Voice memos inbox, assign it to a patient and turn it into a draft note. Memos are deleted on a schedule once handled.',
+      'Platform — Scribe use is now recorded per minute (log only, nothing is blocked), which is the groundwork for pooled minutes and packs.',
+      'What clinicians will notice — Plan limits (patients, clinician seats, storage) come from one table that the app and the edge functions both read. Limits refuse only new additions; nobody already over a limit loses anything, and the app says what to do instead of showing an error code.',
+      'What practices will notice — Non-clinical staff (front desk, billing, read-only) are paid seats at $15 each on Practice and Clinic, none included. Extra clinicians are $49 on Practice (3 included) and $45 on Clinic (10 included, up to 30). Existing practices were counted in, so nobody is locked out.',
+      'What hospitals will notice — A hospital\'s owners and admins run the organisation and see clinical records only when given a clinical seat; existing owners and admins keep access. Outside hospitals, owners and admins are clinical as before.',
+      'What owners will notice — A Manage account page (Practice > Account): seats and add-ons, who has clinical access, the scribe minutes pool with a per-person allowance, add-on checkout, and a request to become a partner institution. Scribe allowances are informational for now.',
+      'Security — Seat counts, add-on purchases and partner status can be changed only by the billing system or a platform admin, never from a client; add-on purchases are applied once per payment event.',
+      'What everyone will notice — New pricing is live on every page: Clinic ($649) added, Individual no longer lists the scribe, Premium is now Plus, free patients have no cap on medications or documents, and the Family plan appears on the roadmap only.',
+    ],
+  },
+  {
     date: '2026-09-28',
     version: '0.9.12',
     title: 'Records stay with the person who filed them; inactive practices shown, not hidden',
