@@ -77,8 +77,9 @@ describe('patient AI is Plus only', () => {
   it('the refusal body carries the code a client keys on', () => {
     const d = decidePatientAi('free');
     if (d.allow) throw new Error('unreachable');
-    expect(gateBody(d)).toMatchObject({ error: 'plus_required', retryable: false });
-    expect(typeof gateBody(d).message).toBe('string');
+    const refusal = d as Exclude<typeof d, { allow: true }>;
+    expect(gateBody(refusal)).toMatchObject({ error: 'plus_required', retryable: false });
+    expect(typeof gateBody(refusal).message).toBe('string');
   });
 });
 
