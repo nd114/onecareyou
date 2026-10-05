@@ -20,6 +20,7 @@ import { PracticeContactCard } from '@/components/clinician/PracticeContactCard'
 import { PracticeRevenueShareCard } from '@/components/clinician/PracticeRevenueShareCard';
 import { PracticeCurrencyCard } from '@/components/clinician/PracticeCurrencyCard';
 import { PracticeStorageCard } from '@/components/clinician/PracticeStorageCard';
+import { PracticeAccountPage } from '@/components/clinician/account/PracticeAccountPage';
 import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
@@ -90,7 +91,8 @@ const ClinicianPracticeSection = () => {
       <ClinicianHeader />
       <SectionTabs section="practice" variant="clinician" />
 
-      <main className="container max-w-3xl px-4 py-4 sm:px-6 sm:py-8">
+      {/* The account page carries tables, so it gets more room than the cards. */}
+      <main className={`container px-4 py-4 sm:px-6 sm:py-8 ${section.id === 'account' ? 'max-w-5xl' : 'max-w-3xl'}`}>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <Button variant="ghost" size="sm" className="-ml-2 mb-3" asChild>
             <Link to="/clinician/practice">
@@ -156,6 +158,10 @@ const ClinicianPracticeSection = () => {
               ) : (
                 <Card><CardContent className="py-8 text-sm text-muted-foreground">Practice settings are available to authorised personnel.</CardContent></Card>
               )
+            )}
+
+            {section.id === 'account' && (
+              <PracticeAccountPage isAdmin={context.isAdmin} canManageBilling={context.canManageBilling} />
             )}
 
             {section.id === 'plan' && (

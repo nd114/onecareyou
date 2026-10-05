@@ -92,6 +92,7 @@ const PRACTICE_KEYWORDS: Record<string, string[]> = {
   access: ['shared patients', 'ehr', 'integrations', 'connections'],
   details: ['address', 'branding', 'logo', 'currency', 'joining code', 'hospital code'],
   plan: ['billing', 'subscription', 'usage', 'storage', 'plan', 'pricing', 'upgrade'],
+  account: ['seats', 'billing', 'add-ons', 'addons', 'partner', 'partnership', 'scribe minutes', 'clinician seat', 'staff seat'],
 };
 
 /** Shown wherever the scribe is offered but this member cannot use it. */

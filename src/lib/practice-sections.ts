@@ -34,7 +34,14 @@
  * plan includes — so they cannot answer differently.
  */
 
-export type PracticeSectionId = "people" | "departments" | "routing" | "access" | "details" | "plan";
+export type PracticeSectionId =
+  | "people"
+  | "departments"
+  | "routing"
+  | "access"
+  | "details"
+  | "plan"
+  | "account";
 
 export interface PracticeContext {
   /** Whether this clinician belongs to a practice at all. */
@@ -123,6 +130,18 @@ export const PRACTICE_SECTIONS: PracticeSection[] = [
     // The subscription card is always there, even on a trial — for whoever
     // looks after the money.
     isAvailable: (c) => c.canManageBilling ?? true,
+  },
+  {
+    id: "account",
+    label: "Manage account",
+    summary: "Seats, access, scribe minutes, add-ons and partnership.",
+    path: "/clinician/practice/account",
+    // Seats and add-ons are the owner's to configure, and the account's money
+    // is the biller's. The overview tab is there for either, so the page is
+    // never blank. Unlike "plan", an unknown billing answer is not permissive
+    // here: somebody who has not been told they run the practice is not
+    // offered its seat controls.
+    isAvailable: (c) => c.hasPractice && (c.isAdmin || c.canManageBilling === true),
   },
 ];
 
