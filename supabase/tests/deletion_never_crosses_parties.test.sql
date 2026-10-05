@@ -422,6 +422,8 @@ BEGIN
      'practice_department_members.practice_id', 'practice_department_members.department_id',
      'practice_patient_departments.practice_id', 'practice_patient_departments.department_id',
      'practice_clinician_allowlist.practice_id',
+     -- Account management: a tenant's own scribe caps, bought packs and partner requests.
+     'practice_scribe_allocations.practice_id', 'scribe_packs.practice_id', 'partner_requests.practice_id',
      -- Platform-only. (beta_nda_signatures.tester_id is SET NULL since
      -- 20261010160000: a signed NDA is evidence and outlives the tester row.)
      'qhin_record_provenance.import_id'

@@ -64,6 +64,36 @@ export type Database = {
           },
         ]
       }
+      addon_events: {
+        Row: {
+          addon: string
+          created_at: string
+          detail: Json
+          practice_id: string | null
+          qty: number
+          status: string
+          stripe_event_id: string
+        }
+        Insert: {
+          addon: string
+          created_at?: string
+          detail?: Json
+          practice_id?: string | null
+          qty: number
+          status: string
+          stripe_event_id: string
+        }
+        Update: {
+          addon?: string
+          created_at?: string
+          detail?: Json
+          practice_id?: string | null
+          qty?: number
+          status?: string
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
       admin_attention_dismissals: {
         Row: {
           admin_user_id: string
@@ -3099,6 +3129,50 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_requests: {
+        Row: {
+          contact: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          message: string | null
+          practice_id: string
+          requested_by: string
+          status: string
+        }
+        Insert: {
+          contact: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          message?: string | null
+          practice_id: string
+          requested_by: string
+          status?: string
+        }
+        Update: {
+          contact?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          message?: string | null
+          practice_id?: string
+          requested_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_requests_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_action_log: {
         Row: {
           action: string
@@ -3843,6 +3917,38 @@ export type Database = {
           },
         ]
       }
+      practice_scribe_allocations: {
+        Row: {
+          cap_minutes: number
+          practice_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          cap_minutes: number
+          practice_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          cap_minutes?: number
+          practice_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_scribe_allocations_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_shares: {
         Row: {
           connected_at: string
@@ -3978,6 +4084,7 @@ export type Database = {
           brand_accent_color: string | null
           brand_logo_url: string | null
           city: string | null
+          clinician_seats_purchased: number
           country: string | null
           created_at: string
           created_by: string
@@ -3989,9 +4096,11 @@ export type Database = {
           member_limit: number | null
           name: string
           npi: string | null
+          partner_status: string
           patient_limit: number | null
           phone: string | null
           primary_color: string | null
+          referral_slug: string | null
           revenue_share_pct: number
           slug: string | null
           state: string | null
@@ -4014,6 +4123,7 @@ export type Database = {
           brand_accent_color?: string | null
           brand_logo_url?: string | null
           city?: string | null
+          clinician_seats_purchased?: number
           country?: string | null
           created_at?: string
           created_by: string
@@ -4025,9 +4135,11 @@ export type Database = {
           member_limit?: number | null
           name: string
           npi?: string | null
+          partner_status?: string
           patient_limit?: number | null
           phone?: string | null
           primary_color?: string | null
+          referral_slug?: string | null
           revenue_share_pct?: number
           slug?: string | null
           state?: string | null
@@ -4050,6 +4162,7 @@ export type Database = {
           brand_accent_color?: string | null
           brand_logo_url?: string | null
           city?: string | null
+          clinician_seats_purchased?: number
           country?: string | null
           created_at?: string
           created_by?: string
@@ -4061,9 +4174,11 @@ export type Database = {
           member_limit?: number | null
           name?: string
           npi?: string | null
+          partner_status?: string
           patient_limit?: number | null
           phone?: string | null
           primary_color?: string | null
+          referral_slug?: string | null
           revenue_share_pct?: number
           slug?: string | null
           state?: string | null
@@ -4629,6 +4744,41 @@ export type Database = {
           },
         ]
       }
+      scribe_packs: {
+        Row: {
+          expires_at: string
+          id: string
+          minutes: number
+          practice_id: string
+          purchased_at: string
+          stripe_ref: string | null
+        }
+        Insert: {
+          expires_at?: string
+          id?: string
+          minutes: number
+          practice_id: string
+          purchased_at?: string
+          stripe_ref?: string | null
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          minutes?: number
+          practice_id?: string
+          purchased_at?: string
+          stripe_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scribe_packs_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scribe_usage: {
         Row: {
           audio_seconds: number
@@ -4916,6 +5066,7 @@ export type Database = {
       }
       tier_limits: {
         Row: {
+          clinician_addon_price_usd: number | null
           note: string | null
           patient_limit: number | null
           scribe_included: boolean
@@ -4923,11 +5074,13 @@ export type Database = {
           seat_limit: number | null
           seat_max: number | null
           staff_seat_model: string
+          staff_seat_price_usd: number | null
           storage_mb: number | null
           storage_mb_per_extra_clinician: number | null
           tier: string
         }
         Insert: {
+          clinician_addon_price_usd?: number | null
           note?: string | null
           patient_limit?: number | null
           scribe_included?: boolean
@@ -4935,11 +5088,13 @@ export type Database = {
           seat_limit?: number | null
           seat_max?: number | null
           staff_seat_model?: string
+          staff_seat_price_usd?: number | null
           storage_mb?: number | null
           storage_mb_per_extra_clinician?: number | null
           tier: string
         }
         Update: {
+          clinician_addon_price_usd?: number | null
           note?: string | null
           patient_limit?: number | null
           scribe_included?: boolean
@@ -4947,6 +5102,7 @@ export type Database = {
           seat_limit?: number | null
           seat_max?: number | null
           staff_seat_model?: string
+          staff_seat_price_usd?: number | null
           storage_mb?: number | null
           storage_mb_per_extra_clinician?: number | null
           tier?: string
@@ -5808,6 +5964,16 @@ export type Database = {
         }
         Returns: string
       }
+      apply_addon_change: {
+        Args: {
+          _addon: string
+          _pack_minutes?: number
+          _practice_id: string
+          _qty: number
+          _stripe_event_id: string
+        }
+        Returns: Json
+      }
       apply_medication_proposal: {
         Args: {
           p_proposal: Database["public"]["Tables"]["record_change_proposals"]["Row"]
@@ -6594,6 +6760,10 @@ export type Database = {
           revenue_share_pct: number
         }[]
       }
+      practice_account_overview: {
+        Args: { _practice_id: string }
+        Returns: Json
+      }
       practice_member_is_clinical: {
         Args: {
           _clinical_seat: boolean
@@ -6678,6 +6848,10 @@ export type Database = {
         Returns: string
       }
       request_client_ip: { Args: never; Returns: string }
+      request_partnership: {
+        Args: { _contact: string; _message?: string; _practice_id: string }
+        Returns: string
+      }
       request_practice_affiliation: { Args: { _slug: string }; Returns: string }
       required_withdrawal_authority: {
         Args: { _sent_at: string }
@@ -6776,6 +6950,10 @@ export type Database = {
       set_institution_slug: {
         Args: { _practice_id: string; _slug: string }
         Returns: string
+      }
+      set_scribe_member_cap: {
+        Args: { _cap_minutes?: number; _practice_id: string; _user_id: string }
+        Returns: Json
       }
       set_member_clinical_seat: {
         Args: { _on: boolean; _practice_id: string; _user_id: string }
