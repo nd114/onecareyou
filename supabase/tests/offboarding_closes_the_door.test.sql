@@ -90,7 +90,7 @@ BEGIN
     (_private,   'offb-private@test.local',   now()),
     (_owner2,    'offb-owner2@test.local',    now());
 
-  INSERT INTO public.practices (id, name, created_by) VALUES (_prac, 'Offboarding General', _owner);
+  INSERT INTO public.practices (id, name, created_by, member_limit) VALUES (_prac, 'Offboarding General', _owner, 5);
   INSERT INTO public.practice_members (practice_id, user_id, role, status) VALUES
     (_prac, _owner, 'owner', 'active')
   ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'owner', status = 'active';

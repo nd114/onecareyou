@@ -128,7 +128,7 @@ BEGIN
   -- 4. A practice member rides the practice's plan
   -- ======================================================================
   PERFORM pg_temp.as_user(NULL);
-  INSERT INTO public.practices (id, name, created_by, tenant_type) VALUES (_prac, 'Ent Practice', _pro, 'practice');
+  INSERT INTO public.practices (id, name, created_by, tenant_type, member_limit) VALUES (_prac, 'Ent Practice', _pro, 'practice', 5);
   INSERT INTO public.practice_members (practice_id, user_id, role, status) VALUES (_prac, _pro, 'owner', 'active')
   ON CONFLICT (practice_id, user_id) DO UPDATE SET role = 'owner', status = 'active';
   INSERT INTO public.practice_members (practice_id, user_id, role, status) VALUES (_prac, _mem, 'provider', 'active');

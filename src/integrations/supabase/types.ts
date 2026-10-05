@@ -5071,6 +5071,7 @@ export type Database = {
           patient_limit: number | null
           scribe_included: boolean
           scribe_minutes_monthly: number | null
+          scribe_minutes_per_extra_clinician: number
           seat_limit: number | null
           seat_max: number | null
           staff_seat_model: string
@@ -5085,6 +5086,7 @@ export type Database = {
           patient_limit?: number | null
           scribe_included?: boolean
           scribe_minutes_monthly?: number | null
+          scribe_minutes_per_extra_clinician?: number
           seat_limit?: number | null
           seat_max?: number | null
           staff_seat_model?: string
@@ -5099,6 +5101,7 @@ export type Database = {
           patient_limit?: number | null
           scribe_included?: boolean
           scribe_minutes_monthly?: number | null
+          scribe_minutes_per_extra_clinician?: number
           seat_limit?: number | null
           seat_max?: number | null
           staff_seat_model?: string

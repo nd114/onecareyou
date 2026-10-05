@@ -70,6 +70,11 @@ BEGIN
   INSERT INTO public.practices (id, name, created_by) VALUES
     (_hosp, 'Authors Practice', _owner),
     (_elsewhere, 'Another Practice', _owner);
+  -- Made under the owner's own session, so the practice starts with one clinician
+  -- seat. The platform (no signed-in user) gives it the five this test seats.
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  UPDATE public.practices SET member_limit = 5 WHERE id IN (_hosp, _elsewhere);
+  PERFORM set_config('request.jwt.claim.sub', _owner::text, true);
   INSERT INTO public.practice_members (practice_id, user_id, role, status) VALUES
     (_hosp, _owner, 'owner',      'active'),
     (_hosp, _dr,    'provider',   'active'),

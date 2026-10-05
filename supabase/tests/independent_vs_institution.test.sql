@@ -52,9 +52,9 @@ BEGIN
     (_outsider,'outsider@test.local'), (_owner,'owner@test.local'),
     (_private,'private@test.local'), (_hospital,'hospital@test.local');
 
-  INSERT INTO public.practices (id, name, created_by, tenant_type) VALUES
-    (_city,'City General',_owner,'hospital'),
-    (_other,'Other Hospital',_owner,'hospital');
+  INSERT INTO public.practices (id, name, created_by, tenant_type, member_limit) VALUES
+    (_city,'City General',_owner,'hospital',5),
+    (_other,'Other Hospital',_owner,'hospital',5);
 
   -- Dr Nair works at City General, and can see its whole roster.
   INSERT INTO public.practice_members (practice_id, user_id, role, status, can_view_all_patients)
