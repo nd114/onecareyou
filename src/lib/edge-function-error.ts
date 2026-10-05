@@ -27,7 +27,16 @@ export interface EdgeFunctionFailure {
   message: string;
   /** The HTTP status, when there was one. Useful for telling apart a refusal from a crash. */
   status?: number;
+  /**
+   * A machine code, when the function sent one next to a readable message
+   * (`{ error: "plus_required", message: "..." }`). The plan gates do this:
+   * `plus_required`, `scribe_not_in_plan`, `plan_check_failed`.
+   */
+  code?: string;
 }
+
+/** A plan-gate code, so a screen can show an upgrade state instead of an error. */
+export const PLAN_GATE_CODES = ['plus_required', 'scribe_not_in_plan', 'plan_check_failed'] as const;
 
 /** A stated reason beats an inferred one; these are only used when there is none. */
 const FALLBACKS: Record<number, string> = {
@@ -54,7 +63,7 @@ export async function edgeFunctionError(error: unknown): Promise<EdgeFunctionFai
 
   if (response) {
     const stated = await readStatedReason(response);
-    if (stated) return { message: stated, status };
+    if (stated) return { message: stated.message, status, code: stated.code };
   }
 
   if (status && FALLBACKS[status]) return { message: FALLBACKS[status], status };
@@ -92,7 +101,9 @@ function responseFrom(error: unknown): Response | undefined {
  * shape is not a message for a person — an HTML error page, a stack trace —
  * and showing it raw would be worse than the fallback.
  */
-async function readStatedReason(response: Response): Promise<string | null> {
+async function readStatedReason(
+  response: Response,
+): Promise<{ message: string; code?: string } | null> {
   let text: string;
   try {
     text = await response.text();
@@ -103,14 +114,18 @@ async function readStatedReason(response: Response): Promise<string | null> {
 
   try {
     const parsed = JSON.parse(text) as { error?: unknown; message?: unknown };
-    const stated = typeof parsed.error === "string" ? parsed.error : parsed.message;
-    if (typeof stated === "string" && stated.trim()) return stated.trim();
-    return null;
+    const code = (PLAN_GATE_CODES as readonly string[]).includes(parsed.error as string)
+      ? (parsed.error as string)
+      : undefined;
+    // A gate code is for the machine; the sentence next to it is for the person.
+    const stated = code ? parsed.message : typeof parsed.error === "string" ? parsed.error : parsed.message;
+    if (typeof stated === "string" && stated.trim()) return { message: stated.trim(), code };
+    return code ? { message: code } : null;
   } catch {
     // Plain text is fine when it is short enough to be a sentence somebody
     // wrote rather than a page somebody served.
     const trimmed = text.trim();
-    if (trimmed.length <= 300 && !trimmed.startsWith("<")) return trimmed;
+    if (trimmed.length <= 300 && !trimmed.startsWith("<")) return { message: trimmed };
     return null;
   }
 }

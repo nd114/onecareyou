@@ -13,6 +13,8 @@ import { Mic, MicOff, Loader2, CheckCircle2, FileAudio, AlertTriangle, Archive, 
 import { Link } from 'react-router-dom';
 import { FileDictationDialog, type DictationExtract } from '@/components/clinician/FileDictationDialog';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { ScribeNotInPlanNotice } from '@/components/clinician/ScribeNotInPlanNotice';
+import { useScribePlan, SCRIBE_NOT_IN_PLAN_REASON } from '@/hooks/useScribePlan';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { format } from 'date-fns';
@@ -52,6 +54,7 @@ export default function ClinicianDictations() {
    * ended most of them mid-sentence — then dropped the recording, because
    * nothing was listening for a stop the clinician had not asked for.
    */
+  const plan = useScribePlan();
   const recorder = useVoiceRecorder({
     maxDurationMs: 10 * 60_000,
     onLimitReached: (blob) => {
@@ -92,6 +95,10 @@ export default function ClinicianDictations() {
   patientLabelRef.current = patientLabel;
 
   const handleRecord = async () => {
+    if (plan.blocked) {
+      toast.error(SCRIBE_NOT_IN_PLAN_REASON);
+      return;
+    }
     if (recorder.isRecording) {
       // Read the clock before stopping: `stop()` resets it, so anything read
       // afterwards is zero.
@@ -249,8 +256,9 @@ export default function ClinicianDictations() {
                 value={patientLabel} onChange={(e) => setPatientLabel(e.target.value)}
                 placeholder="e.g. Alex Moreau — 9am follow-up" disabled={recorder.isRecording} />
             </div>
+            {plan.blocked && <ScribeNotInPlanNotice />}
             <div className="flex items-center gap-3">
-              <Button onClick={handleRecord} variant={recorder.isRecording ? 'destructive' : 'default'}>
+              <Button onClick={handleRecord} disabled={plan.blocked} variant={recorder.isRecording ? 'destructive' : 'default'}>
                 {recorder.isRecording ? <><MicOff className="h-4 w-4 mr-2" /> Stop ({seconds}s)</> : <><Mic className="h-4 w-4 mr-2" /> Record</>}
               </Button>
               {recorder.isRecording && <span className="text-sm text-muted-foreground">{seconds}s / 60s</span>}

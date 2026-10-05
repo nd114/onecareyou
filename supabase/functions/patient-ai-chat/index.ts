@@ -6,6 +6,7 @@ import {
   MEDICATION_TOPICS,
   type FetchLike,
 } from "../_shared/medication-knowledge.ts";
+import { checkPatientAi, gateBody } from "../_shared/plan-gates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -321,6 +322,15 @@ serve(async (req) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // The assistant is a Plus feature. Checked here, not only on screen.
+    const plan = await checkPatientAi(supabase, user.id);
+    if (!plan.allow) {
+      return new Response(JSON.stringify(gateBody(plan)), {
+        status: plan.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

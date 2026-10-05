@@ -17,6 +17,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { MEMO_STYLE, SOAP_SYSTEM, wavSeconds } from "../_shared/scribe-soap.ts";
+import { checkScribe, gateBody } from "../_shared/plan-gates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,6 +48,10 @@ Deno.serve(async (req) => {
     if (!userId) return json({ error: "Unauthorized" }, 401);
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    // The scribe is not part of every plan (Individual and Community have none).
+    // Checked here, not only on screen. A failed lookup is a retryable 503.
+    const plan = await checkScribe(admin, userId);
+    if (!plan.allow) return json(gateBody(plan), plan.status);
     const { data: memo } = await admin
       .from("voice_memos")
       .select("id, clinician_user_id, practice_id, patient_user_id, audio_path, status, transcript, draft")

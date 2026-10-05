@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveFamilyMember } from '@/contexts/FamilyContext';
 import { toast } from 'sonner';
+import { PATIENT_PLUS_QUERY_KEY } from '@/hooks/usePatientPlus';
 import { edgeFunctionError } from '@/lib/edge-function-error';
 
 export type DocumentCategory = 
@@ -192,7 +193,14 @@ export function useHealthDocuments() {
       // The function explains itself — no AI consent, document too large, not
       // a readable format. Rethrowing the raw error replaces all of that with
       // "Edge Function returned a non-2xx status code".
-      if (error) throw new Error((await edgeFunctionError(error)).message);
+      if (error) {
+        const failure = await edgeFunctionError(error);
+        // Summaries are Plus-only; remember it so the card stops offering one.
+        if (failure.code === 'plus_required') {
+          queryClient.setQueryData([PATIENT_PLUS_QUERY_KEY, user?.id], 'free');
+        }
+        throw new Error(failure.message);
+      }
       return data;
     },
     onSuccess: () => {

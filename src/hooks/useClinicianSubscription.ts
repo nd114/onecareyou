@@ -141,18 +141,20 @@ export function clinicianTierName(key: string | null | undefined): string {
 // Feature access by minimum tier required. `clinic` is a new key that sits
 // between Practice and Enterprise.
 //
-// ambient_scribe and assistant_actions are NOT edited for the Oct 2026 price
-// change: the pricing page now shows Individual with no scribe minutes, but who
-// may actually use the scribe is enforced elsewhere and was deliberately left
-// alone, so `solo` stays listed here until that enforcement is changed on
-// purpose.
+// ambient_scribe: Individual (solo) and Community have no scribe, by decision.
+// The edge functions refuse them (encounter-scribe, clinician-dictation-process,
+// voice-memo-process, transcribe-segment: 403 scribe_not_in_plan), reading the
+// tier_limits table; this list is the same decision for the screen, and
+// useScribePlan checks it alongside the database's scribe_included.
+// assistant_actions is the clinician assistant proposing changes, not the
+// scribe, and is unchanged.
 export const CLINICIAN_FEATURE_TIERS = {
   engagement_analytics: ['pro', 'clinic', 'enterprise'] as string[],
   practice_branding: ['enterprise'] as string[],
   team_management: ['pro', 'clinic', 'enterprise'] as string[],
   hipaa_baa: ['enterprise'] as string[],
   ehr_integration: ['enterprise'] as string[],
-  ambient_scribe: ['trial', 'solo', 'pro', 'clinic', 'enterprise'] as string[],
+  ambient_scribe: ['trial', 'pro', 'clinic', 'enterprise'] as string[],
   assistant_actions: ['trial', 'solo', 'pro', 'clinic', 'enterprise'] as string[],
   compliance_export: ['pro', 'clinic', 'enterprise'] as string[],
   revenue_tracking: ['pro', 'clinic', 'enterprise'] as string[],

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProposedAction, ActionOutcome, executeAction } from '@/lib/ai-actions';
 import { chatStorageKey } from '@/lib/chat-storage';
 import { useConversationLogger } from '@/hooks/useConversationLogger';
+import { edgeFunctionError } from '@/lib/edge-function-error';
 import { parseRecordQuery, type RecordQuery } from "@/lib/ai-record-query";
 
 
@@ -33,7 +34,7 @@ export interface ChatMessage {
   actionOutcomes?: ActionOutcome[];
 }
 
-export type AIChatError = { kind: 'consent_required' | 'rate_limit' | 'unavailable' | 'unknown'; message: string };
+export type AIChatError = { kind: 'consent_required' | 'plus_required' | 'rate_limit' | 'unavailable' | 'unknown'; message: string };
 
 interface UseAIChatOptions {
   /**
@@ -182,6 +183,32 @@ export function useAIChat(options: UseAIChatOptions = {}) {
         body: { messages: history, allowActions },
       });
 
+      // The assistant is a Plus feature and the function refuses Free accounts
+      // with 403 { error: 'plus_required' }. That is not a chat reply: roll the
+      // message back and let the panel show the upgrade state.
+      const refusal = data?.error === 'plus_required' ? { code: 'plus_required', message: data.message as string | undefined }
+        : fnError ? await edgeFunctionError(fnError) : null;
+      if (refusal?.code === 'plus_required') {
+        const err: AIChatError = {
+          kind: 'plus_required',
+          message: refusal.message || 'The AI assistant is part of OneCare Plus.',
+        };
+        setError(err);
+        setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+        return err;
+      }
+      if (refusal?.code === 'plan_check_failed') {
+        const err: AIChatError = { kind: 'unavailable', message: refusal.message };
+        setError(err);
+        setMessages(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: refusal.message,
+          timestamp: new Date(),
+        }]);
+        return err;
+      }
+
       // supabase.functions.invoke returns FunctionsHttpError on non-2xx; the
       // `data` payload still carries our JSON error body, so inspect that first.
       if (data?.error) {
@@ -209,7 +236,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
         return err;
       }
 
-      if (fnError) throw new Error(fnError.message || 'Failed to get response');
+      if (fnError) throw new Error(refusal?.message || fnError.message || 'Failed to get response');
 
       const queries: RecordQuery[] = Array.isArray(data.recordQueries)
         ? (data.recordQueries as unknown[])

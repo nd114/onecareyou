@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CARE_RECORD_SOURCE } from '@/hooks/useCareRecordSnapshot';
+import { Link } from 'react-router-dom';
+import { usePatientPlus } from '@/hooks/usePatientPlus';
 import { FileText, Download, Archive, ArchiveRestore, Sparkles, Calendar, Tag, Upload, Loader2, Share2, Users, HeartHandshake, Lock, Eye, FolderInput, Folder, Check, Stethoscope, Pencil, Building2 } from 'lucide-react';
 import { documentOriginIsClinical, documentOriginLabel } from '@/lib/document-origin';
 import { Card, CardContent } from '@/components/ui/card';
@@ -55,6 +57,9 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
   // Folders are real records now, so an empty one is offered here too — there
   // is no longer a "folder that exists but cannot be filed into".
   const { folderNames: folders } = useDocumentFolders();
+  // Summaries are Plus-only. A Free patient is pointed at the plan, not offered
+  // a button that can only be refused.
+  const { isFree: planIsFree } = usePatientPlus();
 
   // The page decides whether archived documents are shown at all; the card
   // only has to offer the right action.
@@ -363,6 +368,14 @@ export function DocumentCard({ document: doc, isPremium = false }: DocumentCardP
                     <Sparkles className="h-3 w-3" />
                   )}
                   Summarize with AI
+                </Button>
+              )}
+              {!doc.ai_summary && !isPremium && planIsFree && (
+                <Button asChild variant="outline" size="sm" className="mt-2 h-7 text-xs gap-1">
+                  <Link to="/pricing" data-testid="summary-plus-prompt">
+                    <Sparkles className="h-3 w-3" />
+                    AI summaries are a Plus feature
+                  </Link>
                 </Button>
               )}
 

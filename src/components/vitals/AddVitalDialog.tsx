@@ -25,6 +25,8 @@ import { Progress } from '@/components/ui/progress';
 import { useUnitPreferences } from '@/hooks/useUnitPreferences';
 import { vitalPlaceholder } from '@/lib/vital-placeholder';
 import { edgeFunctionError } from '@/lib/edge-function-error';
+import { usePatientPlus } from '@/hooks/usePatientPlus';
+import { PlusUpgradePrompt } from '@/components/PlusUpgradePrompt';
 
 interface AddVitalDialogProps {
   open: boolean;
@@ -54,6 +56,9 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
   const { hasConsent, grantConsent, checkConsentRequired } = useAIConsent();
   const { getDisplayUnit, getNormalRange, convertToBaseUnit } = useUnitPreferences();
   const { uploadDocument } = useHealthDocuments();
+  // Lab-report reading is Plus-only: a Free patient gets the plan prompt in
+  // place of the upload area and never reaches the function.
+  const { isFree: planIsFree, markFree } = usePatientPlus();
   
   const [mode, setMode] = useState<'manual' | 'upload'>('manual');
   const [step, setStep] = useState<'entry' | 'confirm'>('entry');
@@ -207,7 +212,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
             body: requestBody
           });
 
-          if (error) throw new Error((await edgeFunctionError(error)).message);
+          if (error) throw await labFailure(error);
           if (!data.success) throw new Error(data.error || 'Failed to extract vitals from report');
 
           if (data.extractedVitals?.length > 0) {
@@ -278,7 +283,7 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
 
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error((await edgeFunctionError(error)).message);
+        throw await labFailure(error);
       }
 
       if (!data.success) {
@@ -304,6 +309,13 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
         fileInputRef.current.value = '';
       }
     }
+  };
+
+  /** A refusal for plan reasons switches the dialog to the upgrade prompt. */
+  const labFailure = async (error: unknown) => {
+    const failure = await edgeFunctionError(error);
+    if (failure.code === 'plus_required') markFree();
+    return new Error(failure.message);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -640,6 +652,11 @@ export function AddVitalDialog({ open, onOpenChange, onSave }: AddVitalDialogPro
                   </div>
                 </>
               )
+            ) : planIsFree ? (
+              <PlusUpgradePrompt
+                feature="Reading a lab report"
+                description="Upload a photo or PDF and OneCare pulls out the readings for you to confirm. Included with OneCare Plus. You can still enter readings by hand."
+              />
             ) : (
               <>
                 {/* Upload Section */}

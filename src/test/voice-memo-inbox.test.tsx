@@ -43,6 +43,11 @@ vi.mock("@/integrations/supabase/client", () => {
     },
   };
 });
+// The scribe is gated by plan; these tests are about the scribe itself, so the plan includes it.
+vi.mock("@/hooks/useEntitlements", async (orig) => ({
+  ...(await orig<typeof import("@/hooks/useEntitlements")>()),
+  useEntitlements: () => ({ entitlements: { tier: "pro", scribeIncluded: true }, isLoading: false }),
+}));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "clin-1" } }) }));
 vi.mock("@/components/layout/SectionTabs", () => ({ SectionTabs: () => null }));
 vi.mock("@/components/clinician/ClinicianHeader", () => ({ ClinicianHeader: () => null }));

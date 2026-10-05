@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { checkPatientAi, gateBody } from "../_shared/plan-gates.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -154,16 +155,14 @@ Deno.serve(async (req) => {
 
     console.log('Processing lab report for user:', user.id);
 
-    // AI lab report parsing is a Premium feature; checked here, not only on screen.
-    const { data: tierRow } = await supabase
-      .from('profiles')
-      .select('subscription_tier')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (tierRow?.subscription_tier !== 'premium') {
+    // AI lab report parsing is a Plus feature; checked here, not only on screen.
+    // The caller's own client is subject to RLS on profiles, which is the
+    // caller's own row, so the check needs no elevated key.
+    const plan = await checkPatientAi(supabase, user.id);
+    if (!plan.allow) {
       return new Response(
-        JSON.stringify({ success: false, error: 'AI lab report parsing is part of Premium.' }),
-        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, ...gateBody(plan) }),
+        { status: plan.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

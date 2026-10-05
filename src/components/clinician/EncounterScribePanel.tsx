@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useScribeRecorder } from "@/contexts/ScribeRecorderContext";
+import { ScribeNotInPlanNotice } from "@/components/clinician/ScribeNotInPlanNotice";
+import { useScribePlan } from "@/hooks/useScribePlan";
 import { Checkbox } from "@/components/ui/checkbox";
 import { parseMentionedVital } from "@/lib/mentioned-vitals";
 import { Button } from "@/components/ui/button";
@@ -90,6 +92,7 @@ export function EncounterScribePanel({ encounter, onApply, returnTo, memo, onMem
   // The recorder lives above the router (ScribeRecorderProvider), so the
   // recording, the live words and any unsent audio outlive this dialog.
   const scribe = useScribeRecorder();
+  const plan = useScribePlan();
   const target = { encounterId: encounter.id, returnTo: returnTo ?? "/clinician/today" };
   const isRec = scribe.recording && scribe.target?.encounterId === encounter.id;
   const otherRecording = scribe.recording && !isRec;
@@ -251,6 +254,7 @@ export function EncounterScribePanel({ encounter, onApply, returnTo, memo, onMem
   return (
     <>
     <div className="space-y-4">
+      {plan.blocked && <ScribeNotInPlanNotice />}
       <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {live.recording ? (
@@ -282,7 +286,7 @@ export function EncounterScribePanel({ encounter, onApply, returnTo, memo, onMem
               </span>
             </>
           ) : (
-            <Button size="sm" className="gap-2" onClick={startRecording} disabled={!!busy || otherRecording}>
+            <Button size="sm" className="gap-2" onClick={startRecording} disabled={!!busy || otherRecording || plan.blocked}>
               <Mic className="h-3.5 w-3.5" /> Record visit
             </Button>
           )}
@@ -302,7 +306,7 @@ export function EncounterScribePanel({ encounter, onApply, returnTo, memo, onMem
             variant="outline"
             className="gap-2"
             onClick={() => fileRef.current?.click()}
-            disabled={live.recording || otherRecording || !!busy}
+            disabled={live.recording || otherRecording || !!busy || plan.blocked}
           >
             <Upload className="h-3.5 w-3.5" /> Upload audio
           </Button>

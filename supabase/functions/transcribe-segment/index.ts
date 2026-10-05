@@ -10,6 +10,7 @@
  * Auth: requires a signed-in clinician JWT.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkScribe, gateBody } from "../_shared/plan-gates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +20,7 @@ const corsHeaders = {
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MAX_BYTES = 8 * 1024 * 1024;
 
 Deno.serve(async (req) => {
@@ -32,6 +34,11 @@ Deno.serve(async (req) => {
     });
     const { data: userData } = await userClient.auth.getUser();
     if (!userData?.user) return json({ error: "Unauthorized" }, 401);
+
+    // The scribe is not part of every plan (Individual and Community have none).
+    // Checked here, not only on screen. A failed lookup is a retryable 503.
+    const plan = await checkScribe(createClient(SUPABASE_URL, SERVICE_KEY), userData.user.id);
+    if (!plan.allow) return json(gateBody(plan), plan.status);
 
     const form = await req.formData().catch(() => null);
     const file = form?.get("file");

@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useClinicianPatients } from '@/hooks/useClinicianPatients';
+import { ScribeNotInPlanNotice } from '@/components/clinician/ScribeNotInPlanNotice';
+import { useScribePlan } from '@/hooks/useScribePlan';
 
 /**
  * The front door to the scribe.
@@ -21,6 +23,7 @@ const ClinicianScribe = () => {
   const navigate = useNavigate();
   const { patients } = useClinicianPatients();
   const [q, setQ] = useState('');
+  const plan = useScribePlan();
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -51,6 +54,15 @@ const ClinicianScribe = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {plan.blocked ? (
+              <>
+                <ScribeNotInPlanNotice />
+                <Button variant="ghost" size="sm" onClick={() => navigate('/clinician/today')}>
+                  Back to Today
+                </Button>
+              </>
+            ) : (
+            <>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -98,6 +110,8 @@ const ClinicianScribe = () => {
             <Button variant="ghost" size="sm" onClick={() => navigate('/clinician/today')}>
               Back to Today
             </Button>
+            </>
+            )}
           </CardContent>
         </Card>
       </main>
