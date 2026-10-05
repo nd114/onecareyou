@@ -11,6 +11,7 @@
 // existing upload + encounter-scribe path.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useScribePlan, SCRIBE_NOT_IN_PLAN_REASON } from "@/hooks/useScribePlan";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLiveScribe } from "@/hooks/useLiveScribe";
 import { useBeforeUnloadGuard } from "@/hooks/useBeforeUnloadGuard";
@@ -125,6 +126,9 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
   const memoInFlight = useRef<Set<string>>(new Set());
   const [unsent, setUnsent] = useState<PendingRecording[]>([]);
   const sessionRef = useRef<ActiveSession | null>(null);
+  const plan = useScribePlan();
+  const planBlockedRef = useRef(false);
+  planBlockedRef.current = plan.blocked;
   const noteStyleRef = useRef("soap");
 
   const refreshUnsent = useCallback(async () => {
@@ -295,6 +299,12 @@ export function ScribeRecorderProvider({ children }: { children: React.ReactNode
   const start = useCallback(
     async (t: ScribeTarget, noteStyle: string) => {
       if (live.recording || !userId) return false;
+      // Not part of Individual or Community. Refused before the microphone
+      // opens, not after a recording has been made and the server says no.
+      if (planBlockedRef.current) {
+        toast.error(SCRIBE_NOT_IN_PLAN_REASON);
+        return false;
+      }
       liveTextRef.current = "";
       setLiveText("");
       setResult(null);

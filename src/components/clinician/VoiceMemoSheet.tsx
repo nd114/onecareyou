@@ -4,6 +4,8 @@ import { Download, Loader2, Mic, Pause, Play, RotateCw, Square } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useOptionalScribeRecorder } from "@/contexts/ScribeRecorderContext";
+import { ScribeNotInPlanNotice } from "@/components/clinician/ScribeNotInPlanNotice";
+import { useScribePlan } from "@/hooks/useScribePlan";
 import { formatElapsed } from "@/components/clinician/ScribeRecordingPill";
 
 /** The wording the clinician sees before they record. Kept in one place so tests and copy agree. */
@@ -45,6 +47,7 @@ export function useOptionalVoiceMemoSheet() {
 export function VoiceMemoSheet() {
   const sheet = useContext(Ctx);
   const scribe = useOptionalScribeRecorder();
+  const plan = useScribePlan();
   const location = useLocation();
   if (!sheet || !scribe) return null;
 
@@ -79,6 +82,8 @@ export function VoiceMemoSheet() {
                 {scribe.paused ? "Paused" : "Recording"}
               </span>
             </div>
+          ) : plan.blocked ? (
+            <ScribeNotInPlanNotice />
           ) : (
             <div className="space-y-2">
               <Button

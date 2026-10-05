@@ -98,6 +98,10 @@ const PRACTICE_KEYWORDS: Record<string, string[]> = {
 /** Shown wherever the scribe is offered but this member cannot use it. */
 export const SCRIBE_LOCKED_REASON = 'Scribe needs clinical access in this practice';
 
+/** Shown wherever the scribe is offered but the plan does not include it. */
+export const SCRIBE_NOT_IN_PLAN_REASON =
+  'The scribe is not part of your plan. Practice, Clinic and Enterprise include it.';
+
 export interface QuickAction {
   id: 'start-scribe' | 'voice-memos';
   label: string;
@@ -116,26 +120,32 @@ export interface QuickAction {
 export function buildQuickActions({
   can,
   loading = false,
+  planIncluded = null,
 }: {
   can: (capability: any) => boolean;
   loading?: boolean;
+  /** false when the plan has no scribe; null/undefined when that is not known. */
+  planIncluded?: boolean | null;
 }): QuickAction[] {
   if (loading) return [];
-  const allowed = can('edit_clinical');
+  const hasRole = can('edit_clinical');
+  const planBlocked = planIncluded === false;
+  const allowed = hasRole && !planBlocked;
+  const reason = hasRole ? SCRIBE_NOT_IN_PLAN_REASON : SCRIBE_LOCKED_REASON;
   return [
     {
       id: 'start-scribe',
       label: 'Start scribe',
       to: '/clinician/scribe',
       keywords: ['scribe', 'record', 'visit note', 'visit notes', 'dictate', 'dictation'],
-      ...(allowed ? {} : { lockedReason: SCRIBE_LOCKED_REASON }),
+      ...(allowed ? {} : { lockedReason: reason }),
     },
     {
       id: 'voice-memos',
       label: 'Voice memos',
       to: '/clinician/voice-memos',
       keywords: ['voice memo', 'memo', 'memos', 'dictate my notes', 'my notes'],
-      ...(allowed ? {} : { lockedReason: SCRIBE_LOCKED_REASON }),
+      ...(allowed ? {} : { lockedReason: reason }),
     },
   ];
 }

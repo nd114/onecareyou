@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUser } from "../_shared/auth.ts";
 import { clinicianShareGrants } from "../_shared/share-access.ts";
+import { patientHasPlus, gateBody, decidePatientAi } from "../_shared/plan-gates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,13 +87,18 @@ serve(async (req) => {
       );
     }
 
-    // AI document summaries are a Premium feature for patients. A clinician
-    // reaching the document through a share is covered by their own plan.
-    if (isOwner && profile?.subscription_tier !== "premium") {
-      return new Response(
-        JSON.stringify({ error: "AI document summaries are part of Premium." }),
-        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    // AI document summaries are a Plus feature for patients. A clinician
+    // reaching the document through a share is covered by their own plan. The
+    // profile was read above with a 'profileError' check, so a failed read has
+    // already stopped here rather than being taken for a free account.
+    if (isOwner && !patientHasPlus(profile?.subscription_tier)) {
+      const plan = decidePatientAi(profile?.subscription_tier ?? null);
+      if (!plan.allow) {
+        return new Response(JSON.stringify(gateBody(plan)), {
+          status: plan.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (!lovableApiKey) {

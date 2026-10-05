@@ -26,6 +26,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useClinicianPatients } from "@/hooks/useClinicianPatients";
 import { memoFailureText, useVoiceMemos, type VoiceMemo } from "@/hooks/useVoiceMemos";
 import { useOptionalVoiceMemoSheet } from "@/components/clinician/VoiceMemoSheet";
+import { ScribeNotInPlanNotice } from "@/components/clinician/ScribeNotInPlanNotice";
+import { useScribePlan } from "@/hooks/useScribePlan";
 
 const STATUS_LABEL: Record<string, string> = {
   uploaded: "Waiting",
@@ -51,6 +53,7 @@ function minutes(ms: number | null) {
 const ClinicianVoiceMemos = () => {
   const navigate = useNavigate();
   const sheet = useOptionalVoiceMemoSheet();
+  const plan = useScribePlan();
   const { memos, isLoading, retry, discard, keepTranscript, assign } = useVoiceMemos();
   const { patients } = useClinicianPatients();
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -100,7 +103,8 @@ const ClinicianVoiceMemos = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {sheet && (
+            {plan.blocked && <ScribeNotInPlanNotice />}
+            {sheet && !plan.blocked && (
               <Button className="gap-2" onClick={sheet.openSheet}>
                 <Mic className="h-4 w-4" /> New voice memo
               </Button>

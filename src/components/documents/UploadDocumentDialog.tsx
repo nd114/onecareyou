@@ -35,6 +35,8 @@ import { useAIConsent } from '@/hooks/useAIConsent';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { FamilyMemberSelector } from '@/components/family/FamilyMemberSelector';
 import { useDocumentFolders } from '@/hooks/useDocumentFolders';
+import { usePatientPlus } from '@/hooks/usePatientPlus';
+import { PlusUpgradePrompt } from '@/components/PlusUpgradePrompt';
 
 
 export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?: string | null } = {}) {
@@ -54,6 +56,7 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
   const { folderNames: folders, createFolder } = useDocumentFolders();
 
   const { hasConsent, checkConsentRequired, grantConsent } = useAIConsent();
+  const { isFree: planIsFree } = usePatientPlus();
 
   const handleAiToggle = (checked: boolean) => {
     if (checked) {
@@ -92,7 +95,7 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
       category,
       documentDate: documentDate || undefined,
       notes: notes || undefined,
-      aiSummarize,
+      aiSummarize: aiSummarize && !planIsFree,
       familyMemberId,
       folder: target,
     });
@@ -242,7 +245,15 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
               />
             </div>
 
-            {/* AI Summarize Toggle */}
+            {/* AI Summarize Toggle. Plus only: a Free patient gets the plan prompt
+                in its place, so the file is simply saved. */}
+            {planIsFree ? (
+              <PlusUpgradePrompt
+                compact
+                feature="AI categorize & summarize"
+                description="Included with OneCare Plus. You can still upload and file your document."
+              />
+            ) : (
             <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30">
               <div className="flex items-center gap-2 min-w-0">
                 <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
@@ -256,6 +267,7 @@ export function UploadDocumentDialog({ defaultFolder = null }: { defaultFolder?:
                 onCheckedChange={handleAiToggle}
               />
             </div>
+            )}
 
             {aiSummarize && (
               <div className="flex items-start gap-2 p-2 rounded-md bg-primary/5 border border-primary/20 text-xs text-muted-foreground">

@@ -14,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useHealthDocuments } from '@/hooks/useHealthDocuments';
 import { useAIChat, ChatMessage } from '@/hooks/useAIChat';
 import { useAIConsent } from '@/hooks/useAIConsent';
+import { usePatientPlus } from '@/hooks/usePatientPlus';
+import { PlusUpgradePrompt } from '@/components/PlusUpgradePrompt';
 import { AIConsentDialog } from '@/components/consent/AIConsentDialog';
 import { AIActionsConsentDialog } from '@/components/consent/AIActionsConsentDialog';
 import { MarkdownMessage } from './MarkdownMessage';
@@ -152,7 +154,7 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
 
   const { hasConsent, grantConsent, hasActionsConsent, grantActionsConsent } = useAIConsent();
 
-  const { messages, isLoading, sendMessage, clearChat, loadConversation, approveActions, discardActions } = useAIChat({
+  const { messages, isLoading, sendMessage: sendToAssistant, clearChat, loadConversation, approveActions, discardActions } = useAIChat({
     persistSurface: 'assistant',
     resolvePatientId,
     // The assistant may only prepare changes once the person has said so
@@ -160,6 +162,15 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
     // it could act, could not, and said it had anyway.
     allowActions: hasActionsConsent,
   });
+  // The assistant is a Plus feature. A Free patient is shown the upgrade state
+  // rather than a chat that can only fail; if the server refuses anyway (the
+  // plan changed, or the stored tier was stale) the same state takes over.
+  const { isFree, hasPlus, markFree } = usePatientPlus();
+  const sendMessage = async (text: string) => {
+    const err = await sendToAssistant(text);
+    if (err?.kind === 'plus_required') markFree();
+    return err;
+  };
   const { uploadDocument } = useHealthDocuments();
   const [input, setInput] = useState('');
   const [interim, setInterim] = useState('');
@@ -232,7 +243,8 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
         title: file.name,
         category: 'other',
         sourceContext: 'assistant',
-        aiSummarize: true,
+        // Summaries are Plus-only; a Free upload is simply saved.
+        aiSummarize: hasPlus,
         familyMemberId: null,
       });
 
@@ -271,6 +283,20 @@ export function AIChatPanel({ renderHeader, onAfterNavigate, starters, where, cl
       setIsUploading(false);
     }
   };
+
+  if (isFree) {
+    return (
+      <div className={cn('flex flex-col min-h-0', className)}>
+        {renderHeader?.({ hasMessages: false, clearChat, loadConversation })}
+        <div className="flex-1 flex items-center justify-center p-6">
+          <PlusUpgradePrompt
+            feature="The AI assistant"
+            description="Ask about your medicines and readings in plain language, and have entries prepared for you to approve. Included with OneCare Plus."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('flex flex-col min-h-0', className)}>

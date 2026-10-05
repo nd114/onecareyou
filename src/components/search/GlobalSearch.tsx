@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePractice } from '@/hooks/usePractice';
 import { usePracticeTenant } from '@/hooks/usePracticeTenant';
 import { useClinicianSubscription, hasFeatureAccess } from '@/hooks/useClinicianSubscription';
+import { useScribePlan } from '@/hooks/useScribePlan';
 import {
   buildDestinations,
   buildQuickActions,
@@ -134,9 +135,10 @@ interface BodyProps {
 
 function ClinicianSearchBody({ onClose }: BodyProps) {
   const { can, loading: capsLoading } = useClinicianCapabilities();
+  const scribePlan = useScribePlan();
   const quickActions = useMemo(
-    () => buildQuickActions({ can, loading: capsLoading }),
-    [can, capsLoading],
+    () => buildQuickActions({ can, loading: capsLoading || scribePlan.loading, planIncluded: scribePlan.included }),
+    [can, capsLoading, scribePlan.loading, scribePlan.included],
   );
   const { patients } = useClinicianPatients();
   const { currentPractice } = usePractice();

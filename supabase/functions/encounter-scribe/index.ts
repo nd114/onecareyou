@@ -18,6 +18,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { SOAP_SYSTEM, wavSeconds } from "../_shared/scribe-soap.ts";
+import { checkScribe, gateBody } from "../_shared/plan-gates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,6 +76,10 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    // The scribe is not part of every plan (Individual and Community have none).
+    // Checked here, not only on screen. A failed lookup is a retryable 503.
+    const plan = await checkScribe(admin, userId);
+    if (!plan.allow) return json(gateBody(plan), plan.status);
     const { data: enc, error: encErr } = await admin
       .from("encounters")
       .select("id, clinician_user_id, patient_user_id, status, practice_id, author_departed_at")

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -328,6 +328,11 @@ const ClinicianPatientDetail = () => {
                   <Lock className="h-4 w-4" /> Scribe
                 </Button>
                 <span className="text-xs text-muted-foreground">{scribeAccess.reason}</span>
+                {scribeAccess.planBlocked && (
+                  <Link to="/clinician/pricing" className="text-xs text-primary underline underline-offset-2">
+                    See plans
+                  </Link>
+                )}
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@
  * Auth: requires JWT. Caller must own the dictation row (clinician_user_id).
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkScribe, gateBody } from "../_shared/plan-gates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +41,10 @@ Deno.serve(async (req) => {
     if (!userData?.user) return json({ error: "Unauthorized" }, 401);
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    // The scribe is not part of every plan (Individual and Community have none).
+    // Checked here, not only on screen. A failed lookup is a retryable 503.
+    const plan = await checkScribe(admin, userData.user.id);
+    if (!plan.allow) return json(gateBody(plan), plan.status);
     const { data: row, error } = await admin
       .from("clinician_dictations")
       .select("*")

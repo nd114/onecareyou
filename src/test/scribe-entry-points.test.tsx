@@ -4,6 +4,11 @@ import { MemoryRouter } from "react-router-dom";
 
 const { caps } = vi.hoisted(() => ({ caps: { can: ((_: string) => true) as (c: string) => boolean, loading: false } }));
 
+// The scribe is gated by plan; these tests are about the scribe itself, so the plan includes it.
+vi.mock("@/hooks/useEntitlements", async (orig) => ({
+  ...(await orig<typeof import("@/hooks/useEntitlements")>()),
+  useEntitlements: () => ({ entitlements: { tier: "pro", scribeIncluded: true }, isLoading: false }),
+}));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "c1" } }) }));
 vi.mock("@/hooks/useClinicianProfile", () => ({ useClinicianProfile: () => ({ isClinician: true }) }));
 vi.mock("@/hooks/useAdminRole", () => ({ useAdminRole: () => ({ isAdmin: false }) }));
