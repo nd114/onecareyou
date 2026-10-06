@@ -267,12 +267,12 @@ const PrivacyPolicy = () => {
                   <p>
                     <strong>Aggregated/Anonymous Data:</strong> We may share aggregated, de-identified data that cannot
                     reasonably be used to identify you for research, analytics, or industry benchmarking purposes.
+                  </p>
                   <p>
                     OneCare does not commercialise identifiable patient data. OneCare may use aggregated, de-identified
                     data for platform analytics, product improvement and research. How AI, secondary use, research,
                     analytics and de-identification work is set out in the{" "}
                     <a href="/ai-use-policy" className="underline">OneCare AI Use Policy</a>.
-                  </p>
                   </p>
                 </div>
               </CardContent>
