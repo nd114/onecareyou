@@ -46,6 +46,8 @@
 - [Terms of Service](https://onecare.you/terms)
 - [Medical Disclaimer](https://onecare.you/disclaimer)
 - [Data Processing](https://onecare.you/data-processing)
+- [Security](https://onecare.you/security)
+- [AI Use Policy](https://onecare.you/ai-use-policy)
 
 ## Notes for AI agents
 

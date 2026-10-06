@@ -54,6 +54,8 @@ const PatientGuidance = lazy(() => import("./pages/PatientGuidance"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const DataProcessing = lazy(() => import("./pages/DataProcessing"));
+const Security = lazy(() => import("./pages/Security"));
+const AIUsePolicy = lazy(() => import("./pages/AIUsePolicy"));
 const About = lazy(() => import("./pages/About"));
 const Features = lazy(() => import("./pages/Features"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
@@ -190,6 +192,8 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/data-processing" element={<DataProcessing />} />
+            <Route path="/security" element={<Security />} />
+            <Route path="/ai-use-policy" element={<AIUsePolicy />} />
             <Route path="/disclaimer" element={<MedicalDisclaimer />} />
             <Route path="/help" element={<Navigate to="/docs" replace />} />
             <Route path="/docs" element={<Docs />} />

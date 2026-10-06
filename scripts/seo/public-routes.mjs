@@ -73,6 +73,10 @@ const STATIC = [
     title: 'Medical Disclaimer | OneCare', description: 'OneCare is for information and record-keeping. It is not a substitute for professional medical advice.' },
   { path: '/data-processing', file: 'src/pages/DataProcessing.tsx', changefreq: 'yearly', priority: '0.3',
     title: 'Data Processing | OneCare', description: 'How OneCare processes personal and health data, including GDPR details.' },
+  { path: '/security', file: 'src/pages/Security.tsx', changefreq: 'yearly', priority: '0.4',
+    title: 'Security | OneCare', description: 'How OneCare protects health records: patient-controlled sharing, database-enforced access, audit trails and no commercialisation of identifiable data.' },
+  { path: '/ai-use-policy', file: 'src/pages/AIUsePolicy.tsx', changefreq: 'yearly', priority: '0.4',
+    title: 'AI Use Policy | OneCare', description: 'How OneCare uses AI, and how secondary data use, research, analytics and de-identification work.' },
 ];
 
 function docs() {

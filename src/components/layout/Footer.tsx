@@ -106,6 +106,16 @@ export function Footer() {
                   Data Processing
                 </Link>
               </li>
+              <li>
+                <Link to="/security" className="hover:text-foreground transition-colors">
+                  Security
+                </Link>
+              </li>
+              <li>
+                <Link to="/ai-use-policy" className="hover:text-foreground transition-colors">
+                  AI Use Policy
+                </Link>
+              </li>
             </ul>
           </div>
 

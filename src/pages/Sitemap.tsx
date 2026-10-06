@@ -78,6 +78,8 @@ const sitemapData: SitemapSection[] = [
       { title: "Terms of Service", path: "/terms", description: "Usage terms and conditions" },
       { title: "Medical Disclaimer", path: "/disclaimer", description: "Important health information" },
       { title: "Data Processing", path: "/data-processing", description: "GDPR and data handling" },
+      { title: "Security", path: "/security", description: "How we protect your records" },
+      { title: "AI Use Policy", path: "/ai-use-policy", description: "AI, research and de-identification" },
     ],
   },
 ];
