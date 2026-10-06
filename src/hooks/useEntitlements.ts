@@ -76,7 +76,7 @@ export function useEntitlements() {
     enabled: !!user,
     staleTime: 30_000,
     queryFn: async (): Promise<Entitlements | null> => {
-      const { data, error } = await supabase.rpc('entitlements_for');
+      const { data, error } = await (supabase as any).rpc('entitlements_for');
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
       return row ? normaliseEntitlements(row as EntitlementsRow) : null;
