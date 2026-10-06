@@ -28,8 +28,6 @@ import { useClinicianProfile } from '@/hooks/useClinicianProfile';
 import { useClinicianSubscription, CLINICIAN_TIER_INFO, ClinicianTier } from '@/hooks/useClinicianSubscription';
 import {
   ENTERPRISE_INCLUDED,
-  ENTERPRISE_ONBOARDING_FEE,
-  ENTERPRISE_FROM_PRICE,
   PRICING_ROADMAP,
   STAFF_SEAT_PRICE,
 } from '@/lib/pricing-constants';
@@ -95,7 +93,7 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
     <div className="min-h-screen bg-background">
       <SEOHead
         title="Clinician Plans & Pricing — For Healthcare Providers"
-        description="HIPAA-ready clinician tools: Community free for community health workers, Individual $99/mo, Practice $299/mo, Clinic $649/mo, Enterprise from $2,500/mo for hospitals."
+        description="HIPAA-ready clinician tools: Community free for community health workers, Individual $99/mo, Practice $299/mo, Clinic $649/mo, Enterprise by quote for hospitals."
         canonical="/clinician/pricing"
       />
       {isClinician ? <ClinicianHeader /> : <Header />}
@@ -174,11 +172,14 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                     </CardDescription>
                     
                     <div className="pt-4">
-                      {key === 'enterprise' && (
-                        <span className="text-sm text-muted-foreground">From </span>
+                      {key === 'enterprise' ? (
+                        <span className="text-3xl font-bold">Contact us</span>
+                      ) : (
+                        <>
+                          <span className="text-4xl font-bold">${price.toLocaleString()}</span>
+                          <span className="text-muted-foreground">/{period}</span>
+                        </>
                       )}
-                      <span className="text-4xl font-bold">${price.toLocaleString()}</span>
-                      <span className="text-muted-foreground">/{period}</span>
                     </div>
                     
                     {isBillable && showAnnual && (
@@ -187,12 +188,18 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
                       </p>
                     )}
                     
-                    <p className="text-sm font-medium text-primary mt-2">
-                      {`Up to ${tierInfo.patientLimit.toLocaleString('en-US')} patients`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {tierInfo.storage} document storage
-                    </p>
+                    {key === 'enterprise' ? (
+                      <p className="text-sm font-medium text-primary mt-2">Scaled to your institution</p>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-primary mt-2">
+                          {`Up to ${tierInfo.patientLimit.toLocaleString('en-US')} patients`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {tierInfo.storage} document storage
+                        </p>
+                      </>
+                    )}
                   </CardHeader>
                   
                   <CardContent className="space-y-4">
@@ -333,11 +340,10 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold mb-2">Enterprise &amp; hospitals</h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Enterprise starts at ${ENTERPRISE_FROM_PRICE.toLocaleString('en-US')}/month for institutions
-              and hospitals. We scope it with you, so the final price depends on departments, clinicians,
-              storage and the integrations you choose. Onboarding assistance is a paid service: a one-time
-              ${ENTERPRISE_ONBOARDING_FEE.toLocaleString('en-US')}, covering multi-department setup,
-              staff onboarding and EHR integration scope.
+              Enterprise is priced by agreement for institutions and hospitals. We scope it with you, so the
+              price depends on departments, clinicians, storage and the integrations you choose. Onboarding
+              assistance is a paid service, covering multi-department setup, staff onboarding and EHR
+              integration scope.
             </p>
           </div>
 
@@ -345,10 +351,10 @@ const ClinicianPricing = ({ audienceSlot }: { audienceSlot?: React.ReactNode } =
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-primary" />
-                What the entry price includes
+                What Enterprise includes
               </CardTitle>
               <CardDescription>
-                From ${ENTERPRISE_FROM_PRICE.toLocaleString('en-US')}/month, quoted after scoping
+                Quoted after scoping
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">

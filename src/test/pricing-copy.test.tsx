@@ -113,6 +113,13 @@ describe('clinician pricing page', () => {
     expect(CLINICIAN_TIER_INFO.enterprise.price).toBe(2500);
   });
 
+  it('quotes Enterprise by agreement instead of showing a price or hospital sizes', async () => {
+    const text = await pageText('/pricing?audience=clinicians');
+    expect(text).toContain('Contact us');
+    expect(text).not.toMatch(/2,500/);
+    expect(text).not.toMatch(/single.site|mid-sized/i);
+  });
+
   it('gives Individual no scribe, in the card and in the comparison table', async () => {
     const solo = CLINICIAN_TIER_INFO.solo.features.join(' | ');
     expect(solo).not.toMatch(/scribe minutes? (included|a month)|\d[\d,]* (scribe )?min/i);

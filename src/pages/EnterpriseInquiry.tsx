@@ -361,7 +361,7 @@ const EnterpriseInquiry = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
-                    { icon: Users, text: 'From $2,500/month: 25 clinicians and 5,000 patients' },
+                    { icon: Users, text: 'Priced by agreement, scaled to your institution' },
                     { icon: Shield, text: 'HIPAA BAA included' },
                     { icon: Link2, text: 'EHR/FHIR integration support' },
                     { icon: HeadphonesIcon, text: 'Priority support' },

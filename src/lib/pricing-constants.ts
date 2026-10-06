@@ -101,8 +101,6 @@ export const LANDING_PREMIUM_FEATURES = [
 // page must not claim one). Used by the clinician pricing page and the
 // enterprise inquiry page.
 
-export const ENTERPRISE_ONBOARDING_FEE = 2500;
-export const ENTERPRISE_FROM_PRICE = 2500;
 
 /** What the entry-level Enterprise price includes. */
 export const ENTERPRISE_INCLUDED = [
