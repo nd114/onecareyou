@@ -152,8 +152,8 @@ const App = () => (
         <AuthProvider>
         <FamilyProvider>
         <ScribeRecorderProvider>
-          <VoiceMemoSheetProvider>
         <BrowserRouter future={routerFutureFlags}>
+          <VoiceMemoSheetProvider>
           <ScrollToTop />
           <RouteTitle />
           <StandaloneLaunchRedirect />
@@ -579,8 +579,8 @@ const App = () => (
             <MobileBottomNav />
             <ScribeRecordingPill />
           </AppChrome>
-        </BrowserRouter>
           </VoiceMemoSheetProvider>
+        </BrowserRouter>
         </ScribeRecorderProvider>
         </FamilyProvider>
       </AuthProvider>

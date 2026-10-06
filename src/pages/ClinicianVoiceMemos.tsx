@@ -253,7 +253,7 @@ function KeepAudioSetting() {
     queryKey: ["keep-memo-audio", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("clinician_profiles")
         .select("keep_memo_audio")
         .eq("user_id", user!.id)
@@ -267,7 +267,7 @@ function KeepAudioSetting() {
         id="keep-memo-audio"
         checked={!!data}
         onCheckedChange={async (v) => {
-          const { error } = await supabase
+          const { error } = await (supabase as any)
             .from("clinician_profiles")
             .update({ keep_memo_audio: v === true })
             .eq("user_id", user!.id);
