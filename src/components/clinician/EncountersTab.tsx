@@ -66,7 +66,7 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe, mem
     queryKey: ["voice-memo", memoId],
     enabled: !!memoId,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("voice_memos")
         .select("id, patient_user_id, transcript, draft, status")
         .eq("id", memoId as string)
@@ -560,7 +560,7 @@ export function EncountersTab({ patientUserId, patientName, autoStartScribe, mem
               memo={seedMemo ? { id: seedMemo.id, transcript: seedMemo.transcript, draft: seedMemo.draft } : undefined}
               onMemoApplied={async () => {
                 if (!seedMemo) return;
-                const { error } = await supabase.rpc("file_voice_memo", {
+                const { error } = await (supabase as any).rpc("file_voice_memo", {
                   _memo_id: seedMemo.id,
                   _encounter_id: scribeFor.id,
                 });

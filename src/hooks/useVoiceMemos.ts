@@ -3,9 +3,28 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { processMemo, VOICE_MEMOS_CHANGED, notifyVoiceMemosChanged } from "@/lib/voice-memo-pipeline";
-import type { Database } from "@/integrations/supabase/types";
+// Untyped until the voice_memos migration is applied and generated types catch up.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
 
-export type VoiceMemo = Database["public"]["Tables"]["voice_memos"]["Row"];
+export interface VoiceMemo {
+  id: string;
+  clinician_user_id: string;
+  practice_id: string | null;
+  patient_user_id: string | null;
+  audio_path: string;
+  duration_ms: number;
+  status: string;
+  transcript: string | null;
+  draft: unknown;
+  encounter_id: string | null;
+  error_code: string | null;
+  created_at: string;
+  updated_at: string;
+  assigned_at: string | null;
+  transcript_confirmed_at: string | null;
+  audio_deleted_at: string | null;
+}
 
 /** Plain words for the reason a memo failed. Never carries transcript text. */
 export function memoFailureText(code: string | null): string {
@@ -35,7 +54,7 @@ export function useVoiceMemos() {
     queryKey: [KEY, userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("voice_memos")
         .select("*")
         .neq("status", "discarded")
@@ -67,7 +86,7 @@ export function useVoiceMemos() {
 
   const discard = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("voice_memos").update({ status: "discarded" }).eq("id", id);
+      const { error } = await db.from("voice_memos").update({ status: "discarded" }).eq("id", id);
       if (error) throw error;
     },
     onSettled: done,
@@ -76,7 +95,7 @@ export function useVoiceMemos() {
   /** Keep the transcript on its own: it stays in the inbox, audio follows the retention rule. */
   const keepTranscript = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await db
         .from("voice_memos")
         .update({ transcript_confirmed_at: new Date().toISOString() })
         .eq("id", id);
@@ -87,7 +106,7 @@ export function useVoiceMemos() {
 
   const assign = useMutation({
     mutationFn: async (v: { id: string; patientUserId: string | null; practiceId?: string | null }) => {
-      const { error } = await supabase.rpc("assign_voice_memo", {
+      const { error } = await db.rpc("assign_voice_memo", {
         _memo_id: v.id,
         _patient_user_id: v.patientUserId as string,
         ...(v.practiceId ? { _practice_id: v.practiceId } : {}),

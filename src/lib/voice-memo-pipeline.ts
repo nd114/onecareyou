@@ -54,7 +54,7 @@ export async function uploadMemo(input: {
   }
   if (lastErr) throw new Error(lastErr);
 
-  const { error: rowErr } = await supabase.from("voice_memos").insert({
+  const { error: rowErr } = await (supabase as any).from("voice_memos").insert({
     id: input.memoId,
     clinician_user_id: input.userId,
     audio_path: path,
