@@ -1,0 +1,1 @@
+ALTER FUNCTION public.notification_is_mandatory(text) SET search_path = public;
