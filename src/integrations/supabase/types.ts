@@ -4890,6 +4890,48 @@ export type Database = {
           },
         ]
       }
+      site_page_views: {
+        Row: {
+          browser: string | null
+          created_at: string
+          device: string | null
+          duration_ms: number
+          id: string
+          path: string
+          referrer_host: string | null
+          session_id: string
+          user_id: string | null
+          utm_source: string | null
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string
+          device?: string | null
+          duration_ms?: number
+          id?: string
+          path: string
+          referrer_host?: string | null
+          session_id: string
+          user_id?: string | null
+          utm_source?: string | null
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string
+          device?: string | null
+          duration_ms?: number
+          id?: string
+          path?: string
+          referrer_host?: string | null
+          session_id?: string
+          user_id?: string | null
+          utm_source?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       snapshot_link_views: {
         Row: {
           document_id: string | null
@@ -5813,6 +5855,19 @@ export type Database = {
           total_value: number
         }[]
       }
+      admin_person_journeys: {
+        Args: { _days?: number; _search: string }
+        Returns: {
+          device: string
+          duration_s: number
+          email: string
+          name: string
+          session_id: string
+          started_at: string
+          steps: Json
+          user_id: string
+        }[]
+      }
       admin_recent_actions: {
         Args: { _limit?: number }
         Returns: {
@@ -5897,6 +5952,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_site_analytics: { Args: { _days?: number }; Returns: Json }
       admin_sync_failures: {
         Args: { _limit?: number }
         Returns: {
@@ -6512,6 +6568,19 @@ export type Database = {
           revoked_at: string
           view_count: number
         }[]
+      }
+      log_page_view: {
+        Args: {
+          _browser?: string
+          _device?: string
+          _duration_ms: number
+          _path: string
+          _referrer_host?: string
+          _session_id: string
+          _utm_source?: string
+          _visitor_id: string
+        }
+        Returns: undefined
       }
       log_platform_admin_action: {
         Args: {
