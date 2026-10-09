@@ -15,6 +15,7 @@ import { FamilyProvider } from "@/contexts/FamilyContext";
 import { ScribeRecorderProvider } from "@/contexts/ScribeRecorderContext";
 import { ScribeRecordingPill } from "@/components/clinician/ScribeRecordingPill";
 import { VoiceMemoSheetProvider } from "@/components/clinician/VoiceMemoSheet";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ClinicianRoute } from "@/components/auth/ClinicianRoute";
 import { RequireCapability } from "@/components/clinician/RequireCapability";
@@ -82,6 +83,7 @@ const AdminAccountsPage = lazy(() => import("./pages/AdminConsole").then((m) => 
 const AdminRevenuePage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminRevenuePage })));
 const AdminReliabilityPage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminReliabilityPage })));
 const AdminTrustPage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminTrustPage })));
+const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminWorkshopPage = lazy(() => import("./pages/AdminConsole").then((m) => ({ default: m.AdminWorkshopPage })));
 
 import { AdminRoute } from "./components/auth/AdminRoute";
@@ -157,6 +159,7 @@ const App = () => (
         <BrowserRouter future={routerFutureFlags}>
           <VoiceMemoSheetProvider>
           <ScrollToTop />
+          <PageViewTracker />
           <RouteTitle />
           <StandaloneLaunchRedirect />
           <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-muted-foreground" role="status" aria-label="Loading">Loading…</div>}>
@@ -457,6 +460,11 @@ const App = () => (
             <Route path="/admin/reliability" element={
               <AdminRoute>
                 <AdminReliabilityPage />
+              </AdminRoute>
+            } />
+            <Route path="/admin/analytics" element={
+              <AdminRoute>
+                <AdminAnalytics />
               </AdminRoute>
             } />
             <Route path="/admin/trust" element={

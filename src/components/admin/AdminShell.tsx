@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
+  BarChart3,
   BookOpen,
   Briefcase,
   Bug,
@@ -181,6 +182,7 @@ function RailContents({
     { to: '/admin/accounts', label: 'Accounts', icon: Users },
     { to: '/admin/revenue', label: 'Revenue', icon: Wallet },
     { to: '/admin/reliability', label: 'Reliability', icon: Activity, badge: failures },
+    { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/admin/trust', label: 'Trust', icon: ShieldCheck },
   ];
 
