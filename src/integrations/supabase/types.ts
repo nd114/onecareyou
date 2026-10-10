@@ -4893,6 +4893,7 @@ export type Database = {
       site_page_views: {
         Row: {
           browser: string | null
+          country: string | null
           created_at: string
           device: string | null
           duration_ms: number
@@ -4900,12 +4901,14 @@ export type Database = {
           path: string
           referrer_host: string | null
           session_id: string
+          timezone: string | null
           user_id: string | null
           utm_source: string | null
           visitor_id: string
         }
         Insert: {
           browser?: string | null
+          country?: string | null
           created_at?: string
           device?: string | null
           duration_ms?: number
@@ -4913,12 +4916,14 @@ export type Database = {
           path: string
           referrer_host?: string | null
           session_id: string
+          timezone?: string | null
           user_id?: string | null
           utm_source?: string | null
           visitor_id: string
         }
         Update: {
           browser?: string | null
+          country?: string | null
           created_at?: string
           device?: string | null
           duration_ms?: number
@@ -4926,6 +4931,7 @@ export type Database = {
           path?: string
           referrer_host?: string | null
           session_id?: string
+          timezone?: string | null
           user_id?: string | null
           utm_source?: string | null
           visitor_id?: string
@@ -6577,6 +6583,7 @@ export type Database = {
           _path: string
           _referrer_host?: string
           _session_id: string
+          _timezone?: string
           _utm_source?: string
           _visitor_id: string
         }

@@ -24,10 +24,19 @@ interface Analytics {
   browsers: Row[];
   audiences: Row[];
   hours: Array<{ hour: number; views: number }>;
+  countries?: Row[];
   recent_sessions: Array<{
     session_id: string; audience: string; started_at: string; duration_s: number;
-    device: string | null; referrer: string | null; paths: string[];
+    device: string | null; browser?: string | null; referrer: string | null; paths: string[];
+    country?: string | null; user_id?: string | null; email?: string | null;
   }>;
+}
+
+const regionNames = (() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }); } catch { return null; } })();
+function placeLabel(c?: string | null) {
+  if (!c || c === 'Unknown') return 'Unknown';
+  if (c.startsWith('tz:')) return `~${c.slice(3)}`;
+  try { return regionNames?.of(c) ?? c; } catch { return c; }
 }
 
 const secs = (s: number) => (s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`);
@@ -206,12 +215,20 @@ export default function AdminAnalytics() {
             <div className="flex justify-between text-[10px] text-muted-foreground mt-1"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
           </Panel>
 
-          <Panel title="Recent sessions" description="The path each visit took. Unnamed — search a person below to see who.">
+          <Panel title="Countries" description="Sessions by visitor country (or browser time zone when the country is unknown).">
+            <Bars rows={(a.countries ?? []).map((r) => ({ ...r, label: placeLabel(r.label) }))} value={(r) => r.count ?? 0} />
+          </Panel>
+
+          <Panel title="Recent sessions" description="Each visit: who (if signed in), where from, and the pages they went through.">
             <div className="space-y-2">
               {a.recent_sessions.map((s) => (
                 <div key={s.session_id} className="rounded-lg border p-3">
                   <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
-                    <span><span className="font-medium text-foreground">{s.audience}</span> · {s.device ?? '—'}{s.referrer ? ` · from ${s.referrer}` : ''}</span>
+                    <span>
+                      <span className="font-medium text-foreground">{s.email ?? s.audience}</span>
+                      {' · '}{placeLabel(s.country)} · {s.device ?? '—'}{s.browser ? ` · ${s.browser}` : ''}{s.referrer ? ` · from ${s.referrer}` : ''}
+                      {s.user_id && <span className="block font-mono text-[10px] select-all">{s.user_id}</span>}
+                    </span>
                     <span>{formatDayTime(s.started_at)} · {secs(s.duration_s ?? 0)}</span>
                   </div>
                   <p className="font-mono text-xs mt-1.5 break-words">{s.paths.join(' → ')}</p>
