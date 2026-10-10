@@ -1,15 +1,21 @@
-import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * First-party page analytics. Records the page path (ids masked, no query
  * string) and time spent — never what anyone types. Founder pages are skipped.
  */
+
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 
 function maskPath(p: string) {
-  return p.replace(UUID, ':id').replace(/\/\d{3,}(?=\/|$)/g, '/:id').slice(0, 200) || '/';
+  return (
+    p
+      .replace(UUID, ":id")
+      .replace(/\/\d{3,}(?=\/|$)/g, "/:id")
+      .slice(0, 200) || "/"
+  );
 }
 
 function stableId(store: Storage, key: string) {
@@ -27,62 +33,97 @@ function stableId(store: Storage, key: string) {
 
 function device() {
   const w = window.innerWidth;
-  return w < 768 ? 'Phone' : w < 1100 ? 'Tablet' : 'Desktop';
+  return w < 768 ? "Phone" : w < 1100 ? "Tablet" : "Desktop";
 }
 
 function browser() {
   const ua = navigator.userAgent;
-  if (/Edg\//.test(ua)) return 'Edge';
-  if (/OPR\//.test(ua)) return 'Opera';
-  if (/Chrome\//.test(ua)) return 'Chrome';
-  if (/Firefox\//.test(ua)) return 'Firefox';
-  if (/Safari\//.test(ua)) return 'Safari';
-  return 'Other';
+  if (/Edg\//.test(ua)) return "Edge";
+  if (/OPR\//.test(ua)) return "Opera";
+  if (/Chrome\//.test(ua)) return "Chrome";
+  if (/Firefox\//.test(ua)) return "Firefox";
+  if (/Safari\//.test(ua)) return "Safari";
+  return "Other";
 }
 
 export function PageViewTracker() {
   const { pathname } = useLocation();
-  const current = useRef<{ path: string; start: number } | null>(null);
+  const current = useRef<{ id: string | null; start: number; path: string } | null>(null);
   const meta = useRef<{ referrer: string | null; utm: string | null } | null>(null);
 
   if (!meta.current) {
     let referrer: string | null = null;
     try {
-      const host = document.referrer ? new URL(document.referrer).host : '';
+      const host = document.referrer ? new URL(document.referrer).host : "";
       referrer = host && host !== window.location.host ? host : null;
-    } catch { /* ignore */ }
-    const utm = new URLSearchParams(window.location.search).get('utm_source');
+    } catch {
+      /* ignore */
+    }
+    const utm = new URLSearchParams(window.location.search).get("utm_source");
     meta.current = { referrer, utm: utm ? utm.slice(0, 60) : null };
   }
 
   useEffect(() => {
-    const flush = () => {
-      const c = current.current;
-      if (!c) return;
+    const cleanPath = maskPath(pathname);
+
+    // Skip recording admin page navigations
+    if (cleanPath.startsWith("/admin")) {
       current.current = null;
-      if (c.path.startsWith('/admin')) return;
-      void supabase.rpc('log_page_view', {
-        _session_id: stableId(sessionStorage, 'oc_sid'),
-        _visitor_id: stableId(localStorage, 'oc_vid'),
-        _path: c.path,
-        _duration_ms: Math.round(performance.now() - c.start),
+      return;
+    }
+
+    const start = performance.now();
+    let isCurrent = true;
+
+    // Log arrival immediately so live visitors register right away
+    void supabase
+      .rpc("log_page_view", {
+        _session_id: stableId(sessionStorage, "oc_sid"),
+        _visitor_id: stableId(localStorage, "oc_vid"),
+        _path: cleanPath,
+        _duration_ms: 0,
         _referrer_host: meta.current?.referrer ?? undefined,
         _utm_source: meta.current?.utm ?? undefined,
         _device: device(),
         _browser: browser(),
-        _timezone: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return undefined; } })(),
+        _timezone: (() => {
+          try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+          } catch {
+            return undefined;
+          }
+        })(),
+      })
+      .then(({ data }) => {
+        if (isCurrent && data) {
+          current.current = { id: data as string, start, path: cleanPath };
+        }
+      });
+
+    const updateDuration = () => {
+      const c = current.current;
+      if (!c?.id) return;
+      const durationMs = Math.round(performance.now() - c.start);
+      current.current = null;
+      void supabase.rpc("update_page_view_duration", {
+        _id: c.id,
+        _duration_ms: durationMs,
       });
     };
 
-    flush();
-    current.current = { path: maskPath(pathname), start: performance.now() };
-
-    const onHide = () => {
-      if (document.visibilityState === 'hidden') flush();
-      else if (!current.current) current.current = { path: maskPath(pathname), start: performance.now() };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        updateDuration();
+      }
     };
-    document.addEventListener('visibilitychange', onHide);
-    return () => document.removeEventListener('visibilitychange', onHide);
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      isCurrent = false;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      updateDuration();
+    };
   }, [pathname]);
 
   return null;
