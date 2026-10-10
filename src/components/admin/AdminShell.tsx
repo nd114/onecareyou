@@ -182,7 +182,7 @@ function RailContents({
     { to: '/admin/accounts', label: 'Accounts', icon: Users },
     { to: '/admin/revenue', label: 'Revenue', icon: Wallet },
     { to: '/admin/reliability', label: 'Reliability', icon: Activity, badge: failures },
-    { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    { to: '/admin/analytics', label: 'Site Analytics', icon: BarChart3 },
     { to: '/admin/trust', label: 'Trust', icon: ShieldCheck },
   ];
 

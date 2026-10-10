@@ -70,6 +70,7 @@ export function PageViewTracker() {
         _utm_source: meta.current?.utm ?? undefined,
         _device: device(),
         _browser: browser(),
+        _timezone: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return undefined; } })(),
       });
     };
 
