@@ -6576,35 +6576,20 @@ export type Database = {
           view_count: number
         }[]
       }
-      log_page_view:
-        | {
-            Args: {
-              _browser?: string
-              _device?: string
-              _duration_ms: number
-              _path: string
-              _referrer_host?: string
-              _session_id: string
-              _timezone?: string
-              _utm_source?: string
-              _visitor_id: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              _browser?: string
-              _device?: string
-              _duration_ms: number
-              _path: string
-              _referrer_host?: string
-              _session_id: string
-              _timezone?: string
-              _utm_source?: string
-              _visitor_id: string
-            }
-            Returns: undefined
-          }
+      log_page_view: {
+        Args: {
+          _browser?: string
+          _device?: string
+          _duration_ms: number
+          _path: string
+          _referrer_host?: string
+          _session_id: string
+          _timezone?: string
+          _utm_source?: string
+          _visitor_id: string
+        }
+        Returns: string
+      }
       log_platform_admin_action: {
         Args: {
           _action: string
