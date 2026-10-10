@@ -5739,6 +5739,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_active_visitors: { Args: never; Returns: number }
       admin_archive_bug_reports: { Args: { _ids: string[] }; Returns: number }
       admin_attention_queue: {
         Args: { _for_admin?: string }
@@ -6575,20 +6576,35 @@ export type Database = {
           view_count: number
         }[]
       }
-      log_page_view: {
-        Args: {
-          _browser?: string
-          _device?: string
-          _duration_ms: number
-          _path: string
-          _referrer_host?: string
-          _session_id: string
-          _timezone?: string
-          _utm_source?: string
-          _visitor_id: string
-        }
-        Returns: undefined
-      }
+      log_page_view:
+        | {
+            Args: {
+              _browser?: string
+              _device?: string
+              _duration_ms: number
+              _path: string
+              _referrer_host?: string
+              _session_id: string
+              _timezone?: string
+              _utm_source?: string
+              _visitor_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _browser?: string
+              _device?: string
+              _duration_ms: number
+              _path: string
+              _referrer_host?: string
+              _session_id: string
+              _timezone?: string
+              _utm_source?: string
+              _visitor_id: string
+            }
+            Returns: undefined
+          }
       log_platform_admin_action: {
         Args: {
           _action: string
@@ -7212,6 +7228,10 @@ export type Database = {
       suggest_medication_name: { Args: { query: string }; Returns: string }
       unaccent: { Args: { "": string }; Returns: string }
       unaccent_immutable: { Args: { value: string }; Returns: string }
+      update_page_view_duration: {
+        Args: { _duration_ms: number; _id: string }
+        Returns: undefined
+      }
       voice_memo_audio_due: {
         Args: { _limit?: number }
         Returns: {
