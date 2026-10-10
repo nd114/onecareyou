@@ -15,6 +15,13 @@
       "when": 1791598341689,
       "tag": "0001_site_analytics_country_and_user",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791599662664,
+      "tag": "0002_page_view_arrival_tracking",
+      "breakpoints": true
     }
   ]
 }
